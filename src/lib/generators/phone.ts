@@ -85,7 +85,7 @@ function randomDigits(count: number): string {
 export function generatePhone(formatted = true, mobile = true): string {
   const ddd = randomItem(DDD_CODES);
   const prefix = mobile ? "9" : String(Math.floor(Math.random() * 5) + 2);
-  const number = prefix + randomDigits(mobile ? 7 : 7);
+  const number = prefix + randomDigits(mobile ? 8 : 7);
 
   if (!formatted) return `${ddd}${number}`;
 

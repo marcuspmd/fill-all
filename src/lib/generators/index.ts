@@ -27,6 +27,7 @@ import {
   generateUsername,
   generateNumber,
   generateText,
+  generateMoney,
 } from "./misc";
 
 export type GeneratorFn = () => string;
@@ -54,6 +55,7 @@ const generatorMap: Record<FieldType, GeneratorFn> = {
   company: generateCompanyName,
   rg: () => generateRg(true),
   text: () => generateText(),
+  money: () => generateMoney(),
   select: () => "",
   checkbox: () => "true",
   radio: () => "true",
@@ -86,4 +88,5 @@ export {
   generateUsername,
   generateNumber,
   generateText,
+  generateMoney,
 };

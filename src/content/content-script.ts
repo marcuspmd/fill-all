@@ -3,9 +3,24 @@
  */
 
 import type { ExtensionMessage, SavedForm } from "@/types";
-import { fillAllFields, captureFormValues } from "@/lib/form/form-filler";
+import {
+  fillAllFields,
+  fillSingleField,
+  captureFormValues,
+} from "@/lib/form/form-filler";
 import { detectFormFields } from "@/lib/form/form-detector";
 import { saveForm } from "@/lib/storage/storage";
+import {
+  startWatching,
+  stopWatching,
+  isWatcherActive,
+} from "@/lib/form/dom-watcher";
+import {
+  createFloatingPanel,
+  removeFloatingPanel,
+  toggleFloatingPanel,
+} from "@/lib/form/floating-panel";
+import { initFieldIcon } from "@/lib/form/field-icon";
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -32,6 +47,18 @@ async function handleContentMessage(
     case "FILL_ALL_FIELDS": {
       const results = await fillAllFields();
       showNotification(`✓ ${results.length} campos preenchidos`);
+
+      // Auto-start watcher to detect dynamic form changes after fill
+      if (!isWatcherActive()) {
+        startWatching((newFieldsCount) => {
+          if (newFieldsCount > 0) {
+            showNotification(
+              `🔄 ${newFieldsCount} novo(s) campo(s) detectado(s) — re-preenchendo...`,
+            );
+          }
+        }, true);
+      }
+
       return { success: true, filled: results.length };
     }
 
@@ -99,12 +126,75 @@ async function handleContentMessage(
       const detected = detectFormFields();
       return {
         count: detected.length,
-        fields: detected.map((f) => ({
-          selector: f.selector,
-          fieldType: f.fieldType,
-          label: f.label || f.name || f.id || "unknown",
-        })),
+        fields: detected.map((f) => {
+          const item: {
+            selector: string;
+            fieldType: string;
+            label: string;
+            options?: Array<{ value: string; text: string }>;
+          } = {
+            selector: f.selector,
+            fieldType: f.fieldType,
+            label: f.label || f.name || f.id || "unknown",
+          };
+          if (f.element instanceof HTMLSelectElement) {
+            item.options = Array.from(f.element.options).map((o) => ({
+              value: o.value,
+              text: o.text.trim(),
+            }));
+          }
+          return item;
+        }),
       };
+    }
+
+    case "FILL_FIELD_BY_SELECTOR": {
+      const selector = message.payload as string;
+      const fields = detectFormFields();
+      const field = fields.find((f) => f.selector === selector);
+      if (!field) return { error: "Field not found" };
+      const result = await fillSingleField(field);
+      if (result) {
+        showNotification(`✓ Campo "${field.label || selector}" preenchido`);
+      }
+      return result ?? { error: "Failed to fill field" };
+    }
+
+    case "START_WATCHING": {
+      const autoRefill =
+        (message.payload as { autoRefill?: boolean })?.autoRefill ?? true;
+      startWatching((newFieldsCount) => {
+        if (newFieldsCount > 0) {
+          showNotification(
+            `🔄 ${newFieldsCount} novo(s) campo(s) detectado(s) — re-preenchendo...`,
+          );
+        }
+      }, autoRefill);
+      return { success: true, watching: true };
+    }
+
+    case "STOP_WATCHING": {
+      stopWatching();
+      return { success: true, watching: false };
+    }
+
+    case "GET_WATCHER_STATUS": {
+      return { watching: isWatcherActive() };
+    }
+
+    case "TOGGLE_PANEL": {
+      toggleFloatingPanel();
+      return { success: true };
+    }
+
+    case "SHOW_PANEL": {
+      createFloatingPanel();
+      return { success: true };
+    }
+
+    case "HIDE_PANEL": {
+      removeFloatingPanel();
+      return { success: true };
     }
 
     default:
@@ -141,3 +231,6 @@ function showNotification(text: string): void {
     setTimeout(() => el.remove(), 300);
   }, 3000);
 }
+
+// --- Init ---
+initFieldIcon();

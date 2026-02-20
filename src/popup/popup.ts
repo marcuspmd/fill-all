@@ -3,13 +3,31 @@
  */
 
 import "./popup.css";
-import type { ExtensionMessage, FieldType, SavedForm } from "@/types";
-import { generate } from "@/lib/generators";
+import type {
+  ExtensionMessage,
+  FieldRule,
+  FieldType,
+  IgnoredField,
+  SavedForm,
+} from "@/types";
+import { generate, generateMoney, generateNumber } from "@/lib/generators";
 
 async function sendToActiveTab(message: ExtensionMessage): Promise<unknown> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return null;
-  return chrome.tabs.sendMessage(tab.id, message);
+
+  const url = tab.url ?? "";
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    console.warn("[fill-all] Content script não disponível nesta página:", url);
+    return null;
+  }
+
+  try {
+    return await chrome.tabs.sendMessage(tab.id, message);
+  } catch (err) {
+    console.warn("[fill-all] Content script não encontrado na aba ativa.", err);
+    return null;
+  }
 }
 
 async function sendToBackground(message: ExtensionMessage): Promise<unknown> {
@@ -18,10 +36,14 @@ async function sendToBackground(message: ExtensionMessage): Promise<unknown> {
 
 // --- Fill All ---
 document.getElementById("btn-fill-all")?.addEventListener("click", async () => {
-  const result = await sendToActiveTab({ type: "FILL_ALL_FIELDS" });
   const btn = document.getElementById("btn-fill-all") as HTMLButtonElement;
-  const res = result as { filled?: number } | null;
-  btn.textContent = `✓ ${res?.filled ?? 0} campos preenchidos`;
+  const result = await sendToActiveTab({ type: "FILL_ALL_FIELDS" });
+  if (result === null) {
+    btn.textContent = "⚠️ Não disponível aqui";
+  } else {
+    const res = result as { filled?: number } | null;
+    btn.textContent = `✓ ${res?.filled ?? 0} campos preenchidos`;
+  }
   setTimeout(() => {
     btn.textContent = "⚡ Preencher Todos os Campos";
   }, 2000);
@@ -36,41 +58,490 @@ document
   });
 
 // --- Detect Fields ---
+const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> = (
+  [
+    { value: "cpf", label: "CPF" },
+    { value: "cnpj", label: "CNPJ" },
+    { value: "email", label: "E-mail" },
+    { value: "phone", label: "Telefone" },
+    { value: "full-name", label: "Nome Completo" },
+    { value: "first-name", label: "Primeiro Nome" },
+    { value: "last-name", label: "Sobrenome" },
+    { value: "rg", label: "RG" },
+    { value: "company", label: "Empresa" },
+    { value: "cep", label: "CEP" },
+    { value: "address", label: "Endereço" },
+    { value: "city", label: "Cidade" },
+    { value: "state", label: "Estado" },
+    { value: "date", label: "Data" },
+    { value: "birth-date", label: "Nascimento" },
+    { value: "money", label: "Dinheiro" },
+    { value: "number", label: "Número" },
+    { value: "password", label: "Senha" },
+    { value: "username", label: "Username" },
+    { value: "text", label: "Texto" },
+    { value: "select", label: "Select" },
+    { value: "unknown", label: "Desconhecido" },
+  ] as Array<{ value: FieldType; label: string }>
+).sort((a, b) => b.label.localeCompare(a.label, "pt-BR"));
+
 document.getElementById("btn-detect")?.addEventListener("click", async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const pageUrl = tab?.url ?? "";
+
   const result = (await sendToActiveTab({ type: "DETECT_FIELDS" })) as {
     count: number;
-    fields: Array<{ selector: string; fieldType: string; label: string }>;
+    fields: Array<{
+      selector: string;
+      fieldType: string;
+      label: string;
+      options?: Array<{ value: string; text: string }>;
+    }>;
   } | null;
 
   const list = document.getElementById("fields-list");
   if (!list || !result) return;
 
+  const hostname = pageUrl ? new URL(pageUrl).hostname : "";
+
+  // Load ignored fields and existing rules in parallel
+  const [ignoredList, rulesList] = (await Promise.all([
+    sendToBackground({ type: "GET_IGNORED_FIELDS" }),
+    sendToBackground({ type: "GET_RULES" }),
+  ])) as [IgnoredField[] | null, FieldRule[] | null];
+
+  const ignoredSelectors = new Set(
+    (ignoredList ?? [])
+      .filter((f) => f.urlPattern.includes(hostname))
+      .map((f) => f.selector),
+  );
+
+  // Rules that apply to this page (by hostname)
+  const pageRules = (rulesList ?? []).filter((r) =>
+    r.urlPattern.includes(hostname),
+  );
+
   list.innerHTML = "";
-  if (result.count === 0) {
+  if (!result || !Array.isArray(result.fields) || result.count === 0) {
     list.innerHTML = '<div class="empty">Nenhum campo encontrado</div>';
     return;
   }
 
   for (const field of result.fields) {
+    const isIgnored = ignoredSelectors.has(field.selector);
+    const existingRule = pageRules.find(
+      (r) => r.fieldSelector === field.selector,
+    );
+    const effectiveType = (existingRule?.fieldType ??
+      field.fieldType) as FieldType;
+
     const item = document.createElement("div");
-    item.className = "list-item";
+    item.className = "list-item field-detect-item";
+    if (existingRule?.id) item.dataset.ruleId = existingRule.id;
+
+    const typeOptions = FIELD_TYPE_OPTIONS.map(
+      (opt) =>
+        `<option value="${escapeHtml(opt.value)}"${
+          opt.value === effectiveType ? " selected" : ""
+        }>${escapeHtml(opt.label)}</option>`,
+    ).join("");
+
+    const isMoney = effectiveType === "money";
+    const isNumber = effectiveType === "number";
+    const isSelect = effectiveType === "select";
+
+    // Build select option picker (only if this field is actually a <select>)
+    const selectOptPickerOptions = (field.options ?? [])
+      .map(
+        (opt, i) =>
+          `<option value="${i + 1}"${
+            existingRule?.selectOptionIndex === i + 1 ? " selected" : ""
+          }>${i + 1}ª: ${escapeHtml(opt.text)}</option>`,
+      )
+      .join("");
+
+    const hasSelectOptions = (field.options ?? []).length > 0;
+
     item.innerHTML = `
-      <span class="field-label">${escapeHtml(field.label)}</span>
-      <span class="field-type badge">${escapeHtml(field.fieldType)}</span>
+      <div class="field-header">
+        <span class="field-label">${escapeHtml(field.label)}</span>
+        <select class="field-type-select" title="Tipo do campo">${typeOptions}</select>
+        <div class="field-actions">
+          <button class="btn btn-sm btn-fill-field" title="Preencher" ${
+            isIgnored ? "disabled" : ""
+          }>▶</button>
+          <button class="btn btn-sm ${
+            isIgnored ? "btn-ignored-active" : "btn-ignore-field"
+          }"
+            title="${isIgnored ? "Remover dos ignorados" : "Ignorar campo"}"
+            data-selector="${escapeHtml(field.selector)}"
+            data-label="${escapeHtml(field.label)}"
+            data-ignored="${isIgnored}">
+            ${isIgnored ? "✓" : "🚫"}
+          </button>
+          <button class="btn btn-sm btn-rules-toggle" title="Configurar regra">⚙️</button>
+        </div>
+      </div>
+      <div class="field-rules-panel" style="display:none">
+        <input type="text" class="rule-fixed-value"
+          placeholder="Valor fixo (vazio = gerar automaticamente)"
+          value="${escapeHtml(existingRule?.fixedValue ?? "")}">
+        <div class="rule-range-row rule-money-range" style="display:${
+          isMoney ? "flex" : "none"
+        }">
+          <span class="rule-range-label">R$</span>
+          <input type="number" class="rule-money-min" placeholder="Mín" min="0" step="0.01"
+            value="${existingRule?.moneyMin ?? ""}">
+          <span class="rule-range-sep">–</span>
+          <input type="number" class="rule-money-max" placeholder="Máx" min="0" step="0.01"
+            value="${existingRule?.moneyMax ?? ""}">
+        </div>
+        <div class="rule-range-row rule-number-range" style="display:${
+          isNumber ? "flex" : "none"
+        }">
+          <span class="rule-range-label">#</span>
+          <input type="number" class="rule-number-min" placeholder="Mín" min="0" step="1"
+            value="${existingRule?.numberMin ?? ""}">
+          <span class="rule-range-sep">–</span>
+          <input type="number" class="rule-number-max" placeholder="Máx" min="0" step="1"
+            value="${existingRule?.numberMax ?? ""}">
+        </div>
+        ${
+          hasSelectOptions
+            ? `
+        <div class="rule-range-row rule-select-option-row" style="display:${
+          isSelect ? "flex" : "none"
+        }">
+          <span class="rule-range-label">Opção:</span>
+          <select class="rule-select-option-idx">
+            <option value="0"${
+              !existingRule?.selectOptionIndex ? " selected" : ""
+            }>Automático (aleatório)</option>
+            ${selectOptPickerOptions}
+          </select>
+        </div>`
+            : ""
+        }
+        <div class="rule-footer">
+          <button class="btn btn-sm btn-save-rule">💾 Salvar Regra</button>
+          <span class="rule-saved-msg hidden">✓ Salvo!</span>
+          ${
+            existingRule
+              ? `<button class="btn btn-sm btn-delete btn-delete-rule" title="Excluir regra">✕ Regra</button>`
+              : ""
+          }
+        </div>
+      </div>
     `;
+
+    const typeSelect =
+      item.querySelector<HTMLSelectElement>(".field-type-select");
+
+    // Helper: build and persist the rule with the current panel state
+    const saveFieldRule = async (silent = false): Promise<void> => {
+      const selectedType = (typeSelect?.value ?? field.fieldType) as FieldType;
+      const fixedValue =
+        item
+          .querySelector<HTMLInputElement>(".rule-fixed-value")
+          ?.value.trim() || undefined;
+      const moneyMinVal =
+        item.querySelector<HTMLInputElement>(".rule-money-min")?.value;
+      const moneyMaxVal =
+        item.querySelector<HTMLInputElement>(".rule-money-max")?.value;
+      const numberMinVal =
+        item.querySelector<HTMLInputElement>(".rule-number-min")?.value;
+      const numberMaxVal =
+        item.querySelector<HTMLInputElement>(".rule-number-max")?.value;
+      const selectOptIdxVal = item.querySelector<HTMLSelectElement>(
+        ".rule-select-option-idx",
+      )?.value;
+
+      const origin = new URL(pageUrl).origin;
+      const pathname = new URL(pageUrl).pathname;
+      const urlPattern = `${origin}${pathname}*`;
+
+      const rule: FieldRule = {
+        id:
+          item.dataset.ruleId ??
+          `rule-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        urlPattern,
+        fieldSelector: field.selector,
+        fieldType: selectedType,
+        fixedValue,
+        generator: fixedValue ? "auto" : selectedType,
+        priority: 10,
+        createdAt: existingRule?.createdAt ?? Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      if (selectedType === "money") {
+        const mn = parseFloat(moneyMinVal ?? "");
+        const mx = parseFloat(moneyMaxVal ?? "");
+        if (!isNaN(mn)) rule.moneyMin = mn;
+        if (!isNaN(mx)) rule.moneyMax = mx;
+      }
+      if (selectedType === "number") {
+        const mn = parseInt(numberMinVal ?? "", 10);
+        const mx = parseInt(numberMaxVal ?? "", 10);
+        if (!isNaN(mn)) rule.numberMin = mn;
+        if (!isNaN(mx)) rule.numberMax = mx;
+      }
+      if (selectedType === "select" && selectOptIdxVal !== undefined) {
+        rule.selectOptionIndex = parseInt(selectOptIdxVal, 10);
+      }
+
+      await sendToBackground({ type: "SAVE_RULE", payload: rule });
+      item.dataset.ruleId = rule.id;
+
+      if (!silent) {
+        const savedMsg = item.querySelector<HTMLElement>(".rule-saved-msg");
+        if (savedMsg) {
+          savedMsg.classList.remove("hidden");
+          setTimeout(() => savedMsg.classList.add("hidden"), 2000);
+        }
+      }
+
+      // Add delete button if this was a new rule
+      if (!item.querySelector(".btn-delete-rule")) {
+        const footer = item.querySelector<HTMLElement>(".rule-footer");
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn btn-sm btn-delete btn-delete-rule";
+        deleteBtn.title = "Excluir regra";
+        deleteBtn.textContent = "✕ Regra";
+        deleteBtn.addEventListener("click", handleDeleteRule);
+        footer?.appendChild(deleteBtn);
+      }
+    };
+
+    // Show/hide range inputs when type changes, and auto-save the new type
+    typeSelect?.addEventListener("change", () => {
+      const t = typeSelect.value;
+      const moneyRange = item.querySelector<HTMLElement>(".rule-money-range");
+      const numberRange = item.querySelector<HTMLElement>(".rule-number-range");
+      const selectOptionRow = item.querySelector<HTMLElement>(
+        ".rule-select-option-row",
+      );
+      if (moneyRange)
+        moneyRange.style.display = t === "money" ? "flex" : "none";
+      if (numberRange)
+        numberRange.style.display = t === "number" ? "flex" : "none";
+      if (selectOptionRow)
+        selectOptionRow.style.display = t === "select" ? "flex" : "none";
+      // Auto-save the type change immediately
+      saveFieldRule(true);
+    });
+
+    // Fill button
+    item
+      .querySelector(".btn-fill-field")
+      ?.addEventListener("click", async () => {
+        await sendToActiveTab({
+          type: "FILL_FIELD_BY_SELECTOR",
+          payload: field.selector,
+        });
+      });
+
+    // Ignore/unignore button
+    const ignoreBtn = item.querySelector<HTMLButtonElement>("[data-selector]");
+    ignoreBtn?.addEventListener("click", async () => {
+      const isCurrentlyIgnored = ignoreBtn.dataset.ignored === "true";
+
+      if (isCurrentlyIgnored) {
+        const current = (await sendToBackground({
+          type: "GET_IGNORED_FIELDS",
+        })) as IgnoredField[] | null;
+        const entry = (current ?? []).find(
+          (f) =>
+            f.selector === field.selector && f.urlPattern.includes(hostname),
+        );
+        if (entry) {
+          await sendToBackground({
+            type: "REMOVE_IGNORED_FIELD",
+            payload: entry.id,
+          });
+        }
+        ignoreBtn.textContent = "🚫";
+        ignoreBtn.className = "btn btn-sm btn-ignore-field";
+        ignoreBtn.dataset.ignored = "false";
+        ignoreBtn.title = "Ignorar campo";
+        const fillBtn =
+          item.querySelector<HTMLButtonElement>(".btn-fill-field");
+        if (fillBtn) fillBtn.disabled = false;
+      } else {
+        const origin = new URL(pageUrl).origin;
+        const pathname = new URL(pageUrl).pathname;
+        const urlPattern = `${origin}${pathname}*`;
+        await sendToBackground({
+          type: "ADD_IGNORED_FIELD",
+          payload: { urlPattern, selector: field.selector, label: field.label },
+        });
+        ignoreBtn.textContent = "✓";
+        ignoreBtn.className = "btn btn-sm btn-ignored-active";
+        ignoreBtn.dataset.ignored = "true";
+        ignoreBtn.title = "Remover dos ignorados";
+        const fillBtn =
+          item.querySelector<HTMLButtonElement>(".btn-fill-field");
+        if (fillBtn) fillBtn.disabled = true;
+      }
+
+      await loadIgnoredFields();
+    });
+
+    // Toggle rules panel
+    item.querySelector(".btn-rules-toggle")?.addEventListener("click", () => {
+      const panel = item.querySelector<HTMLElement>(".field-rules-panel");
+      if (panel) {
+        panel.style.display = panel.style.display === "none" ? "flex" : "none";
+      }
+    });
+
+    // Save rule button
+    item
+      .querySelector(".btn-save-rule")
+      ?.addEventListener("click", () => saveFieldRule(false));
+
+    // Delete rule
+    const handleDeleteRule = (): void => {
+      const ruleId = item.dataset.ruleId;
+      if (ruleId) {
+        sendToBackground({ type: "DELETE_RULE", payload: ruleId });
+        item.removeAttribute("data-rule-id");
+        item.querySelector(".btn-delete-rule")?.remove();
+        if (typeSelect) typeSelect.value = field.fieldType;
+      }
+    };
+
+    item
+      .querySelector(".btn-delete-rule")
+      ?.addEventListener("click", handleDeleteRule);
+
     list.appendChild(item);
   }
 });
 
 // --- Quick Generators ---
+
+async function getMoneyCfg(): Promise<{ min: number; max: number }> {
+  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as {
+    moneyMin?: number;
+    moneyMax?: number;
+  } | null;
+  return {
+    min: settings?.moneyMin ?? 1,
+    max: settings?.moneyMax ?? 10000,
+  };
+}
+
+async function getNumberCfg(): Promise<{ min: number; max: number }> {
+  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as {
+    numberMin?: number;
+    numberMax?: number;
+  } | null;
+  return {
+    min: settings?.numberMin ?? 1,
+    max: settings?.numberMax ?? 99999,
+  };
+}
+
+// Init money/number config inputs from stored settings
+async function initGeneratorConfigs(): Promise<void> {
+  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as Record<
+    string,
+    number
+  > | null;
+  const moneyMin = document.getElementById("money-min") as HTMLInputElement;
+  const moneyMax = document.getElementById("money-max") as HTMLInputElement;
+  const numMin = document.getElementById("number-min") as HTMLInputElement;
+  const numMax = document.getElementById("number-max") as HTMLInputElement;
+  if (moneyMin) moneyMin.value = String(settings?.moneyMin ?? 1);
+  if (moneyMax) moneyMax.value = String(settings?.moneyMax ?? 10000);
+  if (numMin) numMin.value = String(settings?.numberMin ?? 1);
+  if (numMax) numMax.value = String(settings?.numberMax ?? 99999);
+}
+
+function saveMoneyCfg(): void {
+  const min = parseFloat(
+    (document.getElementById("money-min") as HTMLInputElement)?.value,
+  );
+  const max = parseFloat(
+    (document.getElementById("money-max") as HTMLInputElement)?.value,
+  );
+  if (!isNaN(min) && !isNaN(max)) {
+    sendToBackground({
+      type: "SAVE_SETTINGS",
+      payload: { moneyMin: min, moneyMax: max },
+    });
+  }
+}
+
+function saveNumberCfg(): void {
+  const min = parseInt(
+    (document.getElementById("number-min") as HTMLInputElement)?.value,
+    10,
+  );
+  const max = parseInt(
+    (document.getElementById("number-max") as HTMLInputElement)?.value,
+    10,
+  );
+  if (!isNaN(min) && !isNaN(max)) {
+    sendToBackground({
+      type: "SAVE_SETTINGS",
+      payload: { numberMin: min, numberMax: max },
+    });
+  }
+}
+
+document.getElementById("money-min")?.addEventListener("change", saveMoneyCfg);
+document.getElementById("money-max")?.addEventListener("change", saveMoneyCfg);
+document
+  .getElementById("number-min")
+  ?.addEventListener("change", saveNumberCfg);
+document
+  .getElementById("number-max")
+  ?.addEventListener("change", saveNumberCfg);
+
 document.querySelectorAll("[data-generator]").forEach((btn) => {
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", async () => {
     const type = (btn as HTMLElement).dataset.generator as FieldType;
-    const value = generate(type);
+
+    const moneyConfig = document.getElementById("money-config")!;
+    const numberConfig = document.getElementById("number-config")!;
+    moneyConfig.style.display = type === "money" ? "flex" : "none";
+    numberConfig.style.display = type === "number" ? "flex" : "none";
+
+    let value: string;
+    if (type === "money") {
+      const cfg = await getMoneyCfg();
+      const min = parseFloat(
+        (document.getElementById("money-min") as HTMLInputElement)?.value,
+      );
+      const max = parseFloat(
+        (document.getElementById("money-max") as HTMLInputElement)?.value,
+      );
+      value = generateMoney(
+        isNaN(min) ? cfg.min : min,
+        isNaN(max) ? cfg.max : max,
+      );
+    } else if (type === "number") {
+      const cfg = await getNumberCfg();
+      const min = parseInt(
+        (document.getElementById("number-min") as HTMLInputElement)?.value,
+        10,
+      );
+      const max = parseInt(
+        (document.getElementById("number-max") as HTMLInputElement)?.value,
+        10,
+      );
+      value = generateNumber(
+        isNaN(min) ? cfg.min : min,
+        isNaN(max) ? cfg.max : max,
+      );
+    } else {
+      value = generate(type);
+    }
 
     const container = document.getElementById("generated-value")!;
     const text = document.getElementById("generated-text")!;
-
     text.textContent = value;
     container.style.display = "flex";
   });
@@ -91,14 +562,14 @@ document.getElementById("btn-copy")?.addEventListener("click", () => {
 
 // --- Saved Forms ---
 async function loadSavedForms(): Promise<void> {
-  const forms = (await sendToBackground({ type: "LOAD_SAVED_FORM" })) as
+  const forms = (await sendToBackground({ type: "GET_SAVED_FORMS" })) as
     | SavedForm[]
     | null;
   const list = document.getElementById("saved-forms-list");
   if (!list) return;
 
   list.innerHTML = "";
-  if (!forms || forms.length === 0) {
+  if (!Array.isArray(forms) || forms.length === 0) {
     list.innerHTML = '<div class="empty">Nenhum formulário salvo</div>';
     return;
   }
@@ -109,7 +580,7 @@ async function loadSavedForms(): Promise<void> {
     item.innerHTML = `
       <div class="form-info">
         <span class="form-name">${escapeHtml(form.name)}</span>
-        <span class="form-fields">${Object.keys(form.fields).length} campos</span>
+        <span class="form-fields">${Object.keys(form.fields || {}).length} campos</span>
       </div>
       <div class="form-actions">
         <button class="btn btn-sm btn-load" data-form-id="${escapeHtml(form.id)}">Carregar</button>
@@ -122,7 +593,7 @@ async function loadSavedForms(): Promise<void> {
     });
 
     item.querySelector(".btn-delete")?.addEventListener("click", async () => {
-      await sendToBackground({ type: "SAVE_RULE", payload: form.id }); // Delete via background
+      await sendToBackground({ type: "DELETE_FORM", payload: form.id });
       await loadSavedForms();
     });
 
@@ -136,10 +607,113 @@ document.getElementById("btn-options")?.addEventListener("click", (e) => {
   chrome.runtime.openOptionsPage();
 });
 
+// --- Toggle Floating Panel ---
+document
+  .getElementById("btn-toggle-panel")
+  ?.addEventListener("click", async () => {
+    await sendToActiveTab({ type: "TOGGLE_PANEL" });
+  });
+
+// --- Toggle Watch ---
+document
+  .getElementById("btn-toggle-watch")
+  ?.addEventListener("click", async () => {
+    const btn = document.getElementById(
+      "btn-toggle-watch",
+    ) as HTMLButtonElement;
+    const status = (await sendToActiveTab({ type: "GET_WATCHER_STATUS" })) as {
+      watching: boolean;
+    } | null;
+
+    if (status?.watching) {
+      await sendToActiveTab({ type: "STOP_WATCHING" });
+      btn.textContent = "👁️ Watch";
+      btn.classList.remove("btn-active");
+    } else {
+      await sendToActiveTab({
+        type: "START_WATCHING",
+        payload: { autoRefill: true },
+      });
+      btn.textContent = "👁️ Ativo";
+      btn.classList.add("btn-active");
+    }
+  });
+
+// --- Init Watcher Status ---
+async function initWatcherStatus(): Promise<void> {
+  try {
+    const status = (await sendToActiveTab({ type: "GET_WATCHER_STATUS" })) as {
+      watching: boolean;
+    } | null;
+    const btn = document.getElementById(
+      "btn-toggle-watch",
+    ) as HTMLButtonElement;
+    if (btn && status?.watching) {
+      btn.textContent = "👁️ Ativo";
+      btn.classList.add("btn-active");
+    }
+  } catch {
+    // Content script may not be loaded yet
+  }
+}
+
+// --- Ignored Fields ---
+async function loadIgnoredFields(): Promise<void> {
+  const ignored = (await sendToBackground({ type: "GET_IGNORED_FIELDS" })) as
+    | IgnoredField[]
+    | null;
+  const list = document.getElementById("ignored-fields-list");
+  const section = document.getElementById("section-ignored");
+  if (!list || !section) return;
+
+  list.innerHTML = "";
+  if (!Array.isArray(ignored) || ignored.length === 0) {
+    section.style.display = "none";
+    return;
+  }
+
+  section.style.display = "";
+
+  for (const field of ignored) {
+    const item = document.createElement("div");
+    item.className = "list-item";
+
+    // Show hostname + selector
+    let displayUrl = field.urlPattern;
+    try {
+      displayUrl = new URL(field.urlPattern).hostname;
+    } catch {
+      // keep original
+    }
+
+    item.innerHTML = `
+      <div class="field-info">
+        <span class="field-label">${escapeHtml(field.label)}</span>
+        <span class="ignored-url">${escapeHtml(displayUrl)}</span>
+      </div>
+      <button class="btn btn-sm btn-delete" title="Parar de ignorar">✕</button>
+    `;
+
+    item.querySelector(".btn-delete")?.addEventListener("click", async () => {
+      await sendToBackground({
+        type: "REMOVE_IGNORED_FIELD",
+        payload: field.id,
+      });
+      await loadIgnoredFields();
+    });
+
+    list.appendChild(item);
+  }
+}
+
 // --- Init ---
 loadSavedForms();
+loadIgnoredFields();
+initWatcherStatus();
+initGeneratorConfigs();
 
-function escapeHtml(text: string): string {
+function escapeHtml(text: string | undefined | null): string {
+  if (!text) return "";
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;

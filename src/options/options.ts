@@ -9,7 +9,8 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function escapeHtml(text: string): string {
+function escapeHtml(text: string | undefined | null): string {
+  if (!text) return "";
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
@@ -72,7 +73,7 @@ async function loadRules(): Promise<void> {
 
   list.innerHTML = "";
 
-  if (rules.length === 0) {
+  if (!Array.isArray(rules) || rules.length === 0) {
     list.innerHTML = '<div class="empty">Nenhuma regra cadastrada</div>';
     return;
   }
@@ -161,14 +162,14 @@ document
 
 async function loadSavedForms(): Promise<void> {
   const forms = (await chrome.runtime.sendMessage({
-    type: "LOAD_SAVED_FORM",
+    type: "GET_SAVED_FORMS",
   })) as SavedForm[];
   const list = document.getElementById("saved-forms-list");
   if (!list) return;
 
   list.innerHTML = "";
 
-  if (!forms || forms.length === 0) {
+  if (!Array.isArray(forms) || forms.length === 0) {
     list.innerHTML = '<div class="empty">Nenhum formulário salvo</div>';
     return;
   }
@@ -180,16 +181,23 @@ async function loadSavedForms(): Promise<void> {
       <div class="rule-info">
         <strong>${escapeHtml(form.name)}</strong>
         <span class="rule-selector">${escapeHtml(form.urlPattern)}</span>
-        <span class="badge">${Object.keys(form.fields).length} campos</span>
+        <span class="badge">${Object.keys(form.fields || {}).length} campos</span>
       </div>
       <button class="btn btn-sm btn-delete" data-form-id="${escapeHtml(form.id)}">Excluir</button>
     `;
 
+    item.querySelector(".btn-delete")?.addEventListener("click", async () => {
+      await chrome.runtime.sendMessage({
+        type: "DELETE_FORM",
+        payload: form.id,
+      });
+      await loadSavedForms();
+      showToast("Formulário excluído");
+    });
+
     list.appendChild(item);
   }
 }
-
-// --- Toast ---
 
 function showToast(
   message: string,

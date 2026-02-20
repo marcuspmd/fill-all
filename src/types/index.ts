@@ -22,6 +22,7 @@ export type FieldType =
   | "company"
   | "rg"
   | "text"
+  | "money"
   | "select"
   | "checkbox"
   | "radio"
@@ -57,6 +58,14 @@ export interface FieldRule {
   generator: "auto" | "ai" | "tensorflow" | FieldType;
   /** Custom prompt for AI generation */
   aiPrompt?: string;
+  /** Money range (used when fieldType is "money") */
+  moneyMin?: number;
+  moneyMax?: number;
+  /** Number range (used when fieldType is "number") */
+  numberMin?: number;
+  numberMax?: number;
+  /** Select option index: 0 = auto (random), 1 = first option, 2 = second, etc. */
+  selectOptionIndex?: number;
   /** Priority (higher = takes precedence) */
   priority: number;
   /** When this rule was created */
@@ -79,6 +88,18 @@ export interface SavedForm {
   updatedAt: number;
 }
 
+/** A field that should be skipped during auto-fill */
+export interface IgnoredField {
+  id: string;
+  /** URL pattern of the page where this field lives */
+  urlPattern: string;
+  /** CSS selector of the field */
+  selector: string;
+  /** Human-readable label */
+  label: string;
+  createdAt: number;
+}
+
 /** Extension settings */
 export interface Settings {
   /** Whether to auto-fill on page load */
@@ -93,6 +114,12 @@ export interface Settings {
   locale: "pt-BR" | "en-US";
   /** Whether to highlight filled fields */
   highlightFilled: boolean;
+  /** Money generator range */
+  moneyMin: number;
+  moneyMax: number;
+  /** Number generator range */
+  numberMin: number;
+  numberMax: number;
 }
 
 /** Message types for communication between extension parts */
@@ -101,6 +128,8 @@ export type MessageType =
   | "FILL_SINGLE_FIELD"
   | "SAVE_FORM"
   | "LOAD_SAVED_FORM"
+  | "GET_SAVED_FORMS"
+  | "DELETE_FORM"
   | "GET_FORM_FIELDS"
   | "GET_RULES"
   | "SAVE_RULE"
@@ -108,7 +137,17 @@ export type MessageType =
   | "GET_SETTINGS"
   | "SAVE_SETTINGS"
   | "AI_GENERATE"
-  | "DETECT_FIELDS";
+  | "DETECT_FIELDS"
+  | "START_WATCHING"
+  | "STOP_WATCHING"
+  | "GET_WATCHER_STATUS"
+  | "TOGGLE_PANEL"
+  | "SHOW_PANEL"
+  | "HIDE_PANEL"
+  | "FILL_FIELD_BY_SELECTOR"
+  | "GET_IGNORED_FIELDS"
+  | "ADD_IGNORED_FIELD"
+  | "REMOVE_IGNORED_FIELD";
 
 export interface ExtensionMessage {
   type: MessageType;
@@ -129,4 +168,8 @@ export const DEFAULT_SETTINGS: Settings = {
   shortcut: "Alt+F",
   locale: "pt-BR",
   highlightFilled: true,
+  moneyMin: 1,
+  moneyMax: 10000,
+  numberMin: 1,
+  numberMax: 99999,
 };

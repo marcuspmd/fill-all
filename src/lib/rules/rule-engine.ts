@@ -4,7 +4,7 @@
 
 import type { FieldRule, FormField, GenerationResult } from "@/types";
 import { getRulesForUrl, getSavedFormsForUrl } from "@/lib/storage/storage";
-import { generate } from "@/lib/generators";
+import { generate, generateMoney, generateNumber } from "@/lib/generators";
 
 /**
  * Resolves the value for a single field, using this priority:
@@ -61,13 +61,45 @@ export async function resolveFieldValue(
       };
     }
 
+    // Handle select fields with explicit option index
+    if (
+      field.element instanceof HTMLSelectElement &&
+      matchingRule.selectOptionIndex !== undefined
+    ) {
+      const options = Array.from(field.element.options).filter((o) => o.value);
+      if (matchingRule.selectOptionIndex === 0) {
+        // auto — pick random non-empty option
+        if (options.length > 0) {
+          const random = options[Math.floor(Math.random() * options.length)];
+          return {
+            fieldSelector: selector,
+            value: random.value,
+            source: "rule",
+          };
+        }
+      } else {
+        // pick by 1-based index
+        const opt = field.element.options[matchingRule.selectOptionIndex - 1];
+        if (opt) {
+          return { fieldSelector: selector, value: opt.value, source: "rule" };
+        }
+      }
+    }
+
     // If the rule specifies a generator type
     if (
       matchingRule.generator !== "auto" &&
       matchingRule.generator !== "ai" &&
       matchingRule.generator !== "tensorflow"
     ) {
-      const value = generate(matchingRule.generator);
+      let value: string;
+      if (matchingRule.generator === "money") {
+        value = generateMoney(matchingRule.moneyMin, matchingRule.moneyMax);
+      } else if (matchingRule.generator === "number") {
+        value = generateNumber(matchingRule.numberMin, matchingRule.numberMax);
+      } else {
+        value = generate(matchingRule.generator);
+      }
       return { fieldSelector: selector, value, source: "generator" };
     }
 

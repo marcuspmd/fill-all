@@ -72,3 +72,9 @@ export function generateText(wordCount = 5): string {
   ];
   return Array.from({ length: wordCount }, () => randomItem(words)).join(" ");
 }
+
+export function generateMoney(min = 1, max = 10000): string {
+  if (min === max) return min.toFixed(2);
+  const raw = min + Math.random() * (max - min);
+  return raw.toFixed(2);
+}

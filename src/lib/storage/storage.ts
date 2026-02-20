@@ -2,13 +2,14 @@
  * Chrome Storage wrapper for rules
  */
 
-import type { FieldRule, SavedForm, Settings } from "@/types";
+import type { FieldRule, SavedForm, Settings, IgnoredField } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 
 const STORAGE_KEYS = {
   RULES: "fill_all_rules",
   SAVED_FORMS: "fill_all_saved_forms",
   SETTINGS: "fill_all_settings",
+  IGNORED_FIELDS: "fill_all_ignored_fields",
 } as const;
 
 async function getFromStorage<T>(key: string, defaultValue: T): Promise<T> {
@@ -91,6 +92,47 @@ export async function getSettings(): Promise<Settings> {
 export async function saveSettings(settings: Partial<Settings>): Promise<void> {
   const current = await getSettings();
   await setToStorage(STORAGE_KEYS.SETTINGS, { ...current, ...settings });
+}
+
+// --- Ignored Fields ---
+
+export async function getIgnoredFields(): Promise<IgnoredField[]> {
+  return getFromStorage<IgnoredField[]>(STORAGE_KEYS.IGNORED_FIELDS, []);
+}
+
+export async function addIgnoredField(
+  field: Omit<IgnoredField, "id" | "createdAt">,
+): Promise<IgnoredField> {
+  const fields = await getIgnoredFields();
+  const newField: IgnoredField = {
+    ...field,
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    createdAt: Date.now(),
+  };
+  // Avoid duplicates: same url + selector
+  const exists = fields.some(
+    (f) => f.urlPattern === field.urlPattern && f.selector === field.selector,
+  );
+  if (!exists) {
+    fields.push(newField);
+    await setToStorage(STORAGE_KEYS.IGNORED_FIELDS, fields);
+  }
+  return newField;
+}
+
+export async function removeIgnoredField(id: string): Promise<void> {
+  const fields = await getIgnoredFields();
+  await setToStorage(
+    STORAGE_KEYS.IGNORED_FIELDS,
+    fields.filter((f) => f.id !== id),
+  );
+}
+
+export async function getIgnoredFieldsForUrl(
+  url: string,
+): Promise<IgnoredField[]> {
+  const fields = await getIgnoredFields();
+  return fields.filter((f) => matchUrlPattern(url, f.urlPattern));
 }
 
 // --- URL Pattern Matching ---

@@ -8,7 +8,8 @@ import { generate } from "@/lib/generators";
 
 // Field type keywords mapping for classification
 const FIELD_TYPE_KEYWORDS: Record<FieldType, string[]> = {
-  cpf: ["cpf", "documento", "document"],
+  cpf: ["cpf"],
+  // "documento"/"document" removidos — muito genéricos, causavam classificação errada
   cnpj: ["cnpj", "empresa", "company-doc"],
   email: ["email", "e-mail", "mail", "correo"],
   phone: ["phone", "telefone", "celular", "tel", "mobile", "fone", "whatsapp"],
@@ -40,6 +41,7 @@ const FIELD_TYPE_KEYWORDS: Record<FieldType, string[]> = {
   checkbox: [],
   radio: [],
   unknown: [],
+  money: ["money", "valor", "preco", "price", "amount", "margem"],
 };
 
 /**

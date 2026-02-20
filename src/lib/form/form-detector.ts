@@ -4,6 +4,11 @@
 
 import type { FormField, FieldType } from "@/types";
 import { classifyField } from "@/lib/ai/tensorflow-generator";
+import {
+  detectCustomSelects,
+  customSelectToFormField,
+  type CustomSelectField,
+} from "./custom-select-handler";
 
 const INPUT_SELECTOR = [
   'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="reset"]):not([type="file"]):not([disabled])',
@@ -95,7 +100,16 @@ function detectFieldTypeFromElement(
   return "unknown";
 }
 
+export interface DetectionResult {
+  fields: FormField[];
+  customSelects: CustomSelectField[];
+}
+
 export function detectFormFields(): FormField[] {
+  return detectAllFields().fields;
+}
+
+export function detectAllFields(): DetectionResult {
   const elements = document.querySelectorAll<
     HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
   >(INPUT_SELECTOR);
@@ -106,6 +120,14 @@ export function detectFormFields(): FormField[] {
     // Skip invisible elements
     const rect = element.getBoundingClientRect();
     if (rect.width === 0 && rect.height === 0) continue;
+
+    // Skip inputs inside custom selects (handled separately)
+    if (
+      element.closest(
+        ".ant-select, [class*='react-select'], .MuiSelect-root, [class*='MuiAutocomplete']",
+      )
+    )
+      continue;
 
     const basicType = detectFieldTypeFromElement(element);
     const label = findLabel(element);
@@ -132,7 +154,15 @@ export function detectFormFields(): FormField[] {
     fields.push(field);
   }
 
-  return fields;
+  // Detect custom selects (Ant Design, MUI, React Select, etc.)
+  const customSelects = detectCustomSelects();
+
+  // Also add custom selects as FormFields for compatibility
+  for (const cs of customSelects) {
+    fields.push(customSelectToFormField(cs));
+  }
+
+  return { fields, customSelects };
 }
 
 export function detectForms(): HTMLFormElement[] {

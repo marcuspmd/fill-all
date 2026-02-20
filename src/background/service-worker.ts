@@ -3,6 +3,7 @@
  */
 
 import type { ExtensionMessage, FieldRule, SavedForm, Settings } from "@/types";
+import type { IgnoredField } from "@/types";
 import {
   getRules,
   saveRule,
@@ -12,6 +13,9 @@ import {
   deleteForm,
   getSettings,
   saveSettings,
+  getIgnoredFields,
+  addIgnoredField,
+  removeIgnoredField,
 } from "@/lib/storage/storage";
 
 // Create context menu on install
@@ -33,6 +37,12 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "Fill All - Criar regra para este campo",
     contexts: ["editable"],
   });
+
+  chrome.contextMenus.create({
+    id: "fill-all-toggle-panel",
+    title: "Fill All - Abrir/fechar painel flutuante",
+    contexts: ["page"],
+  });
 });
 
 // Handle context menu clicks
@@ -48,6 +58,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       break;
     case "fill-all-field-rule":
       chrome.tabs.sendMessage(tab.id, { type: "FILL_SINGLE_FIELD" });
+      break;
+    case "fill-all-toggle-panel":
+      chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_PANEL" });
       break;
   }
 });
@@ -66,7 +79,44 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
+/** Messages that must be forwarded to the active tab's content script */
+const CONTENT_SCRIPT_MESSAGES = new Set([
+  "FILL_ALL_FIELDS",
+  "FILL_SINGLE_FIELD",
+  "SAVE_FORM",
+  "LOAD_SAVED_FORM",
+  "DETECT_FIELDS",
+  "GET_FORM_FIELDS",
+  "START_WATCHING",
+  "STOP_WATCHING",
+  "GET_WATCHER_STATUS",
+  "TOGGLE_PANEL",
+  "SHOW_PANEL",
+  "HIDE_PANEL",
+]);
+
+async function forwardToActiveTab(message: ExtensionMessage): Promise<unknown> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return { error: "No active tab" };
+
+  const url = tab.url ?? "";
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    return { error: "Content script not available on this page" };
+  }
+
+  try {
+    return await chrome.tabs.sendMessage(tab.id, message);
+  } catch (err) {
+    return { error: "Content script not responding", details: String(err) };
+  }
+}
+
 async function handleMessage(message: ExtensionMessage): Promise<unknown> {
+  // Forward content-script-bound messages to the active tab
+  if (CONTENT_SCRIPT_MESSAGES.has(message.type)) {
+    return forwardToActiveTab(message);
+  }
+
   switch (message.type) {
     case "GET_RULES":
       return getRules();
@@ -79,19 +129,30 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
       await deleteRule(message.payload as string);
       return { success: true };
 
-    case "LOAD_SAVED_FORM":
-      return getSavedForms();
-
-    case "SAVE_FORM": {
-      await saveForm(message.payload as SavedForm);
-      return { success: true };
-    }
-
     case "GET_SETTINGS":
       return getSettings();
 
     case "SAVE_SETTINGS":
       await saveSettings(message.payload as Partial<Settings>);
+      return { success: true };
+
+    case "GET_SAVED_FORMS":
+      return getSavedForms();
+
+    case "DELETE_FORM":
+      await deleteForm(message.payload as string);
+      return { success: true };
+
+    case "GET_IGNORED_FIELDS":
+      return getIgnoredFields();
+
+    case "ADD_IGNORED_FIELD":
+      return addIgnoredField(
+        message.payload as Omit<IgnoredField, "id" | "createdAt">,
+      );
+
+    case "REMOVE_IGNORED_FIELD":
+      await removeIgnoredField(message.payload as string);
       return { success: true };
 
     default:

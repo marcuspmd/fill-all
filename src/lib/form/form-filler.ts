@@ -3,14 +3,24 @@
  */
 
 import type { FormField, GenerationResult, Settings } from "@/types";
-import { detectFormFields } from "./form-detector";
+import { detectAllFields } from "./form-detector";
 import { resolveFieldValue } from "@/lib/rules/rule-engine";
 import {
   generateFieldValue as chromeAiGenerate,
   isAvailable as isChromeAiAvailable,
 } from "@/lib/ai/chrome-ai";
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
-import { getSettings } from "@/lib/storage/storage";
+import {
+  getSettings,
+  getSavedFormsForUrl,
+  getIgnoredFieldsForUrl,
+} from "@/lib/storage/storage";
+import {
+  selectCustomOption,
+  getCustomSelectValue,
+  type CustomSelectField,
+} from "./custom-select-handler";
+import { setFillingInProgress } from "./dom-watcher";
 
 function setNativeValue(element: HTMLElement, value: string): void {
   // Trigger React/Vue/Angular change detection
@@ -88,7 +98,16 @@ function highlightField(element: HTMLElement): void {
 }
 
 export async function fillAllFields(): Promise<GenerationResult[]> {
-  const fields = detectFormFields();
+  setFillingInProgress(true);
+  try {
+    return await doFillAllFields();
+  } finally {
+    setFillingInProgress(false);
+  }
+}
+
+async function doFillAllFields(): Promise<GenerationResult[]> {
+  const { fields, customSelects } = detectAllFields();
   const url = window.location.href;
   const settings = await getSettings();
   const results: GenerationResult[] = [];
@@ -96,7 +115,21 @@ export async function fillAllFields(): Promise<GenerationResult[]> {
   // Determine AI function based on settings
   const aiGenerateFn = await getAiFunction(settings);
 
+  // Get saved forms for resolving custom select values
+  const savedForms = await getSavedFormsForUrl(url);
+
+  // Load ignored fields for current URL
+  const ignoredFields = await getIgnoredFieldsForUrl(url);
+  const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
+
+  // Fill regular fields first
   for (const field of fields) {
+    // Skip pseudo-fields created from custom selects (handled below)
+    if (customSelects.some((cs) => cs.selector === field.selector)) continue;
+
+    // Skip ignored fields
+    if (ignoredSelectors.has(field.selector)) continue;
+
     try {
       const result = await resolveFieldValue(field, url, aiGenerateFn);
 
@@ -109,6 +142,53 @@ export async function fillAllFields(): Promise<GenerationResult[]> {
       results.push(result);
     } catch (error) {
       console.warn(`[Fill All] Failed to fill field ${field.selector}:`, error);
+    }
+  }
+
+  // Fill custom selects (one at a time, waiting for DOM to settle)
+  for (const cs of customSelects) {
+    // Skip ignored custom selects
+    if (ignoredSelectors.has(cs.selector)) continue;
+
+    try {
+      // Check if there's a saved value for this custom select
+      let targetValue: string | undefined;
+
+      for (const form of savedForms) {
+        const key = cs.id || cs.name || cs.selector;
+        if (form.fields[key]) {
+          targetValue = form.fields[key];
+          break;
+        }
+        if (cs.name && form.fields[cs.name]) {
+          targetValue = form.fields[cs.name];
+          break;
+        }
+        if (cs.id && form.fields[cs.id]) {
+          targetValue = form.fields[cs.id];
+          break;
+        }
+      }
+
+      const selectedText = await selectCustomOption(cs, targetValue);
+
+      if (settings.highlightFilled) {
+        highlightField(cs.container);
+      }
+
+      results.push({
+        fieldSelector: cs.selector,
+        value: selectedText,
+        source: targetValue ? "fixed" : "generator",
+      });
+
+      // Wait for DOM to settle after selecting (forms may change dynamically)
+      await waitForDomSettle(500);
+    } catch (error) {
+      console.warn(
+        `[Fill All] Failed to fill custom select ${cs.selector}:`,
+        error,
+      );
     }
   }
 
@@ -135,6 +215,31 @@ export async function fillSingleField(
     console.warn(`[Fill All] Failed to fill field:`, error);
     return null;
   }
+}
+
+function waitForDomSettle(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    let timer: ReturnType<typeof setTimeout>;
+    const observer = new MutationObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        observer.disconnect();
+        resolve();
+      }, 200);
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
+
+    // Fallback: resolve after max wait
+    timer = setTimeout(() => {
+      observer.disconnect();
+      resolve();
+    }, ms);
+  });
 }
 
 function applyValueToField(field: FormField, value: string): void {
@@ -175,10 +280,13 @@ async function getAiFunction(
  * Captures current form values and returns them as a map
  */
 export function captureFormValues(): Record<string, string> {
-  const fields = detectFormFields();
+  const { fields, customSelects } = detectAllFields();
   const values: Record<string, string> = {};
 
   for (const field of fields) {
+    // Skip pseudo-fields from custom selects
+    if (customSelects.some((cs) => cs.selector === field.selector)) continue;
+
     const el = field.element;
     const key = field.id || field.name || field.selector;
 
@@ -193,6 +301,12 @@ export function captureFormValues(): Record<string, string> {
     } else {
       values[key] = el.value;
     }
+  }
+
+  // Capture custom select values
+  for (const cs of customSelects) {
+    const key = cs.id || cs.name || cs.selector;
+    values[key] = getCustomSelectValue(cs);
   }
 
   return values;
