@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fill All - Configurações</title>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚙️ Fill All — Configurações</h1>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="settings">Geral</button>
+      <button class="tab" data-tab="rules">Regras</button>
+      <button class="tab" data-tab="forms">Formulários Salvos</button>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content active" id="tab-settings">
+      <div class="card">
+        <h2>Configurações Gerais</h2>
+
+        <div class="toggle-group">
+          <div>
+            <label>Preencher automaticamente</label>
+            <div class="description">Preenche os campos ao carregar a página</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-auto-fill" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-group">
+          <div>
+            <label>Chrome Built-in AI</label>
+            <div class="description">Usar Gemini Nano quando disponível</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-chrome-ai" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-group">
+          <div>
+            <label>Destacar campos preenchidos</label>
+            <div class="description">Adiciona borda visual nos campos preenchidos</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-highlight" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-row" style="margin-top: 16px">
+          <div class="form-group">
+            <label for="setting-strategy">Estratégia padrão:</label>
+            <select id="setting-strategy">
+              <option value="ai">AI (Chrome AI / TensorFlow)</option>
+              <option value="tensorflow">TensorFlow.js</option>
+              <option value="random">Geradores aleatórios</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="setting-locale">Localidade:</label>
+            <select id="setting-locale">
+              <option value="pt-BR">Português (Brasil)</option>
+              <option value="en-US">English (US)</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="btn-save-settings" class="btn btn-primary">Salvar Configurações</button>
+      </div>
+    </div>
+
+    <!-- Rules Tab -->
+    <div class="tab-content" id="tab-rules">
+      <div class="card">
+        <h2>Regras por Site</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
+          Defina regras específicas para campos em sites diferentes. O campo "CPF" no site A pode ter um valor fixo, enquanto no site B é gerado automaticamente.
+        </p>
+        <div id="rules-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Nova Regra</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="rule-url">Padrão de URL (use * como coringa):</label>
+            <input type="text" id="rule-url" placeholder="https://example.com/*" />
+          </div>
+          <div class="form-group">
+            <label for="rule-selector">Seletor CSS do campo:</label>
+            <input type="text" id="rule-selector" placeholder="#cpf, input[name='cpf']" />
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label for="rule-field-name">Nome do campo (opcional):</label>
+            <input type="text" id="rule-field-name" placeholder="cpf" />
+          </div>
+          <div class="form-group">
+            <label for="rule-type">Tipo do campo:</label>
+            <select id="rule-type">
+              <option value="cpf">CPF</option>
+              <option value="cnpj">CNPJ</option>
+              <option value="email">E-mail</option>
+              <option value="phone">Telefone</option>
+              <option value="full-name">Nome Completo</option>
+              <option value="first-name">Primeiro Nome</option>
+              <option value="last-name">Sobrenome</option>
+              <option value="address">Endereço</option>
+              <option value="cep">CEP</option>
+              <option value="rg">RG</option>
+              <option value="date">Data</option>
+              <option value="birth-date">Data de Nascimento</option>
+              <option value="password">Senha</option>
+              <option value="username">Usuário</option>
+              <option value="company">Empresa</option>
+              <option value="number">Número</option>
+              <option value="text">Texto</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="rule-generator">Gerador:</label>
+            <select id="rule-generator">
+              <option value="auto">Automático</option>
+              <option value="ai">Chrome AI</option>
+              <option value="tensorflow">TensorFlow.js</option>
+              <option value="cpf">CPF válido</option>
+              <option value="cnpj">CNPJ válido</option>
+              <option value="email">E-mail</option>
+              <option value="phone">Telefone</option>
+              <option value="full-name">Nome</option>
+              <option value="cep">CEP</option>
+              <option value="rg">RG</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="rule-fixed">Valor fixo (opcional):</label>
+            <input type="text" id="rule-fixed" placeholder="123.456.789-09" />
+          </div>
+          <div class="form-group">
+            <label for="rule-priority">Prioridade (maior = mais importante):</label>
+            <input type="number" id="rule-priority" value="10" min="0" max="100" />
+          </div>
+        </div>
+
+        <button id="btn-save-rule" class="btn btn-primary">Salvar Regra</button>
+      </div>
+    </div>
+
+    <!-- Saved Forms Tab -->
+    <div class="tab-content" id="tab-forms">
+      <div class="card">
+        <h2>Formulários Salvos</h2>
+        <div id="saved-forms-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./options.ts"></script>
+  <script>
+    document.querySelectorAll('.tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+        tab.classList.add('active');
+        var target = document.getElementById('tab-' + tab.getAttribute('data-tab'));
+        if (target) target.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
