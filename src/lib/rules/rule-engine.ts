@@ -12,8 +12,8 @@ import { generate, generateMoney, generateNumber } from "@/lib/generators";
  * 2. Saved form with fixed data (exact match)
  * 3. Field-specific rule with fixed value
  * 4. Field-specific rule with generator
- * 5. AI / TensorFlow fallback (all field types, not only "unknown")
- * 6. Default generator based on detected field type
+ * 5. Default generator based on detected field type
+ * 6. AI as last resort (only when default generator returns empty, e.g. select fields)
  */
 export async function resolveFieldValue(
   field: FormField,
@@ -136,39 +136,73 @@ export async function resolveFieldValue(
     }
   }
 
-  // 5. Try AI generation if available (all field types)
+  // 5. Default generator based on detected field type
+  const value = generate(field.fieldType);
+  if (value) {
+    console.log(
+      `[Fill All / Rule Engine] Gerador padrão (${field.fieldType}): "${value}"`,
+    );
+    return { fieldSelector: selector, value, source: "generator" };
+  }
+
+  // 5.5 For <select> elements: pick a random valid option directly.
+  // AI cannot know which options are available in the DOM, so we must handle this ourselves.
+  if (field.element instanceof HTMLSelectElement) {
+    const validOptions = Array.from(field.element.options).filter(
+      (opt) => opt.value,
+    );
+    if (validOptions.length > 0) {
+      const random =
+        validOptions[Math.floor(Math.random() * validOptions.length)];
+      console.log(
+        `[Fill All / Rule Engine] Select aleatório: "${random.value}" (${validOptions.length} opções disponíveis)`,
+      );
+      return {
+        fieldSelector: selector,
+        value: random.value,
+        source: "generator",
+      };
+    }
+    // No valid options — return empty, no point calling AI
+    console.warn(
+      `[Fill All / Rule Engine] Select sem opções válidas para: ${fieldDesc}`,
+    );
+    return { fieldSelector: selector, value: "", source: "generator" };
+  }
+
+  // 5.6 For checkbox/radio: the value is fixed (true/false), AI adds no value here.
+  if (
+    field.element instanceof HTMLInputElement &&
+    (field.element.type === "checkbox" || field.element.type === "radio")
+  ) {
+    return { fieldSelector: selector, value: "true", source: "generator" };
+  }
+
+  // 6. AI as last resort — only for free-text fields where the generator returned empty
   if (aiGenerateFn) {
     console.log(
-      `[Fill All / Rule Engine] Tentando AI como fallback para campo: ${fieldDesc}`,
+      `[Fill All / Rule Engine] Gerador padrão retornou vazio, tentando AI como último recurso para: ${fieldDesc}`,
     );
     try {
-      const value = await aiGenerateFn(field);
-      if (value) {
-        console.log(`[Fill All / Rule Engine] AI fallback gerou: "${value}"`);
-        return { fieldSelector: selector, value, source: "ai" };
+      const aiValue = await aiGenerateFn(field);
+      if (aiValue) {
+        console.log(
+          `[Fill All / Rule Engine] AI (último recurso) gerou: "${aiValue}"`,
+        );
+        return { fieldSelector: selector, value: aiValue, source: "ai" };
       }
       console.warn(
-        `[Fill All / Rule Engine] AI fallback retornou vazio para: ${fieldDesc}`,
+        `[Fill All / Rule Engine] AI (último recurso) retornou vazio para: ${fieldDesc}`,
       );
     } catch (err) {
       console.warn(
-        `[Fill All / Rule Engine] AI fallback falhou para: ${fieldDesc}`,
+        `[Fill All / Rule Engine] AI (último recurso) falhou para: ${fieldDesc}`,
         err,
       );
-      // Fall through to default generator
     }
-  } else {
-    console.log(
-      `[Fill All / Rule Engine] Sem função de AI disponível para: ${fieldDesc}`,
-    );
   }
 
-  // 6. Default generator
-  const value = generate(field.fieldType);
-  console.log(
-    `[Fill All / Rule Engine] Gerador padrão (${field.fieldType}): "${value}"`,
-  );
-  return { fieldSelector: selector, value, source: "generator" };
+  return { fieldSelector: selector, value: value || "", source: "generator" };
 }
 
 function findMatchingRule(

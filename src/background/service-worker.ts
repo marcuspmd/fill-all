@@ -106,8 +106,25 @@ async function forwardToActiveTab(message: ExtensionMessage): Promise<unknown> {
 
   try {
     return await chrome.tabs.sendMessage(tab.id, message);
-  } catch (err) {
-    return { error: "Content script not responding", details: String(err) };
+  } catch {
+    // Content script not loaded (tab existed before extension install/update).
+    // Try to inject it dynamically and retry once.
+    try {
+      const manifest = chrome.runtime.getManifest();
+      const files = (manifest.content_scripts?.[0]?.js ?? []) as string[];
+      if (files.length === 0)
+        throw new Error("No content script files in manifest");
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files,
+      });
+      return await chrome.tabs.sendMessage(tab.id, message);
+    } catch (injectErr) {
+      return {
+        error: "Content script not responding",
+        details: String(injectErr),
+      };
+    }
   }
 }
 

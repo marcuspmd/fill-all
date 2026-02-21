@@ -78,3 +78,85 @@ export function generateMoney(min = 1, max = 10000): string {
   const raw = min + Math.random() * (max - min);
   return raw.toFixed(2);
 }
+
+export function generateWebsite(): string {
+  const domains = [
+    "minhapagina",
+    "seusite",
+    "empresa",
+    "loja",
+    "portal",
+    "blog",
+    "sistema",
+    "plataforma",
+    "startup",
+    "negocio",
+  ];
+  const tlds = ["com.br", "com", "net", "io", "app", "digital", "online"];
+  return `https://www.${randomItem(domains)}.${randomItem(tlds)}`;
+}
+
+export function generateProductName(): string {
+  const adjectives = [
+    "Premium",
+    "Pro",
+    "Lite",
+    "Ultra",
+    "Smart",
+    "Fast",
+    "Plus",
+    "Max",
+    "Mini",
+    "Standard",
+  ];
+  const nouns = [
+    "Pacote",
+    "Kit",
+    "Módulo",
+    "Solução",
+    "Serviço",
+    "Produto",
+    "Item",
+    "Pacote",
+    "Plano",
+    "Assinatura",
+  ];
+  const num = Math.floor(Math.random() * 900) + 100;
+  return `${randomItem(adjectives)} ${randomItem(nouns)} ${num}`;
+}
+
+export function generateJobTitle(): string {
+  const titles = [
+    "Analista de Sistemas",
+    "Desenvolvedor Full Stack",
+    "Gerente de Projetos",
+    "Coordenador de TI",
+    "Diretor Comercial",
+    "Técnico de Suporte",
+    "Designer UX/UI",
+    "Engenheiro de Software",
+    "Product Manager",
+    "Consultor de Negócios",
+    "Especialista em Marketing",
+    "Analista de Dados",
+    "Arquiteto de Soluções",
+    "Scrum Master",
+    "DevOps Engineer",
+  ];
+  return randomItem(titles);
+}
+
+export function generateCpfCnpj(): string {
+  // Randomly returns either a CPF or a CNPJ (both unformatted)
+  // Actual digit generation reuses the dedicated generators
+  // but we return a placeholder here; the filler resolves via its own registry
+  return Math.random() < 0.6
+    ? `${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 90 + 10)}`
+    : `${Math.floor(Math.random() * 90 + 10)}.${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 900 + 100)}/${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 90 + 10)}`;
+}
+
+export function generateEmployeeCount(): string {
+  const ranges = [1, 5, 10, 25, 50, 100, 250, 500, 1000, 5000, 10000];
+  const base = randomItem(ranges);
+  return String(base + Math.floor(Math.random() * (base / 2)));
+}

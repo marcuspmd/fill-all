@@ -24,9 +24,25 @@ async function sendToActiveTab(message: ExtensionMessage): Promise<unknown> {
 
   try {
     return await chrome.tabs.sendMessage(tab.id, message);
-  } catch (err) {
-    console.warn("[fill-all] Content script não encontrado na aba ativa.", err);
-    return null;
+  } catch {
+    // Content script not loaded (tab existed before extension install/update).
+    // Try to inject it dynamically and retry once.
+    try {
+      const manifest = chrome.runtime.getManifest();
+      const files = (manifest.content_scripts?.[0]?.js ?? []) as string[];
+      if (files.length === 0) return null;
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files,
+      });
+      return await chrome.tabs.sendMessage(tab.id, message);
+    } catch (injectErr) {
+      console.warn(
+        "[fill-all] Content script não pôde ser injetado na aba ativa.",
+        injectErr,
+      );
+      return null;
+    }
   }
 }
 
@@ -81,6 +97,8 @@ const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> = (
     { value: "username", label: "Username" },
     { value: "text", label: "Texto" },
     { value: "select", label: "Select" },
+    { value: "checkbox", label: "Checkbox" },
+    { value: "radio", label: "Radio" },
     { value: "unknown", label: "Desconhecido" },
   ] as Array<{ value: FieldType; label: string }>
 ).sort((a, b) => b.label.localeCompare(a.label, "pt-BR"));
@@ -96,6 +114,8 @@ document.getElementById("btn-detect")?.addEventListener("click", async () => {
       fieldType: string;
       label: string;
       options?: Array<{ value: string; text: string }>;
+      checkboxValue?: string;
+      checkboxChecked?: boolean;
     }>;
   } | null;
 
@@ -162,6 +182,29 @@ document.getElementById("btn-detect")?.addEventListener("click", async () => {
 
     const hasSelectOptions = (field.options ?? []).length > 0;
 
+    // Preview: select options (value → label pills) and checkbox value + state
+    const MAX_OPTS_PREVIEW = 4;
+    const filteredOpts = (field.options ?? []).filter((o) => o.value);
+    const optionPills = filteredOpts
+      .slice(0, MAX_OPTS_PREVIEW)
+      .map(
+        (o) =>
+          `<span class="field-option-pill"><code>${escapeHtml(o.value)}</code><span class="field-option-arrow"> → </span><span class="field-option-pill-text">${escapeHtml(o.text)}</span></span>`,
+      )
+      .join("");
+    const extraCount = Math.max(0, filteredOpts.length - MAX_OPTS_PREVIEW);
+    const optionsPreviewHtml = hasSelectOptions
+      ? `<div class="field-options-preview">${optionPills}${extraCount > 0 ? `<span class="field-option-more">+${extraCount}</span>` : ""}</div>`
+      : "";
+
+    const isCheckboxOrRadio =
+      field.fieldType === "checkbox" || field.fieldType === "radio";
+    const cbLabel =
+      field.label && field.label !== "unknown" ? field.label : undefined;
+    const checkboxPreviewHtml = isCheckboxOrRadio
+      ? `<div class="field-options-preview"><span class="field-option-pill"><code>${escapeHtml(field.checkboxValue ?? "on")}</code>${cbLabel ? `<span class="field-option-arrow"> → </span><span class="field-option-pill-text">${escapeHtml(cbLabel)}</span>` : ""}</span><span class="field-option-pill ${field.checkboxChecked ? "field-option-checked" : "field-option-unchecked"}">${field.checkboxChecked ? "✓ marcado" : "☐ desmarcado"}</span></div>`
+      : "";
+
     item.innerHTML = `
       <div class="field-header">
         <span class="field-label">${escapeHtml(field.label)}</span>
@@ -182,6 +225,7 @@ document.getElementById("btn-detect")?.addEventListener("click", async () => {
           <button class="btn btn-sm btn-rules-toggle" title="Configurar regra">⚙️</button>
         </div>
       </div>
+      ${optionsPreviewHtml}${checkboxPreviewHtml}
       <div class="field-rules-panel" style="display:none">
         <input type="text" class="rule-fixed-value"
           placeholder="Valor fixo (vazio = gerar automaticamente)"

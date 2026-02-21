@@ -9,11 +9,10 @@
 
 import type { FormField, FieldRule, FieldType } from "@/types";
 import { fillSingleField } from "./form-filler";
-import {
-  classifyField,
-  invalidateClassifier,
-} from "@/lib/ai/tensorflow-generator";
+import { invalidateClassifier } from "@/lib/ai/tensorflow-generator";
 import { saveRule } from "@/lib/storage/storage";
+import { DEFAULT_PIPELINE } from "./detectors/classifiers";
+import { buildSignals } from "./detectors/signals-builder";
 
 const ICON_ID = "fill-all-field-icon";
 const RULE_POPUP_ID = "fill-all-rule-popup";
@@ -218,11 +217,12 @@ async function handleIconClick(e: Event): Promise<void> {
     required: el.required,
   };
 
-  // Detect the field type
-  field.fieldType = detectFieldType(el);
-  if (field.fieldType === "unknown") {
-    field.fieldType = classifyField(field);
-  }
+  // Build signals and classify using the same pipeline as the popup
+  field.contextSignals = buildSignals(field);
+  const pipelineResult = await DEFAULT_PIPELINE.runAsync(field);
+  field.fieldType = pipelineResult.type;
+  field.detectionMethod = pipelineResult.method;
+  field.detectionConfidence = pipelineResult.confidence;
 
   // Show loading state
   const btn = iconElement?.querySelector(
@@ -317,21 +317,11 @@ function buildFormField(
     return field;
   }
 
-  // ── Step 1: HTML input[type] mapping ────────────────────────────────────
-  field.fieldType = detectFieldType(el);
-
-  // ── Step 2: TF.js sync classifier ────────────────────────────────────────
-  if (field.fieldType === "unknown") {
-    field.fieldType = classifyField(field);
-    field.detectionMethod = "tensorflow";
-    // Expose confidence so the modal can trigger AI refinement when needed.
-    // tfSoftClassify score is not accessible directly here, so we use a
-    // conservative default (< 0.7) to force AI check from the caller.
-    field.detectionConfidence = 0.5;
-  } else {
-    field.detectionMethod = "html-type";
-    field.detectionConfidence = 1.0;
-  }
+  // ── Classify using the same pipeline as the popup (sync) ────────────────
+  const pipelineResult = DEFAULT_PIPELINE.run(field);
+  field.fieldType = pipelineResult.type;
+  field.detectionMethod = pipelineResult.method;
+  field.detectionConfidence = pipelineResult.confidence;
 
   return field;
 }
@@ -669,24 +659,6 @@ async function saveFieldRule(): Promise<void> {
       currentTarget = null;
     }, 800);
   }
-}
-
-function detectFieldType(
-  element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): FormField["fieldType"] {
-  if (element instanceof HTMLSelectElement) return "select";
-  if (element instanceof HTMLTextAreaElement) return "text";
-
-  const type = (element as HTMLInputElement).type?.toLowerCase();
-  if (type === "checkbox") return "checkbox";
-  if (type === "radio") return "radio";
-  if (type === "email") return "email";
-  if (type === "tel") return "phone";
-  if (type === "password") return "password";
-  if (type === "number") return "number";
-  if (type === "date") return "date";
-
-  return "unknown";
 }
 
 function getUniqueSelector(element: Element): string {

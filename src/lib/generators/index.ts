@@ -28,6 +28,11 @@ import {
   generateNumber,
   generateText,
   generateMoney,
+  generateWebsite,
+  generateProductName,
+  generateJobTitle,
+  generateCpfCnpj,
+  generateEmployeeCount,
 } from "./misc";
 
 export type GeneratorFn = () => string;
@@ -35,6 +40,7 @@ export type GeneratorFn = () => string;
 const generatorMap: Record<FieldType, GeneratorFn> = {
   cpf: () => generateCpf(true),
   cnpj: () => generateCnpj(true),
+  "cpf-cnpj": generateCpfCnpj,
   email: generateEmail,
   phone: () => generatePhone(true, true),
   name: generateFullName,
@@ -56,6 +62,11 @@ const generatorMap: Record<FieldType, GeneratorFn> = {
   rg: () => generateRg(true),
   text: () => generateText(),
   money: () => generateMoney(),
+  website: generateWebsite,
+  product: generateProductName,
+  supplier: generateCompanyName,
+  "employee-count": generateEmployeeCount,
+  "job-title": generateJobTitle,
   select: () => "",
   checkbox: () => "true",
   radio: () => "true",
@@ -89,4 +100,9 @@ export {
   generateNumber,
   generateText,
   generateMoney,
+  generateWebsite,
+  generateProductName,
+  generateJobTitle,
+  generateCpfCnpj,
+  generateEmployeeCount,
 };

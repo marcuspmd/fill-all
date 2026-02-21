@@ -124,7 +124,10 @@ async function handleContentMessage(
     }
 
     case "DETECT_FIELDS": {
-      const detected = detectFormFields();
+      const { fields: detected } =
+        await import("@/lib/form/form-detector").then((m) =>
+          m.detectAllFieldsAsync(),
+        );
       return {
         count: detected.length,
         fields: detected.map((f) => {
@@ -133,6 +136,8 @@ async function handleContentMessage(
             fieldType: string;
             label: string;
             options?: Array<{ value: string; text: string }>;
+            checkboxValue?: string;
+            checkboxChecked?: boolean;
           } = {
             selector: f.selector,
             fieldType: f.fieldType,
@@ -143,6 +148,13 @@ async function handleContentMessage(
               value: o.value,
               text: o.text.trim(),
             }));
+          }
+          if (
+            f.element instanceof HTMLInputElement &&
+            (f.element.type === "checkbox" || f.element.type === "radio")
+          ) {
+            item.checkboxValue = f.element.value;
+            item.checkboxChecked = f.element.checked;
           }
           return item;
         }),

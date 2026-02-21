@@ -556,6 +556,74 @@ body {
   opacity: 1;
 }
 
+/* Options preview row (select options / checkbox value → label) */
+.field-options-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.field-option-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 99px;
+  color: #475569;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+.field-option-pill code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 9px;
+  background: none;
+  color: #6366f1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
+}
+
+.field-option-arrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+  font-size: 9px;
+}
+
+.field-option-pill-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.field-option-more {
+  font-size: 10px;
+  padding: 2px 7px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 99px;
+  color: #4f46e5;
+  font-weight: 600;
+}
+
+.field-option-checked {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.field-option-unchecked {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+}
+
 /* Footer */
 .footer {
   display: flex;
