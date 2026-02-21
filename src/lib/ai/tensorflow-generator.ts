@@ -223,6 +223,61 @@ const FIELD_TYPE_KEYWORDS: Record<FieldType, string[]> = {
     "fantasy-name",
     "companyname",
   ],
+  "cpf-cnpj": [
+    "cpf-cnpj",
+    "cpfcnpj",
+    "cpf_cnpj",
+    "cpf/cnpj",
+    "cpf-ou-cnpj",
+    "documento-fiscal",
+    "doc-fiscal",
+    "informe-cpf-cnpj",
+  ],
+  website: [
+    "website",
+    "site",
+    "homepage",
+    "pagina-web",
+    "endereco-web",
+    "dominio",
+    "domain",
+  ],
+  product: ["produto", "product", "nome-produto", "item", "mercadoria", "sku"],
+  supplier: [
+    "fornecedor",
+    "supplier",
+    "vendor",
+    "parceiro",
+    "nome-fornecedor",
+    "empresa-fornecedora",
+    "razao-fornecedor",
+  ],
+  "employee-count": [
+    "funcionarios",
+    "colaboradores",
+    "headcount",
+    "employee-count",
+    "num-funcionarios",
+    "qtd-funcionarios",
+    "workforce",
+    "employees",
+    "quadro-pessoal",
+    "tamanho-empresa",
+  ],
+  "job-title": [
+    "cargo",
+    "funcao",
+    "função",
+    "profissao",
+    "profissão",
+    "occupation",
+    "job-title",
+    "jobtitle",
+    "position",
+    "role",
+    "titulo-profissional",
+    "area-atuacao",
+  ],
 
   // ── Numeric / financial ──────────────────────────────────────────────────
   money: [
@@ -399,128 +454,48 @@ export async function loadPretrainedModel(): Promise<void> {
   return _pretrainedLoadPromise;
 }
 
-// ── TF.js classifier singleton ───────────────────────────────────────────────
-// Built lazily on first call to classifyField. Uses TF.js tensors for the
-// matrix multiply (batch cosine similarity over all field-type prototypes).
-
-interface TFClassifier {
-  vocab: Map<string, number>;
-  /** Shape: [numActiveTypes, vocabSize] — one L2-normalised prototype per type */
-  prototypes: tf.Tensor2D;
-  activeTypes: FieldType[];
-}
-
-let _classifier: TFClassifier | null = null;
-
-function getClassifier(): TFClassifier {
-  if (_classifier) return _classifier;
-
-  // Only types that have at least one keyword get a prototype vector
-  const activeEntries = (
-    Object.entries(FIELD_TYPE_KEYWORDS) as [FieldType, string[]][]
-  ).filter(([, kws]) => kws.length > 0);
-
-  const allKeywords = activeEntries.flatMap(([, kws]) => kws);
-  const vocab = buildVocab(allKeywords);
-
-  const protoRows = activeEntries.map(([ft, keywords]) => {
-    // Average of all keyword vectors for this type
-    const avg = new Float32Array(vocab.size);
-    for (const kw of keywords) {
-      const v = vectorize(kw, vocab);
-      for (let i = 0; i < avg.length; i++) avg[i] += v[i];
-    }
-    // L2 normalise the average
-    let norm = 0;
-    for (let i = 0; i < avg.length; i++) norm += avg[i] * avg[i];
-    norm = Math.sqrt(norm);
-    if (norm > 0) for (let i = 0; i < avg.length; i++) avg[i] /= norm;
-    return avg;
-  });
-
-  _classifier = {
-    vocab,
-    prototypes: tf.tensor2d(
-      protoRows.flatMap((r) => Array.from(r)),
-      [activeEntries.length, vocab.size],
-    ),
-    activeTypes: activeEntries.map(([ft]) => ft),
-  };
-
-  return _classifier;
-}
-
-/** Discard the cached classifier so it is rebuilt on the next call. */
+/**
+ * Discard any cached pre-trained state so the model is reloaded on the next call.
+ * Called after user overrides (field-icon.ts) — kept as a no-op here because
+ * user-saved rules are resolved by the rule-engine, not by the TF model.
+ */
 export function invalidateClassifier(): void {
-  _classifier = null;
+  // no-op: user corrections are stored as rules, not baked into the TF model.
 }
 
 /**
- * Classify field signals using TF.js.
+ * Classify field signals using the pre-trained TF.js model.
  *
- * Priority:
- *   1. Pre-trained neural network (if model artefacts were generated).
- *   2. Runtime prototype-vector classifier built from FIELD_TYPE_KEYWORDS.
- *
- * Returns null if signals are empty or confidence is below TF_THRESHOLD.
+ * Returns null if:
+ *   - signals are empty
+ *   - the model has not been loaded yet (falls through to keyword/html-fallback)
+ *   - the best prediction score is below TF_THRESHOLD
  */
 function tfSoftClassify(
   signals: string,
 ): { type: FieldType; score: number } | null {
   if (!signals.trim()) return null;
+  if (!_pretrained) return null; // model not loaded — keyword/html-fallback handles it
 
-  // ── Path A: pre-trained model ─────────────────────────────────────────────
-  if (_pretrained) {
-    const inputVec = vectorize(signals, _pretrained.vocab);
-    if (!inputVec.some((v) => v > 0)) return null;
-
-    const { bestIdx, bestScore } = tf.tidy(() => {
-      const input = tf.tensor2d([Array.from(inputVec)]);
-      const probs = (_pretrained!.model.predict(input) as tf.Tensor).dataSync();
-      let idx = 0;
-      let score = -1;
-      for (let i = 0; i < probs.length; i++) {
-        if (probs[i] > score) {
-          score = probs[i];
-          idx = i;
-        }
-      }
-      return { bestIdx: idx, bestScore: score };
-    });
-
-    if (bestScore < TF_THRESHOLD) return null;
-    return { type: _pretrained.labels[bestIdx], score: bestScore };
-  }
-
-  // ── Path B: runtime prototype-vector classifier (keyword-derived) ─────────
-  const clf = getClassifier();
-  const inputVec = vectorize(signals, clf.vocab);
+  const inputVec = vectorize(signals, _pretrained.vocab);
   if (!inputVec.some((v) => v > 0)) return null;
 
-  // tf.tidy disposes all intermediate tensors automatically
-  const { typeIdx, score } = tf.tidy(() => {
-    // input: [vocabSize] → reshape to column [vocabSize, 1]
-    const input = tf
-      .tensor1d(inputVec)
-      .reshape([clf.vocab.size, 1]) as tf.Tensor2D;
-
-    // prototypes [T, V] × input [V, 1] → sims [T, 1]
-    const sims = tf.matMul(clf.prototypes, input).squeeze() as tf.Tensor1D;
-
-    const simsData = sims.dataSync();
-    let bestIdx = 0;
-    let bestScore = -1;
-    for (let i = 0; i < simsData.length; i++) {
-      if (simsData[i] > bestScore) {
-        bestScore = simsData[i];
-        bestIdx = i;
+  const { bestIdx, bestScore } = tf.tidy(() => {
+    const input = tf.tensor2d([Array.from(inputVec)]);
+    const probs = (_pretrained!.model.predict(input) as tf.Tensor).dataSync();
+    let idx = 0;
+    let score = -1;
+    for (let i = 0; i < probs.length; i++) {
+      if (probs[i] > score) {
+        score = probs[i];
+        idx = i;
       }
     }
-    return { typeIdx: bestIdx, score: bestScore };
+    return { bestIdx: idx, bestScore: score };
   });
 
-  if (score < TF_THRESHOLD) return null;
-  return { type: clf.activeTypes[typeIdx], score };
+  if (bestScore < TF_THRESHOLD) return null;
+  return { type: _pretrained.labels[bestIdx], score: bestScore };
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────

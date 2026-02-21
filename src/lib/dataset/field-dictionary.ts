@@ -696,7 +696,8 @@ export const FIELD_DICTIONARY: FieldDictionaryEntry[] = [
   {
     type: "supplier",
     category: "business",
-    description: "Supplier / vendor / partner company name (fornecedor, parceiro)",
+    description:
+      "Supplier / vendor / partner company name (fornecedor, parceiro)",
     generator: {
       strategy: "random",
       generatorFn: "generateCompanyName",
@@ -804,7 +805,8 @@ export const FIELD_DICTIONARY: FieldDictionaryEntry[] = [
   {
     type: "cpf-cnpj",
     category: "document",
-    description: "Hybrid field that accepts both CPF (individual) or CNPJ (company) — very common in Brazilian forms",
+    description:
+      "Hybrid field that accepts both CPF (individual) or CNPJ (company) — very common in Brazilian forms",
     generator: {
       strategy: "random",
       generatorFn: "generateCpfCnpj",
@@ -818,7 +820,11 @@ export const FIELD_DICTIONARY: FieldDictionaryEntry[] = [
       autocompleteHint: "off",
     },
     localeFormats: [
-      { locale: "pt-BR", format: "###.###.###-## ou ##.###.###/####-##", example: "123.456.789-09" },
+      {
+        locale: "pt-BR",
+        format: "###.###.###-## ou ##.###.###/####-##",
+        example: "123.456.789-09",
+      },
     ],
     classificationWeight: 1.3,
     minConfidence: 0.6,

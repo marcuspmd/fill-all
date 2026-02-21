@@ -273,6 +273,108 @@ export const VALIDATION_SAMPLES: ValidationSample[] = [
     note: "Comentários",
   },
 
+  // ── CPF-CNPJ ──
+  {
+    signals: "cpf_ou_cnpj cpf-cnpj documento_fiscal",
+    expectedType: "cpf-cnpj",
+    note: "CPF ou CNPJ combinado",
+  },
+  {
+    signals: "informe cpf ou cnpj doc_contribuinte",
+    expectedType: "cpf-cnpj",
+    note: "Instrução de preenchimento",
+  },
+  {
+    signals: "cpf_cnpj_input documento-legal fiscal_doc",
+    expectedType: "cpf-cnpj",
+    note: "Variação de ID fiscal",
+  },
+
+  // ── WEBSITE ──
+  {
+    signals: "site_empresa url_empresa website",
+    expectedType: "website",
+    note: "Site da empresa",
+  },
+  {
+    signals: "homepage_url pagina_web endereco_web",
+    expectedType: "website",
+    note: "Homepage / página web",
+  },
+  {
+    signals: "link_site domain url",
+    expectedType: "website",
+    note: "Link / domain",
+  },
+
+  // ── PRODUCT ──
+  {
+    signals: "nome_produto produto_input product_name",
+    expectedType: "product",
+    note: "Nome do produto",
+  },
+  {
+    signals: "item_servico servico-produto product",
+    expectedType: "product",
+    note: "Serviço / produto",
+  },
+  {
+    signals: "descricao_produto artigo_vendido item",
+    expectedType: "product",
+    note: "Descrição do produto",
+  },
+
+  // ── SUPPLIER ──
+  {
+    signals: "nome_fornecedor fornecedor_input supplier",
+    expectedType: "supplier",
+    note: "Nome do fornecedor",
+  },
+  {
+    signals: "empresa_fornecedora parceiro_fornecedor vendor",
+    expectedType: "supplier",
+    note: "Empresa fornecedora",
+  },
+  {
+    signals: "razao_fornecedor fornecedor parceiro",
+    expectedType: "supplier",
+    note: "Razão social do fornecedor",
+  },
+
+  // ── EMPLOYEE COUNT ──
+  {
+    signals: "qtd_funcionarios funcionarios_total employees",
+    expectedType: "employee-count",
+    note: "Quantidade de funcionários",
+  },
+  {
+    signals: "numero_colaboradores headcount workforce",
+    expectedType: "employee-count",
+    note: "Headcount / workforce",
+  },
+  {
+    signals: "total_empregados staff_count quadro_pessoal",
+    expectedType: "employee-count",
+    note: "Total de empregados",
+  },
+
+  // ── JOB TITLE ──
+  {
+    signals: "cargo_profissional cargo_input job_title",
+    expectedType: "job-title",
+    note: "Cargo profissional",
+  },
+  {
+    signals: "funcao_exercida ocupacao profissao",
+    expectedType: "job-title",
+    note: "Função / ocupação",
+  },
+  {
+    signals: "titulo_profissional position_title role",
+    expectedType: "job-title",
+    note: "Título / position",
+  },
+
   // ── AMBIGUOUS / HARD ──
   {
     signals: "campo_texto text input_1",

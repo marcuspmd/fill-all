@@ -1354,6 +1354,420 @@ const COMPANY_SAMPLES: TrainingSample[] = [
   },
 ];
 
+// ── CPF / CNPJ (hybrid) ──────────────────────────────────────────────────────
+
+const CPF_CNPJ_SAMPLES: TrainingSample[] = [
+  {
+    signals: "cpf_cnpj cpf/cnpj cpf-cnpj cpf ou cnpj",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "cpf cnpj cpf_cnpj informe cpf ou cnpj",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "documento cpf_cnpj tax_id identificacao fiscal",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "doc cpf cnpj identificacao doc_number",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "cpfcnpj cpf-ou-cnpj campo_cpf_cnpj",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "informe seu cpf cnpj campo_documento",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "taxid tax_id cpf_cnpj documento fiscal",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "cpf cnpj pessoa fisica juridica doc_type",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "numero documento nx_doc cpf_cnpj",
+    type: "cpf-cnpj",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "cpf_cnpj_field input_cpf_cnpj cpf ou cnpj",
+    type: "cpf-cnpj",
+    source: "augmented",
+    difficulty: "easy",
+  },
+];
+
+// ── SUPPLIER ──────────────────────────────────────────────────────────────────
+
+const SUPPLIER_SAMPLES: TrainingSample[] = [
+  {
+    signals: "fornecedor fornecedor supplier vendor",
+    type: "supplier",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "nome fornecedor nome_fornecedor supplier_name",
+    type: "supplier",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "fabricante fabricante manufacturer brand",
+    type: "supplier",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "parceiro parceiro partner vendor_name",
+    type: "supplier",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "fornecedor_input inp_fornecedor supplier",
+    type: "supplier",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "empresa fornecedora supply_company fornecedor",
+    type: "supplier",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "marca_fornecedor marca fabricante fornecedor",
+    type: "supplier",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "vendor supplier_field fornecedor_name",
+    type: "supplier",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "contratado prestador fornecedor empresa",
+    type: "supplier",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "distribuidor distributor supplier fornecedor",
+    type: "supplier",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "fabricante_produto manufacturer_name fornecedor",
+    type: "supplier",
+    source: "augmented",
+    difficulty: "medium",
+  },
+];
+
+// ── PRODUCT ───────────────────────────────────────────────────────────────────
+
+const PRODUCT_SAMPLES: TrainingSample[] = [
+  {
+    signals: "produto produto product product_name",
+    type: "product",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "product product nome_produto productName",
+    type: "product",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "nome do produto product_name nome_prod",
+    type: "product",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "item item_name artigo article artic",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "sku sku codigo_produto product_code",
+    type: "product",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "codigo_produto product_code sku desc_produto",
+    type: "product",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "descricao_produto product_description desc_item",
+    type: "product",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "product_field inp_produto produto item",
+    type: "product",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "nome_item item_name product produto",
+    type: "product",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "produto_id product_id item_id produto",
+    type: "product",
+    source: "augmented",
+    difficulty: "medium",
+  },
+];
+
+// ── EMPLOYEE COUNT ────────────────────────────────────────────────────────────
+
+const EMPLOYEE_COUNT_SAMPLES: TrainingSample[] = [
+  {
+    signals: "funcionarios qtd_funcionarios num_funcionarios headcount",
+    type: "employee-count",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "numero funcionarios employee_count contagem funcionarios",
+    type: "employee-count",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "colaboradores numero_colaboradores headcount workforce",
+    type: "employee-count",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "qtd_colaboradores employee-count contagem colaboradores",
+    type: "employee-count",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "porte empresa tamanho_empresa num_funcionarios",
+    type: "employee-count",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "quantos funcionarios qty_employees workforce_size",
+    type: "employee-count",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "employees_count employees_total staff headcount",
+    type: "employee-count",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "total_funcionarios total_colaboradores employees",
+    type: "employee-count",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "numero_empregados empregados_count quantidade_funcionarios",
+    type: "employee-count",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "trabalhadores equipe team_size workforce_field",
+    type: "employee-count",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "contagem_funcionarios employee_number headcount_field",
+    type: "employee-count",
+    source: "augmented",
+    difficulty: "easy",
+  },
+];
+
+// ── JOB TITLE ─────────────────────────────────────────────────────────────────
+
+const JOB_TITLE_SAMPLES: TrainingSample[] = [
+  {
+    signals: "cargo cargo job_title jobTitle",
+    type: "job-title",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "job title job-title jobtitle cargo",
+    type: "job-title",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "position role funcao cargo_profissao",
+    type: "job-title",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "profissao profissão occupation cargo_func",
+    type: "job-title",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "funcao function role cargo_input",
+    type: "job-title",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "departamento department setor area",
+    type: "job-title",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "cargo_func funcao_input inp_cargo cargo",
+    type: "job-title",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "ocupacao occupation profissional cargo",
+    type: "job-title",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "especialidade especialidade expertise job_field",
+    type: "job-title",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "job_title_input inp_jobtitle position_field",
+    type: "job-title",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "titulo_profissional professional_title cargo",
+    type: "job-title",
+    source: "augmented",
+    difficulty: "medium",
+  },
+];
+
+// ── WEBSITE ───────────────────────────────────────────────────────────────────
+
+const WEBSITE_SAMPLES: TrainingSample[] = [
+  {
+    signals: "website website site url",
+    type: "website",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "site site homepage url_site",
+    type: "website",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "homepage homepage_url website web",
+    type: "website",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "url url_field website_url web_address",
+    type: "website",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "endereco_site site_url web_address website",
+    type: "website",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "link_site website_link url_empresa site",
+    type: "website",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "linkedin linkedin_url perfil_linkedin",
+    type: "website",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "instagram instagram_url perfil_instagram",
+    type: "website",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "site_empresa url_empresa site web",
+    type: "website",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "web website_field inp_url site_field",
+    type: "website",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "rede_social social_media perfil_online url",
+    type: "website",
+    source: "augmented",
+    difficulty: "hard",
+  },
+];
+
 // ── NUMERIC / FINANCIAL ─────────────────────────────────────────────────────
 
 const MONEY_SAMPLES: TrainingSample[] = [
@@ -1658,6 +2072,48 @@ const HARD_SAMPLES: TrainingSample[] = [
     source: "augmented",
     difficulty: "hard",
   },
+  // cpf-cnpj ambiguous
+  {
+    signals: "doc documento id_doc cpf cnpj",
+    type: "cpf-cnpj",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  // website in contact context
+  {
+    signals: "site url linkedin empresa contato",
+    type: "website",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  // job-title vs department
+  {
+    signals: "cargo profissao position departamento setor",
+    type: "job-title",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  // employee-count vs number
+  {
+    signals: "funcionarios colaboradores numero empresa qtd",
+    type: "employee-count",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  // product vs text
+  {
+    signals: "produto item nome_produto category_id sku",
+    type: "product",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  // supplier vs company
+  {
+    signals: "fornecedor empresa_nome org supplier vendor",
+    type: "supplier",
+    source: "augmented",
+    difficulty: "hard",
+  },
 ];
 
 // ── Aggregate all training samples ──────────────────────────────────────────
@@ -1665,6 +2121,7 @@ const HARD_SAMPLES: TrainingSample[] = [
 export const TRAINING_SAMPLES: TrainingSample[] = [
   ...CPF_SAMPLES,
   ...CNPJ_SAMPLES,
+  ...CPF_CNPJ_SAMPLES,
   ...RG_SAMPLES,
   ...EMAIL_SAMPLES,
   ...PHONE_SAMPLES,
@@ -1683,6 +2140,11 @@ export const TRAINING_SAMPLES: TrainingSample[] = [
   ...PASSWORD_SAMPLES,
   ...USERNAME_SAMPLES,
   ...COMPANY_SAMPLES,
+  ...SUPPLIER_SAMPLES,
+  ...PRODUCT_SAMPLES,
+  ...EMPLOYEE_COUNT_SAMPLES,
+  ...JOB_TITLE_SAMPLES,
+  ...WEBSITE_SAMPLES,
   ...MONEY_SAMPLES,
   ...NUMBER_SAMPLES,
   ...TEXT_SAMPLES,
