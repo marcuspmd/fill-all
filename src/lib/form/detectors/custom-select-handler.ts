@@ -4,6 +4,7 @@
  */
 
 import type { FormField, FieldType } from "@/types";
+import type { Detector } from "./detector.interface";
 
 /** Describes a detected custom select component */
 export interface CustomSelectField {
@@ -64,6 +65,12 @@ export function detectCustomSelects(): CustomSelectField[] {
 
   return fields;
 }
+
+/** Detector object — wraps {@link detectCustomSelects} under the common Detector contract. */
+export const customSelectDetector: Detector<void, CustomSelectField[]> = {
+  name: "custom-select",
+  detect: () => detectCustomSelects(),
+};
 
 function identifyCustomSelect(el: HTMLElement): CustomSelectField | null {
   // Ant Design Select

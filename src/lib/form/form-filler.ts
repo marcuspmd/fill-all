@@ -19,7 +19,7 @@ import {
   selectCustomOption,
   getCustomSelectValue,
   type CustomSelectField,
-} from "./custom-select-handler";
+} from "./detectors/custom-select-handler";
 import { setFillingInProgress } from "./dom-watcher";
 
 function setNativeValue(element: HTMLElement, value: string): void {

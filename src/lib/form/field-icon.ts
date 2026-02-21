@@ -11,10 +11,8 @@ import type { FormField, FieldRule, FieldType } from "@/types";
 import { fillSingleField } from "./form-filler";
 import {
   classifyField,
-  classifyFieldAsync,
   invalidateClassifier,
 } from "@/lib/ai/tensorflow-generator";
-import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { saveRule } from "@/lib/storage/storage";
 
 const ICON_ID = "fill-all-field-icon";
@@ -277,14 +275,6 @@ function handleInspectClick(e: Event): void {
   const field = buildFormField(el);
   currentInspectField = field;
   showInspectModal(field);
-
-  // If TF.js confidence is low, refine with Chrome AI in background
-  if (
-    (field.detectionConfidence ?? 1) < 0.7 &&
-    field.detectionMethod !== "custom-select"
-  ) {
-    void refineFieldWithAI(field);
-  }
 }
 
 function buildFormField(
@@ -344,63 +334,6 @@ function buildFormField(
   }
 
   return field;
-}
-
-/**
- * Calls Chrome AI to refine a low-confidence TF.js classification and
- * patches the open inspection modal in-place with the updated result.
- */
-async function refineFieldWithAI(field: FormField): Promise<void> {
-  const methodTd = inspectModalElement?.querySelector<HTMLElement>(
-    "#fa-modal-method-td",
-  );
-  if (methodTd) {
-    methodTd.innerHTML = `<span style="display:inline-block;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700;background:#6366f1;color:#fff">⏳ Consultando IA...</span>`;
-  }
-
-  const aiType = await classifyFieldAsync(field);
-  if (!inspectModalElement) return; // modal was closed while waiting
-
-  const prevType = field.fieldType;
-  if (aiType !== "unknown") {
-    field.fieldType = aiType;
-    field.detectionMethod = "chrome-ai";
-    field.detectionConfidence = 0.85;
-    currentInspectField = field;
-  }
-
-  // Update method badge
-  const badgeColors: Record<string, string> = {
-    "html-type": "#f59e0b",
-    keyword: "#22c55e",
-    tensorflow: "#6366f1",
-    "chrome-ai": "#a855f7",
-    "html-fallback": "#ef4444",
-    "custom-select": "#06b6d4",
-    interactive: "#0ea5e9",
-    "user-override": "#f97316",
-  };
-  const methodLabel = field.detectionMethod ?? "—";
-  const bg = badgeColors[methodLabel] ?? "#64748b";
-  const conf = `${((field.detectionConfidence ?? 0) * 100).toFixed(0)}%`;
-  if (methodTd) {
-    methodTd.innerHTML = `<span style="display:inline-block;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700;background:${bg};color:#fff">${methodLabel}</span> <span style="color:#94a3b8;font-size:11px">(confiança ${conf})</span>`;
-  }
-
-  // Update type select & badge if AI changed the classification
-  if (aiType !== "unknown" && aiType !== prevType) {
-    const select = inspectModalElement.querySelector<HTMLSelectElement>(
-      "#fa-modal-type-select",
-    );
-    if (select) select.value = aiType;
-
-    const typeBadge = inspectModalElement.querySelector<HTMLElement>(
-      "#fa-modal-type-badge",
-    );
-    if (typeBadge) {
-      typeBadge.innerHTML = `<span style="display:inline-block;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700;background:${bg};color:#fff">chrome-ai</span>`;
-    }
-  }
 }
 
 const ALL_FIELD_TYPES: FieldType[] = [
@@ -561,7 +494,6 @@ async function saveInspectOverride(): Promise<void> {
   }
 
   if (signals) {
-    await storeLearnedEntry(signals, newType);
     invalidateClassifier();
 
     console.log(

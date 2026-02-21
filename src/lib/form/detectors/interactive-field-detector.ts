@@ -10,6 +10,7 @@
  */
 
 import type { FormField, InteractiveFieldType } from "@/types";
+import type { Detector } from "./detector.interface";
 
 export interface InteractiveField {
   container: HTMLElement;
@@ -291,6 +292,12 @@ export function detectInteractiveFields(): InteractiveField[] {
 
   return results;
 }
+
+/** Detector object — wraps {@link detectInteractiveFields} under the common Detector contract. */
+export const interactiveFieldDetector: Detector<void, InteractiveField[]> = {
+  name: "interactive-fields",
+  detect: () => detectInteractiveFields(),
+};
 
 /**
  * Converts an InteractiveField to a minimal FormField-compatible object

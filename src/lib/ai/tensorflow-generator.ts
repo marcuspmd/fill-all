@@ -15,8 +15,6 @@
 import * as tf from "@tensorflow/tfjs";
 import type { FormField, FieldType } from "@/types";
 import { generate } from "@/lib/generators";
-import type { LearnedEntry } from "@/lib/ai/learning-store";
-import { storeLearnedEntry, getLearnedEntries } from "@/lib/ai/learning-store";
 
 // Field type keywords mapping for classification
 // ORDER MATTERS: longer/more-specific keywords score higher (score = keyword.length).
@@ -317,10 +315,6 @@ const NGRAM_SIZE = 3;
 // Increase to be more conservative; decrease to allow fuzzier matches.
 const TF_THRESHOLD = 0.7;
 
-// If TF.js cosine similarity is below this value, Chrome AI is consulted
-// to refine (or confirm) the classification result.
-const AI_ASSIST_THRESHOLD = 0.7;
-
 function charNgrams(text: string): string[] {
   const padded = `_${text}_`;
   const result: string[] = [];
@@ -418,31 +412,6 @@ interface TFClassifier {
 
 let _classifier: TFClassifier | null = null;
 
-// ── Continuous-learning cache ─────────────────────────────────────────────────
-// Loaded asynchronously at content-script init; used synchronously inside
-// getClassifier() to shift prototype vectors toward real-world patterns.
-let _learnedEntries: LearnedEntry[] = [];
-
-/**
- * Load AI-derived classifications from chrome.storage and incorporate them
- * into the TF.js prototype matrix on the next classify call.
- * Must be called once during content-script initialisation.
- */
-export async function loadLearnedClassifications(): Promise<void> {
-  _learnedEntries = await getLearnedEntries();
-  _classifier = null; // force rebuild with updated data
-  if (isDebugEnabled() && _learnedEntries.length > 0) {
-    console.log(
-      `[Fill All] Loaded ${_learnedEntries.length} learned classification(s) into TF.js classifier`,
-    );
-  }
-}
-
-/** Discard the cached classifier so it is rebuilt on the next call. */
-export function invalidateClassifier(): void {
-  _classifier = null;
-}
-
 function getClassifier(): TFClassifier {
   if (_classifier) return _classifier;
 
@@ -451,29 +420,14 @@ function getClassifier(): TFClassifier {
     Object.entries(FIELD_TYPE_KEYWORDS) as [FieldType, string[]][]
   ).filter(([, kws]) => kws.length > 0);
 
-  // Build a map: type → signals from the continuous-learning store
-  const learnedByType = new Map<FieldType, string[]>();
-  for (const entry of _learnedEntries) {
-    if (!learnedByType.has(entry.type)) learnedByType.set(entry.type, []);
-    learnedByType.get(entry.type)!.push(entry.signals);
-  }
-
-  // Vocab includes both static keywords and learned signals so new n-grams
-  // observed in the wild are represented in the embedding space.
   const allKeywords = activeEntries.flatMap(([, kws]) => kws);
-  const allLearnedSignals = _learnedEntries.map((e) => e.signals);
-  const vocab = buildVocab([...allKeywords, ...allLearnedSignals]);
+  const vocab = buildVocab(allKeywords);
 
   const protoRows = activeEntries.map(([ft, keywords]) => {
     // Average of all keyword vectors for this type
     const avg = new Float32Array(vocab.size);
     for (const kw of keywords) {
       const v = vectorize(kw, vocab);
-      for (let i = 0; i < avg.length; i++) avg[i] += v[i];
-    }
-    // Incorporate learned signals (continuous learning)
-    for (const sig of learnedByType.get(ft) ?? []) {
-      const v = vectorize(sig, vocab);
       for (let i = 0; i < avg.length; i++) avg[i] += v[i];
     }
     // L2 normalise the average
@@ -494,6 +448,11 @@ function getClassifier(): TFClassifier {
   };
 
   return _classifier;
+}
+
+/** Discard the cached classifier so it is rebuilt on the next call. */
+export function invalidateClassifier(): void {
+  _classifier = null;
 }
 
 /**
@@ -564,81 +523,42 @@ function tfSoftClassify(
   return { type: clf.activeTypes[typeIdx], score };
 }
 
-// ── Chrome AI type classification ───────────────────────────────────────────
+// ── Public API ───────────────────────────────────────────────────────────────
 
 /**
- * Uses Chrome Built-in AI (Gemini Nano) to classify a field type.
- * Called only when TF.js and keyword matching both fail to identify the field.
- * Returns 'unknown' on any error or if Chrome AI is unavailable.
+ * Step 1: Hard keyword match over a normalised signals string.
+ * Returns the best matching FieldType, or null if nothing matches.
  */
-async function classifyWithChromeAI(
-  field: FormField,
-  signals: string,
-): Promise<{ type: FieldType; raw: string } | null> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const newApi = (globalThis as any).LanguageModel as
-    | LanguageModelStatic
-    | undefined;
+export function classifyByKeyword(signals: string): FieldType | null {
+  if (!signals.trim()) return null;
 
-  const hasAny = !!newApi;
-  if (!hasAny) return null;
+  let best: FieldType = "unknown";
+  let bestScore = 0;
 
-  try {
-    // Check availability with new API first
-    if (newApi) {
-      const avail = await newApi.availability({
-        model: "gemini-nano",
-        outputLanguage: "en",
-      });
-      if (avail === "unavailable") return null;
+  for (const [fieldType, keywords] of Object.entries(FIELD_TYPE_KEYWORDS)) {
+    for (const keyword of keywords) {
+      if (signals.includes(keyword)) {
+        const score = keyword.length;
+        if (score > bestScore) {
+          bestScore = score;
+          best = fieldType as FieldType;
+        }
+      }
     }
-
-    const allTypes = (Object.keys(FIELD_TYPE_KEYWORDS) as FieldType[]).filter(
-      (t) => t !== "unknown",
-    );
-
-    const context = [
-      field.label && `Label: ${field.label}`,
-      field.name && `Name: ${field.name}`,
-      field.id && `ID: ${field.id}`,
-      field.placeholder && `Placeholder: ${field.placeholder}`,
-      field.autocomplete && `Autocomplete: ${field.autocomplete}`,
-      `Input type attribute: ${field.element.type || "text"}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    const systemPrompt = `You are a form field type classifier. Given information about an HTML form field, respond with EXACTLY one type from this list: ${allTypes.join(", ")}. No explanations, no punctuation — just the type name.`;
-    const userPrompt = `Classify this form field:\n${context}`;
-
-    if (isDebugEnabled()) {
-      console.groupCollapsed(`[Fill All] Chrome AI classify — prompt`);
-      console.log("🔧 systemPrompt:", systemPrompt);
-      console.log("💬 userPrompt:", userPrompt);
-      console.groupEnd();
-    }
-
-    const aiSession = await newApi!.create({
-      systemPrompt,
-      outputLanguage: "en",
-    });
-    const raw = await aiSession.prompt(userPrompt);
-    aiSession.destroy();
-
-    if (isDebugEnabled()) {
-      console.log(`[Fill All] Chrome AI classify — response: "${raw.trim()}"`);
-    }
-
-    const detected = raw.trim().toLowerCase().split(/\s/)[0];
-    if ((allTypes as string[]).includes(detected))
-      return { type: detected as FieldType, raw: raw.trim() };
-    return null;
-  } catch {
-    return null;
   }
+
+  return best !== "unknown" ? best : null;
 }
 
-// ── Public API ───────────────────────────────────────────────────────────────
+/**
+ * Step 2: TF.js cosine-similarity soft match over a normalised signals string.
+ * Returns the best matching FieldType + confidence score, or null if below threshold.
+ */
+export function classifyByTfSoft(
+  signals: string,
+): { type: FieldType; score: number } | null {
+  return tfSoftClassify(signals);
+}
 
 /**
  * Classifies a form field into a FieldType using TF.js-powered classification.
@@ -659,32 +579,15 @@ export function classifyField(field: FormField): FieldType {
     .join(" ");
 
   // ── Step 1: Hard keyword match ────────────────────────────────────────────
-  let keywordMatch: FieldType = "unknown";
-  let keywordScore = 0;
-  let winnerKeyword = "";
-
-  for (const [fieldType, keywords] of Object.entries(FIELD_TYPE_KEYWORDS)) {
-    for (const keyword of keywords) {
-      if (signals.includes(keyword)) {
-        const score = keyword.length;
-        if (score > keywordScore) {
-          keywordScore = score;
-          keywordMatch = fieldType as FieldType;
-          winnerKeyword = keyword;
-        }
-      }
-    }
-  }
-
-  if (keywordMatch !== "unknown") {
+  const kwType = classifyByKeyword(signals);
+  if (kwType !== null) {
     if (isDebugEnabled()) {
       console.groupCollapsed(
-        `[Fill All] classify → %c${keywordMatch}%c  (keyword)  ${field.selector}`,
+        `[Fill All] classify → %c${kwType}%c  (keyword)  ${field.selector}`,
         "color: #22c55e; font-weight: bold",
         "color: inherit",
       );
       console.log("📡 signals:", signals || "(none)");
-      console.log(`🏆 keyword: "${winnerKeyword}" (score ${keywordScore})`);
       console.log("🔖 field:", {
         label: field.label,
         name: field.name,
@@ -693,12 +596,11 @@ export function classifyField(field: FormField): FieldType {
       });
       console.groupEnd();
     }
-    return keywordMatch;
+    return kwType;
   }
 
   // ── Step 2: TF.js soft / fuzzy match ─────────────────────────────────────
-  const tfResult = tfSoftClassify(signals);
-
+  const tfResult = classifyByTfSoft(signals);
   if (tfResult) {
     if (isDebugEnabled()) {
       console.groupCollapsed(
@@ -757,121 +659,11 @@ export function classifyField(field: FormField): FieldType {
 }
 
 /**
- * Async variant of classifyField with two extra layers:
- *
- * 1. **Low-confidence AI refinement** — if TF.js matched but with cosine
- *    similarity < AI_ASSIST_THRESHOLD (70%), Chrome AI is consulted to
- *    confirm or override the result.
- * 2. **Continuous learning** — every AI-produced classification is stored
- *    in chrome.storage and incorporated into TF.js on next page load,
- *    shifting prototype vectors toward real-world field patterns.
- *
- * The sync `classifyField` is kept for non-fill / non-async contexts.
- */
-export async function classifyFieldAsync(field: FormField): Promise<FieldType> {
-  const signals = [
-    field.label?.toLowerCase(),
-    field.name?.toLowerCase(),
-    field.id?.toLowerCase(),
-    field.placeholder?.toLowerCase(),
-    field.autocomplete?.toLowerCase(),
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  // ── Steps 1–3: run the sync classifier (includes all debug logs) ──────────
-  const syncResult = classifyField(field);
-
-  if (syncResult !== "unknown") {
-    // Determine whether the result came from a keyword match (100% confident)
-    // or from the TF.js / HTML-type fallback paths.
-    let isKeywordMatch = false;
-    outer: for (const keywords of Object.values(FIELD_TYPE_KEYWORDS)) {
-      for (const kw of keywords) {
-        if (signals.includes(kw)) {
-          isKeywordMatch = true;
-          break outer;
-        }
-      }
-    }
-
-    if (isKeywordMatch) return syncResult; // 100% confident — no AI needed
-
-    const tfResult = tfSoftClassify(signals);
-
-    // HTML input[type] fallback (no TF.js match) — attribute is authoritative
-    if (!tfResult) return syncResult;
-
-    const confidencePct = (tfResult.score * 100).toFixed(1);
-
-    if (tfResult.score >= AI_ASSIST_THRESHOLD) return syncResult; // ≥70% — trust TF.js
-
-    // ── Low-confidence TF.js: consult Chrome AI to refine ─────────────────
-    if (isDebugEnabled()) {
-      console.log(
-        `[Fill All] TF.js confidence ${confidencePct}% < ${AI_ASSIST_THRESHOLD * 100}% — consulting Chrome AI to refine "${syncResult}"`,
-      );
-    }
-
-    const aiRefine = await classifyWithChromeAI(field, signals);
-    if (aiRefine) {
-      if (isDebugEnabled()) {
-        const changed = aiRefine.type !== syncResult;
-        console.log(
-          `[Fill All] Chrome AI ${changed ? "overrode" : "confirmed"}: "${syncResult}" → "${aiRefine.type}"`,
-        );
-      }
-      await storeLearnedEntry(signals, aiRefine.type);
-      invalidateClassifier();
-      return aiRefine.type;
-    }
-
-    return syncResult; // AI unavailable — accept low-confidence TF.js result
-  }
-
-  // ── Step 4: Chrome AI fallback for fully unknown fields ───────────────────
-  const aiResult = await classifyWithChromeAI(field, signals);
-
-  if (aiResult) {
-    if (isDebugEnabled()) {
-      console.groupCollapsed(
-        `[Fill All] classify → %c${aiResult.type}%c  (chrome-ai)  ${field.selector}`,
-        "color: #a855f7; font-weight: bold",
-        "color: inherit",
-      );
-      console.log("📡 signals:", signals || "(none)");
-      console.log(`🧠 Chrome AI raw response: "${aiResult.raw}"`);
-      console.log("🔖 field:", {
-        label: field.label,
-        name: field.name,
-        id: field.id,
-        placeholder: field.placeholder,
-      });
-      console.groupEnd();
-    }
-    await storeLearnedEntry(signals, aiResult.type);
-    invalidateClassifier();
-    return aiResult.type;
-  }
-
-  if (isDebugEnabled()) {
-    console.log(
-      `[Fill All] classify → %cunknown%c  (all methods failed)  ${field.selector}`,
-      "color: #ef4444; font-weight: bold",
-      "color: inherit",
-    );
-  }
-
-  return "unknown";
-}
-
-/**
  * Generate a value using TF.js classification + built-in generators.
- * Falls back to Chrome AI for field type detection when TF.js yields 'unknown'.
  */
 export async function generateWithTensorFlow(
   field: FormField,
 ): Promise<string> {
-  const detectedType = await classifyFieldAsync(field);
+  const detectedType = classifyField(field);
   return generate(detectedType);
 }
