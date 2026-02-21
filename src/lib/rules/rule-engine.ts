@@ -8,20 +8,46 @@ import { generate, generateMoney, generateNumber } from "@/lib/generators";
 
 /**
  * Resolves the value for a single field, using this priority:
- * 1. Saved form with fixed data (exact match)
- * 2. Field-specific rule with fixed value
- * 3. Field-specific rule with generator
- * 4. AI / TensorFlow fallback
- * 5. Default generator based on detected field type
+ * 1. (optional) AI first — when forceAIFirst is true
+ * 2. Saved form with fixed data (exact match)
+ * 3. Field-specific rule with fixed value
+ * 4. Field-specific rule with generator
+ * 5. AI / TensorFlow fallback (all field types, not only "unknown")
+ * 6. Default generator based on detected field type
  */
 export async function resolveFieldValue(
   field: FormField,
   url: string,
   aiGenerateFn?: (field: FormField) => Promise<string>,
+  forceAIFirst = false,
 ): Promise<GenerationResult> {
   const selector = field.selector;
 
-  // 1. Check saved forms
+  const fieldDesc = `selector="${selector}" label="${field.label ?? ""}" type="${field.fieldType}"`;
+  console.log(
+    `[Fill All / Rule Engine] Resolvendo campo: ${fieldDesc}${forceAIFirst ? " [forceAIFirst=true]" : ""}`,
+  );
+
+  // 1. AI first (when flag is enabled)
+  if (forceAIFirst && aiGenerateFn) {
+    console.log(
+      `[Fill All / Rule Engine] Tentando AI primeiro (forceAIFirst)...`,
+    );
+    try {
+      const value = await aiGenerateFn(field);
+      if (value) {
+        console.log(
+          `[Fill All / Rule Engine] AI (forceAIFirst) gerou: "${value}"`,
+        );
+        return { fieldSelector: selector, value, source: "ai" };
+      }
+    } catch (err) {
+      console.warn(`[Fill All / Rule Engine] AI (forceAIFirst) falhou:`, err);
+      // Fall through to normal priority order
+    }
+  }
+
+  // 2. Check saved forms
   const savedForms = await getSavedFormsForUrl(url);
   for (const form of savedForms) {
     if (form.fields[selector]) {
@@ -110,18 +136,38 @@ export async function resolveFieldValue(
     }
   }
 
-  // 4. Try AI generation if available
-  if (aiGenerateFn && field.fieldType === "unknown") {
+  // 5. Try AI generation if available (all field types)
+  if (aiGenerateFn) {
+    console.log(
+      `[Fill All / Rule Engine] Tentando AI como fallback para campo: ${fieldDesc}`,
+    );
     try {
       const value = await aiGenerateFn(field);
-      if (value) return { fieldSelector: selector, value, source: "ai" };
-    } catch {
+      if (value) {
+        console.log(`[Fill All / Rule Engine] AI fallback gerou: "${value}"`);
+        return { fieldSelector: selector, value, source: "ai" };
+      }
+      console.warn(
+        `[Fill All / Rule Engine] AI fallback retornou vazio para: ${fieldDesc}`,
+      );
+    } catch (err) {
+      console.warn(
+        `[Fill All / Rule Engine] AI fallback falhou para: ${fieldDesc}`,
+        err,
+      );
       // Fall through to default generator
     }
+  } else {
+    console.log(
+      `[Fill All / Rule Engine] Sem função de AI disponível para: ${fieldDesc}`,
+    );
   }
 
-  // 5. Default generator
+  // 6. Default generator
   const value = generate(field.fieldType);
+  console.log(
+    `[Fill All / Rule Engine] Gerador padrão (${field.fieldType}): "${value}"`,
+  );
   return { fieldSelector: selector, value, source: "generator" };
 }
 

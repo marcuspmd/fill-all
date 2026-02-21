@@ -131,7 +131,12 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
     if (ignoredSelectors.has(field.selector)) continue;
 
     try {
-      const result = await resolveFieldValue(field, url, aiGenerateFn);
+      const result = await resolveFieldValue(
+        field,
+        url,
+        aiGenerateFn,
+        settings.forceAIFirst,
+      );
 
       applyValueToField(field, result.value);
 
@@ -203,7 +208,12 @@ export async function fillSingleField(
   const aiGenerateFn = await getAiFunction(settings);
 
   try {
-    const result = await resolveFieldValue(field, url, aiGenerateFn);
+    const result = await resolveFieldValue(
+      field,
+      url,
+      aiGenerateFn,
+      settings.forceAIFirst,
+    );
     applyValueToField(field, result.value);
 
     if (settings.highlightFilled) {
@@ -264,15 +274,30 @@ function applyValueToField(field: FormField, value: string): void {
 async function getAiFunction(
   settings: Settings,
 ): Promise<((field: FormField) => Promise<string>) | undefined> {
-  if (settings.useChromeAI && (await isChromeAiAvailable())) {
-    return chromeAiGenerate;
+  console.log(
+    `[Fill All / Form Filler] useChromeAI=${settings.useChromeAI} | defaultStrategy=${settings.defaultStrategy} | forceAIFirst=${settings.forceAIFirst}`,
+  );
+
+  if (settings.useChromeAI) {
+    const available = await isChromeAiAvailable();
+    console.log(`[Fill All / Form Filler] Chrome AI disponível: ${available}`);
+    if (available) {
+      console.log("[Fill All / Form Filler] Usando Chrome AI (Gemini Nano).");
+      return chromeAiGenerate;
+    }
   }
 
   // Fallback to TF.js-based generation
   if (settings.defaultStrategy === "tensorflow") {
+    console.log(
+      "[Fill All / Form Filler] Chrome AI indisponível — usando TensorFlow.js.",
+    );
     return async (field: FormField) => await generateWithTensorFlow(field);
   }
 
+  console.warn(
+    "[Fill All / Form Filler] Nenhuma função de AI configurada. Será usado apenas o gerador padrão.",
+  );
   return undefined;
 }
 

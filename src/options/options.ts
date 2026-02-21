@@ -27,6 +27,9 @@ async function loadSettings(): Promise<void> {
     settings.autoFillOnLoad;
   (document.getElementById("setting-chrome-ai") as HTMLInputElement).checked =
     settings.useChromeAI;
+  (
+    document.getElementById("setting-force-ai-first") as HTMLInputElement
+  ).checked = settings.forceAIFirst ?? false;
   (document.getElementById("setting-highlight") as HTMLInputElement).checked =
     settings.highlightFilled;
   (document.getElementById("setting-strategy") as HTMLSelectElement).value =
@@ -44,6 +47,9 @@ document
       ).checked,
       useChromeAI: (
         document.getElementById("setting-chrome-ai") as HTMLInputElement
+      ).checked,
+      forceAIFirst: (
+        document.getElementById("setting-force-ai-first") as HTMLInputElement
       ).checked,
       highlightFilled: (
         document.getElementById("setting-highlight") as HTMLInputElement

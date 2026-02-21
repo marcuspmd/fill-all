@@ -108,6 +108,8 @@ export interface Settings {
   defaultStrategy: "ai" | "tensorflow" | "random";
   /** Whether to use Chrome built-in AI when available */
   useChromeAI: boolean;
+  /** When true, AI is tried before saved forms, rules and generators */
+  forceAIFirst: boolean;
   /** Keyboard shortcut to trigger fill */
   shortcut: string;
   /** Locale for generated data */
@@ -165,6 +167,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoFillOnLoad: false,
   defaultStrategy: "ai",
   useChromeAI: true,
+  forceAIFirst: false,
   shortcut: "Alt+F",
   locale: "pt-BR",
   highlightFilled: true,
