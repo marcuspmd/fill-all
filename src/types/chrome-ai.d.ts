@@ -1,58 +1,54 @@
 /**
- * Chrome Built-in AI API type definitions
+ * Chrome Built-in AI — Prompt API type definitions
+ * New API (Chrome 131+): global `LanguageModel`
  * Based on: https://developer.chrome.com/docs/ai/get-started
  */
 
-declare namespace ai {
-  interface LanguageModelCapabilities {
-    available: "no" | "after-download" | "readily";
-    defaultTopK?: number;
-    maxTopK?: number;
-    defaultTemperature?: number;
-  }
+// ── New Prompt API (LanguageModel global) ─────────────────────────────────────
 
-  interface LanguageModelCreateOptions {
-    systemPrompt?: string;
-    initialPrompts?: Array<{
-      role: "system" | "user" | "assistant";
-      content: string;
-    }>;
-    topK?: number;
-    temperature?: number;
-    signal?: AbortSignal;
-  }
+type LanguageModelAvailability =
+  | "available"
+  | "downloadable"
+  | "downloading"
+  | "unavailable";
 
-  interface LanguageModelSession {
-    prompt(input: string, options?: { signal?: AbortSignal }): Promise<string>;
-    promptStreaming(
-      input: string,
-      options?: { signal?: AbortSignal },
-    ): ReadableStream<string>;
-    clone(): Promise<LanguageModelSession>;
-    destroy(): void;
-    tokensSoFar: number;
-    maxTokens: number;
-    tokensLeft: number;
-  }
-
-  interface LanguageModel {
-    capabilities(): Promise<LanguageModelCapabilities>;
-    create(options?: LanguageModelCreateOptions): Promise<LanguageModelSession>;
-  }
+interface LanguageModelAvailabilityOptions {
+  model?: string;
+  outputLanguage?: string;
 }
 
-interface WindowOrWorkerGlobalScope {
-  readonly ai: {
-    languageModel: ai.LanguageModel;
-  };
+interface LanguageModelCreateOptions {
+  model?: string;
+  systemPrompt?: string;
+  initialPrompts?: Array<{
+    role: "system" | "user" | "assistant";
+    content: string;
+  }>;
+  topK?: number;
+  temperature?: number;
+  signal?: AbortSignal;
+  outputLanguage?: string;
+  monitor?: (monitor: EventTarget) => void;
 }
 
-interface Window {
-  readonly ai: {
-    languageModel: ai.LanguageModel;
-  };
+interface LanguageModelSession {
+  prompt(input: string, options?: { signal?: AbortSignal }): Promise<string>;
+  promptStreaming(
+    input: string,
+    options?: { signal?: AbortSignal },
+  ): ReadableStream<string>;
+  clone(): Promise<LanguageModelSession>;
+  destroy(): void;
+  tokensUsed?: number;
+  maxTokens?: number;
+  tokensRemaining?: number;
 }
 
-declare const ai: {
-  languageModel: ai.LanguageModel;
-};
+interface LanguageModelStatic {
+  availability(
+    options?: LanguageModelAvailabilityOptions,
+  ): Promise<LanguageModelAvailability>;
+  create(options?: LanguageModelCreateOptions): Promise<LanguageModelSession>;
+}
+
+declare const LanguageModel: LanguageModelStatic;

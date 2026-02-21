@@ -21,6 +21,7 @@ import {
   toggleFloatingPanel,
 } from "@/lib/form/floating-panel";
 import { initFieldIcon } from "@/lib/form/field-icon";
+import { loadLearnedClassifications } from "@/lib/ai/tensorflow-generator";
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -234,3 +235,7 @@ function showNotification(text: string): void {
 
 // --- Init ---
 initFieldIcon();
+// Load AI-learned classifications so TF.js prototypes reflect real-world data.
+loadLearnedClassifications().catch(() => {
+  // Non-critical — silently ignore storage errors on init
+});

@@ -270,7 +270,7 @@ async function getAiFunction(
 
   // Fallback to TF.js-based generation
   if (settings.defaultStrategy === "tensorflow") {
-    return async (field: FormField) => generateWithTensorFlow(field);
+    return async (field: FormField) => await generateWithTensorFlow(field);
   }
 
   return undefined;
