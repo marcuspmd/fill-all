@@ -1,3 +1,26 @@
+/** How a field type was determined */
+export type DetectionMethod =
+  | "html-type"
+  | "keyword"
+  | "tensorflow"
+  | "chrome-ai"
+  | "html-fallback"
+  | "custom-select"
+  | "interactive"
+  | "user-override";
+
+/** Type of interactive/custom widget detected on the page */
+export type InteractiveFieldType =
+  | "date-picker"
+  | "time-picker"
+  | "rich-text"
+  | "slider"
+  | "toggle"
+  | "rating"
+  | "captcha"
+  | "color-picker"
+  | "autocomplete";
+
 /** Field types that the extension can detect and generate values for */
 export type FieldType =
   | "cpf"
@@ -39,6 +62,18 @@ export interface FormField {
   placeholder?: string;
   autocomplete?: string;
   required: boolean;
+  /** Which method produced fieldType */
+  detectionMethod?: DetectionMethod;
+  /** Confidence score 0–1 from TF.js or AI (1.0 for keyword/html-type) */
+  detectionConfidence?: number;
+  /** True when the field is a non-native interactive widget */
+  isInteractive?: boolean;
+  /** Sub-type for interactive widgets */
+  interactiveType?: InteractiveFieldType;
+  /** Normalised signals string used for classification (name+id+label+placeholder) */
+  contextSignals?: string;
+  /** Refined semantic type for <select>/<textarea> without changing fieldType */
+  contextualType?: FieldType;
 }
 
 /** Rule to define how a specific field should be filled on a specific site */

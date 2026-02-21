@@ -315,7 +315,7 @@ const NGRAM_SIZE = 3;
 
 // Minimum cosine similarity for TF.js prediction to be accepted.
 // Increase to be more conservative; decrease to allow fuzzier matches.
-const TF_THRESHOLD = 0.25;
+const TF_THRESHOLD = 0.7;
 
 // If TF.js cosine similarity is below this value, Chrome AI is consulted
 // to refine (or confirm) the classification result.
@@ -388,7 +388,7 @@ export async function loadLearnedClassifications(): Promise<void> {
 }
 
 /** Discard the cached classifier so it is rebuilt on the next call. */
-function invalidateClassifier(): void {
+export function invalidateClassifier(): void {
   _classifier = null;
 }
 
