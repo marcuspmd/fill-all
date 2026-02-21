@@ -354,6 +354,57 @@ function vectorize(text: string, vocab: Map<string, number>): Float32Array {
   return v;
 }
 
+// ── Pre-trained model (loaded from public/model/) ───────────────────────────
+// When available, this is preferred over the runtime prototype-vector approach.
+// Trained offline with `npm run train:model` using the labelled dataset.
+
+interface PretrainedState {
+  model: tf.LayersModel;
+  vocab: Map<string, number>;
+  labels: FieldType[];
+}
+
+let _pretrained: PretrainedState | null = null;
+let _pretrainedLoadPromise: Promise<void> | null = null;
+
+/**
+ * Loads the offline-trained TF.js model from the extension's model/ directory.
+ * Must be called once during content-script initialisation (non-blocking).
+ * Safe to call multiple times — subsequent calls are no-ops.
+ */
+export async function loadPretrainedModel(): Promise<void> {
+  if (_pretrained) return;
+  if (_pretrainedLoadPromise) return _pretrainedLoadPromise;
+
+  _pretrainedLoadPromise = (async () => {
+    try {
+      const base = chrome.runtime.getURL("model/");
+      const [model, vocabRaw, labelsRaw] = await Promise.all([
+        tf.loadLayersModel(`${base}model.json`),
+        fetch(`${base}vocab.json`).then(
+          (r) => r.json() as Promise<Record<string, number>>,
+        ),
+        fetch(`${base}labels.json`).then((r) => r.json() as Promise<string[]>),
+      ]);
+      _pretrained = {
+        model,
+        vocab: new Map(Object.entries(vocabRaw)),
+        labels: labelsRaw as FieldType[],
+      };
+      if (isDebugEnabled()) {
+        console.log(
+          `[Fill All] Pre-trained model loaded — ${labelsRaw.length} classes, vocab ${_pretrained.vocab.size} n-grams`,
+        );
+      }
+    } catch {
+      // Model artefacts not yet generated — runtime classifier is used instead.
+      // Run `npm run train:model` to generate public/model/.
+    }
+  })();
+
+  return _pretrainedLoadPromise;
+}
+
 // ── TF.js classifier singleton ───────────────────────────────────────────────
 // Built lazily on first call to classifyField. Uses TF.js tensors for the
 // matrix multiply (batch cosine similarity over all field-type prototypes).
@@ -446,14 +497,43 @@ function getClassifier(): TFClassifier {
 }
 
 /**
- * Classify field signals using TF.js cosine similarity.
- * Returns null if signals are empty or all similarities are below TF_THRESHOLD.
+ * Classify field signals using TF.js.
+ *
+ * Priority:
+ *   1. Pre-trained neural network (if model artefacts were generated).
+ *   2. Runtime prototype-vector classifier built from FIELD_TYPE_KEYWORDS.
+ *
+ * Returns null if signals are empty or confidence is below TF_THRESHOLD.
  */
 function tfSoftClassify(
   signals: string,
 ): { type: FieldType; score: number } | null {
   if (!signals.trim()) return null;
 
+  // ── Path A: pre-trained model ─────────────────────────────────────────────
+  if (_pretrained) {
+    const inputVec = vectorize(signals, _pretrained.vocab);
+    if (!inputVec.some((v) => v > 0)) return null;
+
+    const { bestIdx, bestScore } = tf.tidy(() => {
+      const input = tf.tensor2d([Array.from(inputVec)]);
+      const probs = (_pretrained!.model.predict(input) as tf.Tensor).dataSync();
+      let idx = 0;
+      let score = -1;
+      for (let i = 0; i < probs.length; i++) {
+        if (probs[i] > score) {
+          score = probs[i];
+          idx = i;
+        }
+      }
+      return { bestIdx: idx, bestScore: score };
+    });
+
+    if (bestScore < TF_THRESHOLD) return null;
+    return { type: _pretrained.labels[bestIdx], score: bestScore };
+  }
+
+  // ── Path B: runtime prototype-vector classifier (keyword-derived) ─────────
   const clf = getClassifier();
   const inputVec = vectorize(signals, clf.vocab);
   if (!inputVec.some((v) => v > 0)) return null;

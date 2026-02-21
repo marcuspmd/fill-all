@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "train:model": "tsx --tsconfig tsconfig.json scripts/train-model.ts"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0"
@@ -15,6 +16,8 @@
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.3.0",
     "@types/chrome": "^0.0.287",
+    "@types/node": "^22.19.11",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.3",
     "vite": "^7.3.1"
   },
