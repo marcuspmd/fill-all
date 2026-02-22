@@ -10,6 +10,9 @@
  */
 
 import type { FieldType } from "@/types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("RuntimeDataset");
 
 export const RUNTIME_DATASET_KEY = "fill_all_runtime_dataset";
 
@@ -63,9 +66,14 @@ export async function getDatasetCount(): Promise<number> {
  */
 export async function addDatasetEntry(
   entry: Omit<DatasetEntry, "id" | "createdAt">,
-): Promise<DatasetEntry> {
+): Promise<DatasetEntry | null> {
   const normalized = normalise(entry.signals);
-  if (!normalized) throw new Error("signals não pode ser vazio");
+  if (!normalized) {
+    log.warn(
+      "addDatasetEntry: signals está vazio após normalização — ignorando",
+    );
+    return null;
+  }
 
   const existing = await getDatasetEntries();
 

@@ -99,12 +99,9 @@ export class DetectionPipeline {
   async runAsync(field: FormField): Promise<PipelineResult> {
     const t0 = performance.now();
     for (const classifier of this.classifiers) {
-      console.log(`⏳ Executando ${classifier.name}...`);
       const result = classifier.detectAsync
         ? await classifier.detectAsync(field)
         : classifier.detect(field);
-
-      console.log("result", result);
 
       if (result !== null && result.type !== "unknown") {
         return {

@@ -185,7 +185,3 @@ export async function* streamAllFields(): AsyncGenerator<FormField> {
     yield field;
   }
 }
-
-export function detectForms(): HTMLFormElement[] {
-  return Array.from(document.querySelectorAll("form"));
-}

@@ -245,7 +245,8 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     case "ADD_IGNORED_FIELD": {
       const payload = parseIgnoredFieldPayload(message.payload);
       if (!payload) return { error: "Invalid payload for ADD_IGNORED_FIELD" };
-      return addIgnoredField(payload);
+      const ignored = await addIgnoredField(payload);
+      return ignored ?? { error: "Failed to add ignored field" };
     }
 
     case "REMOVE_IGNORED_FIELD":
@@ -323,6 +324,7 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
         return { error: "Invalid payload for ADD_DATASET_ENTRY" };
       }
       const added = await addDatasetEntry(entry);
+      if (!added) return { error: "Failed to add dataset entry" };
       // Keep learning store in sync with the dataset
       await storeLearnedEntry(added.signals, added.type, undefined, "auto");
       void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });

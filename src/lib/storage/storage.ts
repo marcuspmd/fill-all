@@ -12,6 +12,9 @@ import type {
 } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 import { matchUrlPattern } from "@/lib/url/match-url-pattern";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("Storage");
 
 const STORAGE_KEYS = {
   RULES: "fill_all_rules",
@@ -23,6 +26,7 @@ const STORAGE_KEYS = {
 type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
 
 const MAX_FIELD_CACHE_ENTRIES = 100;
+const WRITE_TIMEOUT_MS = 30_000;
 const writeQueues = new Map<StorageKey, Promise<void>>();
 
 async function getFromStorage<T>(key: string, defaultValue: T): Promise<T> {
@@ -32,6 +36,17 @@ async function getFromStorage<T>(key: string, defaultValue: T): Promise<T> {
 
 async function setToStorage<T>(key: string, value: T): Promise<void> {
   await chrome.storage.local.set({ [key]: value });
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`Storage write timeout (${ms}ms)`)),
+      ms,
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 async function updateStorageAtomically<T>(
@@ -48,11 +63,15 @@ async function updateStorageAtomically<T>(
     await setToStorage(key, nextValue);
   });
 
+  const guardedWrite = withTimeout(currentWrite, WRITE_TIMEOUT_MS).catch(
+    (err) => {
+      log.warn(`Atomic update for key "${key}" failed:`, err);
+    },
+  );
+
   writeQueues.set(
     key,
-    currentWrite.catch(() => {
-      // Keep queue alive after errors.
-    }),
+    guardedWrite.then(() => {}),
   );
 
   await currentWrite;
@@ -66,23 +85,29 @@ export async function getRules(): Promise<FieldRule[]> {
 }
 
 export async function saveRule(rule: FieldRule): Promise<void> {
-  await updateStorageAtomically(STORAGE_KEYS.RULES, [] as FieldRule[], (rules) => {
-    const next = [...rules];
-    const existingIndex = next.findIndex((r) => r.id === rule.id);
+  await updateStorageAtomically(
+    STORAGE_KEYS.RULES,
+    [] as FieldRule[],
+    (rules) => {
+      const next = [...rules];
+      const existingIndex = next.findIndex((r) => r.id === rule.id);
 
-    if (existingIndex >= 0) {
-      next[existingIndex] = { ...rule, updatedAt: Date.now() };
-    } else {
-      next.push({ ...rule, createdAt: Date.now(), updatedAt: Date.now() });
-    }
+      if (existingIndex >= 0) {
+        next[existingIndex] = { ...rule, updatedAt: Date.now() };
+      } else {
+        next.push({ ...rule, createdAt: Date.now(), updatedAt: Date.now() });
+      }
 
-    return next;
-  });
+      return next;
+    },
+  );
 }
 
 export async function deleteRule(ruleId: string): Promise<void> {
-  await updateStorageAtomically(STORAGE_KEYS.RULES, [] as FieldRule[], (rules) =>
-    rules.filter((r) => r.id !== ruleId),
+  await updateStorageAtomically(
+    STORAGE_KEYS.RULES,
+    [] as FieldRule[],
+    (rules) => rules.filter((r) => r.id !== ruleId),
   );
 }
 
@@ -153,7 +178,7 @@ export async function getIgnoredFields(): Promise<IgnoredField[]> {
 
 export async function addIgnoredField(
   field: Omit<IgnoredField, "id" | "createdAt">,
-): Promise<IgnoredField> {
+): Promise<IgnoredField | null> {
   let resolvedField: IgnoredField | null = null;
 
   await updateStorageAtomically(
@@ -180,7 +205,8 @@ export async function addIgnoredField(
   );
 
   if (!resolvedField) {
-    throw new Error("Failed to resolve ignored field");
+    log.warn("Failed to resolve ignored field — returning null");
+    return null;
   }
   return resolvedField;
 }
@@ -202,8 +228,13 @@ export async function getIgnoredFieldsForUrl(
 
 // --- Field Detection Cache ---
 
-export async function getFieldDetectionCache(): Promise<FieldDetectionCacheEntry[]> {
-  return getFromStorage<FieldDetectionCacheEntry[]>(STORAGE_KEYS.FIELD_CACHE, []);
+export async function getFieldDetectionCache(): Promise<
+  FieldDetectionCacheEntry[]
+> {
+  return getFromStorage<FieldDetectionCacheEntry[]>(
+    STORAGE_KEYS.FIELD_CACHE,
+    [],
+  );
 }
 
 export async function getFieldDetectionCacheForUrl(
@@ -217,8 +248,9 @@ export async function getFieldDetectionCacheForUrl(
   try {
     const u = new URL(url);
     return (
-      entries.find((entry) => entry.origin === u.origin && entry.path === u.pathname) ??
-      null
+      entries.find(
+        (entry) => entry.origin === u.origin && entry.path === u.pathname,
+      ) ?? null
     );
   } catch {
     return null;
@@ -271,7 +303,9 @@ export async function saveFieldDetectionCacheForUrl(
   return entry;
 }
 
-export async function deleteFieldDetectionCacheForUrl(url: string): Promise<void> {
+export async function deleteFieldDetectionCacheForUrl(
+  url: string,
+): Promise<void> {
   await updateStorageAtomically(
     STORAGE_KEYS.FIELD_CACHE,
     [] as FieldDetectionCacheEntry[],

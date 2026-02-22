@@ -37,7 +37,7 @@ export async function isAvailable(): Promise<boolean> {
   }
 }
 
-export async function getSession(): Promise<LanguageModelSession> {
+export async function getSession(): Promise<LanguageModelSession | null> {
   if (session) {
     log.debug("Reutilizando sessão existente.");
     return session;
@@ -53,10 +53,18 @@ export async function getSession(): Promise<LanguageModelSession> {
 - For emails, use realistic-looking addresses
 - Keep values concise and appropriate for the field`;
 
-  if (!newApi) throw new Error("Chrome AI is not available");
+  if (!newApi) {
+    log.warn("Chrome AI API não encontrada — sessão não criada.");
+    return null;
+  }
 
   const avail = await newApi.availability({ outputLanguage: "en" });
-  if (avail === "unavailable") throw new Error("Chrome AI is not available");
+  if (avail === "unavailable") {
+    log.warn(
+      "Chrome AI indisponível (status: unavailable) — sessão não criada.",
+    );
+    return null;
+  }
   session = await newApi.create({ systemPrompt, outputLanguage: "en" });
   log.debug("Sessão criada com sucesso.");
   return session!;
@@ -68,6 +76,10 @@ export async function generateFieldValue(field: FormField): Promise<string> {
   );
 
   const aiSession = await getSession();
+  if (!aiSession) {
+    log.warn("Sessão Chrome AI indisponível — não é possível gerar valor.");
+    return "";
+  }
 
   const context = [
     field.label && `Label: ${field.label}`,

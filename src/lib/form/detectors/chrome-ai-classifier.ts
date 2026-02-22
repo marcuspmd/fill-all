@@ -118,7 +118,8 @@ async function getOrCreateSession(): Promise<LanguageModelSession | null> {
     });
 
     return classifierSession;
-  } catch {
+  } catch (err) {
+    log.warn("Falha ao criar sessão Chrome AI:", err);
     return null;
   }
 }
