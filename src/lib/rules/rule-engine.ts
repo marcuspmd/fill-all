@@ -2,9 +2,13 @@
  * Rule engine — determines which value to use for a given field
  */
 
-import type { FieldRule, FormField, GenerationResult } from "@/types";
+import type { FieldRule, FormField, GenerationResult, FieldType } from "@/types";
 import { getRulesForUrl, getSavedFormsForUrl } from "@/lib/storage/storage";
 import { generate, generateMoney, generateNumber } from "@/lib/generators";
+import {
+  adaptGeneratedValue,
+  generateWithConstraints,
+} from "@/lib/generators/adaptive";
 
 /**
  * Resolves the value for a single field, using this priority:
@@ -34,7 +38,11 @@ export async function resolveFieldValue(
       `[Fill All / Rule Engine] Tentando AI primeiro (forceAIFirst)...`,
     );
     try {
-      const value = await aiGenerateFn(field);
+      const aiValue = await aiGenerateFn(field);
+      const value = adaptGeneratedValue(aiValue, {
+        element: field.element,
+        requireValidity: true,
+      });
       if (value) {
         console.log(
           `[Fill All / Rule Engine] AI (forceAIFirst) gerou: "${value}"`,
@@ -118,29 +126,47 @@ export async function resolveFieldValue(
       matchingRule.generator !== "ai" &&
       matchingRule.generator !== "tensorflow"
     ) {
+      const ruleGenerator = matchingRule.generator as FieldType;
       let value: string;
-      if (matchingRule.generator === "money") {
-        value = generateMoney(matchingRule.moneyMin, matchingRule.moneyMax);
-      } else if (matchingRule.generator === "number") {
-        value = generateNumber(matchingRule.numberMin, matchingRule.numberMax);
+      if (ruleGenerator === "money") {
+        value = generateWithConstraints(
+          () => generateMoney(matchingRule.moneyMin, matchingRule.moneyMax),
+          { element: field.element, requireValidity: false },
+        );
+      } else if (ruleGenerator === "number") {
+        value = generateWithConstraints(
+          () => generateNumber(matchingRule.numberMin, matchingRule.numberMax),
+          { element: field.element, requireValidity: false },
+        );
       } else {
-        value = generate(matchingRule.generator);
+        value = generateWithConstraints(
+          () => generate(ruleGenerator),
+          { element: field.element, requireValidity: false },
+        );
       }
       return { fieldSelector: selector, value, source: "generator" };
     }
 
     // If the rule says to use AI
     if (matchingRule.generator === "ai" && aiGenerateFn) {
-      const value = await aiGenerateFn(field);
+      const aiValue = await aiGenerateFn(field);
+      const value = adaptGeneratedValue(aiValue, {
+        element: field.element,
+        requireValidity: false,
+      });
       return { fieldSelector: selector, value, source: "ai" };
     }
   }
 
   // 5. Default generator based on detected field type
-  const value = generate(field.fieldType);
+  const effectiveType = getEffectiveFieldType(field);
+  const value = generateWithConstraints(() => generate(effectiveType), {
+    element: field.element,
+    requireValidity: true,
+  });
   if (value) {
     console.log(
-      `[Fill All / Rule Engine] Gerador padrão (${field.fieldType}): "${value}"`,
+      `[Fill All / Rule Engine] Gerador padrão (${effectiveType}): "${value}"`,
     );
     return { fieldSelector: selector, value, source: "generator" };
   }
@@ -185,11 +211,15 @@ export async function resolveFieldValue(
     );
     try {
       const aiValue = await aiGenerateFn(field);
-      if (aiValue) {
+      const adaptedAiValue = adaptGeneratedValue(aiValue, {
+        element: field.element,
+        requireValidity: true,
+      });
+      if (adaptedAiValue) {
         console.log(
-          `[Fill All / Rule Engine] AI (último recurso) gerou: "${aiValue}"`,
+          `[Fill All / Rule Engine] AI (último recurso) gerou: "${adaptedAiValue}"`,
         );
-        return { fieldSelector: selector, value: aiValue, source: "ai" };
+        return { fieldSelector: selector, value: adaptedAiValue, source: "ai" };
       }
       console.warn(
         `[Fill All / Rule Engine] AI (último recurso) retornou vazio para: ${fieldDesc}`,
@@ -203,6 +233,18 @@ export async function resolveFieldValue(
   }
 
   return { fieldSelector: selector, value: value || "", source: "generator" };
+}
+
+function getEffectiveFieldType(field: FormField): FieldType {
+  if (
+    (field.fieldType === "unknown" || field.fieldType === "select") &&
+    field.contextualType &&
+    field.contextualType !== "unknown" &&
+    field.contextualType !== "select"
+  ) {
+    return field.contextualType;
+  }
+  return field.fieldType;
 }
 
 function findMatchingRule(

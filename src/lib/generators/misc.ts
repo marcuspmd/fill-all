@@ -2,6 +2,9 @@
  * Miscellaneous generators: password, username, number
  */
 
+import { generateCpf } from "./cpf";
+import { generateCnpj } from "./cnpj";
+
 function randomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -147,12 +150,8 @@ export function generateJobTitle(): string {
 }
 
 export function generateCpfCnpj(): string {
-  // Randomly returns either a CPF or a CNPJ (both unformatted)
-  // Actual digit generation reuses the dedicated generators
-  // but we return a placeholder here; the filler resolves via its own registry
-  return Math.random() < 0.6
-    ? `${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 90 + 10)}`
-    : `${Math.floor(Math.random() * 90 + 10)}.${Math.floor(Math.random() * 900 + 100)}.${Math.floor(Math.random() * 900 + 100)}/${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 90 + 10)}`;
+  // CPF is slightly more common in public forms than CNPJ.
+  return Math.random() < 0.6 ? generateCpf(true) : generateCnpj(true);
 }
 
 export function generateEmployeeCount(): string {

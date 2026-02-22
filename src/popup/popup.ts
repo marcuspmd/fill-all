@@ -11,6 +11,7 @@ import type {
   SavedForm,
 } from "@/types";
 import { generate, generateMoney, generateNumber } from "@/lib/generators";
+import { generateWithConstraints } from "@/lib/generators/adaptive";
 
 async function sendToActiveTab(message: ExtensionMessage): Promise<unknown> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -562,9 +563,13 @@ document.querySelectorAll("[data-generator]").forEach((btn) => {
       const max = parseFloat(
         (document.getElementById("money-max") as HTMLInputElement)?.value,
       );
-      value = generateMoney(
-        isNaN(min) ? cfg.min : min,
-        isNaN(max) ? cfg.max : max,
+      value = generateWithConstraints(
+        () =>
+          generateMoney(
+            isNaN(min) ? cfg.min : min,
+            isNaN(max) ? cfg.max : max,
+          ),
+        { requireValidity: true },
       );
     } else if (type === "number") {
       const cfg = await getNumberCfg();
@@ -576,12 +581,18 @@ document.querySelectorAll("[data-generator]").forEach((btn) => {
         (document.getElementById("number-max") as HTMLInputElement)?.value,
         10,
       );
-      value = generateNumber(
-        isNaN(min) ? cfg.min : min,
-        isNaN(max) ? cfg.max : max,
+      value = generateWithConstraints(
+        () =>
+          generateNumber(
+            isNaN(min) ? cfg.min : min,
+            isNaN(max) ? cfg.max : max,
+          ),
+        { requireValidity: true },
       );
     } else {
-      value = generate(type);
+      value = generateWithConstraints(() => generate(type), {
+        requireValidity: true,
+      });
     }
 
     const container = document.getElementById("generated-value")!;
