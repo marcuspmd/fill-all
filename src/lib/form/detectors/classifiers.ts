@@ -199,7 +199,7 @@ export async function detectNativeFieldsAsync(): Promise<FormField[]> {
 
     field.contextSignals = buildSignals(field);
 
-      const result = await _activePipeline.runAsync(field);
+    const result = await _activePipeline.runAsync(field);
     field.detectionConfidence = result.confidence;
     field.detectionDurationMs = result.durationMs;
 

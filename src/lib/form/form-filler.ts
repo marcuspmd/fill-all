@@ -263,7 +263,10 @@ export async function fillSingleField(
     applyValueToField(field, result.value);
 
     if (settings.highlightFilled) {
-      highlightField(field.element, field.label ?? field.fieldType ?? undefined);
+      highlightField(
+        field.element,
+        field.label ?? field.fieldType ?? undefined,
+      );
     }
 
     return result;

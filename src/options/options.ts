@@ -76,9 +76,7 @@ async function loadSettings(): Promise<void> {
     document.getElementById("setting-show-field-icon") as HTMLInputElement
   ).checked = settings.showFieldIcon ?? true;
   (
-    document.getElementById(
-      "setting-field-icon-position",
-    ) as HTMLSelectElement
+    document.getElementById("setting-field-icon-position") as HTMLSelectElement
   ).value = settings.fieldIconPosition ?? "inside";
 
   // Detection pipeline
@@ -147,11 +145,14 @@ const STRATEGY_LABELS: Record<string, string> = {
 };
 
 const STRATEGY_DESCRIPTIONS: Record<string, string> = {
-  "html-type": "Detecção determinística por type/tag HTML (email, number, date…)",
+  "html-type":
+    "Detecção determinística por type/tag HTML (email, number, date…)",
   keyword: "Detecção por palavras-chave no nome/id/label (cpf, cnpj, nome…)",
   tensorflow: "Classificação por modelo de ML com n-gramas de caractere",
-  "chrome-ai": "Geração via Gemini Nano embutido no Chrome (requer Chrome 131+)",
-  "html-fallback": "Fallback final: mapeamento básico de input[type] → FieldType",
+  "chrome-ai":
+    "Geração via Gemini Nano embutido no Chrome (requer Chrome 131+)",
+  "html-fallback":
+    "Fallback final: mapeamento básico de input[type] → FieldType",
 };
 
 let _dragSrcIdx: number | null = null;
@@ -159,15 +160,15 @@ let _dragSrcIdx: number | null = null;
 function getPipelineFromDOM(): DetectionStrategyEntry[] {
   const list = document.getElementById("strategy-list");
   if (!list) return [];
-  return Array.from(
-    list.querySelectorAll<HTMLElement>(".strategy-item"),
-  ).map((item) => {
-    const toggle = item.querySelector<HTMLInputElement>(".strategy-toggle");
-    return {
-      name: toggle?.dataset.name ?? "",
-      enabled: toggle?.checked ?? true,
-    };
-  });
+  return Array.from(list.querySelectorAll<HTMLElement>(".strategy-item")).map(
+    (item) => {
+      const toggle = item.querySelector<HTMLInputElement>(".strategy-toggle");
+      return {
+        name: toggle?.dataset.name ?? "",
+        enabled: toggle?.checked ?? true,
+      };
+    },
+  );
 }
 
 function renderStrategyList(pipeline: DetectionStrategyEntry[]): void {
