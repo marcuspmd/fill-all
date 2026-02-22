@@ -47,11 +47,11 @@ const TF_THRESHOLD = 0.4;
 
 // Minimum cosine similarity for a learned entry to be used.
 // Higher than TF_THRESHOLD because learned data is trusted (Chrome AI + user corrections).
-const LEARNED_THRESHOLD = 0.75;
+const LEARNED_THRESHOLD = 0.6;
 
 function charNgrams(text: string): string[] {
   const normalized = text
-    .toLowerCase() 
+    .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[_\-/.]+/g, " ")

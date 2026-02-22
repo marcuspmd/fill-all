@@ -2,13 +2,14 @@
  * Chrome AI Field Classifier
  *
  * Uses the Chrome Built-in Language API (Gemini Nano, Chrome 131+) to classify
- * form fields via a structured JSON prompt.
+ * form fields via a structured JSON prompt that includes the element's raw HTML.
  *
  * Pipeline position: after TensorFlow, before html-fallback.
  *
  * Sync `detect()` always returns null — this classifier is async-only.
- * Async `detectAsync()` sends field context to the AI and parses the JSON
- * response back into a { fieldType, confidence } result.
+ * Async `detectAsync()` sends field HTML context to the AI, parses the JSON
+ * response back into a { fieldType, confidence, generatorType } result, and
+ * persists the classification to the learning store so TF.js can retrain.
  *
  * On any error (AI unavailable, timeout, parse failure) it returns null so
  * the pipeline continues to the html-fallback classifier.
@@ -16,10 +17,12 @@
 
 import type { FormField, FieldType } from "@/types";
 import type { FieldClassifier, ClassifierResult } from "./pipeline";
+import { storeLearnedEntry } from "@/lib/ai/learning-store";
+import { invalidateClassifier } from "@/lib/ai/tensorflow-generator";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const CLASSIFY_TIMEOUT_MS = 3000;
+const CLASSIFY_TIMEOUT_MS = 60000;
 const MIN_CONFIDENCE = 0.6;
 
 const VALID_FIELD_TYPES = new Set<string>([
@@ -53,27 +56,40 @@ const VALID_FIELD_TYPES = new Set<string>([
 ]);
 
 /**
- * System prompt instructs the model to act as a field-type classifier and to
- * respond exclusively with a JSON object — no prose, no markdown, no extras.
+ * Inline instructions embedded in every prompt so the model always has context,
+ * regardless of whether the Chrome AI session supports systemPrompt.
+ * This is the only reliable way to enforce JSON-only output with Gemini Nano.
  */
-const SYSTEM_PROMPT = `You are a form field type classifier for Brazilian web forms.
-Given context about an HTML form field (label, name, id, placeholder, autocomplete, HTML type),
-determine the semantic type of the field.
+const INLINE_INSTRUCTIONS = `You are a form field type classifier for Brazilian web forms.
+You will receive the raw HTML of an input element and its surrounding container.
+Determine the semantic type of the field and which data generator should fill it.
 
-Respond ONLY with a JSON object in this exact format (no other text):
-{"fieldType": "<type>", "confidence": <number>}
+You MUST respond ONLY with a JSON object in this exact format — no other text, no markdown, no explanation:
+{"fieldType": "<type>", "confidence": <number>, "generatorType": "<generator>"}
 
-Valid types:
+Valid fieldType values:
+cpf, cnpj, email, phone, name, first-name, last-name, full-name,
+address, street, city, state, zip-code, cep, date, birth-date,
+number, password, username, company, rg, text, money,
+select, checkbox, radio, unknown
+
+Valid generatorType values (same list — pick the most specific generator):
 cpf, cnpj, email, phone, name, first-name, last-name, full-name,
 address, street, city, state, zip-code, cep, date, birth-date,
 number, password, username, company, rg, text, money,
 select, checkbox, radio, unknown
 
 Rules:
-- Return ONLY the JSON, nothing else.
-- confidence is a float between 0 and 1.
+- Return ONLY the JSON object, nothing else. No introductory text.
+- confidence is a float between 0.0 and 1.0.
 - Use "unknown" when the field purpose is unclear.
-- Only return confidence >= ${MIN_CONFIDENCE} when you are reasonably sure.`;
+- Only return confidence >= ${MIN_CONFIDENCE} when you are reasonably sure.
+- generatorType should match the most specific generator for the field
+  (e.g. for a birth date field use "birth-date", not just "date").
+- Analyse HTML attributes (name, id, placeholder, class, aria-label, autocomplete)
+  as well as visible label text to determine the field purpose.
+
+Example output: {"fieldType": "email", "confidence": 0.98, "generatorType": "email"}`;
 
 // ── Session management ────────────────────────────────────────────────────────
 
@@ -94,7 +110,6 @@ async function getOrCreateSession(): Promise<LanguageModelSession | null> {
     if (avail === "unavailable") return null;
 
     classifierSession = await LanguageModelAPI.create({
-      systemPrompt: SYSTEM_PROMPT,
       outputLanguage: "en",
     });
 
@@ -114,22 +129,70 @@ export function destroyClassifierSession(): void {
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
 
+/** Maximum characters to include from outerHTML to keep prompts concise. */
+const MAX_ELEMENT_HTML_CHARS = 600;
+const MAX_CONTEXT_HTML_CHARS = 500;
+
+/**
+ * Extracts the relevant surrounding container HTML for a field element.
+ * Walks up the DOM looking for a wrapping label, fieldset or common
+ * form-group patterns. Returns null when none is found.
+ */
+function getContextHtml(el: HTMLElement): string | null {
+  const container =
+    el.closest<HTMLElement>(
+      'label, fieldset, [class*="field"], [class*="group"], [class*="form-"], [class*="input-wrap"]',
+    ) ?? el.parentElement;
+
+  if (!container || container === el) return null;
+
+  // Avoid returning the entire <form> or <body>
+  if (
+    container.tagName === "FORM" ||
+    container.tagName === "BODY" ||
+    container.tagName === "MAIN"
+  ) {
+    return null;
+  }
+
+  const raw = container.outerHTML;
+  if (raw.length <= MAX_CONTEXT_HTML_CHARS) return raw;
+  return raw.slice(0, MAX_CONTEXT_HTML_CHARS) + "…";
+}
+
 function buildPrompt(field: FormField): string {
-  const lines: string[] = [];
+  const sections: string[] = [];
 
-  if (field.contextSignals) lines.push(`Signals: ${field.contextSignals}`);
+  // ── Section 1: raw element HTML ───────────────────────────────────────────
+  const elementHtml = field.element.outerHTML;
+  sections.push(
+    `=== Element HTML ===\n${elementHtml.length > MAX_ELEMENT_HTML_CHARS ? elementHtml.slice(0, MAX_ELEMENT_HTML_CHARS) + "…" : elementHtml}`,
+  );
 
-  const inputType = (field.element as HTMLInputElement).type;
-  if (inputType && inputType !== "text") lines.push(`HTML type: ${inputType}`);
+  // ── Section 2: surrounding container HTML (label + field wrapper) ─────────
+  const contextHtml = getContextHtml(field.element as HTMLElement);
+  if (contextHtml) {
+    sections.push(`=== Surrounding HTML (container) ===\n${contextHtml}`);
+  }
 
-  if (field.autocomplete) lines.push(`Autocomplete: ${field.autocomplete}`);
+  // ── Section 3: pre-computed text signals (normalised label / name / id …) ──
+  if (field.contextSignals?.trim()) {
+    sections.push(`=== Field Signals ===\n${field.contextSignals}`);
+  }
 
-  return `Classify this form field:\n${lines.join("\n")}`;
+  // Inline instructions are always embedded to ensure JSON-only output,
+  // since Gemini Nano may ignore session-level systemPrompt in some Chrome builds.
+  return `${INLINE_INSTRUCTIONS}\n\nClassify this form field:\n\n${sections.join("\n\n")}`;
 }
 
 // ── Response parser ───────────────────────────────────────────────────────────
 
-function parseResponse(raw: string): ClassifierResult | null {
+interface AiClassifierResult extends ClassifierResult {
+  /** Generator the AI recommended for this field. */
+  generatorType: FieldType;
+}
+
+function parseResponse(raw: string): AiClassifierResult | null {
   try {
     // Extract the first JSON-like object from the response, even if the model
     // adds surrounding text despite instructions.
@@ -139,6 +202,7 @@ function parseResponse(raw: string): ClassifierResult | null {
     const parsed = JSON.parse(match[0]) as {
       fieldType?: unknown;
       confidence?: unknown;
+      generatorType?: unknown;
     };
 
     if (
@@ -155,7 +219,14 @@ function parseResponse(raw: string): ClassifierResult | null {
     // Discard low-confidence and "unknown" results — let the fallback handle them.
     if (type === "unknown" || confidence < MIN_CONFIDENCE) return null;
 
-    return { type, confidence };
+    // generatorType — must be a valid FieldType; falls back to fieldType.
+    const rawGenerator =
+      typeof parsed.generatorType === "string" &&
+      VALID_FIELD_TYPES.has(parsed.generatorType)
+        ? (parsed.generatorType as FieldType)
+        : type;
+
+    return { type, confidence, generatorType: rawGenerator };
   } catch {
     return null;
   }
@@ -175,7 +246,9 @@ export const chromeAiClassifier: FieldClassifier = {
   },
 
   /**
-   * Async path — sends field context to Gemini Nano and parses the JSON reply.
+   * Async path — sends field HTML context to Gemini Nano and parses the JSON
+   * reply. On success, persists the classification to the learning store so
+   * TF.js prototype vectors are updated for future page loads.
    * Returns null on unavailability, timeout, or parse failure.
    */
   async detectAsync(field: FormField): Promise<ClassifierResult | null> {
@@ -193,8 +266,17 @@ export const chromeAiClassifier: FieldClassifier = {
 
       let raw: string;
       try {
+        console.log(
+          `[Fill All / Chrome AI Classifier] Prompt for "${field.contextSignals ?? field.name ?? field.id}":\n${prompt}`,
+        );
         raw = await session.prompt(prompt, { signal: controller.signal });
+        console.log(
+          `[Fill All / Chrome AI Classifier] Raw response for "${field.contextSignals ?? field.name ?? field.id}":\n${raw}`,
+        );
       } finally {
+        console.debug(
+          `[Fill All / Chrome AI Classifier] Response for "${field.contextSignals ?? field.name ?? field.id}":\n${prompt ?? "(no response)"}`,
+        );
         clearTimeout(timeoutId);
       }
 
@@ -202,17 +284,39 @@ export const chromeAiClassifier: FieldClassifier = {
 
       if (result) {
         console.log(
-          `[Fill All / Chrome AI Classifier] "${field.contextSignals ?? field.name ?? field.id}" → ${result.type} (${(result.confidence * 100).toFixed(0)}%)`,
+          `[Fill All / Chrome AI Classifier] "${field.contextSignals ?? field.name ?? field.id}" → ${result.type} (generator: ${result.generatorType}, ${(result.confidence * 100).toFixed(0)}%)`,
         );
+
+        // ── Persist to learning store ─────────────────────────────────────
+        // This allows TF.js to retrain using Chrome AI classifications so
+        // future page loads benefit without hitting the AI every time.
+        const signals = field.contextSignals ?? "";
+        if (signals) {
+          storeLearnedEntry(signals, result.type, result.generatorType)
+            .then(() => invalidateClassifier())
+            .catch(() => {
+              /* non-critical — ignore storage errors */
+            });
+        }
       }
 
-      return result;
+      // Return only the base ClassifierResult to keep the pipeline interface clean.
+      return result
+        ? { type: result.type, confidence: result.confidence }
+        : null;
     } catch (err) {
-      // AbortError = timeout; silently skip. Other errors get a warning.
-      if (err instanceof Error && err.name !== "AbortError") {
+      if (err instanceof Error && err.name === "AbortError") {
+        // Timeout — log so the user can see what happened in DevTools.
+        console.warn(
+          `[Fill All / Chrome AI Classifier] ⏱ Timeout (${CLASSIFY_TIMEOUT_MS}ms) para "${field.contextSignals ?? field.name ?? field.id}" — passando para html-fallback`,
+        );
+      } else {
         // Session may be broken — reset so next call creates a fresh one.
         classifierSession = null;
-        console.warn("[Fill All / Chrome AI Classifier] Erro:", err.message);
+        console.warn(
+          "[Fill All / Chrome AI Classifier] Erro:",
+          (err as Error).message,
+        );
       }
       return null;
     }

@@ -18,6 +18,11 @@ export interface LearnedEntry {
   /** Normalised field signals used to produce the classification. */
   signals: string;
   type: FieldType;
+  /**
+   * Which generator the AI recommended for this field type.
+   * Defaults to `type` when not provided (backward-compatible).
+   */
+  generatorType?: FieldType;
   timestamp: number;
 }
 
@@ -35,16 +40,25 @@ function normaliseSignals(input: string): string {
  * Persist a new signal→type mapping.
  * Deduplicates by `signals` string — if the same signal set was already
  * stored, its entry is updated (type + timestamp). Caps at MAX_LEARNED_ENTRIES.
+ *
+ * @param generatorType - Optional explicit generator type recommended by the AI.
+ *   Defaults to `type` when omitted.
  */
 export async function storeLearnedEntry(
   signals: string,
   type: FieldType,
+  generatorType?: FieldType,
 ): Promise<void> {
   const normalized = normaliseSignals(signals);
   if (!normalized) return;
   const existing = await getLearnedEntries();
   const filtered = existing.filter((e) => e.signals !== normalized);
-  filtered.push({ signals: normalized, type, timestamp: Date.now() });
+  filtered.push({
+    signals: normalized,
+    type,
+    generatorType: generatorType ?? type,
+    timestamp: Date.now(),
+  });
   // Keep only the most recent MAX_LEARNED_ENTRIES
   const trimmed = filtered.slice(-MAX_LEARNED_ENTRIES);
   await chrome.storage.local.set({ [LEARNED_STORAGE_KEY]: trimmed });
@@ -90,7 +104,9 @@ export function buildSignalsFromRule(rule: FieldRule): string {
 }
 
 /** Rebuild learned entries from the currently configured rules. */
-export async function retrainLearnedFromRules(rules: FieldRule[]): Promise<number> {
+export async function retrainLearnedFromRules(
+  rules: FieldRule[],
+): Promise<number> {
   await clearLearnedEntries();
 
   let imported = 0;

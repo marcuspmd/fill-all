@@ -138,6 +138,12 @@ const KEYWORD_RULES: KeywordRule[] = [
   },
   { patterns: ["nome"], type: "name", wholeWord: true },
 
+  // // ── Email ─────────────────────────────────────────────────────────────────
+  // {
+  //   patterns: ["email", "e-mail", "e_mail", "emailaddress", "email address"],
+  //   type: "email",
+  // },
+
   // ── Phone / communication ─────────────────────────────────────────────────
   { patterns: ["whatsapp", "zap"], type: "phone" },
   {
