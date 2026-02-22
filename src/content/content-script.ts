@@ -95,18 +95,6 @@ async function handleContentMessage(
     case "FILL_ALL_FIELDS": {
       const results = await fillAllFields();
       showNotification(`✓ ${results.length} campos preenchidos`);
-
-      // Auto-start watcher to detect dynamic form changes after fill
-      if (!isWatcherActive()) {
-        startWatching((newFieldsCount) => {
-          if (newFieldsCount > 0) {
-            showNotification(
-              `🔄 ${newFieldsCount} novo(s) campo(s) detectado(s) — re-preenchendo...`,
-            );
-          }
-        }, true);
-      }
-
       return { success: true, filled: results.length };
     }
 
