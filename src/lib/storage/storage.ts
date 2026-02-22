@@ -2,7 +2,14 @@
  * Chrome Storage wrapper for rules
  */
 
-import type { FieldRule, SavedForm, Settings, IgnoredField } from "@/types";
+import type {
+  FieldRule,
+  SavedForm,
+  Settings,
+  IgnoredField,
+  FieldDetectionCacheEntry,
+  DetectedFieldSummary,
+} from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 
 const STORAGE_KEYS = {
@@ -10,7 +17,10 @@ const STORAGE_KEYS = {
   SAVED_FORMS: "fill_all_saved_forms",
   SETTINGS: "fill_all_settings",
   IGNORED_FIELDS: "fill_all_ignored_fields",
+  FIELD_CACHE: "fill_all_field_cache",
 } as const;
+
+const MAX_FIELD_CACHE_ENTRIES = 100;
 
 async function getFromStorage<T>(key: string, defaultValue: T): Promise<T> {
   const result = await chrome.storage.local.get(key);
@@ -133,6 +143,81 @@ export async function getIgnoredFieldsForUrl(
 ): Promise<IgnoredField[]> {
   const fields = await getIgnoredFields();
   return fields.filter((f) => matchUrlPattern(url, f.urlPattern));
+}
+
+// --- Field Detection Cache ---
+
+export async function getFieldDetectionCache(): Promise<FieldDetectionCacheEntry[]> {
+  return getFromStorage<FieldDetectionCacheEntry[]>(STORAGE_KEYS.FIELD_CACHE, []);
+}
+
+export async function getFieldDetectionCacheForUrl(
+  url: string,
+): Promise<FieldDetectionCacheEntry | null> {
+  const entries = await getFieldDetectionCache();
+  const exact = entries.find((entry) => entry.url === url);
+  if (exact) return exact;
+
+  // fallback: origin+path match in case query/hash changed
+  try {
+    const u = new URL(url);
+    return (
+      entries.find((entry) => entry.origin === u.origin && entry.path === u.pathname) ??
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
+export async function saveFieldDetectionCacheForUrl(
+  url: string,
+  fields: DetectedFieldSummary[],
+): Promise<FieldDetectionCacheEntry> {
+  const now = Date.now();
+  let parsed: URL | null = null;
+  try {
+    parsed = new URL(url);
+  } catch {
+    // keep null and fallback to plain values
+  }
+
+  const entry: FieldDetectionCacheEntry = {
+    url,
+    origin: parsed?.origin ?? "",
+    hostname: parsed?.hostname ?? "",
+    path: parsed?.pathname ?? "",
+    count: fields.length,
+    fields,
+    updatedAt: now,
+  };
+
+  const existing = await getFieldDetectionCache();
+  const filtered = existing.filter(
+    (item) =>
+      item.url !== url &&
+      !(entry.origin && entry.path && item.origin === entry.origin && item.path === entry.path),
+  );
+  filtered.push(entry);
+
+  const trimmed = filtered
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, MAX_FIELD_CACHE_ENTRIES);
+
+  await setToStorage(STORAGE_KEYS.FIELD_CACHE, trimmed);
+  return entry;
+}
+
+export async function deleteFieldDetectionCacheForUrl(url: string): Promise<void> {
+  const current = await getFieldDetectionCache();
+  await setToStorage(
+    STORAGE_KEYS.FIELD_CACHE,
+    current.filter((entry) => entry.url !== url),
+  );
+}
+
+export async function clearFieldDetectionCache(): Promise<void> {
+  await setToStorage(STORAGE_KEYS.FIELD_CACHE, []);
 }
 
 // --- URL Pattern Matching ---

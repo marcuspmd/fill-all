@@ -15,6 +15,7 @@
       <button class="tab active" data-tab="settings">Geral</button>
       <button class="tab" data-tab="rules">Regras</button>
       <button class="tab" data-tab="forms">Formulários Salvos</button>
+      <button class="tab" data-tab="cache">Cache & Treino</button>
     </div>
 
     <!-- Settings Tab -->
@@ -177,19 +178,36 @@
         <div id="saved-forms-list"></div>
       </div>
     </div>
+
+    <!-- Cache & Training Tab -->
+    <div class="tab-content" id="tab-cache">
+      <div class="card">
+        <h2>Cache de Detecção por Página</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
+          Guarda os campos detectados por URL para que o popup recupere o estado rapidamente.
+        </p>
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <button id="btn-refresh-cache" class="btn btn-primary">Atualizar</button>
+          <button id="btn-clear-cache" class="btn btn-delete">Limpar Todo Cache</button>
+        </div>
+        <div id="cache-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Aprendizado e Retreino</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
+          O sistema aprende com regras salvas e exemplos detectados. Você pode reconstruir a base aprendida a partir das regras atuais.
+        </p>
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <button id="btn-retrain-learning" class="btn btn-primary">Retreinar Base pelas Regras</button>
+          <button id="btn-clear-learning" class="btn btn-delete">Limpar Aprendizado</button>
+        </div>
+        <div id="learning-summary" class="empty" style="padding: 10px 0; text-align:left;"></div>
+        <div id="learned-list"></div>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="./options.ts"></script>
-  <script>
-    document.querySelectorAll('.tab').forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-        document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
-        tab.classList.add('active');
-        var target = document.getElementById('tab-' + tab.getAttribute('data-tab'));
-        if (target) target.classList.add('active');
-      });
-    });
-  </script>
 </body>
 </html>

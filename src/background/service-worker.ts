@@ -16,7 +16,20 @@ import {
   getIgnoredFields,
   addIgnoredField,
   removeIgnoredField,
+  getFieldDetectionCache,
+  getFieldDetectionCacheForUrl,
+  saveFieldDetectionCacheForUrl,
+  deleteFieldDetectionCacheForUrl,
+  clearFieldDetectionCache,
 } from "@/lib/storage/storage";
+import type { DetectedFieldSummary } from "@/types";
+import {
+  getLearnedEntries,
+  clearLearnedEntries,
+  storeLearnedEntry,
+  buildSignalsFromRule,
+  retrainLearnedFromRules,
+} from "@/lib/ai/learning-store";
 
 // Create context menu on install
 chrome.runtime.onInstalled.addListener(() => {
@@ -139,7 +152,14 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
       return getRules();
 
     case "SAVE_RULE":
-      await saveRule(message.payload as FieldRule);
+      {
+        const rule = message.payload as FieldRule;
+        await saveRule(rule);
+        const signals = buildSignalsFromRule(rule);
+        if (signals) {
+          await storeLearnedEntry(signals, rule.fieldType);
+        }
+      }
       return { success: true };
 
     case "DELETE_RULE":
@@ -171,6 +191,45 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     case "REMOVE_IGNORED_FIELD":
       await removeIgnoredField(message.payload as string);
       return { success: true };
+
+    case "GET_FIELD_CACHE": {
+      const payload = message.payload as { url?: string } | undefined;
+      if (payload?.url) {
+        return getFieldDetectionCacheForUrl(payload.url);
+      }
+      return getFieldDetectionCache();
+    }
+
+    case "SAVE_FIELD_CACHE": {
+      const payload = message.payload as
+        | { url: string; fields: DetectedFieldSummary[] }
+        | undefined;
+      if (!payload?.url || !Array.isArray(payload.fields)) {
+        return { error: "Invalid payload for SAVE_FIELD_CACHE" };
+      }
+      return saveFieldDetectionCacheForUrl(payload.url, payload.fields);
+    }
+
+    case "DELETE_FIELD_CACHE":
+      await deleteFieldDetectionCacheForUrl(message.payload as string);
+      return { success: true };
+
+    case "CLEAR_FIELD_CACHE":
+      await clearFieldDetectionCache();
+      return { success: true };
+
+    case "GET_LEARNED_ENTRIES":
+      return getLearnedEntries();
+
+    case "CLEAR_LEARNED_ENTRIES":
+      await clearLearnedEntries();
+      return { success: true };
+
+    case "RETRAIN_LEARNING_DATABASE": {
+      const rules = await getRules();
+      const imported = await retrainLearnedFromRules(rules);
+      return { success: true, imported, totalRules: rules.length };
+    }
 
     default:
       return { error: `Unknown message type: ${message.type}` };

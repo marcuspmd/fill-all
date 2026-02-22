@@ -2,7 +2,11 @@
  * Content script — runs on every page, listens for fill commands
  */
 
-import type { ExtensionMessage, SavedForm } from "@/types";
+import type {
+  DetectedFieldSummary,
+  ExtensionMessage,
+  SavedForm,
+} from "@/types";
 import {
   fillAllFields,
   fillSingleField,
@@ -130,18 +134,17 @@ async function handleContentMessage(
         );
       return {
         count: detected.length,
-        fields: detected.map((f) => {
-          const item: {
-            selector: string;
-            fieldType: string;
-            label: string;
-            options?: Array<{ value: string; text: string }>;
-            checkboxValue?: string;
-            checkboxChecked?: boolean;
-          } = {
+        fields: detected.map((f): DetectedFieldSummary => {
+          const item: DetectedFieldSummary = {
             selector: f.selector,
             fieldType: f.fieldType,
             label: f.label || f.name || f.id || "unknown",
+            name: f.name,
+            id: f.id,
+            placeholder: f.placeholder,
+            required: f.required,
+            contextualType: f.contextualType,
+            detectionMethod: f.detectionMethod,
           };
           if (f.element instanceof HTMLSelectElement) {
             item.options = Array.from(f.element.options).map((o) => ({

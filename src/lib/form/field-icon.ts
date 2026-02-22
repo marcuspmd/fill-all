@@ -10,7 +10,7 @@
 import type { FormField, FieldRule, FieldType } from "@/types";
 import { fillSingleField } from "./form-filler";
 import { invalidateClassifier } from "@/lib/ai/tensorflow-generator";
-import { saveRule } from "@/lib/storage/storage";
+import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { DEFAULT_PIPELINE } from "./detectors/classifiers";
 import { buildSignals } from "./detectors/signals-builder";
 
@@ -485,6 +485,7 @@ async function saveInspectOverride(): Promise<void> {
 
   if (signals) {
     invalidateClassifier();
+    await storeLearnedEntry(signals, newType);
 
     console.log(
       `%c[Fill All] 🎓 Override do usuário: "${signals}" → "${newType}"`,
@@ -646,7 +647,7 @@ async function saveFieldRule(): Promise<void> {
     updatedAt: Date.now(),
   };
 
-  await saveRule(rule);
+  await chrome.runtime.sendMessage({ type: "SAVE_RULE", payload: rule });
 
   const saveBtn =
     rulePopupElement?.querySelector<HTMLButtonElement>("#fa-rp-save");

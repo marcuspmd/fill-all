@@ -4,7 +4,9 @@
 
 import "./popup.css";
 import type {
+  DetectedFieldSummary,
   ExtensionMessage,
+  FieldDetectionCacheEntry,
   FieldRule,
   FieldType,
   IgnoredField,
@@ -12,6 +14,13 @@ import type {
 } from "@/types";
 import { generate, generateMoney, generateNumber } from "@/lib/generators";
 import { generateWithConstraints } from "@/lib/generators/adaptive";
+
+type DetectFieldItem = DetectedFieldSummary;
+
+interface DetectFieldsResponse {
+  count: number;
+  fields: DetectFieldItem[];
+}
 
 async function sendToActiveTab(message: ExtensionMessage): Promise<unknown> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -49,6 +58,11 @@ async function sendToActiveTab(message: ExtensionMessage): Promise<unknown> {
 
 async function sendToBackground(message: ExtensionMessage): Promise<unknown> {
   return chrome.runtime.sendMessage(message);
+}
+
+async function getActivePageUrl(): Promise<string> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tab?.url ?? "";
 }
 
 // --- Fill All ---
@@ -105,23 +119,34 @@ const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> = (
 ).sort((a, b) => b.label.localeCompare(a.label, "pt-BR"));
 
 document.getElementById("btn-detect")?.addEventListener("click", async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const pageUrl = tab?.url ?? "";
+  const pageUrl = await getActivePageUrl();
+  const result = (await sendToActiveTab({ type: "DETECT_FIELDS" })) as
+    | DetectFieldsResponse
+    | null;
 
-  const result = (await sendToActiveTab({ type: "DETECT_FIELDS" })) as {
-    count: number;
-    fields: Array<{
-      selector: string;
-      fieldType: string;
-      label: string;
-      options?: Array<{ value: string; text: string }>;
-      checkboxValue?: string;
-      checkboxChecked?: boolean;
-    }>;
-  } | null;
+  if (!result || !Array.isArray(result.fields)) {
+    await loadDetectedFieldsFromCache();
+    return;
+  }
 
+  await sendToBackground({
+    type: "SAVE_FIELD_CACHE",
+    payload: { url: pageUrl, fields: result.fields },
+  });
+
+  await renderDetectedFields(result, pageUrl, {
+    source: "live",
+    updatedAt: Date.now(),
+  });
+});
+
+async function renderDetectedFields(
+  result: DetectFieldsResponse,
+  pageUrl: string,
+  meta?: { source?: "live" | "cache"; updatedAt?: number },
+): Promise<void> {
   const list = document.getElementById("fields-list");
-  if (!list || !result) return;
+  if (!list) return;
 
   const hostname = pageUrl ? new URL(pageUrl).hostname : "";
 
@@ -143,6 +168,19 @@ document.getElementById("btn-detect")?.addEventListener("click", async () => {
   );
 
   list.innerHTML = "";
+
+  if (meta?.source === "cache") {
+    const updatedAtText = meta.updatedAt
+      ? new Date(meta.updatedAt).toLocaleString("pt-BR")
+      : "";
+    const info = document.createElement("div");
+    info.className = "empty";
+    info.textContent = updatedAtText
+      ? `Mostrando cache (${updatedAtText})`
+      : "Mostrando cache";
+    list.appendChild(info);
+  }
+
   if (!result || !Array.isArray(result.fields) || result.count === 0) {
     list.innerHTML = '<div class="empty">Nenhum campo encontrado</div>';
     return;
@@ -462,7 +500,25 @@ document.getElementById("btn-detect")?.addEventListener("click", async () => {
 
     list.appendChild(item);
   }
-});
+}
+
+async function loadDetectedFieldsFromCache(): Promise<void> {
+  const pageUrl = await getActivePageUrl();
+  if (!pageUrl.startsWith("http://") && !pageUrl.startsWith("https://")) return;
+
+  const cache = (await sendToBackground({
+    type: "GET_FIELD_CACHE",
+    payload: { url: pageUrl },
+  })) as FieldDetectionCacheEntry | null;
+
+  if (!cache || !Array.isArray(cache.fields)) return;
+
+  await renderDetectedFields(
+    { count: cache.count ?? cache.fields.length, fields: cache.fields },
+    pageUrl,
+    { source: "cache", updatedAt: cache.updatedAt },
+  );
+}
 
 // --- Quick Generators ---
 
@@ -874,6 +930,7 @@ async function initChromeAIStatus(): Promise<void> {
 // --- Init ---
 loadSavedForms();
 loadIgnoredFields();
+loadDetectedFieldsFromCache();
 initWatcherStatus();
 initGeneratorConfigs();
 initChromeAIStatus();

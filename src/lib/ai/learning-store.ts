@@ -7,7 +7,7 @@
  * TF.js classifier so its prototype vectors shift toward real-world patterns.
  */
 
-import type { FieldType } from "@/types";
+import type { FieldRule, FieldType } from "@/types";
 
 export const LEARNED_STORAGE_KEY = "fill_all_learned_classifications";
 
@@ -21,6 +21,16 @@ export interface LearnedEntry {
   timestamp: number;
 }
 
+function normaliseSignals(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /**
  * Persist a new signal→type mapping.
  * Deduplicates by `signals` string — if the same signal set was already
@@ -30,10 +40,11 @@ export async function storeLearnedEntry(
   signals: string,
   type: FieldType,
 ): Promise<void> {
-  if (!signals.trim()) return;
+  const normalized = normaliseSignals(signals);
+  if (!normalized) return;
   const existing = await getLearnedEntries();
-  const filtered = existing.filter((e) => e.signals !== signals);
-  filtered.push({ signals, type, timestamp: Date.now() });
+  const filtered = existing.filter((e) => e.signals !== normalized);
+  filtered.push({ signals: normalized, type, timestamp: Date.now() });
   // Keep only the most recent MAX_LEARNED_ENTRIES
   const trimmed = filtered.slice(-MAX_LEARNED_ENTRIES);
   await chrome.storage.local.set({ [LEARNED_STORAGE_KEY]: trimmed });
@@ -53,4 +64,42 @@ export async function clearLearnedEntries(): Promise<void> {
 /** Return the count of stored entries without loading all data. */
 export async function getLearnedCount(): Promise<number> {
   return (await getLearnedEntries()).length;
+}
+
+/**
+ * Builds synthetic classifier signals from a rule.
+ * This allows the extension to learn from explicit user mappings.
+ */
+export function buildSignalsFromRule(rule: FieldRule): string {
+  const selectorTokens = rule.fieldSelector
+    .replace(/[#.[\]=:'"]/g, " ")
+    .replace(/>/g, " ")
+    .replace(/-/g, " ")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const parts = [
+    rule.fieldType,
+    rule.fieldName,
+    selectorTokens,
+    rule.fieldSelector,
+  ].filter(Boolean) as string[];
+
+  return normaliseSignals(parts.join(" "));
+}
+
+/** Rebuild learned entries from the currently configured rules. */
+export async function retrainLearnedFromRules(rules: FieldRule[]): Promise<number> {
+  await clearLearnedEntries();
+
+  let imported = 0;
+  for (const rule of rules) {
+    const signals = buildSignalsFromRule(rule);
+    if (!signals) continue;
+    await storeLearnedEntry(signals, rule.fieldType);
+    imported += 1;
+  }
+
+  return imported;
 }

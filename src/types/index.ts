@@ -143,6 +143,33 @@ export interface IgnoredField {
   createdAt: number;
 }
 
+/** Lightweight field snapshot used for popup cache and diagnostics */
+export interface DetectedFieldSummary {
+  selector: string;
+  fieldType: FieldType;
+  label: string;
+  name?: string;
+  id?: string;
+  placeholder?: string;
+  required?: boolean;
+  contextualType?: FieldType;
+  detectionMethod?: DetectionMethod;
+  options?: Array<{ value: string; text: string }>;
+  checkboxValue?: string;
+  checkboxChecked?: boolean;
+}
+
+/** Per-page cache entry for detected fields */
+export interface FieldDetectionCacheEntry {
+  url: string;
+  origin: string;
+  hostname: string;
+  path: string;
+  count: number;
+  fields: DetectedFieldSummary[];
+  updatedAt: number;
+}
+
 /** Extension settings */
 export interface Settings {
   /** Whether to auto-fill on page load */
@@ -192,7 +219,14 @@ export type MessageType =
   | "FILL_FIELD_BY_SELECTOR"
   | "GET_IGNORED_FIELDS"
   | "ADD_IGNORED_FIELD"
-  | "REMOVE_IGNORED_FIELD";
+  | "REMOVE_IGNORED_FIELD"
+  | "GET_FIELD_CACHE"
+  | "SAVE_FIELD_CACHE"
+  | "DELETE_FIELD_CACHE"
+  | "CLEAR_FIELD_CACHE"
+  | "GET_LEARNED_ENTRIES"
+  | "CLEAR_LEARNED_ENTRIES"
+  | "RETRAIN_LEARNING_DATABASE";
 
 export interface ExtensionMessage {
   type: MessageType;
