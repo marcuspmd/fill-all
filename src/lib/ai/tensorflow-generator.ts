@@ -11,9 +11,10 @@
  * group for every field with signals, keyword matches, TF.js score, and final type.
  */
 
-import * as tf from "@tensorflow/tfjs";
 import type { FormField, FieldType } from "@/types";
 import { generate } from "@/lib/generators";
+import { getLearnedEntries } from "@/lib/ai/learning-store";
+import type { LayersModel, Tensor } from "@tensorflow/tfjs";
 
 // ── Debug flag ───────────────────────────────────────────────────────────────
 // Activate in the browser DevTools console of the page being filled:
@@ -24,6 +25,18 @@ function isDebugEnabled(): boolean {
   return !!(globalThis as Record<string, unknown>)["__FILL_ALL_DEBUG__"];
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Dot product of two L2-normalised Float32Arrays → cosine similarity.
+ */
+function dotProduct(a: Float32Array, b: Float32Array): number {
+  let sum = 0;
+  const len = Math.min(a.length, b.length);
+  for (let i = 0; i < len; i++) sum += a[i] * b[i];
+  return sum;
+}
+
 // ── Character n-gram helpers ─────────────────────────────────────────────────
 
 const NGRAM_SIZE = 3;
@@ -32,9 +45,13 @@ const NGRAM_SIZE = 3;
 // 0.65 keeps good precision while reducing fallback frequency on noisy labels.
 const TF_THRESHOLD = 0.4;
 
+// Minimum cosine similarity for a learned entry to be used.
+// Higher than TF_THRESHOLD because learned data is trusted (Chrome AI + user corrections).
+const LEARNED_THRESHOLD = 0.75;
+
 function charNgrams(text: string): string[] {
   const normalized = text
-    .toLowerCase()
+    .toLowerCase() 
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[_\-/.]+/g, " ")
@@ -67,13 +84,31 @@ function vectorize(text: string, vocab: Map<string, number>): Float32Array {
 // Trained offline with `npm run train:model` using the labelled dataset.
 
 interface PretrainedState {
-  model: tf.LayersModel;
+  model: LayersModel;
   vocab: Map<string, number>;
   labels: FieldType[];
 }
 
+interface LearnedVector {
+  vector: Float32Array;
+  type: FieldType;
+}
+
 let _pretrained: PretrainedState | null = null;
 let _pretrainedLoadPromise: Promise<void> | null = null;
+let _learnedVectors: LearnedVector[] = [];
+let _tfModule: typeof import("@tensorflow/tfjs") | null = null;
+let _tfLoadPromise: Promise<typeof import("@tensorflow/tfjs")> | null = null;
+
+async function loadTfModule(): Promise<typeof import("@tensorflow/tfjs")> {
+  if (_tfModule) return _tfModule;
+  if (_tfLoadPromise) return _tfLoadPromise;
+  _tfLoadPromise = import("@tensorflow/tfjs").then((mod) => {
+    _tfModule = mod;
+    return mod;
+  });
+  return _tfLoadPromise;
+}
 
 /**
  * Loads the offline-trained TF.js model from the extension's model/ directory.
@@ -86,6 +121,7 @@ export async function loadPretrainedModel(): Promise<void> {
 
   _pretrainedLoadPromise = (async () => {
     try {
+      const tf = await loadTfModule();
       const base = chrome.runtime.getURL("model/");
       const [model, vocabRaw, labelsRaw] = await Promise.all([
         tf.loadLayersModel(`${base}model.json`),
@@ -99,9 +135,12 @@ export async function loadPretrainedModel(): Promise<void> {
         vocab: new Map(Object.entries(vocabRaw)),
         labels: labelsRaw as FieldType[],
       };
+      // Load learned vectors so user corrections are immediately active
+      await loadLearnedVectors();
+
       if (isDebugEnabled()) {
         console.log(
-          `[Fill All] Pre-trained model loaded — ${labelsRaw.length} classes, vocab ${_pretrained.vocab.size} n-grams`,
+          `[Fill All] Pre-trained model loaded — ${labelsRaw.length} classes, vocab ${_pretrained.vocab.size} n-grams, ${_learnedVectors.length} learned vectors`,
         );
       }
     } catch (err) {
@@ -119,12 +158,44 @@ export async function loadPretrainedModel(): Promise<void> {
 }
 
 /**
- * Discard any cached pre-trained state so the model is reloaded on the next call.
- * Called after user overrides (field-icon.ts) — kept as a no-op here because
- * user-saved rules are resolved by the rule-engine, not by the TF model.
+ * Reload the learned vectors from storage so the latest user corrections and
+ * Chrome AI classifications are reflected in the next field classification.
+ * Call this after storing a new learned entry.
  */
 export function invalidateClassifier(): void {
-  // no-op: user corrections are stored as rules, not baked into the TF model.
+  _learnedVectors = [];
+  if (_pretrained) {
+    // Reload in background — next classification will pick up the fresh vectors.
+    loadLearnedVectors().catch(() => {});
+  }
+}
+
+/**
+ * Vectorises and caches all entries from the learning-store.
+ * Requires the pre-trained vocab to be loaded first.
+ */
+async function loadLearnedVectors(): Promise<void> {
+  if (!_pretrained) return;
+  try {
+    const entries = await getLearnedEntries();
+    _learnedVectors = entries
+      .map((e) => ({
+        vector: vectorize(e.signals, _pretrained!.vocab),
+        type: e.type,
+      }))
+      .filter((e) => e.vector.some((v) => v > 0));
+    if (isDebugEnabled()) {
+      console.log(
+        `[Fill All] Learned vectors reloaded — ${_learnedVectors.length} entries`,
+      );
+    }
+  } catch (err) {
+    console.warn(
+      "[Fill All] Não foi possível carregar vetores aprendidos:",
+      err,
+    );
+    _learnedVectors = [];
+  }
 }
 
 /**
@@ -139,7 +210,7 @@ function tfSoftClassify(
   signals: string,
 ): { type: FieldType; score: number } | null {
   if (!signals.trim()) return null;
-  if (!_pretrained) {
+  if (!_pretrained || !_tfModule) {
     console.warn(
       "[Fill All] ⚠️  Modelo não carregado ainda — usando html-fallback. Sinais:",
       signals,
@@ -150,9 +221,31 @@ function tfSoftClassify(
   const inputVec = vectorize(signals, _pretrained.vocab);
   if (!inputVec.some((v) => v > 0)) return null;
 
-  const { bestIdx, bestScore } = tf.tidy(() => {
-    const input = tf.tensor2d([Array.from(inputVec)]);
-    const probs = (_pretrained!.model.predict(input) as tf.Tensor).dataSync();
+  // ── Step 1: Check learned vectors (Chrome AI + user corrections) ──────────
+  if (_learnedVectors.length > 0) {
+    let bestLearnedScore = -1;
+    let bestLearnedType: FieldType | null = null;
+    for (const entry of _learnedVectors) {
+      const sim = dotProduct(inputVec, entry.vector);
+      if (sim > bestLearnedScore) {
+        bestLearnedScore = sim;
+        bestLearnedType = entry.type;
+      }
+    }
+    if (bestLearnedScore >= LEARNED_THRESHOLD && bestLearnedType) {
+      if (isDebugEnabled()) {
+        console.log(
+          `[Fill All] 🎓 Learned match: "${bestLearnedType}" (cosine=${bestLearnedScore.toFixed(3)}, threshold=${LEARNED_THRESHOLD}) para "${signals}"`,
+        );
+      }
+      return { type: bestLearnedType, score: bestLearnedScore };
+    }
+  }
+
+  // ── Step 2: TF.js pre-trained model ──────────────────────────────────────
+  const { bestIdx, bestScore } = _tfModule.tidy(() => {
+    const input = _tfModule!.tensor2d([Array.from(inputVec)]);
+    const probs = (_pretrained!.model.predict(input) as Tensor).dataSync();
     let idx = 0;
     let score = -1;
     for (let i = 0; i < probs.length; i++) {

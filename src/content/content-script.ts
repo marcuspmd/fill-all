@@ -13,7 +13,7 @@ import {
   fillSingleField,
   captureFormValues,
 } from "@/lib/form/form-filler";
-import { detectFormFields } from "@/lib/form/form-detector";
+import { detectAllFieldsAsync, detectFormFields } from "@/lib/form/form-detector";
 import { saveForm } from "@/lib/storage/storage";
 import {
   startWatching,
@@ -32,7 +32,7 @@ import {
   parseSavedFormPayload,
   parseStartWatchingPayload,
   parseStringPayload,
-} from "@/lib/messaging/validators";
+} from "@/lib/messaging/light-validators";
 
 type FillableElement =
   | HTMLInputElement
@@ -187,10 +187,7 @@ async function handleContentMessage(
     }
 
     case "DETECT_FIELDS": {
-      const { fields: detected } =
-        await import("@/lib/form/form-detector").then((m) =>
-          m.detectAllFieldsAsync(),
-        );
+      const { fields: detected } = await detectAllFieldsAsync();
       return {
         count: detected.length,
         fields: detected.map((f): DetectedFieldSummary => {

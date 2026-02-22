@@ -484,8 +484,8 @@ async function saveInspectOverride(): Promise<void> {
   }
 
   if (signals) {
-    invalidateClassifier();
     await storeLearnedEntry(signals, newType);
+    invalidateClassifier(); // dispara reload dos vetores já com a nova entrada
 
     console.log(
       `%c[Fill All] 🎓 Override do usuário: "${signals}" → "${newType}"`,
