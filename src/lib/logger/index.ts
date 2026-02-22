@@ -41,6 +41,18 @@ const state: LoggerState = {
   level: "warn",
 };
 
+/** true enquanto initLogger() ainda não terminou */
+let initializing = true;
+
+interface BufferedEntry {
+  level: LogLevel | "group";
+  prefix: string;
+  args: unknown[];
+}
+
+/** Fila de mensagens emitidas antes do init completar */
+const buffer: BufferedEntry[] = [];
+
 // ── Funções internas ───────────────────────────────────────────────────────────
 
 function shouldLog(level: LogLevel): boolean {
@@ -49,6 +61,50 @@ function shouldLog(level: LogLevel): boolean {
 
 function formatPrefix(namespace: string): string {
   return `[FillAll/${namespace}]`;
+}
+
+function flushBuffer(): void {
+  for (const entry of buffer) {
+    if (entry.level === "group") {
+      if (shouldLog("debug")) console.debug(entry.prefix, ...entry.args);
+    } else if (shouldLog(entry.level)) {
+      const fn =
+        entry.level === "error"
+          ? console.error
+          : entry.level === "warn"
+            ? console.warn
+            : entry.level === "info"
+              ? console.info
+              : console.debug;
+      fn(entry.prefix, ...entry.args);
+    }
+  }
+  buffer.length = 0;
+}
+
+function emit(
+  level: LogLevel | "group",
+  prefix: string,
+  args: unknown[],
+): void {
+  if (initializing) {
+    buffer.push({ level, prefix, args });
+    return;
+  }
+  if (level === "group") {
+    if (shouldLog("debug")) console.debug(prefix, ...args);
+    return;
+  }
+  if (!shouldLog(level)) return;
+  const fn =
+    level === "error"
+      ? console.error
+      : level === "warn"
+        ? console.warn
+        : level === "info"
+          ? console.info
+          : console.debug;
+  fn(prefix, ...args);
 }
 
 // ── API pública de configuração ────────────────────────────────────────────────
@@ -68,7 +124,11 @@ export function configureLogger(options: Partial<LoggerState>): void {
  * Se `chrome` não estiver disponível (ex.: testes unitários), usa os padrões.
  */
 export async function initLogger(): Promise<void> {
-  if (typeof chrome === "undefined" || !chrome.storage) return;
+  if (typeof chrome === "undefined" || !chrome.storage) {
+    initializing = false;
+    flushBuffer();
+    return;
+  }
 
   const SETTINGS_KEY = "fill_all_settings";
 
@@ -79,14 +139,20 @@ export async function initLogger(): Promise<void> {
       | undefined;
 
     if (settings) {
+      const enabled = settings.debugLog ?? false;
       configureLogger({
-        enabled: settings.debugLog ?? false,
-        level: settings.logLevel ?? "warn",
+        enabled,
+        // Se debugLog ligado mas logLevel não salvo, assume "debug" — caso contrário "warn"
+        level: settings.logLevel ?? (enabled ? "debug" : "warn"),
       });
     }
   } catch {
     // Silently ignore — logger stays with defaults.
   }
+
+  // Libera a fila de mensagens acumuladas antes do init terminar.
+  initializing = false;
+  flushBuffer();
 
   // Atualiza em tempo real quando as configurações mudarem.
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -95,9 +161,10 @@ export async function initLogger(): Promise<void> {
       | { debugLog?: boolean; logLevel?: LogLevel }
       | undefined;
     if (!newSettings) return;
+    const enabled = newSettings.debugLog ?? false;
     configureLogger({
-      enabled: newSettings.debugLog ?? false,
-      level: newSettings.logLevel ?? "warn",
+      enabled,
+      level: newSettings.logLevel ?? (enabled ? "debug" : "warn"),
     });
   });
 }
@@ -109,11 +176,9 @@ export interface Logger {
   info(...args: unknown[]): void;
   warn(...args: unknown[]): void;
   error(...args: unknown[]): void;
-  /** Abre um grupo colapsado — só executa se o nível debug estiver ativo. */
-  groupCollapsed(label: string): void;
-  /** Abre um grupo expandido — só executa se o nível debug estiver ativo. */
+  /** Imprime um cabeçalho de seção no lugar de um group. */
   group(label: string): void;
-  /** Fecha o grupo atual. */
+  groupCollapsed(label: string): void;
   groupEnd(): void;
 }
 
@@ -130,25 +195,25 @@ export function createLogger(namespace: string): Logger {
 
   return {
     debug(...args: unknown[]) {
-      if (shouldLog("debug")) console.debug(prefix, ...args);
+      emit("debug", prefix, args);
     },
     info(...args: unknown[]) {
-      if (shouldLog("info")) console.info(prefix, ...args);
+      emit("info", prefix, args);
     },
     warn(...args: unknown[]) {
-      if (shouldLog("warn")) console.warn(prefix, ...args);
+      emit("warn", prefix, args);
     },
     error(...args: unknown[]) {
-      if (shouldLog("error")) console.error(prefix, ...args);
+      emit("error", prefix, args);
     },
     groupCollapsed(label: string) {
-      if (shouldLog("debug")) console.groupCollapsed(`${prefix} ${label}`);
+      emit("group", `${prefix} ── ${label} ──`, []);
     },
     group(label: string) {
-      if (shouldLog("debug")) console.group(`${prefix} ${label}`);
+      emit("group", `${prefix} ── ${label} ──`, []);
     },
     groupEnd() {
-      if (shouldLog("debug")) console.groupEnd();
+      // no-op: sem group, não há nada para fechar
     },
   };
 }

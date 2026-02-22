@@ -27,6 +27,7 @@ import {
   customSelectPageDetector,
   interactivePageDetector,
   detectNativeFieldsAsync,
+  streamNativeFieldsAsync,
 } from "./detectors/classifiers";
 export { DEFAULT_PIPELINE, DEFAULT_COLLECTION_PIPELINE };
 import { createLogger } from "@/lib/logger";
@@ -120,6 +121,7 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
     log.groupCollapsed(
       `#${idx + 1} <${tag} type="${htmlType}"> │ id="${field.id ?? ""}" name="${field.name ?? ""}"`,
     );
+    log.debug(field);
     log.debug(`📌 Label: "${field.label ?? "(nenhum)"}"`);
     log.debug(`📡 Sinais: "${field.contextSignals || "(nenhum)"}"`);
     const fieldMs = field.detectionDurationMs ?? 0;
@@ -162,6 +164,26 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
   const interactiveFields = detectInteractiveFields();
 
   return { fields, customSelects, interactiveFields };
+}
+
+/**
+ * Streaming detection — yields each FormField immediately after it is classified.
+ * Native inputs run the full async pipeline (incl. Chrome AI); custom selects and
+ * interactive fields are yielded synchronously at the end.
+ *
+ * Ideal for real-time UI updates: consumers can show each field's type as it
+ * arrives rather than waiting for the entire scan to complete.
+ */
+export async function* streamAllFields(): AsyncGenerator<FormField> {
+  for await (const field of streamNativeFieldsAsync()) {
+    yield field;
+  }
+  for (const field of customSelectPageDetector.detect()) {
+    yield field;
+  }
+  for (const field of interactivePageDetector.detect()) {
+    yield field;
+  }
 }
 
 export function detectForms(): HTMLFormElement[] {

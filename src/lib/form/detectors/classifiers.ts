@@ -101,8 +101,6 @@ export const DEFAULT_PIPELINE = new DetectionPipeline([
 /** Runtime-mutable pipeline — overridden by content-script based on user settings. */
 let _activePipeline: DetectionPipeline = DEFAULT_PIPELINE;
 
-export { tensorflowClassifier } from "./tensorflow-classifier";
-
 /** All named classifiers available for pipeline composition. */
 const NAMED_CLASSIFIERS: Record<string, FieldClassifier> = {
   "html-type": htmlTypeClassifier,
@@ -148,14 +146,50 @@ export function buildPipelineFromSettings(
   return new DetectionPipeline(ordered);
 }
 
-// ── Async native-input scanner ───────────────────────────────────────────────
+// ── Shared selectors ─────────────────────────────────────────────────────────
+
+const INPUT_SELECTOR = [
+  'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="reset"]):not([type="file"]):not([disabled])',
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+].join(", ");
+
+const CUSTOM_SELECT_ANCESTOR =
+  ".ant-select, [class*='react-select'], .MuiSelect-root, [class*='MuiAutocomplete']";
+
+// ── Shared field builder ──────────────────────────────────────────────────────
 
 /**
- * Async variant of nativeInputDetector.
- * Scans the same elements but classifies each one with DEFAULT_PIPELINE.runAsync(),
- * which activates the Chrome AI classifier (chromeAiClassifier.detectAsync).
- *
- * Used by detectAllFieldsAsync() in form-detector.ts.
+ * Builds a bare FormField from a DOM element (no classification yet).
+ * Shared by the sync detector, async detector, and streaming generator
+ * to avoid duplication.
+ */
+function buildNativeField(
+  element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): FormField {
+  const labelResult = findLabelWithStrategy(element);
+  const field: FormField = {
+    element,
+    selector: getUniqueSelector(element),
+    fieldType: "unknown",
+    label: labelResult?.text,
+    name: element.name || undefined,
+    id: element.id || undefined,
+    placeholder:
+      ("placeholder" in element ? element.placeholder : undefined) || undefined,
+    autocomplete: element.autocomplete || undefined,
+    required: element.required,
+  };
+  field.contextSignals = buildSignals(field);
+  return field;
+}
+
+// ── Native-input async scanners ───────────────────────────────────────────────
+
+/**
+ * Classifies all visible native inputs asynchronously (including Chrome AI).
+ * Waits for every field before returning — use streamNativeFieldsAsync()
+ * when you need real-time feedback as each field is classified.
  */
 export async function detectNativeFieldsAsync(): Promise<FormField[]> {
   const elements = document.querySelectorAll<
@@ -169,24 +203,7 @@ export async function detectNativeFieldsAsync(): Promise<FormField[]> {
     if (rect.width === 0 && rect.height === 0) continue;
     if (element.closest(CUSTOM_SELECT_ANCESTOR)) continue;
 
-    const labelResult = findLabelWithStrategy(element);
-
-    const field: FormField = {
-      element,
-      selector: getUniqueSelector(element),
-      fieldType: "unknown",
-      label: labelResult?.text,
-      name: element.name || undefined,
-      id: element.id || undefined,
-      placeholder:
-        ("placeholder" in element ? element.placeholder : undefined) ||
-        undefined,
-      autocomplete: element.autocomplete || undefined,
-      required: element.required,
-    };
-
-    field.contextSignals = buildSignals(field);
-
+    const field = buildNativeField(element);
     const result = await _activePipeline.runAsync(field);
     field.fieldType = result.type;
     field.detectionMethod = result.method;
@@ -199,20 +216,36 @@ export async function detectNativeFieldsAsync(): Promise<FormField[]> {
   return fields;
 }
 
+/**
+ * Streaming variant: yields each FormField immediately after it is classified.
+ * Enables real-time UI updates while the rest of the page is still being scanned.
+ */
+export async function* streamNativeFieldsAsync(): AsyncGenerator<FormField> {
+  const elements = document.querySelectorAll<
+    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+  >(INPUT_SELECTOR);
+
+  for (const element of elements) {
+    const rect = element.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) continue;
+    if (element.closest(CUSTOM_SELECT_ANCESTOR)) continue;
+
+    const field = buildNativeField(element);
+    const result = await _activePipeline.runAsync(field);
+    field.fieldType = result.type;
+    field.detectionMethod = result.method;
+    field.detectionConfidence = result.confidence;
+    field.detectionDurationMs = result.durationMs;
+
+    yield field;
+  }
+}
+
 // ── Page-level detectors ──────────────────────────────────────────────────────
-
-const INPUT_SELECTOR = [
-  'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="reset"]):not([type="file"]):not([disabled])',
-  "select:not([disabled])",
-  "textarea:not([disabled])",
-].join(", ");
-
-const CUSTOM_SELECT_ANCESTOR =
-  ".ant-select, [class*='react-select'], .MuiSelect-root, [class*='MuiAutocomplete']";
 
 /**
  * Scans native input/select/textarea elements and classifies each one
- * using DEFAULT_PIPELINE.
+ * synchronously using the active pipeline. Used by dom-watcher.
  */
 export const nativeInputDetector: PageDetector = {
   name: "native-inputs",
@@ -228,24 +261,7 @@ export const nativeInputDetector: PageDetector = {
       if (rect.width === 0 && rect.height === 0) continue;
       if (element.closest(CUSTOM_SELECT_ANCESTOR)) continue;
 
-      const labelResult = findLabelWithStrategy(element);
-
-      const field: FormField = {
-        element,
-        selector: getUniqueSelector(element),
-        fieldType: "unknown",
-        label: labelResult?.text,
-        name: element.name || undefined,
-        id: element.id || undefined,
-        placeholder:
-          ("placeholder" in element ? element.placeholder : undefined) ||
-          undefined,
-        autocomplete: element.autocomplete || undefined,
-        required: element.required,
-      };
-
-      field.contextSignals = buildSignals(field);
-
+      const field = buildNativeField(element);
       const result = _activePipeline.run(field);
       field.fieldType = result.type;
       field.detectionMethod = result.method;

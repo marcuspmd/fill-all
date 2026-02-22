@@ -27,7 +27,7 @@ const log = createLogger("TFClassifier");
 // ── Thresholds ────────────────────────────────────────────────────────────────
 
 /** Minimum TF.js softmax score to accept a prediction. */
-export const TF_THRESHOLD = 0.4;
+export const TF_THRESHOLD = 0.2;
 
 /** Minimum cosine similarity for a learned entry (more trusted data). */
 const LEARNED_THRESHOLD = 0.5;

@@ -5,9 +5,10 @@
 
 import type { ExtensionMessage } from "@/types";
 import { fillAllFields, captureFormValues } from "./form-filler";
-import { detectFormFields } from "./form-detector";
+import { streamAllFields } from "./form-detector";
 import { startWatching, stopWatching, isWatcherActive } from "./dom-watcher";
 import { saveForm } from "@/lib/storage/storage";
+import { showDetectionBadge, clearAllBadges } from "./field-overlay";
 
 const PANEL_ID = "fill-all-floating-panel";
 const STORAGE_KEY = "fill_all_panel_position";
@@ -336,9 +337,22 @@ function setupHandlers(panel: HTMLElement): void {
   });
 
   // Detect
-  panel.querySelector("#fa-btn-detect")?.addEventListener("click", () => {
-    const fields = detectFormFields();
-    setStatus(panel, `🔍 ${fields.length} campos encontrados`, "info");
+  panel.querySelector("#fa-btn-detect")?.addEventListener("click", async () => {
+    const btn = panel.querySelector("#fa-btn-detect") as HTMLButtonElement;
+    btn.textContent = "⏳ Detectando...";
+    btn.disabled = true;
+    clearAllBadges();
+
+    let count = 0;
+    for await (const field of streamAllFields()) {
+      count++;
+      setStatus(panel, `🔍 ${count} campo(s) detectado(s)...`, "info");
+      showDetectionBadge(field.element, field.fieldType, field.detectionMethod);
+    }
+
+    setStatus(panel, `✅ ${count} campo(s) detectado(s)`, "success");
+    btn.textContent = "🔍 Detectar";
+    btn.disabled = false;
   });
 
   // Watch toggle

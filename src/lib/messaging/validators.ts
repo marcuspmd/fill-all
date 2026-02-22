@@ -26,6 +26,8 @@ const settingsSchema = z
     moneyMax: z.number(),
     numberMin: z.number(),
     numberMax: z.number(),
+    debugLog: z.boolean(),
+    logLevel: z.enum(["debug", "info", "warn", "error"]),
   })
   .partial()
   .strict();

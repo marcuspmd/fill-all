@@ -75,6 +75,27 @@
           </div>
         </div>
 
+        <div class="toggle-group" style="margin-top: 16px">
+          <div>
+            <label>Logs de diagnóstico</label>
+            <div class="description">Exibe mensagens de depuração no console do navegador</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-debug-log" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" id="log-level-group" style="margin-top: 8px">
+          <label for="setting-log-level">Nível mínimo de log:</label>
+          <select id="setting-log-level">
+            <option value="debug">Debug (tudo)</option>
+            <option value="info">Info</option>
+            <option value="warn">Warn</option>
+            <option value="error">Error (somente erros)</option>
+          </select>
+        </div>
+
         <button id="btn-save-settings" class="btn btn-primary">Salvar Configurações</button>
       </div>
 

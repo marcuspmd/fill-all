@@ -25,7 +25,9 @@ interface DetectFieldsResponse {
 }
 
 async function sendToActiveTab(message: ExtensionMessage): Promise<unknown> {
-  const result = await sendMessageToActiveTab(message, { injectIfNeeded: true });
+  const result = await sendMessageToActiveTab(message, {
+    injectIfNeeded: true,
+  });
   if (result && typeof result === "object" && "error" in result) {
     return null;
   }
@@ -95,25 +97,35 @@ const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> = (
 ).sort((a, b) => b.label.localeCompare(a.label, "pt-BR"));
 
 document.getElementById("btn-detect")?.addEventListener("click", async () => {
-  const pageUrl = await getActivePageUrl();
-  const result = (await sendToActiveTab({ type: "DETECT_FIELDS" })) as
-    | DetectFieldsResponse
-    | null;
+  const btn = document.getElementById("btn-detect") as HTMLButtonElement;
+  const originalText = btn.textContent ?? "🔍 Detectar Campos";
+  btn.disabled = true;
+  btn.textContent = "⏳ Detectando...";
 
-  if (!result || !Array.isArray(result.fields)) {
-    await loadDetectedFieldsFromCache();
-    return;
+  try {
+    const pageUrl = await getActivePageUrl();
+    const result = (await sendToActiveTab({
+      type: "DETECT_FIELDS",
+    })) as DetectFieldsResponse | null;
+
+    if (!result || !Array.isArray(result.fields)) {
+      await loadDetectedFieldsFromCache();
+      return;
+    }
+
+    await sendToBackground({
+      type: "SAVE_FIELD_CACHE",
+      payload: { url: pageUrl, fields: result.fields },
+    });
+
+    await renderDetectedFields(result, pageUrl, {
+      source: "live",
+      updatedAt: Date.now(),
+    });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
-
-  await sendToBackground({
-    type: "SAVE_FIELD_CACHE",
-    payload: { url: pageUrl, fields: result.fields },
-  });
-
-  await renderDetectedFields(result, pageUrl, {
-    source: "live",
-    updatedAt: Date.now(),
-  });
 });
 
 async function renderDetectedFields(
@@ -408,7 +420,9 @@ async function renderDetectedFields(
           type: "GET_IGNORED_FIELDS",
         })) as IgnoredField[] | null;
         const entry = (current ?? []).find(
-          (f) => f.selector === field.selector && matchUrlPattern(pageUrl, f.urlPattern),
+          (f) =>
+            f.selector === field.selector &&
+            matchUrlPattern(pageUrl, f.urlPattern),
         );
         if (entry) {
           await sendToBackground({
@@ -594,10 +608,7 @@ document.querySelectorAll("[data-generator]").forEach((btn) => {
       );
       value = generateWithConstraints(
         () =>
-          generateMoney(
-            isNaN(min) ? cfg.min : min,
-            isNaN(max) ? cfg.max : max,
-          ),
+          generateMoney(isNaN(min) ? cfg.min : min, isNaN(max) ? cfg.max : max),
         { requireValidity: true },
       );
     } else if (type === "number") {

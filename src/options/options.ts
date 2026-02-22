@@ -71,6 +71,12 @@ async function loadSettings(): Promise<void> {
   (document.getElementById("setting-locale") as HTMLSelectElement).value =
     settings.locale;
 
+  // Debug logging settings
+  (document.getElementById("setting-debug-log") as HTMLInputElement).checked =
+    settings.debugLog ?? false;
+  (document.getElementById("setting-log-level") as HTMLSelectElement).value =
+    settings.logLevel ?? "warn";
+
   // Field icon settings
   (
     document.getElementById("setting-show-field-icon") as HTMLInputElement
@@ -102,6 +108,12 @@ document
       ).value as Settings["defaultStrategy"],
       locale: (document.getElementById("setting-locale") as HTMLSelectElement)
         .value as Settings["locale"],
+      debugLog: (
+        document.getElementById("setting-debug-log") as HTMLInputElement
+      ).checked,
+      logLevel: (
+        document.getElementById("setting-log-level") as HTMLSelectElement
+      ).value as Settings["logLevel"],
     };
 
     await chrome.runtime.sendMessage({
