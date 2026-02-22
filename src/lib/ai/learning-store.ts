@@ -29,8 +29,8 @@ export interface LearnedEntry {
   timestamp: number;
   /**
    * Origin of this entry:
-   * - "auto" → learned organicallule" → imported/rebuilt fy during real-use (Chrome AI / TF.js feedback)
-   * - "rrom a configured FieldRule during retrain
+   * - "auto" → learned organically during real-use (Chrome AI / TF.js feedback)
+   * - "rule" → imported/rebuilt from a configured FieldRule during retrain
    * Defaults to "auto" when absent (backward-compatible).
    */
   source?: "auto" | "rule";
@@ -217,7 +217,7 @@ export async function retrainLearnedFromRules(
   );
   log.debug(
     "NOTA: este retreino atualiza apenas os vetores de " +
-      +"aprendizado (cosine similarity). Os pesos da rede neural TF.js NÃO " +
+      "aprendizado (cosine similarity). Os pesos da rede neural TF.js NÃO " +
       "são alterados. Para retreinar o modelo neural, execute: npm run train:model",
   );
 
