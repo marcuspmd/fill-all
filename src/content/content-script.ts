@@ -13,7 +13,10 @@ import {
   fillSingleField,
   captureFormValues,
 } from "@/lib/form/form-filler";
-import { detectAllFieldsAsync, detectFormFields } from "@/lib/form/form-detector";
+import {
+  detectAllFieldsAsync,
+  detectFormFields,
+} from "@/lib/form/form-detector";
 import { saveForm } from "@/lib/storage/storage";
 import {
   startWatching,
@@ -26,7 +29,10 @@ import {
   toggleFloatingPanel,
 } from "@/lib/form/floating-panel";
 import { initFieldIcon } from "@/lib/form/field-icon";
-import { loadPretrainedModel } from "@/lib/ai/tensorflow-generator";
+import {
+  loadPretrainedModel,
+  invalidateClassifier,
+} from "@/lib/ai/tensorflow-generator";
 import {
   parseIncomingMessage,
   parseSavedFormPayload,
@@ -222,7 +228,8 @@ async function handleContentMessage(
 
     case "FILL_FIELD_BY_SELECTOR": {
       const selector = parseStringPayload(message.payload);
-      if (!selector) return { error: "Invalid payload for FILL_FIELD_BY_SELECTOR" };
+      if (!selector)
+        return { error: "Invalid payload for FILL_FIELD_BY_SELECTOR" };
       const fields = detectFormFields();
       const field = fields.find((f) => f.selector === selector);
       if (!field) return { error: "Field not found" };
@@ -271,6 +278,11 @@ async function handleContentMessage(
       return { success: true };
     }
 
+    case "INVALIDATE_CLASSIFIER": {
+      invalidateClassifier();
+      return { success: true };
+    }
+
     default:
       return { error: `Unknown message type: ${message.type}` };
   }
@@ -278,13 +290,16 @@ async function handleContentMessage(
 
 function findSingleFieldTarget(fields: FormField[]): FormField | undefined {
   if (lastContextMenuElement) {
-    const byContextMenu = fields.find((f) => f.element === lastContextMenuElement);
+    const byContextMenu = fields.find(
+      (f) => f.element === lastContextMenuElement,
+    );
     if (byContextMenu) return byContextMenu;
   }
 
   if (document.activeElement instanceof HTMLElement) {
-    const activeField =
-      document.activeElement.closest("input, select, textarea");
+    const activeField = document.activeElement.closest(
+      "input, select, textarea",
+    );
     if (
       activeField instanceof HTMLInputElement ||
       activeField instanceof HTMLSelectElement ||

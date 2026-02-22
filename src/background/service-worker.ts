@@ -73,35 +73,51 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
   switch (info.menuItemId) {
     case "fill-all-fields":
-      void sendToSpecificTab(tab.id, tab.url, { type: "FILL_ALL_FIELDS" }, {
-        injectIfNeeded: true,
-      });
+      void sendToSpecificTab(
+        tab.id,
+        tab.url,
+        { type: "FILL_ALL_FIELDS" },
+        {
+          injectIfNeeded: true,
+        },
+      );
       break;
     case "fill-all-save-form":
-      void sendToSpecificTab(tab.id, tab.url, { type: "SAVE_FORM" }, {
-        injectIfNeeded: true,
-      });
+      void sendToSpecificTab(
+        tab.id,
+        tab.url,
+        { type: "SAVE_FORM" },
+        {
+          injectIfNeeded: true,
+        },
+      );
       break;
     case "fill-all-field-rule":
-      void sendToSpecificTab(tab.id, tab.url, { type: "FILL_SINGLE_FIELD" }, {
-        injectIfNeeded: true,
-      });
+      void sendToSpecificTab(
+        tab.id,
+        tab.url,
+        { type: "FILL_SINGLE_FIELD" },
+        {
+          injectIfNeeded: true,
+        },
+      );
       break;
     case "fill-all-toggle-panel":
-      void sendToSpecificTab(tab.id, tab.url, { type: "TOGGLE_PANEL" }, {
-        injectIfNeeded: true,
-      });
+      void sendToSpecificTab(
+        tab.id,
+        tab.url,
+        { type: "TOGGLE_PANEL" },
+        {
+          injectIfNeeded: true,
+        },
+      );
       break;
   }
 });
 
 // Handle messages from popup and content script
 chrome.runtime.onMessage.addListener(
-  (
-    message: unknown,
-    _sender,
-    sendResponse: (response: unknown) => void,
-  ) => {
+  (message: unknown, _sender, sendResponse: (response: unknown) => void) => {
     const parsed = parseIncomingMessage(message);
     if (!parsed) {
       sendResponse({ error: "Invalid message format" });
@@ -114,6 +130,24 @@ chrome.runtime.onMessage.addListener(
     return true; // Keep message channel open for async
   },
 );
+
+/**
+ * Broadcast a message to all tabs that have an active content script.
+ * Errors are silently ignored (tabs without content script injected, chrome:// tabs, etc.).
+ * Note: does NOT require the `tabs` permission — tab.id is always accessible.
+ */
+async function broadcastToAllTabs(message: ExtensionMessage): Promise<void> {
+  const tabs = await chrome.tabs.query({});
+  await Promise.allSettled(
+    tabs
+      .filter((tab) => tab.id != null)
+      .map((tab) =>
+        chrome.tabs.sendMessage(tab.id!, message).catch(() => {
+          /* tab has no content script — expected */
+        }),
+      ),
+  );
+}
 
 /** Messages that must be forwarded to the active tab's content script */
 const CONTENT_SCRIPT_MESSAGES = new Set([
@@ -190,17 +224,17 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     case "GET_IGNORED_FIELDS":
       return getIgnoredFields();
 
-    case "ADD_IGNORED_FIELD":
-      {
-        const payload = parseIgnoredFieldPayload(message.payload);
-        if (!payload) return { error: "Invalid payload for ADD_IGNORED_FIELD" };
-        return addIgnoredField(payload);
-      }
+    case "ADD_IGNORED_FIELD": {
+      const payload = parseIgnoredFieldPayload(message.payload);
+      if (!payload) return { error: "Invalid payload for ADD_IGNORED_FIELD" };
+      return addIgnoredField(payload);
+    }
 
     case "REMOVE_IGNORED_FIELD":
       {
         const ignoredId = parseStringPayload(message.payload);
-        if (!ignoredId) return { error: "Invalid payload for REMOVE_IGNORED_FIELD" };
+        if (!ignoredId)
+          return { error: "Invalid payload for REMOVE_IGNORED_FIELD" };
         await removeIgnoredField(ignoredId);
       }
       return { success: true };
@@ -238,12 +272,19 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 
     case "CLEAR_LEARNED_ENTRIES":
       await clearLearnedEntries();
+      void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
       return { success: true };
 
     case "RETRAIN_LEARNING_DATABASE": {
       const rules = await getRules();
-      const imported = await retrainLearnedFromRules(rules);
-      return { success: true, imported, totalRules: rules.length };
+      const result = await retrainLearnedFromRules(rules);
+      void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
+      console.log(
+        `[ServiceWorker] RETRAIN_LEARNING_DATABASE concluído: ` +
+          `imported=${result.imported}, skipped=${result.skipped}, ` +
+          `totalRules=${result.totalRules}, durationMs=${result.durationMs}`,
+      );
+      return { success: true, ...result };
     }
 
     default:

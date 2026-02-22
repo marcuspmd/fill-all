@@ -226,7 +226,8 @@ export type MessageType =
   | "CLEAR_FIELD_CACHE"
   | "GET_LEARNED_ENTRIES"
   | "CLEAR_LEARNED_ENTRIES"
-  | "RETRAIN_LEARNING_DATABASE";
+  | "RETRAIN_LEARNING_DATABASE"
+  | "INVALIDATE_CLASSIFIER";
 
 export interface ExtensionMessage {
   type: MessageType;

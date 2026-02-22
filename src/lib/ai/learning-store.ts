@@ -24,6 +24,13 @@ export interface LearnedEntry {
    */
   generatorType?: FieldType;
   timestamp: number;
+  /**
+   * Origin of this entry:
+   * - "auto" → learned organicallule" → imported/rebuilt fy during real-use (Chrome AI / TF.js feedback)
+   * - "rrom a configured FieldRule during retrain
+   * Defaults to "auto" when absent (backward-compatible).
+   */
+  source?: "auto" | "rule";
 }
 
 function normaliseSignals(input: string): string {
@@ -43,11 +50,14 @@ function normaliseSignals(input: string): string {
  *
  * @param generatorType - Optional explicit generator type recommended by the AI.
  *   Defaults to `type` when omitted.
+ * @param source - Origin of the entry: "auto" (organic) or "rule" (from retrain).
+ *   Defaults to "auto".
  */
 export async function storeLearnedEntry(
   signals: string,
   type: FieldType,
   generatorType?: FieldType,
+  source: "auto" | "rule" = "auto",
 ): Promise<void> {
   const normalized = normaliseSignals(signals);
   if (!normalized) return;
@@ -58,6 +68,7 @@ export async function storeLearnedEntry(
     type,
     generatorType: generatorType ?? type,
     timestamp: Date.now(),
+    source,
   });
   // Keep only the most recent MAX_LEARNED_ENTRIES
   const trimmed = filtered.slice(-MAX_LEARNED_ENTRIES);
@@ -73,6 +84,13 @@ export async function getLearnedEntries(): Promise<LearnedEntry[]> {
 /** Remove all learned entries (full retrain from scratch). */
 export async function clearLearnedEntries(): Promise<void> {
   await chrome.storage.local.remove(LEARNED_STORAGE_KEY);
+}
+
+/** Remove only entries that were imported from rules (source === "rule"), preserving organic entries. */
+export async function clearRuleDerivedEntries(): Promise<void> {
+  const existing = await getLearnedEntries();
+  const autoOnly = existing.filter((e) => (e.source ?? "auto") !== "rule");
+  await chrome.storage.local.set({ [LEARNED_STORAGE_KEY]: autoOnly });
 }
 
 /** Return the count of stored entries without loading all data. */
@@ -103,19 +121,89 @@ export function buildSignalsFromRule(rule: FieldRule): string {
   return normaliseSignals(parts.join(" "));
 }
 
+export interface RetrainDetail {
+  ruleId: string;
+  selector: string;
+  type: string;
+  signals: string;
+  status: "imported" | "skipped";
+}
+
+export interface RetrainResult {
+  imported: number;
+  skipped: number;
+  totalRules: number;
+  durationMs: number;
+  details: RetrainDetail[];
+}
+
 /** Rebuild learned entries from the currently configured rules. */
 export async function retrainLearnedFromRules(
   rules: FieldRule[],
-): Promise<number> {
-  await clearLearnedEntries();
+): Promise<RetrainResult> {
+  const t0 = Date.now();
+
+  console.log(
+    `[LearningStore] Iniciando retreino: ${rules.length} regra(s) encontrada(s).`,
+  );
+
+  const prevCount = await getLearnedCount();
+  console.log(
+    `[LearningStore] Entradas aprendidas antes do retreino: ${prevCount}`,
+  );
+
+  // Only remove rule-derived entries; organic (auto) entries are preserved.
+  await clearRuleDerivedEntries();
+  console.log(
+    "[LearningStore] Entradas de regras anteriores removidas do storage (entradas orgânicas preservadas).",
+  );
 
   let imported = 0;
+  let skipped = 0;
+  const details: RetrainDetail[] = [];
+
   for (const rule of rules) {
     const signals = buildSignalsFromRule(rule);
-    if (!signals) continue;
-    await storeLearnedEntry(signals, rule.fieldType);
+    if (!signals) {
+      console.warn(
+        `[LearningStore] Regra ignorada (sem signals): id=${rule.id} selector=${rule.fieldSelector}`,
+      );
+      details.push({
+        ruleId: rule.id,
+        selector: rule.fieldSelector,
+        type: rule.fieldType,
+        signals: "",
+        status: "skipped",
+      });
+      skipped += 1;
+      continue;
+    }
+
+    await storeLearnedEntry(signals, rule.fieldType, undefined, "rule");
+    details.push({
+      ruleId: rule.id,
+      selector: rule.fieldSelector,
+      type: rule.fieldType,
+      signals,
+      status: "imported",
+    });
     imported += 1;
+    console.log(
+      `[LearningStore]   ✔ ${rule.fieldType.padEnd(12)} ← "${signals.slice(0, 80)}" (${rule.fieldSelector})`,
+    );
   }
 
-  return imported;
+  const durationMs = Date.now() - t0;
+
+  console.log(
+    `[LearningStore] Retreino finalizado em ${durationMs}ms. ` +
+      `Importadas: ${imported}, Ignoradas: ${skipped}`,
+  );
+  console.log(
+    "[LearningStore] NOTA: este retreino atualiza apenas os vetores de " +
+      "aprendizado (cosine similarity). Os pesos da rede neural TF.js NÃO " +
+      "são alterados. Para retreinar o modelo neural, execute: npm run train:model",
+  );
+
+  return { imported, skipped, totalRules: rules.length, durationMs, details };
 }

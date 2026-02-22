@@ -8,7 +8,8 @@
     "build": "vite build",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
-    "train:model": "tsx --tsconfig tsconfig.json scripts/train-model.ts"
+    "train:model": "tsx --tsconfig tsconfig.json scripts/train-model.ts",
+    "import:rules": "tsx --tsconfig tsconfig.json scripts/import-rules-to-dataset.ts"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",

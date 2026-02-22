@@ -7,11 +7,10 @@
     "storage",
     "activeTab",
     "scripting",
-    "contextMenus"
-  ],
-  "optional_permissions": [
+    "contextMenus",
     "tabs"
   ],
+  "optional_permissions": [],
   "host_permissions": [
     "<all_urls>"
   ],

@@ -163,10 +163,20 @@ export async function loadPretrainedModel(): Promise<void> {
  * Call this after storing a new learned entry.
  */
 export function invalidateClassifier(): void {
+  const prev = _learnedVectors.length;
   _learnedVectors = [];
+  console.log(
+    `[TFClassifier] invalidateClassifier: ${prev} vetores descarregados. Recarregando do storage...`,
+  );
   if (_pretrained) {
     // Reload in background — next classification will pick up the fresh vectors.
-    loadLearnedVectors().catch(() => {});
+    loadLearnedVectors().catch((err) => {
+      console.error("[TFClassifier] Erro ao recarregar vetores:", err);
+    });
+  } else {
+    console.warn(
+      "[TFClassifier] Modelo pré-treinado ainda não carregado. Os vetores serão carregados na próxima classificação.",
+    );
   }
 }
 
@@ -184,11 +194,10 @@ async function loadLearnedVectors(): Promise<void> {
         type: e.type,
       }))
       .filter((e) => e.vector.some((v) => v > 0));
-    if (isDebugEnabled()) {
-      console.log(
-        `[Fill All] Learned vectors reloaded — ${_learnedVectors.length} entries`,
-      );
-    }
+    console.log(
+      `[TFClassifier] loadLearnedVectors: ${entries.length} entradas no storage, ` +
+        `${_learnedVectors.length} vetores carregados (vetores nulos descartados).`,
+    );
   } catch (err) {
     console.warn(
       "[Fill All] Não foi possível carregar vetores aprendidos:",

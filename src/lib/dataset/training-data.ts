@@ -2705,6 +2705,9 @@ const HARD_SAMPLES: TrainingSample[] = [
   },
 ];
 
+// ── User samples (imported from extension rules via `npm run import:rules`) ──
+import { USER_SAMPLES } from "./user-samples";
+
 // ── Aggregate all training samples ──────────────────────────────────────────
 
 export const TRAINING_SAMPLES: TrainingSample[] = [
@@ -2740,6 +2743,7 @@ export const TRAINING_SAMPLES: TrainingSample[] = [
   ...BILINGUAL_EXPANSION_SAMPLES,
   ...TARGETED_EXPANSION_SAMPLES,
   ...HARD_SAMPLES,
+  ...USER_SAMPLES,
 ];
 
 /** Get training samples filtered by difficulty */

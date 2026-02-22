@@ -10,6 +10,7 @@ import type {
   SavedForm,
   Settings,
 } from "@/types";
+import type { RetrainResult } from "@/lib/ai/learning-store";
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -267,7 +268,8 @@ async function loadFieldCache(): Promise<void> {
   list.innerHTML = "";
 
   if (!Array.isArray(cache) || cache.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhum cache de campos detectados</div>';
+    list.innerHTML =
+      '<div class="empty">Nenhum cache de campos detectados</div>';
     return;
   }
 
@@ -334,17 +336,21 @@ async function loadLearnedEntries(): Promise<void> {
   }
 }
 
-document.getElementById("btn-refresh-cache")?.addEventListener("click", async () => {
-  await loadFieldCache();
-  await loadLearnedEntries();
-  showToast("Cache atualizado");
-});
+document
+  .getElementById("btn-refresh-cache")
+  ?.addEventListener("click", async () => {
+    await loadFieldCache();
+    await loadLearnedEntries();
+    showToast("Cache atualizado");
+  });
 
-document.getElementById("btn-clear-cache")?.addEventListener("click", async () => {
-  await chrome.runtime.sendMessage({ type: "CLEAR_FIELD_CACHE" });
-  await loadFieldCache();
-  showToast("Cache limpo");
-});
+document
+  .getElementById("btn-clear-cache")
+  ?.addEventListener("click", async () => {
+    await chrome.runtime.sendMessage({ type: "CLEAR_FIELD_CACHE" });
+    await loadFieldCache();
+    showToast("Cache limpo");
+  });
 
 document
   .getElementById("btn-clear-learning")
@@ -355,15 +361,120 @@ document
   });
 
 document
+  .getElementById("btn-export-rules-dataset")
+  ?.addEventListener("click", async () => {
+    const rules = (await chrome.runtime.sendMessage({
+      type: "GET_RULES",
+    })) as FieldRule[];
+
+    if (!Array.isArray(rules) || rules.length === 0) {
+      showToast("Nenhuma regra para exportar", "error");
+      return;
+    }
+
+    const json = JSON.stringify(rules, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "fill-all-rules.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(
+      `${rules.length} regra(s) exportada(s). Execute: npm run import:rules fill-all-rules.json`,
+    );
+  });
+
+document
   .getElementById("btn-retrain-learning")
   ?.addEventListener("click", async () => {
-    const result = (await chrome.runtime.sendMessage({
-      type: "RETRAIN_LEARNING_DATABASE",
-    })) as { imported?: number; totalRules?: number } | null;
-    await loadLearnedEntries();
-    showToast(
-      `Retreino concluído: ${result?.imported ?? 0}/${result?.totalRules ?? 0} regras`,
-    );
+    const btn = document.getElementById(
+      "btn-retrain-learning",
+    ) as HTMLButtonElement;
+    const logBox = document.getElementById(
+      "retrain-log-box",
+    ) as HTMLElement | null;
+    const logPre = document.getElementById(
+      "retrain-log",
+    ) as HTMLPreElement | null;
+
+    btn.disabled = true;
+    btn.textContent = "Retreinando...";
+
+    if (logBox) logBox.style.display = "none";
+    if (logPre) logPre.textContent = "";
+
+    const t0 = performance.now();
+
+    try {
+      const result = (await chrome.runtime.sendMessage({
+        type: "RETRAIN_LEARNING_DATABASE",
+      })) as (RetrainResult & { success?: boolean }) | null;
+
+      const elapsed = Math.round(performance.now() - t0);
+
+      await loadLearnedEntries();
+
+      if (result && logPre && logBox) {
+        const lines: string[] = [];
+        lines.push("═══════════════════════════════════════════");
+        lines.push("  RETREINO DE VETORES — RESULTADO DETALHADO");
+        lines.push("═══════════════════════════════════════════");
+        lines.push("");
+        lines.push(`  Total de regras encontradas : ${result.totalRules}`);
+        lines.push(`  Importadas com sucesso      : ${result.imported}`);
+        lines.push(`  Ignoradas (sem signals)     : ${result.skipped}`);
+        lines.push(
+          `  Duração total               : ${result.durationMs ?? elapsed}ms`,
+        );
+        lines.push("");
+        lines.push("─── O QUE FOI FEITO ───────────────────────");
+        lines.push(
+          "  ✔ Entradas anteriores de regras foram removidas (entradas orgânicas preservadas).",
+        );
+        lines.push(
+          "  ✔ Regras convertidas em sinais e salvas como LearnedEntry.",
+        );
+        lines.push("  ✔ Abas abertas notificadas (INVALIDATE_CLASSIFIER).");
+        lines.push("  ✔ Próxima classificação usará os novos vetores.");
+        lines.push("");
+        lines.push("─── O QUE NÃO FOI FEITO ───────────────────");
+        lines.push("  ✗ Os pesos da rede neural TF.js NÃO foram alterados.");
+        lines.push(
+          "  ✗ Os arquivos model.json / *.bin NÃO foram substituídos.",
+        );
+        lines.push("  → Para retreinar o modelo neural: npm run train:model");
+        lines.push("");
+
+        if (result.details && result.details.length > 0) {
+          lines.push("─── DETALHES POR REGRA ────────────────────");
+          for (const d of result.details) {
+            const icon = d.status === "imported" ? "✔" : "✗";
+            const sig = d.signals ? `"${d.signals.slice(0, 60)}"` : "(vazio)";
+            lines.push(
+              `  ${icon} [${d.type.padEnd(14)}] ${d.selector.slice(0, 40)}`,
+            );
+            lines.push(`       signals: ${sig}`);
+          }
+          lines.push("");
+        }
+
+        lines.push("═══════════════════════════════════════════");
+
+        logPre.textContent = lines.join("\n");
+        logBox.style.display = "block";
+      }
+
+      showToast(
+        `✅ ${result?.imported ?? 0} vetores atualizados de ${result?.totalRules ?? 0} regras (${result?.durationMs ?? elapsed}ms)`,
+      );
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "🧠 Retreinar Vetores (Browser)";
+    }
   });
 
 // --- Init ---
