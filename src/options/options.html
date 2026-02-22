@@ -37,33 +37,22 @@
 
         <div class="toggle-group">
           <div>
-            <label>Chrome Built-in AI</label>
-            <div class="description">Usar Gemini Nano quando disponível</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="setting-chrome-ai" />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="toggle-group">
-          <div>
-            <label>IA sempre primeiro</label>
-            <div class="description">Força a IA a ser usada antes de regras, formulários salvos e geradores</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="setting-force-ai-first" />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="toggle-group">
-          <div>
             <label>Destacar campos preenchidos</label>
-            <div class="description">Adiciona borda visual nos campos preenchidos</div>
+            <div class="description">Adiciona borda visual e exibe o nome detectado nos campos preenchidos</div>
           </div>
           <label class="toggle">
             <input type="checkbox" id="setting-highlight" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-group">
+          <div>
+            <label>Cache de detecção</label>
+            <div class="description">Guarda campos detectados por URL para carregamento rápido no popup</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-cache-enabled" />
             <span class="slider"></span>
           </label>
         </div>
@@ -87,6 +76,58 @@
         </div>
 
         <button id="btn-save-settings" class="btn btn-primary">Salvar Configurações</button>
+      </div>
+
+      <!-- Field Icon Card -->
+      <div class="card">
+        <h2>Ícone de Campo</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
+          Configure a exibição do ícone de preenchimento rápido que aparece ao focar em um campo.
+        </p>
+
+        <div class="toggle-group">
+          <div>
+            <label>Exibir ícone de campo</label>
+            <div class="description">Mostra os botões de preencher, inspecionar e salvar regra ao focar num campo</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-show-field-icon" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" id="field-icon-position-group" style="margin-top: 12px;">
+          <label for="setting-field-icon-position">Posição do ícone:</label>
+          <select id="setting-field-icon-position">
+            <option value="above">Acima do campo</option>
+            <option value="inside">Dentro do campo (à direita)</option>
+            <option value="below">Abaixo do campo</option>
+          </select>
+          <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--text-muted);">
+            Recarregue a aba ativa para aplicar a mudança de posição.
+          </div>
+        </div>
+
+        <button id="btn-save-field-icon" class="btn btn-primary" style="margin-top: 8px;">Salvar</button>
+      </div>
+
+      <!-- Detection Strategies Card -->
+      <div class="card">
+        <h2>Estratégias de Detecção</h2>
+        <p class="description" style="margin-bottom: 12px; color: var(--text-muted); font-size: 13px;">
+          Arraste para reordenar as estratégias. A extensão tenta cada estratégia habilitada na ordem listada até encontrar um resultado.
+        </p>
+
+        <div id="strategy-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+
+        <div id="chrome-ai-status-block" style="display:none; margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); background: var(--bg);">
+          <div id="chrome-ai-status-text" style="color: var(--text-muted);"></div>
+          <button id="btn-download-chrome-ai" class="btn btn-secondary" style="display:none; margin-top: 8px; font-size: 12px;">
+            ⬇️ Iniciar download do modelo
+          </button>
+        </div>
+
+        <button id="btn-save-strategies" class="btn btn-primary" style="margin-top: 12px;">Salvar Ordem</button>
       </div>
     </div>
 

@@ -38,10 +38,16 @@ let currentRuleField: {
 } | null = null;
 let hideTimeout: ReturnType<typeof setTimeout> | null = null;
 
+/** Active position setting, updated via initFieldIcon() */
+let _iconPosition: "above" | "inside" | "below" = "inside";
+
 /**
  * Initializes the field icon feature — call once from content script
  */
-export function initFieldIcon(): void {
+export function initFieldIcon(
+  position: "above" | "inside" | "below" = "inside",
+): void {
+  _iconPosition = position;
   injectStyles();
 
   document.addEventListener("focusin", handleFocusIn, true);
@@ -168,12 +174,23 @@ function positionIcon(target: HTMLElement): void {
 
   const rect = target.getBoundingClientRect();
   const iconHeight = 24;
-  const totalWidth = 47; // two 22px buttons + 3px gap
+  const totalWidth = 72; // three 22px buttons + 3px gaps
   const gap = 4;
 
-  // Position inside the input, right-aligned
-  let top = rect.top + (rect.height - iconHeight) / 2 + window.scrollY;
-  let left = rect.right - totalWidth - gap + window.scrollX;
+  let top: number;
+  let left: number;
+
+  if (_iconPosition === "above") {
+    top = rect.top - iconHeight - gap + window.scrollY;
+    left = rect.right - totalWidth - gap + window.scrollX;
+  } else if (_iconPosition === "below") {
+    top = rect.bottom + gap + window.scrollY;
+    left = rect.right - totalWidth - gap + window.scrollX;
+  } else {
+    // inside (default)
+    top = rect.top + (rect.height - iconHeight) / 2 + window.scrollY;
+    left = rect.right - totalWidth - gap + window.scrollX;
+  }
 
   // Clamp within viewport
   const maxLeft = window.innerWidth + window.scrollX - totalWidth - 4;

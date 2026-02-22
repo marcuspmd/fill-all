@@ -87,14 +87,57 @@ function handleCheckboxOrRadio(element: HTMLInputElement): void {
   element.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function highlightField(element: HTMLElement): void {
+function highlightField(element: HTMLElement, detectedLabel?: string): void {
   const original = element.style.outline;
   element.style.outline = "2px solid #4F46E5";
   element.style.outlineOffset = "1px";
+
+  let badge: HTMLElement | null = null;
+  if (detectedLabel) {
+    badge = createFieldLabelBadge(element, detectedLabel);
+  }
+
   setTimeout(() => {
     element.style.outline = original;
     element.style.outlineOffset = "";
+    badge?.remove();
   }, 2000);
+}
+
+function createFieldLabelBadge(
+  target: HTMLElement,
+  label: string,
+): HTMLElement {
+  const rect = target.getBoundingClientRect();
+  const badge = document.createElement("div");
+  badge.textContent = label;
+
+  const top = rect.top - 20;
+  const left = rect.left;
+
+  badge.style.cssText = `
+    position: fixed;
+    top: ${Math.max(2, top)}px;
+    left: ${left}px;
+    background: rgba(79, 70, 229, 0.9);
+    color: #fff;
+    font-size: 10px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    z-index: 2147483645;
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    letter-spacing: 0.2px;
+  `;
+  document.body.appendChild(badge);
+  return badge;
 }
 
 export async function fillAllFields(): Promise<GenerationResult[]> {
@@ -141,7 +184,10 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
       applyValueToField(field, result.value);
 
       if (settings.highlightFilled) {
-        highlightField(field.element);
+        highlightField(
+          field.element,
+          field.label ?? field.fieldType ?? undefined,
+        );
       }
 
       results.push(result);
@@ -217,7 +263,7 @@ export async function fillSingleField(
     applyValueToField(field, result.value);
 
     if (settings.highlightFilled) {
-      highlightField(field.element);
+      highlightField(field.element, field.label ?? field.fieldType ?? undefined);
     }
 
     return result;

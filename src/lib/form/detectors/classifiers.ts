@@ -97,7 +97,7 @@ export const htmlFallbackClassifier: FieldClassifier = {
 /**
  * Default field-level classification pipeline.
  * Classifies a single FormField:
- *   html-type → tensorflow → chrome-ai (async) → html-fallback
+ *   html-type → keyword → tensorflow → chrome-ai (async) → html-fallback
  *
  * chrome-ai participates only when the pipeline is run via runAsync().
  * The synchronous run() skips it transparently (detect() returns null).
@@ -109,6 +109,56 @@ export const DEFAULT_PIPELINE = new DetectionPipeline([
   chromeAiClassifier,
   htmlFallbackClassifier,
 ]);
+
+// ── Configurable active pipeline ──────────────────────────────────────────────
+
+/** Runtime-mutable pipeline — overridden by content-script based on user settings. */
+let _activePipeline: DetectionPipeline = DEFAULT_PIPELINE;
+
+/** All named classifiers available for pipeline composition. */
+const NAMED_CLASSIFIERS: Record<string, FieldClassifier> = {
+  "html-type": htmlTypeClassifier,
+  keyword: keywordClassifier,
+  tensorflow: tensorflowClassifier,
+  "chrome-ai": chromeAiClassifier,
+  "html-fallback": htmlFallbackClassifier,
+};
+
+/**
+ * Returns the currently active detection pipeline.
+ * Defaults to DEFAULT_PIPELINE unless overridden via setActivePipeline().
+ */
+export function getActivePipeline(): DetectionPipeline {
+  return _activePipeline;
+}
+
+/**
+ * Overrides the active detection pipeline used by nativeInputDetector.
+ * Called by the content script on startup based on user settings.
+ */
+export function setActivePipeline(pipeline: DetectionPipeline): void {
+  _activePipeline = pipeline;
+}
+
+/**
+ * Builds a DetectionPipeline from a user-defined ordered config.
+ * Strategies not listed or disabled are excluded.
+ * html-fallback is always appended last when not already present.
+ */
+export function buildPipelineFromSettings(
+  config: Array<{ name: string; enabled: boolean }>,
+): DetectionPipeline {
+  const ordered = config
+    .filter((s) => s.enabled && NAMED_CLASSIFIERS[s.name])
+    .map((s) => NAMED_CLASSIFIERS[s.name]);
+
+  // Ensure there's always a fallback terminator
+  if (!ordered.find((c) => c.name === "html-fallback")) {
+    ordered.push(htmlFallbackClassifier);
+  }
+
+  return new DetectionPipeline(ordered);
+}
 
 // ── Async native-input scanner ───────────────────────────────────────────────
 
@@ -149,9 +199,7 @@ export async function detectNativeFieldsAsync(): Promise<FormField[]> {
 
     field.contextSignals = buildSignals(field);
 
-    const result = await DEFAULT_PIPELINE.runAsync(field);
-    field.fieldType = result.type;
-    field.detectionMethod = result.method;
+      const result = await _activePipeline.runAsync(field);
     field.detectionConfidence = result.confidence;
     field.detectionDurationMs = result.durationMs;
 
@@ -208,7 +256,7 @@ export const nativeInputDetector: PageDetector = {
 
       field.contextSignals = buildSignals(field);
 
-      const result = DEFAULT_PIPELINE.run(field);
+      const result = _activePipeline.run(field);
       field.fieldType = result.type;
       field.detectionMethod = result.method;
       field.detectionConfidence = result.confidence;

@@ -266,6 +266,11 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
       if (!payload) {
         return { error: "Invalid payload for SAVE_FIELD_CACHE" };
       }
+      // Respect user's cache-enabled setting
+      const cacheSettings = await getSettings();
+      if (cacheSettings.cacheEnabled === false) {
+        return { success: true, skipped: true };
+      }
       return saveFieldDetectionCacheForUrl(payload.url, payload.fields);
     }
 

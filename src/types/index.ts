@@ -170,6 +170,14 @@ export interface FieldDetectionCacheEntry {
   updatedAt: number;
 }
 
+/** A single detection strategy entry in the pipeline config */
+export interface DetectionStrategyEntry {
+  /** Classifier name (html-type | keyword | tensorflow | chrome-ai | html-fallback) */
+  name: string;
+  /** Whether this strategy is active */
+  enabled: boolean;
+}
+
 /** Extension settings */
 export interface Settings {
   /** Whether to auto-fill on page load */
@@ -186,6 +194,14 @@ export interface Settings {
   locale: "pt-BR" | "en-US";
   /** Whether to highlight filled fields */
   highlightFilled: boolean;
+  /** Whether to enable field detection cache */
+  cacheEnabled: boolean;
+  /** Whether to show the per-field fill/inspect icon */
+  showFieldIcon: boolean;
+  /** Position of the field icon relative to the input */
+  fieldIconPosition: "above" | "inside" | "below";
+  /** Ordered list of classification strategies */
+  detectionPipeline: DetectionStrategyEntry[];
   /** Money generator range */
   moneyMin: number;
   moneyMax: number;
@@ -251,6 +267,14 @@ export interface GenerationResult {
   source: "fixed" | "rule" | "ai" | "tensorflow" | "generator";
 }
 
+export const DEFAULT_DETECTION_PIPELINE: DetectionStrategyEntry[] = [
+  { name: "html-type", enabled: true },
+  { name: "keyword", enabled: true },
+  { name: "tensorflow", enabled: true },
+  { name: "chrome-ai", enabled: true },
+  { name: "html-fallback", enabled: true },
+];
+
 export const DEFAULT_SETTINGS: Settings = {
   autoFillOnLoad: false,
   defaultStrategy: "ai",
@@ -259,6 +283,10 @@ export const DEFAULT_SETTINGS: Settings = {
   shortcut: "Alt+F",
   locale: "pt-BR",
   highlightFilled: true,
+  cacheEnabled: true,
+  showFieldIcon: true,
+  fieldIconPosition: "inside",
+  detectionPipeline: DEFAULT_DETECTION_PIPELINE,
   moneyMin: 1,
   moneyMax: 10000,
   numberMin: 1,

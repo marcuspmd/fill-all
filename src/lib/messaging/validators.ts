@@ -16,6 +16,12 @@ const settingsSchema = z
     shortcut: z.string(),
     locale: z.enum(["pt-BR", "en-US"]),
     highlightFilled: z.boolean(),
+    cacheEnabled: z.boolean(),
+    showFieldIcon: z.boolean(),
+    fieldIconPosition: z.enum(["above", "inside", "below"]),
+    detectionPipeline: z
+      .array(z.object({ name: z.string().min(1), enabled: z.boolean() }))
+      .optional(),
     moneyMin: z.number(),
     moneyMax: z.number(),
     numberMin: z.number(),
