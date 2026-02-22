@@ -11,7 +11,8 @@
     "train:model": "tsx --tsconfig tsconfig.json scripts/train-model.ts"
   },
   "dependencies": {
-    "@tensorflow/tfjs": "^4.22.0"
+    "@tensorflow/tfjs": "^4.22.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.3.0",

@@ -11,6 +11,7 @@ import type {
   DetectedFieldSummary,
 } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
+import { matchUrlPattern } from "@/lib/url/match-url-pattern";
 
 const STORAGE_KEYS = {
   RULES: "fill_all_rules",
@@ -19,8 +20,10 @@ const STORAGE_KEYS = {
   IGNORED_FIELDS: "fill_all_ignored_fields",
   FIELD_CACHE: "fill_all_field_cache",
 } as const;
+type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
 
 const MAX_FIELD_CACHE_ENTRIES = 100;
+const writeQueues = new Map<StorageKey, Promise<void>>();
 
 async function getFromStorage<T>(key: string, defaultValue: T): Promise<T> {
   const result = await chrome.storage.local.get(key);
@@ -31,6 +34,31 @@ async function setToStorage<T>(key: string, value: T): Promise<void> {
   await chrome.storage.local.set({ [key]: value });
 }
 
+async function updateStorageAtomically<T>(
+  key: StorageKey,
+  defaultValue: T,
+  updater: (current: T) => T,
+): Promise<T> {
+  const previous = writeQueues.get(key) ?? Promise.resolve();
+  let nextValue = defaultValue;
+
+  const currentWrite = previous.then(async () => {
+    const current = await getFromStorage<T>(key, defaultValue);
+    nextValue = updater(current);
+    await setToStorage(key, nextValue);
+  });
+
+  writeQueues.set(
+    key,
+    currentWrite.catch(() => {
+      // Keep queue alive after errors.
+    }),
+  );
+
+  await currentWrite;
+  return nextValue;
+}
+
 // --- Rules ---
 
 export async function getRules(): Promise<FieldRule[]> {
@@ -38,22 +66,24 @@ export async function getRules(): Promise<FieldRule[]> {
 }
 
 export async function saveRule(rule: FieldRule): Promise<void> {
-  const rules = await getRules();
-  const existingIndex = rules.findIndex((r) => r.id === rule.id);
+  await updateStorageAtomically(STORAGE_KEYS.RULES, [] as FieldRule[], (rules) => {
+    const next = [...rules];
+    const existingIndex = next.findIndex((r) => r.id === rule.id);
 
-  if (existingIndex >= 0) {
-    rules[existingIndex] = { ...rule, updatedAt: Date.now() };
-  } else {
-    rules.push({ ...rule, createdAt: Date.now(), updatedAt: Date.now() });
-  }
+    if (existingIndex >= 0) {
+      next[existingIndex] = { ...rule, updatedAt: Date.now() };
+    } else {
+      next.push({ ...rule, createdAt: Date.now(), updatedAt: Date.now() });
+    }
 
-  await setToStorage(STORAGE_KEYS.RULES, rules);
+    return next;
+  });
 }
 
 export async function deleteRule(ruleId: string): Promise<void> {
-  const rules = await getRules();
-  const filtered = rules.filter((r) => r.id !== ruleId);
-  await setToStorage(STORAGE_KEYS.RULES, filtered);
+  await updateStorageAtomically(STORAGE_KEYS.RULES, [] as FieldRule[], (rules) =>
+    rules.filter((r) => r.id !== ruleId),
+  );
 }
 
 export async function getRulesForUrl(url: string): Promise<FieldRule[]> {
@@ -70,22 +100,30 @@ export async function getSavedForms(): Promise<SavedForm[]> {
 }
 
 export async function saveForm(form: SavedForm): Promise<void> {
-  const forms = await getSavedForms();
-  const existingIndex = forms.findIndex((f) => f.id === form.id);
+  await updateStorageAtomically(
+    STORAGE_KEYS.SAVED_FORMS,
+    [] as SavedForm[],
+    (forms) => {
+      const next = [...forms];
+      const existingIndex = next.findIndex((f) => f.id === form.id);
 
-  if (existingIndex >= 0) {
-    forms[existingIndex] = { ...form, updatedAt: Date.now() };
-  } else {
-    forms.push({ ...form, createdAt: Date.now(), updatedAt: Date.now() });
-  }
+      if (existingIndex >= 0) {
+        next[existingIndex] = { ...form, updatedAt: Date.now() };
+      } else {
+        next.push({ ...form, createdAt: Date.now(), updatedAt: Date.now() });
+      }
 
-  await setToStorage(STORAGE_KEYS.SAVED_FORMS, forms);
+      return next;
+    },
+  );
 }
 
 export async function deleteForm(formId: string): Promise<void> {
-  const forms = await getSavedForms();
-  const filtered = forms.filter((f) => f.id !== formId);
-  await setToStorage(STORAGE_KEYS.SAVED_FORMS, filtered);
+  await updateStorageAtomically(
+    STORAGE_KEYS.SAVED_FORMS,
+    [] as SavedForm[],
+    (forms) => forms.filter((f) => f.id !== formId),
+  );
 }
 
 export async function getSavedFormsForUrl(url: string): Promise<SavedForm[]> {
@@ -100,8 +138,11 @@ export async function getSettings(): Promise<Settings> {
 }
 
 export async function saveSettings(settings: Partial<Settings>): Promise<void> {
-  const current = await getSettings();
-  await setToStorage(STORAGE_KEYS.SETTINGS, { ...current, ...settings });
+  await updateStorageAtomically(
+    STORAGE_KEYS.SETTINGS,
+    DEFAULT_SETTINGS,
+    (current) => ({ ...current, ...settings }),
+  );
 }
 
 // --- Ignored Fields ---
@@ -113,28 +154,42 @@ export async function getIgnoredFields(): Promise<IgnoredField[]> {
 export async function addIgnoredField(
   field: Omit<IgnoredField, "id" | "createdAt">,
 ): Promise<IgnoredField> {
-  const fields = await getIgnoredFields();
-  const newField: IgnoredField = {
-    ...field,
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    createdAt: Date.now(),
-  };
-  // Avoid duplicates: same url + selector
-  const exists = fields.some(
-    (f) => f.urlPattern === field.urlPattern && f.selector === field.selector,
+  let resolvedField: IgnoredField | null = null;
+
+  await updateStorageAtomically(
+    STORAGE_KEYS.IGNORED_FIELDS,
+    [] as IgnoredField[],
+    (fields) => {
+      const existing = fields.find(
+        (f) =>
+          f.urlPattern === field.urlPattern && f.selector === field.selector,
+      );
+      if (existing) {
+        resolvedField = existing;
+        return fields;
+      }
+
+      const nextField: IgnoredField = {
+        ...field,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        createdAt: Date.now(),
+      };
+      resolvedField = nextField;
+      return [...fields, nextField];
+    },
   );
-  if (!exists) {
-    fields.push(newField);
-    await setToStorage(STORAGE_KEYS.IGNORED_FIELDS, fields);
+
+  if (!resolvedField) {
+    throw new Error("Failed to resolve ignored field");
   }
-  return newField;
+  return resolvedField;
 }
 
 export async function removeIgnoredField(id: string): Promise<void> {
-  const fields = await getIgnoredFields();
-  await setToStorage(
+  await updateStorageAtomically(
     STORAGE_KEYS.IGNORED_FIELDS,
-    fields.filter((f) => f.id !== id),
+    [] as IgnoredField[],
+    (fields) => fields.filter((f) => f.id !== id),
   );
 }
 
@@ -192,45 +247,44 @@ export async function saveFieldDetectionCacheForUrl(
     updatedAt: now,
   };
 
-  const existing = await getFieldDetectionCache();
-  const filtered = existing.filter(
-    (item) =>
-      item.url !== url &&
-      !(entry.origin && entry.path && item.origin === entry.origin && item.path === entry.path),
+  await updateStorageAtomically(
+    STORAGE_KEYS.FIELD_CACHE,
+    [] as FieldDetectionCacheEntry[],
+    (existing) => {
+      const filtered = existing.filter(
+        (item) =>
+          item.url !== url &&
+          !(
+            entry.origin &&
+            entry.path &&
+            item.origin === entry.origin &&
+            item.path === entry.path
+          ),
+      );
+      filtered.push(entry);
+
+      return filtered
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .slice(0, MAX_FIELD_CACHE_ENTRIES);
+    },
   );
-  filtered.push(entry);
-
-  const trimmed = filtered
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, MAX_FIELD_CACHE_ENTRIES);
-
-  await setToStorage(STORAGE_KEYS.FIELD_CACHE, trimmed);
   return entry;
 }
 
 export async function deleteFieldDetectionCacheForUrl(url: string): Promise<void> {
-  const current = await getFieldDetectionCache();
-  await setToStorage(
+  await updateStorageAtomically(
     STORAGE_KEYS.FIELD_CACHE,
-    current.filter((entry) => entry.url !== url),
+    [] as FieldDetectionCacheEntry[],
+    (current) => current.filter((entry) => entry.url !== url),
   );
 }
 
 export async function clearFieldDetectionCache(): Promise<void> {
-  await setToStorage(STORAGE_KEYS.FIELD_CACHE, []);
+  await updateStorageAtomically(
+    STORAGE_KEYS.FIELD_CACHE,
+    [] as FieldDetectionCacheEntry[],
+    () => [],
+  );
 }
 
-// --- URL Pattern Matching ---
-
-export function matchUrlPattern(url: string, pattern: string): boolean {
-  try {
-    // Convert wildcard pattern to regex
-    const escaped = pattern
-      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-      .replace(/\*/g, ".*");
-    const regex = new RegExp(`^${escaped}$`, "i");
-    return regex.test(url);
-  } catch {
-    return url.includes(pattern);
-  }
-}
+export { matchUrlPattern } from "@/lib/url/match-url-pattern";

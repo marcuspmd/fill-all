@@ -5,6 +5,7 @@
 import type {
   DetectedFieldSummary,
   ExtensionMessage,
+  FormField,
   SavedForm,
 } from "@/types";
 import {
@@ -26,6 +27,36 @@ import {
 } from "@/lib/form/floating-panel";
 import { initFieldIcon } from "@/lib/form/field-icon";
 import { loadPretrainedModel } from "@/lib/ai/tensorflow-generator";
+import {
+  parseIncomingMessage,
+  parseSavedFormPayload,
+  parseStartWatchingPayload,
+  parseStringPayload,
+} from "@/lib/messaging/validators";
+
+type FillableElement =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement;
+
+let lastContextMenuElement: FillableElement | null = null;
+
+document.addEventListener(
+  "contextmenu",
+  (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const field = target.closest("input, select, textarea");
+    if (
+      field instanceof HTMLInputElement ||
+      field instanceof HTMLSelectElement ||
+      field instanceof HTMLTextAreaElement
+    ) {
+      lastContextMenuElement = field;
+    }
+  },
+  true,
+);
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -34,11 +65,17 @@ function generateId(): string {
 // Listen for messages from background / popup
 chrome.runtime.onMessage.addListener(
   (
-    message: ExtensionMessage,
+    message: unknown,
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response: unknown) => void,
   ) => {
-    handleContentMessage(message)
+    const parsed = parseIncomingMessage(message);
+    if (!parsed) {
+      sendResponse({ error: "Invalid message format" });
+      return false;
+    }
+
+    handleContentMessage(parsed as ExtensionMessage)
       .then(sendResponse)
       .catch((err) => sendResponse({ error: (err as Error).message }));
     return true;
@@ -85,14 +122,22 @@ async function handleContentMessage(
     }
 
     case "LOAD_SAVED_FORM": {
-      const form = message.payload as SavedForm;
+      const form = parseSavedFormPayload(message.payload);
+      if (!form) return { error: "Invalid payload for LOAD_SAVED_FORM" };
       const fields = detectFormFields();
 
       let filled = 0;
       for (const field of fields) {
         const key = field.id || field.name || field.selector;
         const value = form.fields[key];
-        if (value) {
+        if (value === undefined) continue;
+
+        if (
+          field.element instanceof HTMLInputElement &&
+          (field.element.type === "checkbox" || field.element.type === "radio")
+        ) {
+          field.element.checked = value === "true";
+        } else {
           const nativeValueSetter = Object.getOwnPropertyDescriptor(
             window.HTMLInputElement.prototype,
             "value",
@@ -103,15 +148,29 @@ async function handleContentMessage(
           } else {
             field.element.value = value;
           }
-
-          field.element.dispatchEvent(new Event("input", { bubbles: true }));
-          field.element.dispatchEvent(new Event("change", { bubbles: true }));
-          filled++;
         }
+
+        field.element.dispatchEvent(new Event("input", { bubbles: true }));
+        field.element.dispatchEvent(new Event("change", { bubbles: true }));
+        filled++;
       }
 
       showNotification(`✓ ${filled} campos carregados do template`);
       return { success: true, filled };
+    }
+
+    case "FILL_SINGLE_FIELD": {
+      const fields = detectFormFields();
+      const targetField = findSingleFieldTarget(fields);
+      if (!targetField) return { error: "No target field found" };
+
+      const result = await fillSingleField(targetField);
+      if (result) {
+        showNotification(
+          `✓ Campo "${targetField.label || targetField.name || targetField.id || targetField.selector}" preenchido`,
+        );
+      }
+      return result ?? { error: "Failed to fill field" };
     }
 
     case "GET_FORM_FIELDS": {
@@ -165,7 +224,8 @@ async function handleContentMessage(
     }
 
     case "FILL_FIELD_BY_SELECTOR": {
-      const selector = message.payload as string;
+      const selector = parseStringPayload(message.payload);
+      if (!selector) return { error: "Invalid payload for FILL_FIELD_BY_SELECTOR" };
       const fields = detectFormFields();
       const field = fields.find((f) => f.selector === selector);
       if (!field) return { error: "Field not found" };
@@ -177,8 +237,9 @@ async function handleContentMessage(
     }
 
     case "START_WATCHING": {
-      const autoRefill =
-        (message.payload as { autoRefill?: boolean })?.autoRefill ?? true;
+      const payload = parseStartWatchingPayload(message.payload);
+      if (!payload) return { error: "Invalid payload for START_WATCHING" };
+      const autoRefill = payload.autoRefill ?? true;
       startWatching((newFieldsCount) => {
         if (newFieldsCount > 0) {
           showNotification(
@@ -216,6 +277,28 @@ async function handleContentMessage(
     default:
       return { error: `Unknown message type: ${message.type}` };
   }
+}
+
+function findSingleFieldTarget(fields: FormField[]): FormField | undefined {
+  if (lastContextMenuElement) {
+    const byContextMenu = fields.find((f) => f.element === lastContextMenuElement);
+    if (byContextMenu) return byContextMenu;
+  }
+
+  if (document.activeElement instanceof HTMLElement) {
+    const activeField =
+      document.activeElement.closest("input, select, textarea");
+    if (
+      activeField instanceof HTMLInputElement ||
+      activeField instanceof HTMLSelectElement ||
+      activeField instanceof HTMLTextAreaElement
+    ) {
+      const byFocus = fields.find((f) => f.element === activeField);
+      if (byFocus) return byFocus;
+    }
+  }
+
+  return fields.find((f) => !f.element.disabled);
 }
 
 function showNotification(text: string): void {

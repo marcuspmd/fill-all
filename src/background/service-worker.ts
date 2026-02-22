@@ -2,14 +2,12 @@
  * Background service worker — handles messages and context menu
  */
 
-import type { ExtensionMessage, FieldRule, SavedForm, Settings } from "@/types";
-import type { IgnoredField } from "@/types";
+import type { ExtensionMessage } from "@/types";
 import {
   getRules,
   saveRule,
   deleteRule,
   getSavedForms,
-  saveForm,
   deleteForm,
   getSettings,
   saveSettings,
@@ -22,7 +20,6 @@ import {
   deleteFieldDetectionCacheForUrl,
   clearFieldDetectionCache,
 } from "@/lib/storage/storage";
-import type { DetectedFieldSummary } from "@/types";
 import {
   getLearnedEntries,
   clearLearnedEntries,
@@ -30,6 +27,18 @@ import {
   buildSignalsFromRule,
   retrainLearnedFromRules,
 } from "@/lib/ai/learning-store";
+import {
+  parseIncomingMessage,
+  parseIgnoredFieldPayload,
+  parseRulePayload,
+  parseSaveFieldCachePayload,
+  parseSettingsPayload,
+  parseStringPayload,
+} from "@/lib/messaging/validators";
+import {
+  sendToActiveTab,
+  sendToSpecificTab,
+} from "@/lib/chrome/active-tab-messaging";
 
 // Create context menu on install
 chrome.runtime.onInstalled.addListener(() => {
@@ -64,16 +73,24 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
   switch (info.menuItemId) {
     case "fill-all-fields":
-      chrome.tabs.sendMessage(tab.id, { type: "FILL_ALL_FIELDS" });
+      void sendToSpecificTab(tab.id, tab.url, { type: "FILL_ALL_FIELDS" }, {
+        injectIfNeeded: true,
+      });
       break;
     case "fill-all-save-form":
-      chrome.tabs.sendMessage(tab.id, { type: "SAVE_FORM" });
+      void sendToSpecificTab(tab.id, tab.url, { type: "SAVE_FORM" }, {
+        injectIfNeeded: true,
+      });
       break;
     case "fill-all-field-rule":
-      chrome.tabs.sendMessage(tab.id, { type: "FILL_SINGLE_FIELD" });
+      void sendToSpecificTab(tab.id, tab.url, { type: "FILL_SINGLE_FIELD" }, {
+        injectIfNeeded: true,
+      });
       break;
     case "fill-all-toggle-panel":
-      chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_PANEL" });
+      void sendToSpecificTab(tab.id, tab.url, { type: "TOGGLE_PANEL" }, {
+        injectIfNeeded: true,
+      });
       break;
   }
 });
@@ -81,11 +98,17 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 // Handle messages from popup and content script
 chrome.runtime.onMessage.addListener(
   (
-    message: ExtensionMessage,
+    message: unknown,
     _sender,
     sendResponse: (response: unknown) => void,
   ) => {
-    handleMessage(message)
+    const parsed = parseIncomingMessage(message);
+    if (!parsed) {
+      sendResponse({ error: "Invalid message format" });
+      return false;
+    }
+
+    handleMessage(parsed as ExtensionMessage)
       .then(sendResponse)
       .catch((err) => sendResponse({ error: err.message }));
     return true; // Keep message channel open for async
@@ -109,36 +132,7 @@ const CONTENT_SCRIPT_MESSAGES = new Set([
 ]);
 
 async function forwardToActiveTab(message: ExtensionMessage): Promise<unknown> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return { error: "No active tab" };
-
-  const url = tab.url ?? "";
-  if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    return { error: "Content script not available on this page" };
-  }
-
-  try {
-    return await chrome.tabs.sendMessage(tab.id, message);
-  } catch {
-    // Content script not loaded (tab existed before extension install/update).
-    // Try to inject it dynamically and retry once.
-    try {
-      const manifest = chrome.runtime.getManifest();
-      const files = (manifest.content_scripts?.[0]?.js ?? []) as string[];
-      if (files.length === 0)
-        throw new Error("No content script files in manifest");
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files,
-      });
-      return await chrome.tabs.sendMessage(tab.id, message);
-    } catch (injectErr) {
-      return {
-        error: "Content script not responding",
-        details: String(injectErr),
-      };
-    }
-  }
+  return sendToActiveTab(message, { injectIfNeeded: true });
 }
 
 async function handleMessage(message: ExtensionMessage): Promise<unknown> {
@@ -153,7 +147,8 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 
     case "SAVE_RULE":
       {
-        const rule = message.payload as FieldRule;
+        const rule = parseRulePayload(message.payload);
+        if (!rule) return { error: "Invalid payload for SAVE_RULE" };
         await saveRule(rule);
         const signals = buildSignalsFromRule(rule);
         if (signals) {
@@ -163,33 +158,51 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
       return { success: true };
 
     case "DELETE_RULE":
-      await deleteRule(message.payload as string);
+      {
+        const ruleId = parseStringPayload(message.payload);
+        if (!ruleId) return { error: "Invalid payload for DELETE_RULE" };
+        await deleteRule(ruleId);
+      }
       return { success: true };
 
     case "GET_SETTINGS":
       return getSettings();
 
     case "SAVE_SETTINGS":
-      await saveSettings(message.payload as Partial<Settings>);
+      {
+        const settings = parseSettingsPayload(message.payload);
+        if (!settings) return { error: "Invalid payload for SAVE_SETTINGS" };
+        await saveSettings(settings);
+      }
       return { success: true };
 
     case "GET_SAVED_FORMS":
       return getSavedForms();
 
     case "DELETE_FORM":
-      await deleteForm(message.payload as string);
+      {
+        const formId = parseStringPayload(message.payload);
+        if (!formId) return { error: "Invalid payload for DELETE_FORM" };
+        await deleteForm(formId);
+      }
       return { success: true };
 
     case "GET_IGNORED_FIELDS":
       return getIgnoredFields();
 
     case "ADD_IGNORED_FIELD":
-      return addIgnoredField(
-        message.payload as Omit<IgnoredField, "id" | "createdAt">,
-      );
+      {
+        const payload = parseIgnoredFieldPayload(message.payload);
+        if (!payload) return { error: "Invalid payload for ADD_IGNORED_FIELD" };
+        return addIgnoredField(payload);
+      }
 
     case "REMOVE_IGNORED_FIELD":
-      await removeIgnoredField(message.payload as string);
+      {
+        const ignoredId = parseStringPayload(message.payload);
+        if (!ignoredId) return { error: "Invalid payload for REMOVE_IGNORED_FIELD" };
+        await removeIgnoredField(ignoredId);
+      }
       return { success: true };
 
     case "GET_FIELD_CACHE": {
@@ -201,17 +214,19 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
     }
 
     case "SAVE_FIELD_CACHE": {
-      const payload = message.payload as
-        | { url: string; fields: DetectedFieldSummary[] }
-        | undefined;
-      if (!payload?.url || !Array.isArray(payload.fields)) {
+      const payload = parseSaveFieldCachePayload(message.payload);
+      if (!payload) {
         return { error: "Invalid payload for SAVE_FIELD_CACHE" };
       }
       return saveFieldDetectionCacheForUrl(payload.url, payload.fields);
     }
 
     case "DELETE_FIELD_CACHE":
-      await deleteFieldDetectionCacheForUrl(message.payload as string);
+      {
+        const url = parseStringPayload(message.payload);
+        if (!url) return { error: "Invalid payload for DELETE_FIELD_CACHE" };
+        await deleteFieldDetectionCacheForUrl(url);
+      }
       return { success: true };
 
     case "CLEAR_FIELD_CACHE":
@@ -239,10 +254,6 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
 // Handle keyboard shortcut
 chrome.commands?.onCommand?.addListener((command) => {
   if (command === "fill-all-fields") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { type: "FILL_ALL_FIELDS" });
-      }
-    });
+    void sendToActiveTab({ type: "FILL_ALL_FIELDS" }, { injectIfNeeded: true });
   }
 });

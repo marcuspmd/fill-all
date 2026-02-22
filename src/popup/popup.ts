@@ -14,6 +14,8 @@ import type {
 } from "@/types";
 import { generate, generateMoney, generateNumber } from "@/lib/generators";
 import { generateWithConstraints } from "@/lib/generators/adaptive";
+import { matchUrlPattern } from "@/lib/url/match-url-pattern";
+import { sendToActiveTab as sendMessageToActiveTab } from "@/lib/chrome/active-tab-messaging";
 
 type DetectFieldItem = DetectedFieldSummary;
 
@@ -23,37 +25,11 @@ interface DetectFieldsResponse {
 }
 
 async function sendToActiveTab(message: ExtensionMessage): Promise<unknown> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return null;
-
-  const url = tab.url ?? "";
-  if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    console.warn("[fill-all] Content script não disponível nesta página:", url);
+  const result = await sendMessageToActiveTab(message, { injectIfNeeded: true });
+  if (result && typeof result === "object" && "error" in result) {
     return null;
   }
-
-  try {
-    return await chrome.tabs.sendMessage(tab.id, message);
-  } catch {
-    // Content script not loaded (tab existed before extension install/update).
-    // Try to inject it dynamically and retry once.
-    try {
-      const manifest = chrome.runtime.getManifest();
-      const files = (manifest.content_scripts?.[0]?.js ?? []) as string[];
-      if (files.length === 0) return null;
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files,
-      });
-      return await chrome.tabs.sendMessage(tab.id, message);
-    } catch (injectErr) {
-      console.warn(
-        "[fill-all] Content script não pôde ser injetado na aba ativa.",
-        injectErr,
-      );
-      return null;
-    }
-  }
+  return result;
 }
 
 async function sendToBackground(message: ExtensionMessage): Promise<unknown> {
@@ -148,8 +124,6 @@ async function renderDetectedFields(
   const list = document.getElementById("fields-list");
   if (!list) return;
 
-  const hostname = pageUrl ? new URL(pageUrl).hostname : "";
-
   // Load ignored fields and existing rules in parallel
   const [ignoredList, rulesList] = (await Promise.all([
     sendToBackground({ type: "GET_IGNORED_FIELDS" }),
@@ -158,13 +132,13 @@ async function renderDetectedFields(
 
   const ignoredSelectors = new Set(
     (ignoredList ?? [])
-      .filter((f) => f.urlPattern.includes(hostname))
+      .filter((f) => matchUrlPattern(pageUrl, f.urlPattern))
       .map((f) => f.selector),
   );
 
-  // Rules that apply to this page (by hostname)
+  // Rules that apply to this page
   const pageRules = (rulesList ?? []).filter((r) =>
-    r.urlPattern.includes(hostname),
+    matchUrlPattern(pageUrl, r.urlPattern),
   );
 
   list.innerHTML = "";
@@ -434,8 +408,7 @@ async function renderDetectedFields(
           type: "GET_IGNORED_FIELDS",
         })) as IgnoredField[] | null;
         const entry = (current ?? []).find(
-          (f) =>
-            f.selector === field.selector && f.urlPattern.includes(hostname),
+          (f) => f.selector === field.selector && matchUrlPattern(pageUrl, f.urlPattern),
         );
         if (entry) {
           await sendToBackground({
