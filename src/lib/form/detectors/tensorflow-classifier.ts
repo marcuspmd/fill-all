@@ -20,13 +20,9 @@ import { getLearnedEntries } from "@/lib/ai/learning-store";
 import { loadRuntimeModel } from "@/lib/ai/runtime-trainer";
 import { dotProduct, vectorize } from "@/lib/shared/ngram";
 import type { FieldClassifier, ClassifierResult } from "./pipeline";
+import { createLogger } from "@/lib/logger";
 
-// ── Debug flag ────────────────────────────────────────────────────────────────
-
-function isDebugEnabled(): boolean {
-  return true; // leave always on for now
-  return !!(globalThis as Record<string, unknown>)["__FILL_ALL_DEBUG__"];
-}
+const log = createLogger("TFClassifier");
 
 // ── Thresholds ────────────────────────────────────────────────────────────────
 
@@ -93,11 +89,9 @@ export async function loadPretrainedModel(): Promise<void> {
       if (runtimeModel) {
         _pretrained = runtimeModel;
         await loadLearnedVectors();
-        if (isDebugEnabled()) {
-          console.log(
-            `[Fill All] ✅ Runtime-trained model loaded from storage — ${runtimeModel.labels.length} classes, vocab ${runtimeModel.vocab.size} n-grams, ${_learnedVectors.length} learned vectors`,
-          );
-        }
+        log.info(
+          `✅ Runtime-trained model loaded from storage — ${runtimeModel.labels.length} classes, vocab ${runtimeModel.vocab.size} n-grams, ${_learnedVectors.length} learned vectors`,
+        );
         return;
       }
 
@@ -118,18 +112,13 @@ export async function loadPretrainedModel(): Promise<void> {
       };
       await loadLearnedVectors();
 
-      if (isDebugEnabled()) {
-        console.log(
-          `[Fill All] Pre-trained model loaded (bundled) — ${labelsRaw.length} classes, vocab ${_pretrained.vocab.size} n-grams, ${_learnedVectors.length} learned vectors`,
-        );
-      }
-    } catch (err) {
-      console.error(
-        "[Fill All] ❌ Falha ao carregar modelo pré-treinado:",
-        err,
+      log.info(
+        `Pre-trained model loaded (bundled) — ${labelsRaw.length} classes, vocab ${_pretrained.vocab.size} n-grams, ${_learnedVectors.length} learned vectors`,
       );
-      console.warn(
-        "[Fill All] ⚠️  Classificação usará apenas HTML input[type] como fallback.",
+    } catch (err) {
+      log.error("❌ Falha ao carregar modelo pré-treinado:", err);
+      log.warn(
+        "⚠️  Classificação usará apenas HTML input[type] como fallback.",
       );
     }
   })();
@@ -151,15 +140,12 @@ async function loadLearnedVectors(): Promise<void> {
         type: e.type,
       }))
       .filter((e) => e.vector.some((v) => v > 0));
-    console.log(
-      `[TFClassifier] loadLearnedVectors: ${entries.length} entradas no storage, ` +
+    log.debug(
+      `loadLearnedVectors: ${entries.length} entradas no storage, ` +
         `${_learnedVectors.length} vetores carregados (vetores nulos descartados).`,
     );
   } catch (err) {
-    console.warn(
-      "[Fill All] Não foi possível carregar vetores aprendidos:",
-      err,
-    );
+    log.warn("Não foi possível carregar vetores aprendidos:", err);
     _learnedVectors = [];
   }
 }
@@ -171,16 +157,16 @@ async function loadLearnedVectors(): Promise<void> {
 export function invalidateClassifier(): void {
   const prev = _learnedVectors.length;
   _learnedVectors = [];
-  console.log(
-    `[TFClassifier] invalidateClassifier: ${prev} vetores descarregados. Recarregando do storage...`,
+  log.debug(
+    `invalidateClassifier: ${prev} vetores descarregados. Recarregando do storage...`,
   );
   if (_pretrained) {
     loadLearnedVectors().catch((err) => {
-      console.error("[TFClassifier] Erro ao recarregar vetores:", err);
+      log.error("Erro ao recarregar vetores:", err);
     });
   } else {
-    console.warn(
-      "[TFClassifier] Modelo pré-treinado ainda não carregado. Os vetores serão carregados na próxima classificação.",
+    log.warn(
+      "Modelo pré-treinado ainda não carregado. Os vetores serão carregados na próxima classificação.",
     );
   }
 }
@@ -194,9 +180,7 @@ export async function reloadClassifier(): Promise<void> {
   _pretrainedLoadPromise = null;
   _learnedVectors = [];
   await loadPretrainedModel();
-  console.log(
-    "[TFClassifier] reloadClassifier: classificador recarregado com novo modelo.",
-  );
+  log.info("reloadClassifier: classificador recarregado com novo modelo.");
 }
 
 // ── Core classification ───────────────────────────────────────────────────────
@@ -214,8 +198,8 @@ export function classifyByTfSoft(
 ): { type: FieldType; score: number } | null {
   if (!signals.trim()) return null;
   if (!_pretrained || !_tfModule) {
-    console.warn(
-      "[Fill All] ⚠️  Modelo não carregado ainda — usando html-fallback. Sinais:",
+    log.warn(
+      "⚠️  Modelo não carregado ainda — usando html-fallback. Sinais:",
       signals,
     );
     return null;
@@ -236,11 +220,9 @@ export function classifyByTfSoft(
       }
     }
     if (bestLearnedScore >= LEARNED_THRESHOLD && bestLearnedType) {
-      if (isDebugEnabled()) {
-        console.log(
-          `[Fill All] 🎓 Learned match: "${bestLearnedType}" (cosine=${bestLearnedScore.toFixed(3)}, threshold=${LEARNED_THRESHOLD}) para "${signals}"`,
-        );
-      }
+      log.debug(
+        `🎓 Learned match: "${bestLearnedType}" (cosine=${bestLearnedScore.toFixed(3)}, threshold=${LEARNED_THRESHOLD}) para "${signals}"`,
+      );
       return { type: bestLearnedType, score: bestLearnedScore };
     }
   }
@@ -261,8 +243,8 @@ export function classifyByTfSoft(
   });
 
   if (bestScore < TF_THRESHOLD) {
-    console.warn(
-      `[Fill All] ⚠️  TF.js score baixo (${bestScore.toFixed(3)} < threshold ${TF_THRESHOLD}) para sinais: "${signals}" — melhor palpite: "${_pretrained.labels[bestIdx]}"`,
+    log.warn(
+      `⚠️  TF.js score baixo (${bestScore.toFixed(3)} < threshold ${TF_THRESHOLD}) para sinais: "${signals}" — melhor palpite: "${_pretrained.labels[bestIdx]}"`,
     );
     return null;
   }
@@ -298,24 +280,20 @@ export function classifyField(field: FormField): FieldType {
 
   const tfResult = classifyByTfSoft(signals);
   if (tfResult) {
-    if (isDebugEnabled()) {
-      console.groupCollapsed(
-        `[Fill All] classify → %c${tfResult.type}%c  (tf.js cosine=${tfResult.score.toFixed(3)})  ${field.selector}`,
-        "color: #6366f1; font-weight: bold",
-        "color: inherit",
-      );
-      console.log("📡 signals:", signals || "(none)");
-      console.log(
-        `🤖 TF.js best match: "${tfResult.type}" (similarity ${tfResult.score.toFixed(3)}, threshold ${TF_THRESHOLD})`,
-      );
-      console.log("🔖 field:", {
-        label: field.label,
-        name: field.name,
-        id: field.id,
-        placeholder: field.placeholder,
-      });
-      console.groupEnd();
-    }
+    log.groupCollapsed(
+      `classify → ${tfResult.type}  (tf.js cosine=${tfResult.score.toFixed(3)})  ${field.selector}`,
+    );
+    log.debug("📡 signals:", signals || "(none)");
+    log.debug(
+      `🤖 TF.js best match: "${tfResult.type}" (similarity ${tfResult.score.toFixed(3)}, threshold ${TF_THRESHOLD})`,
+    );
+    log.debug("🔖 field:", {
+      label: field.label,
+      name: field.name,
+      id: field.id,
+      placeholder: field.placeholder,
+    });
+    log.groupEnd();
     return tfResult.type;
   }
 
@@ -323,24 +301,18 @@ export function classifyField(field: FormField): FieldType {
   const htmlType: FieldType =
     (HTML_TYPE_FALLBACK[inputType] as FieldType) ?? "unknown";
 
-  if (isDebugEnabled()) {
-    console.groupCollapsed(
-      `[Fill All] classify → %c${htmlType}%c  (html-type / fallback)  ${field.selector}`,
-      "color: #f59e0b; font-weight: bold",
-      "color: inherit",
-    );
-    console.log("📡 signals:", signals || "(none)");
-    console.log(
-      `⚠️  no keyword or TF.js match — using input[type="${inputType}"]`,
-    );
-    console.log("🔖 field:", {
-      label: field.label,
-      name: field.name,
-      id: field.id,
-      placeholder: field.placeholder,
-    });
-    console.groupEnd();
-  }
+  log.groupCollapsed(
+    `classify → ${htmlType}  (html-type / fallback)  ${field.selector}`,
+  );
+  log.debug("📡 signals:", signals || "(none)");
+  log.debug(`⚠️  no keyword or TF.js match — using input[type="${inputType}"]`);
+  log.debug("🔖 field:", {
+    label: field.label,
+    name: field.name,
+    id: field.id,
+    placeholder: field.placeholder,
+  });
+  log.groupEnd();
 
   return htmlType;
 }

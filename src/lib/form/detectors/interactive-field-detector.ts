@@ -11,6 +11,9 @@
 
 import type { FormField, InteractiveFieldType } from "@/types";
 import type { Detector } from "./detector.interface";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("InteractiveDetector");
 
 export interface InteractiveField {
   container: HTMLElement;
@@ -223,7 +226,7 @@ export function detectInteractiveFields(): InteractiveField[] {
   const results: InteractiveField[] = [];
   const seen = new Set<HTMLElement>();
 
-  console.group("[Fill All / Interactive] 🎛️ Detectando campos interativos...");
+  log.groupCollapsed(`🏛️ Detectando campos interativos...`);
 
   for (const pattern of INTERACTIVE_PATTERNS) {
     const selector = pattern.selectors.join(", ");
@@ -274,21 +277,19 @@ export function detectInteractiveFields(): InteractiveField[] {
 
       results.push(field);
 
-      console.log(
-        `[Fill All / Interactive] 🎛️ ${pattern.type.padEnd(12)} │ selector="${interactiveSelector}" │ label="${label ?? "(sem label)"}"`,
+      log.debug(
+        `🏛️ ${pattern.type.padEnd(12)} │ selector="${interactiveSelector}" │ label="${label ?? "(sem label)"}"`,
       );
     }
   }
 
   if (results.length === 0) {
-    console.log("[Fill All / Interactive] Nenhum widget interativo encontrado");
+    log.debug("Nenhum widget interativo encontrado");
   } else {
-    console.log(
-      `[Fill All / Interactive] ✅ ${results.length} widget(s) interativo(s) encontrado(s)`,
-    );
+    log.debug(`✅ ${results.length} widget(s) interativo(s) encontrado(s)`);
   }
 
-  console.groupEnd();
+  log.groupEnd();
 
   return results;
 }

@@ -2,13 +2,21 @@
  * Rule engine — determines which value to use for a given field
  */
 
-import type { FieldRule, FormField, GenerationResult, FieldType } from "@/types";
+import type {
+  FieldRule,
+  FormField,
+  GenerationResult,
+  FieldType,
+} from "@/types";
 import { getRulesForUrl, getSavedFormsForUrl } from "@/lib/storage/storage";
 import { generate, generateMoney, generateNumber } from "@/lib/generators";
 import {
   adaptGeneratedValue,
   generateWithConstraints,
 } from "@/lib/generators/adaptive";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("RuleEngine");
 
 /**
  * Resolves the value for a single field, using this priority:
@@ -28,15 +36,13 @@ export async function resolveFieldValue(
   const selector = field.selector;
 
   const fieldDesc = `selector="${selector}" label="${field.label ?? ""}" type="${field.fieldType}"`;
-  console.log(
-    `[Fill All / Rule Engine] Resolvendo campo: ${fieldDesc}${forceAIFirst ? " [forceAIFirst=true]" : ""}`,
+  log.debug(
+    `Resolvendo campo: ${fieldDesc}${forceAIFirst ? " [forceAIFirst=true]" : ""}`,
   );
 
   // 1. AI first (when flag is enabled)
   if (forceAIFirst && aiGenerateFn) {
-    console.log(
-      `[Fill All / Rule Engine] Tentando AI primeiro (forceAIFirst)...`,
-    );
+    log.debug(`Tentando AI primeiro (forceAIFirst)...`);
     try {
       const aiValue = await aiGenerateFn(field);
       const value = adaptGeneratedValue(aiValue, {
@@ -44,13 +50,11 @@ export async function resolveFieldValue(
         requireValidity: true,
       });
       if (value) {
-        console.log(
-          `[Fill All / Rule Engine] AI (forceAIFirst) gerou: "${value}"`,
-        );
+        log.debug(`AI (forceAIFirst) gerou: "${value}"`);
         return { fieldSelector: selector, value, source: "ai" };
       }
     } catch (err) {
-      console.warn(`[Fill All / Rule Engine] AI (forceAIFirst) falhou:`, err);
+      log.warn(`AI (forceAIFirst) falhou:`, err);
       // Fall through to normal priority order
     }
   }
@@ -139,10 +143,10 @@ export async function resolveFieldValue(
           { element: field.element, requireValidity: false },
         );
       } else {
-        value = generateWithConstraints(
-          () => generate(ruleGenerator),
-          { element: field.element, requireValidity: false },
-        );
+        value = generateWithConstraints(() => generate(ruleGenerator), {
+          element: field.element,
+          requireValidity: false,
+        });
       }
       return { fieldSelector: selector, value, source: "generator" };
     }
@@ -165,9 +169,7 @@ export async function resolveFieldValue(
     requireValidity: true,
   });
   if (value) {
-    console.log(
-      `[Fill All / Rule Engine] Gerador padrão (${effectiveType}): "${value}"`,
-    );
+    log.debug(`Gerador padrão (${effectiveType}): "${value}"`);
     return { fieldSelector: selector, value, source: "generator" };
   }
 
@@ -180,8 +182,8 @@ export async function resolveFieldValue(
     if (validOptions.length > 0) {
       const random =
         validOptions[Math.floor(Math.random() * validOptions.length)];
-      console.log(
-        `[Fill All / Rule Engine] Select aleatório: "${random.value}" (${validOptions.length} opções disponíveis)`,
+      log.debug(
+        `Select aleatório: "${random.value}" (${validOptions.length} opções disponíveis)`,
       );
       return {
         fieldSelector: selector,
@@ -190,9 +192,7 @@ export async function resolveFieldValue(
       };
     }
     // No valid options — return empty, no point calling AI
-    console.warn(
-      `[Fill All / Rule Engine] Select sem opções válidas para: ${fieldDesc}`,
-    );
+    log.warn(`Select sem opções válidas para: ${fieldDesc}`);
     return { fieldSelector: selector, value: "", source: "generator" };
   }
 
@@ -206,8 +206,8 @@ export async function resolveFieldValue(
 
   // 6. AI as last resort — only for free-text fields where the generator returned empty
   if (aiGenerateFn) {
-    console.log(
-      `[Fill All / Rule Engine] Gerador padrão retornou vazio, tentando AI como último recurso para: ${fieldDesc}`,
+    log.debug(
+      `Gerador padrão retornou vazio, tentando AI como último recurso para: ${fieldDesc}`,
     );
     try {
       const aiValue = await aiGenerateFn(field);
@@ -216,19 +216,12 @@ export async function resolveFieldValue(
         requireValidity: true,
       });
       if (adaptedAiValue) {
-        console.log(
-          `[Fill All / Rule Engine] AI (último recurso) gerou: "${adaptedAiValue}"`,
-        );
+        log.debug(`AI (último recurso) gerou: "${adaptedAiValue}"`);
         return { fieldSelector: selector, value: adaptedAiValue, source: "ai" };
       }
-      console.warn(
-        `[Fill All / Rule Engine] AI (último recurso) retornou vazio para: ${fieldDesc}`,
-      );
+      log.warn(`AI (último recurso) retornou vazio para: ${fieldDesc}`);
     } catch (err) {
-      console.warn(
-        `[Fill All / Rule Engine] AI (último recurso) falhou para: ${fieldDesc}`,
-        err,
-      );
+      log.warn(`AI (último recurso) falhou para: ${fieldDesc}`, err);
     }
   }
 

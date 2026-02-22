@@ -12,6 +12,9 @@ import { fillSingleField } from "./form-filler";
 import { invalidateClassifier } from "@/lib/form/detectors/tensorflow-classifier";
 import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { DEFAULT_PIPELINE } from "./detectors/classifiers";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("FieldIcon");
 import { buildSignals } from "./detectors/signals-builder";
 
 const ICON_ID = "fill-all-field-icon";
@@ -504,10 +507,7 @@ async function saveInspectOverride(): Promise<void> {
     await storeLearnedEntry(signals, newType);
     invalidateClassifier(); // dispara reload dos vetores já com a nova entrada
 
-    console.log(
-      `%c[Fill All] 🎓 Override do usuário: "${signals}" → "${newType}"`,
-      "color: #f97316; font-weight: bold",
-    );
+    log.info(`🎓 Override do usuário: "${signals}" → "${newType}"`);
   }
 
   if (saveBtn) {

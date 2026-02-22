@@ -208,6 +208,10 @@ export interface Settings {
   /** Number generator range */
   numberMin: number;
   numberMax: number;
+  /** Whether debug logging is enabled (all console output is suppressed when false) */
+  debugLog: boolean;
+  /** Minimum log level to output: debug < info < warn < error */
+  logLevel: "debug" | "info" | "warn" | "error";
 }
 
 /** Message types for communication between extension parts */
@@ -293,4 +297,6 @@ export const DEFAULT_SETTINGS: Settings = {
   moneyMax: 10000,
   numberMin: 1,
   numberMax: 99999,
+  debugLog: false,
+  logLevel: "warn",
 };

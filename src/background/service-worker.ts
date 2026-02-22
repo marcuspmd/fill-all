@@ -53,6 +53,10 @@ import {
   sendToActiveTab,
   sendToSpecificTab,
 } from "@/lib/chrome/active-tab-messaging";
+import { initLogger, createLogger } from "@/lib/logger";
+
+void initLogger();
+const log = createLogger("ServiceWorker");
 
 // Create context menu on install
 chrome.runtime.onInstalled.addListener(() => {
@@ -298,8 +302,8 @@ async function handleMessage(message: ExtensionMessage): Promise<unknown> {
       const rules = await getRules();
       const result = await retrainLearnedFromRules(rules);
       void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
-      console.log(
-        `[ServiceWorker] RETRAIN_LEARNING_DATABASE concluído: ` +
+      log.info(
+        `RETRAIN_LEARNING_DATABASE concluído: ` +
           `imported=${result.imported}, skipped=${result.skipped}, ` +
           `totalRules=${result.totalRules}, durationMs=${result.durationMs}`,
       );

@@ -29,6 +29,9 @@ import {
   detectNativeFieldsAsync,
 } from "./detectors/classifiers";
 export { DEFAULT_PIPELINE, DEFAULT_COLLECTION_PIPELINE };
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("FormDetector");
 export type {
   FieldClassifier,
   ClassifierResult,
@@ -74,11 +77,8 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
   const url = window.location.href;
   const t0 = performance.now();
 
-  console.groupCollapsed(
-    `%c[Fill All] 🚀 Detecção iniciada — ${new URL(url).hostname}`,
-    "color: #6366f1; font-weight: bold",
-  );
-  console.log(`📄 URL: ${url}`);
+  log.groupCollapsed(`🚀 Detecção iniciada — ${new URL(url).hostname}`);
+  log.debug(`📄 URL: ${url}`);
 
   // Use the async pipeline so the Chrome AI classifier (detectAsync) is active
   // for native inputs. Custom selects and interactive fields remain synchronous.
@@ -117,28 +117,20 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
     const htmlType =
       field.element instanceof HTMLInputElement ? field.element.type : "—";
 
-    console.groupCollapsed(
-      `[Fill All] #${idx + 1} <${tag} type="${htmlType}"> │ id="${field.id ?? ""}" name="${field.name ?? ""}"`,
+    log.groupCollapsed(
+      `#${idx + 1} <${tag} type="${htmlType}"> │ id="${field.id ?? ""}" name="${field.name ?? ""}"`,
     );
-    console.log(`📌 Label: "${field.label ?? "(nenhum)"}"`);
-    console.log(`📡 Sinais: "${field.contextSignals || "(nenhum)"}"`);
+    log.debug(`📌 Label: "${field.label ?? "(nenhum)"}"`);
+    log.debug(`📡 Sinais: "${field.contextSignals || "(nenhum)"}"`);
     const fieldMs = field.detectionDurationMs ?? 0;
     const fieldMsStr =
       fieldMs >= 1
         ? `${fieldMs.toFixed(1)}ms`
         : `${(fieldMs * 1000).toFixed(0)}µs`;
-    const fieldMsStyle =
-      fieldMs > 100
-        ? "color: #ef4444; font-weight: bold"
-        : fieldMs > 20
-          ? "color: #f59e0b"
-          : "color: #94a3b8";
-    console.log(
-      `%c✅ Tipo final: "${field.fieldType}" [${method} | ${((field.detectionConfidence ?? 0) * 100).toFixed(0)}%] %c⚡ ${fieldMsStr}`,
-      `color: ${methodColor[method]}; font-weight: bold`,
-      fieldMsStyle,
+    log.debug(
+      `✅ Tipo final: "${field.fieldType}" [${method} | ${((field.detectionConfidence ?? 0) * 100).toFixed(0)}%] ⚡ ${fieldMsStr}`,
     );
-    console.groupEnd();
+    log.groupEnd();
   });
 
   const summary = (Object.entries(byMethod) as [DetectionMethod, number][])
@@ -146,10 +138,7 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
     .map(([m, n]) => `${m}: ${n}`)
     .join(" · ");
 
-  console.log(
-    `%c[Fill All] ✅ ${fields.length} campo(s)  ·  ${summary}`,
-    "color: #22c55e; font-weight: bold",
-  );
+  log.info(`✅ ${fields.length} campo(s)  ·  ${summary}`);
 
   // ── Performance summary ────────────────────────────────────────────────────
   const totalMs = performance.now() - t0;
@@ -164,11 +153,10 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
     const label = f.label ?? f.id ?? f.name ?? "?";
     return `#${fIdx} "${label}" ${ms}ms [${f.detectionMethod}]`;
   });
-  console.log(
-    `%c[Fill All] ⏱ ${totalMs.toFixed(0)}ms total${slowTop.length ? ` · 🐢 ${slowTop.join(" · ")}` : ""}`,
-    "color: #94a3b8",
+  log.debug(
+    `⏱ ${totalMs.toFixed(0)}ms total${slowTop.length ? ` · 🐢 ${slowTop.join(" · ")}` : ""}`,
   );
-  console.groupEnd();
+  log.groupEnd();
 
   const customSelects = detectCustomSelects();
   const interactiveFields = detectInteractiveFields();

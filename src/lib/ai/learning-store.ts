@@ -8,6 +8,9 @@
  */
 
 import type { FieldRule, FieldType } from "@/types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("LearningStore");
 
 export const LEARNED_STORAGE_KEY = "fill_all_learned_classifications";
 
@@ -160,19 +163,15 @@ export async function retrainLearnedFromRules(
 ): Promise<RetrainResult> {
   const t0 = Date.now();
 
-  console.log(
-    `[LearningStore] Iniciando retreino: ${rules.length} regra(s) encontrada(s).`,
-  );
+  log.info(`Iniciando retreino: ${rules.length} regra(s) encontrada(s).`);
 
   const prevCount = await getLearnedCount();
-  console.log(
-    `[LearningStore] Entradas aprendidas antes do retreino: ${prevCount}`,
-  );
+  log.debug(`Entradas aprendidas antes do retreino: ${prevCount}`);
 
   // Only remove rule-derived entries; organic (auto) entries are preserved.
   await clearRuleDerivedEntries();
-  console.log(
-    "[LearningStore] Entradas de regras anteriores removidas do storage (entradas orgânicas preservadas).",
+  log.debug(
+    "Entradas de regras anteriores removidas do storage (entradas orgânicas preservadas).",
   );
 
   let imported = 0;
@@ -182,8 +181,8 @@ export async function retrainLearnedFromRules(
   for (const rule of rules) {
     const signals = buildSignalsFromRule(rule);
     if (!signals) {
-      console.warn(
-        `[LearningStore] Regra ignorada (sem signals): id=${rule.id} selector=${rule.fieldSelector}`,
+      log.warn(
+        `Regra ignorada (sem signals): id=${rule.id} selector=${rule.fieldSelector}`,
       );
       details.push({
         ruleId: rule.id,
@@ -205,20 +204,20 @@ export async function retrainLearnedFromRules(
       status: "imported",
     });
     imported += 1;
-    console.log(
-      `[LearningStore]   ✔ ${rule.fieldType.padEnd(12)} ← "${signals.slice(0, 80)}" (${rule.fieldSelector})`,
+    log.debug(
+      `  ✔ ${rule.fieldType.padEnd(12)} ← "${signals.slice(0, 80)}" (${rule.fieldSelector})`,
     );
   }
 
   const durationMs = Date.now() - t0;
 
-  console.log(
-    `[LearningStore] Retreino finalizado em ${durationMs}ms. ` +
+  log.info(
+    `Retreino finalizado em ${durationMs}ms. ` +
       `Importadas: ${imported}, Ignoradas: ${skipped}`,
   );
-  console.log(
-    "[LearningStore] NOTA: este retreino atualiza apenas os vetores de " +
-      "aprendizado (cosine similarity). Os pesos da rede neural TF.js NÃO " +
+  log.debug(
+    "NOTA: este retreino atualiza apenas os vetores de " +
+      +"aprendizado (cosine similarity). Os pesos da rede neural TF.js NÃO " +
       "são alterados. Para retreinar o modelo neural, execute: npm run train:model",
   );
 

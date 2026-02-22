@@ -44,6 +44,7 @@ import {
   parseStartWatchingPayload,
   parseStringPayload,
 } from "@/lib/messaging/light-validators";
+import { initLogger } from "@/lib/logger";
 
 type FillableElement =
   | HTMLInputElement
@@ -343,6 +344,7 @@ function showNotification(text: string): void {
 
 // --- Init ---
 async function initContentScript(): Promise<void> {
+  await initLogger();
   const settings = await getSettings();
 
   // Configure the detection pipeline from user settings

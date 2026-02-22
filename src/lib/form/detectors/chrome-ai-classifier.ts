@@ -20,6 +20,9 @@ import type { FieldClassifier, ClassifierResult } from "./pipeline";
 import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { invalidateClassifier } from "./tensorflow-classifier";
 import { addDatasetEntry } from "@/lib/dataset/runtime-dataset";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("ChromeAIClassifier");
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -267,16 +270,16 @@ export const chromeAiClassifier: FieldClassifier = {
 
       let raw: string;
       try {
-        console.log(
-          `[Fill All / Chrome AI Classifier] Prompt for "${field.contextSignals ?? field.name ?? field.id}":\n${prompt}`,
+        log.debug(
+          `Prompt for "${field.contextSignals ?? field.name ?? field.id}":\n${prompt}`,
         );
         raw = await session.prompt(prompt, { signal: controller.signal });
-        console.log(
-          `[Fill All / Chrome AI Classifier] Raw response for "${field.contextSignals ?? field.name ?? field.id}":\n${raw}`,
+        log.debug(
+          `Raw response for "${field.contextSignals ?? field.name ?? field.id}":\n${raw}`,
         );
       } finally {
-        console.debug(
-          `[Fill All / Chrome AI Classifier] Response for "${field.contextSignals ?? field.name ?? field.id}":\n${prompt ?? "(no response)"}`,
+        log.debug(
+          `Response for "${field.contextSignals ?? field.name ?? field.id}":\n${prompt ?? "(no response)"}`,
         );
         clearTimeout(timeoutId);
       }
@@ -284,8 +287,8 @@ export const chromeAiClassifier: FieldClassifier = {
       const result = parseResponse(raw);
 
       if (result) {
-        console.log(
-          `[Fill All / Chrome AI Classifier] "${field.contextSignals ?? field.name ?? field.id}" → ${result.type} (generator: ${result.generatorType}, ${(result.confidence * 100).toFixed(0)}%)`,
+        log.debug(
+          `"${field.contextSignals ?? field.name ?? field.id}" → ${result.type} (generator: ${result.generatorType}, ${(result.confidence * 100).toFixed(0)}%)`,
         );
 
         // ── Persist to dataset + learning store ───────────────────────────
@@ -317,16 +320,13 @@ export const chromeAiClassifier: FieldClassifier = {
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
         // Timeout — log so the user can see what happened in DevTools.
-        console.warn(
-          `[Fill All / Chrome AI Classifier] ⏱ Timeout (${CLASSIFY_TIMEOUT_MS}ms) para "${field.contextSignals ?? field.name ?? field.id}" — passando para html-fallback`,
+        log.warn(
+          `⏱ Timeout (${CLASSIFY_TIMEOUT_MS}ms) para "${field.contextSignals ?? field.name ?? field.id}" — passando para html-fallback`,
         );
       } else {
         // Session may be broken — reset so next call creates a fresh one.
         classifierSession = null;
-        console.warn(
-          "[Fill All / Chrome AI Classifier] Erro:",
-          (err as Error).message,
-        );
+        log.warn("Erro:", (err as Error).message);
       }
       return null;
     }

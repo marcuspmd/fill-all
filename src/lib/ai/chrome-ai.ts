@@ -5,6 +5,9 @@
  */
 
 import type { FormField } from "@/types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("ChromeAI");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const newApi = (globalThis as any).LanguageModel as
@@ -16,36 +19,31 @@ let session: LanguageModelSession | null = null;
 export async function isAvailable(): Promise<boolean> {
   try {
     if (!newApi) {
-      console.warn(
-        "[Fill All / Chrome AI] LanguageModel API não encontrada no globalThis. Chrome AI indisponível.",
+      log.warn(
+        "LanguageModel API não encontrada no globalThis. Chrome AI indisponível.",
       );
       return false;
     }
     const result = await newApi.availability({ outputLanguage: "en" });
-    console.log(`[Fill All / Chrome AI] availability() retornou: "${result}"`);
+    log.debug(`availability() retornou: "${result}"`);
     const available = result === "available" || result === "downloadable";
     if (!available) {
-      console.warn(
-        `[Fill All / Chrome AI] AI não disponível (status: "${result}").`,
-      );
+      log.warn(`AI não disponível (status: "${result}").`);
     }
     return available;
   } catch (err) {
-    console.error(
-      "[Fill All / Chrome AI] Erro ao verificar disponibilidade:",
-      err,
-    );
+    log.error("Erro ao verificar disponibilidade:", err);
     return false;
   }
 }
 
 export async function getSession(): Promise<LanguageModelSession> {
   if (session) {
-    console.log("[Fill All / Chrome AI] Reutilizando sessão existente.");
+    log.debug("Reutilizando sessão existente.");
     return session;
   }
 
-  console.log("[Fill All / Chrome AI] Criando nova sessão...");
+  log.debug("Criando nova sessão...");
 
   const systemPrompt = `You are a form field value generator. When given information about a form field (its label, name, type, placeholder), you generate a single realistic test value for it. Rules:
 - Return ONLY the value, no explanations
@@ -60,13 +58,13 @@ export async function getSession(): Promise<LanguageModelSession> {
   const avail = await newApi.availability({ outputLanguage: "en" });
   if (avail === "unavailable") throw new Error("Chrome AI is not available");
   session = await newApi.create({ systemPrompt, outputLanguage: "en" });
-  console.log("[Fill All / Chrome AI] Sessão criada com sucesso.");
+  log.debug("Sessão criada com sucesso.");
   return session!;
 }
 
 export async function generateFieldValue(field: FormField): Promise<string> {
-  console.log(
-    `[Fill All / Chrome AI] Gerando valor para campo: selector="${field.selector}" label="${field.label ?? ""}" name="${field.name ?? ""}" type="${field.fieldType}"`,
+  log.debug(
+    `Gerando valor para campo: selector="${field.selector}" label="${field.label ?? ""}" name="${field.name ?? ""}" type="${field.fieldType}"`,
   );
 
   const aiSession = await getSession();
@@ -85,20 +83,20 @@ export async function generateFieldValue(field: FormField): Promise<string> {
 
   const prompt = `Generate a realistic test value for this form field:\n${context}`;
 
-  console.groupCollapsed(
-    `[Fill All / Chrome AI] Prompt → campo: "${field.label ?? field.name ?? field.selector}"`,
+  log.groupCollapsed(
+    `Prompt → campo: "${field.label ?? field.name ?? field.selector}"`,
   );
-  console.log("▶ Prompt completo:\n" + prompt);
-  console.groupEnd();
+  log.debug("▶ Prompt completo:\n" + prompt);
+  log.groupEnd();
 
   const result = await aiSession.prompt(prompt);
 
-  console.groupCollapsed(
-    `[Fill All / Chrome AI] Resposta ← campo: "${field.label ?? field.name ?? field.selector}"`,
+  log.groupCollapsed(
+    `Resposta ← campo: "${field.label ?? field.name ?? field.selector}"`,
   );
-  console.log("◀ Resposta raw:\n" + result);
-  console.log('◀ Valor final (trimmed): "' + result.trim() + '"');
-  console.groupEnd();
+  log.debug("◄ Resposta raw:\n" + result);
+  log.debug('\u25c4 Valor final (trimmed): "' + result.trim() + '"');
+  log.groupEnd();
 
   return result.trim();
 }

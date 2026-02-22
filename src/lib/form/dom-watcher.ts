@@ -5,6 +5,9 @@
 
 import { detectAllFields } from "./form-detector";
 import { fillAllFields } from "./form-filler";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("DomWatcher");
 
 type DomWatcherCallback = (newFieldsCount: number) => void;
 
@@ -73,7 +76,7 @@ export function startWatching(
         lastFieldSignature = newSignature;
 
         if (diff > 0) {
-          console.log(`[Fill All] Detected ${diff} new form field(s)`);
+          log.info(`Detected ${diff} new form field(s)`);
 
           if (onNewFieldsCallback) {
             onNewFieldsCallback(diff);
@@ -84,7 +87,7 @@ export function startWatching(
           }
         } else if (diff !== 0) {
           // Fields were removed or changed - update signature
-          console.log(`[Fill All] Form structure changed (${diff} fields)`);
+          log.info(`Form structure changed (${diff} fields)`);
           if (onNewFieldsCallback) {
             onNewFieldsCallback(diff);
           }
@@ -100,7 +103,7 @@ export function startWatching(
     attributeFilter: ["disabled", "hidden", "style", "class"],
   });
 
-  console.log("[Fill All] DOM watcher started");
+  log.debug("DOM watcher started");
 }
 
 /**
@@ -117,7 +120,7 @@ export function stopWatching(): void {
   }
   isWatching = false;
   onNewFieldsCallback = null;
-  console.log("[Fill All] DOM watcher stopped");
+  log.debug("DOM watcher stopped");
 }
 
 /**

@@ -21,6 +21,9 @@ import {
   type CustomSelectField,
 } from "./detectors/custom-select-handler";
 import { setFillingInProgress } from "./dom-watcher";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("FormFiller");
 
 function setNativeValue(element: HTMLElement, value: string): void {
   // Trigger React/Vue/Angular change detection
@@ -192,7 +195,7 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
 
       results.push(result);
     } catch (error) {
-      console.warn(`[Fill All] Failed to fill field ${field.selector}:`, error);
+      log.warn(`Failed to fill field ${field.selector}:`, error);
     }
   }
 
@@ -236,10 +239,7 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
       // Wait for DOM to settle after selecting (forms may change dynamically)
       await waitForDomSettle(500);
     } catch (error) {
-      console.warn(
-        `[Fill All] Failed to fill custom select ${cs.selector}:`,
-        error,
-      );
+      log.warn(`Failed to fill custom select ${cs.selector}:`, error);
     }
   }
 
@@ -271,7 +271,7 @@ export async function fillSingleField(
 
     return result;
   } catch (error) {
-    console.warn(`[Fill All] Failed to fill field:`, error);
+    log.warn(`Failed to fill field:`, error);
     return null;
   }
 }
@@ -323,29 +323,27 @@ function applyValueToField(field: FormField, value: string): void {
 async function getAiFunction(
   settings: Settings,
 ): Promise<((field: FormField) => Promise<string>) | undefined> {
-  console.log(
-    `[Fill All / Form Filler] useChromeAI=${settings.useChromeAI} | defaultStrategy=${settings.defaultStrategy} | forceAIFirst=${settings.forceAIFirst}`,
+  log.debug(
+    `useChromeAI=${settings.useChromeAI} | defaultStrategy=${settings.defaultStrategy} | forceAIFirst=${settings.forceAIFirst}`,
   );
 
   if (settings.useChromeAI) {
     const available = await isChromeAiAvailable();
-    console.log(`[Fill All / Form Filler] Chrome AI disponível: ${available}`);
+    log.debug(`Chrome AI disponível: ${available}`);
     if (available) {
-      console.log("[Fill All / Form Filler] Usando Chrome AI (Gemini Nano).");
+      log.debug("Usando Chrome AI (Gemini Nano).");
       return chromeAiGenerate;
     }
   }
 
   // Fallback to TF.js-based generation
   if (settings.defaultStrategy === "tensorflow") {
-    console.log(
-      "[Fill All / Form Filler] Chrome AI indisponível — usando TensorFlow.js.",
-    );
+    log.debug("Chrome AI indisponível — usando TensorFlow.js.");
     return async (field: FormField) => await generateWithTensorFlow(field);
   }
 
-  console.warn(
-    "[Fill All / Form Filler] Nenhuma função de AI configurada. Será usado apenas o gerador padrão.",
+  log.warn(
+    "Nenhuma função de AI configurada. Será usado apenas o gerador padrão.",
   );
   return undefined;
 }

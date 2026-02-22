@@ -23,6 +23,9 @@
 import type { FieldType } from "@/types";
 import type { DatasetEntry } from "@/lib/dataset/runtime-dataset";
 import type { LayersModel, Tensor } from "@tensorflow/tfjs";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("RuntimeTrainer");
 
 // ── Keys ────────────────────────────────────────────────────────────────────
 
@@ -242,7 +245,7 @@ export async function loadRuntimeModel(): Promise<{
     const vocab = new Map(Object.entries(vocabObj));
     return { model, vocab, labels: labelsArr as FieldType[] };
   } catch (err) {
-    console.warn("[RuntimeTrainer] Falha ao carregar modelo do storage:", err);
+    log.warn("Falha ao carregar modelo do storage:", err);
     return null;
   }
 }
