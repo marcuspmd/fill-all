@@ -19,6 +19,7 @@ import type { FormField, FieldType } from "@/types";
 import type { FieldClassifier, ClassifierResult } from "./pipeline";
 import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { invalidateClassifier } from "@/lib/ai/tensorflow-generator";
+import { addDatasetEntry } from "@/lib/dataset/runtime-dataset";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -287,11 +288,20 @@ export const chromeAiClassifier: FieldClassifier = {
           `[Fill All / Chrome AI Classifier] "${field.contextSignals ?? field.name ?? field.id}" → ${result.type} (generator: ${result.generatorType}, ${(result.confidence * 100).toFixed(0)}%)`,
         );
 
-        // ── Persist to learning store ─────────────────────────────────────
-        // This allows TF.js to retrain using Chrome AI classifications so
-        // future page loads benefit without hitting the AI every time.
+        // ── Persist to dataset + learning store ───────────────────────────
+        // The dataset is the source of truth for the learning store.
+        // Both are updated so TF.js can retrain and the cosine classifier
+        // benefits immediately on the next field classification.
         const signals = field.contextSignals ?? "";
         if (signals) {
+          addDatasetEntry({
+            signals,
+            type: result.type,
+            source: "auto",
+            difficulty: "easy",
+          }).catch(() => {
+            /* non-critical */
+          });
           storeLearnedEntry(signals, result.type, result.generatorType)
             .then(() => invalidateClassifier())
             .catch(() => {

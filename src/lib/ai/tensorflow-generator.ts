@@ -14,6 +14,7 @@
 import type { FormField, FieldType } from "@/types";
 import { generate } from "@/lib/generators";
 import { getLearnedEntries } from "@/lib/ai/learning-store";
+import { loadRuntimeModel } from "@/lib/ai/runtime-trainer";
 import type { LayersModel, Tensor } from "@tensorflow/tfjs";
 
 // ── Debug flag ───────────────────────────────────────────────────────────────
@@ -111,8 +112,12 @@ async function loadTfModule(): Promise<typeof import("@tensorflow/tfjs")> {
 }
 
 /**
- * Loads the offline-trained TF.js model from the extension's model/ directory.
- * Must be called once during content-script initialisation (non-blocking).
+ * Loads the pre-trained TF.js model.
+ *
+ * Priority:
+ *   1. Runtime-trained model stored in chrome.storage.local (via options page)
+ *   2. Bundled model files from public/model/ (ship-time default)
+ *
  * Safe to call multiple times — subsequent calls are no-ops.
  */
 export async function loadPretrainedModel(): Promise<void> {
@@ -121,6 +126,22 @@ export async function loadPretrainedModel(): Promise<void> {
 
   _pretrainedLoadPromise = (async () => {
     try {
+      await loadTfModule();
+
+      // ── Step 1: Try runtime-trained model (user dataset, options page) ────
+      const runtimeModel = await loadRuntimeModel();
+      if (runtimeModel) {
+        _pretrained = runtimeModel;
+        await loadLearnedVectors();
+        if (isDebugEnabled()) {
+          console.log(
+            `[Fill All] ✅ Runtime-trained model loaded from storage — ${runtimeModel.labels.length} classes, vocab ${runtimeModel.vocab.size} n-grams, ${_learnedVectors.length} learned vectors`,
+          );
+        }
+        return;
+      }
+
+      // ── Step 2: Fall back to bundled model files ──────────────────────────
       const tf = await loadTfModule();
       const base = chrome.runtime.getURL("model/");
       const [model, vocabRaw, labelsRaw] = await Promise.all([
@@ -140,7 +161,7 @@ export async function loadPretrainedModel(): Promise<void> {
 
       if (isDebugEnabled()) {
         console.log(
-          `[Fill All] Pre-trained model loaded — ${labelsRaw.length} classes, vocab ${_pretrained.vocab.size} n-grams, ${_learnedVectors.length} learned vectors`,
+          `[Fill All] Pre-trained model loaded (bundled) — ${labelsRaw.length} classes, vocab ${_pretrained.vocab.size} n-grams, ${_learnedVectors.length} learned vectors`,
         );
       }
     } catch (err) {
@@ -178,6 +199,20 @@ export function invalidateClassifier(): void {
       "[TFClassifier] Modelo pré-treinado ainda não carregado. Os vetores serão carregados na próxima classificação.",
     );
   }
+}
+
+/**
+ * Reloads the entire classifier (model + vocab + learned vectors) from storage.
+ * Call this after a new model has been trained via the options page.
+ */
+export async function reloadClassifier(): Promise<void> {
+  _pretrained = null;
+  _pretrainedLoadPromise = null;
+  _learnedVectors = [];
+  await loadPretrainedModel();
+  console.log(
+    "[TFClassifier] reloadClassifier: classificador recarregado com novo modelo.",
+  );
 }
 
 /**

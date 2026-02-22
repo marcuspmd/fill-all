@@ -86,6 +86,23 @@ export async function clearLearnedEntries(): Promise<void> {
   await chrome.storage.local.remove(LEARNED_STORAGE_KEY);
 }
 
+/**
+ * Remove a single learned entry by its normalised signals string.
+ * No-op if no matching entry exists. Used to keep the learning store in sync
+ * when a dataset entry is deleted.
+ */
+export async function removeLearnedEntryBySignals(
+  signals: string,
+): Promise<void> {
+  const normalized = normaliseSignals(signals);
+  if (!normalized) return;
+  const existing = await getLearnedEntries();
+  const filtered = existing.filter((e) => e.signals !== normalized);
+  if (filtered.length !== existing.length) {
+    await chrome.storage.local.set({ [LEARNED_STORAGE_KEY]: filtered });
+  }
+}
+
 /** Remove only entries that were imported from rules (source === "rule"), preserving organic entries. */
 export async function clearRuleDerivedEntries(): Promise<void> {
   const existing = await getLearnedEntries();

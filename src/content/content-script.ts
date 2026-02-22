@@ -32,6 +32,7 @@ import { initFieldIcon } from "@/lib/form/field-icon";
 import {
   loadPretrainedModel,
   invalidateClassifier,
+  reloadClassifier,
 } from "@/lib/ai/tensorflow-generator";
 import {
   parseIncomingMessage,
@@ -268,6 +269,11 @@ async function handleContentMessage(
 
     case "INVALIDATE_CLASSIFIER": {
       invalidateClassifier();
+      return { success: true };
+    }
+
+    case "RELOAD_CLASSIFIER": {
+      void reloadClassifier();
       return { success: true };
     }
 
