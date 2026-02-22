@@ -1,9 +1,55 @@
 # AGENTS.md — Fill All Chrome Extension
 
-## Agentes e Módulos do Projeto
+Extensão Chrome (Manifest V3) para preenchimento automático de formulários com AI, TensorFlow.js e geradores de dados brasileiros válidos.
 
-Este projeto é uma extensão Chrome para preenchimento automático de formulários.
-Abaixo estão os agentes (módulos) do sistema e suas responsabilidades.
+---
+
+## Build & Dev
+
+```bash
+npm install          # Instalar dependências
+npm run dev          # Build com HMR (Vite + @crxjs/vite-plugin)
+npm run build        # Build de produção → dist/
+npm run type-check   # Verificação de tipos (tsc --noEmit)
+npm run clean        # Limpa dist/
+npm run train:model  # Treina modelo TensorFlow (tsx scripts/train-model.ts)
+```
+
+Carregar no Chrome: `chrome://extensions/` → Modo de desenvolvedor → Carregar sem compactação → selecionar `dist/`.
+
+---
+
+## Code Style & Conventions
+
+- **TypeScript strict** — `strict: true`, sem `any` implícito
+- **Named exports apenas** — nunca `export default`
+- **Barrel exports** para módulos com muitos arquivos (`dataset/index.ts`, `generators/index.ts`)
+- **Constantes** em UPPERCASE: `STORAGE_KEYS`, `DEFAULT_PIPELINE`, `KEYWORD_RULES`
+- **Detectors/Classifiers** são objetos imutáveis com `.name` + `.detect()`, não classes
+- **Pipelines** são imutáveis — transformações criam novas instâncias
+- **Zod v4** para validação de schemas — usar `z.uuid()` (NÃO `z.string().uuid()`)
+- **Path aliases**: preferir `@/*` sobre aliases granulares (`@lib/*`, `@form/*` etc.)
+
+### Naming
+
+| Categoria | Padrão | Exemplos |
+|-----------|--------|----------|
+| Objetos detector | `camelCase` + sufixo semântico | `htmlTypeDetector`, `keywordClassifier` |
+| Funções | `verbNoun` | `detectBasicType()`, `buildSignals()`, `generateCpf()` |
+| Storage | `get*`, `save*`, `delete*`, `*ForUrl` | `getRulesForUrl()`, `updateStorageAtomically()` |
+| Tipos | `PascalCase` | `FieldType`, `FormField`, `ClassifierResult` |
+| Constantes | `UPPER_SNAKE_CASE` | `STORAGE_KEYS`, `DEFAULT_PIPELINE` |
+
+### Error Handling
+
+- **Nunca throw** em: storage, parsers, generators — retornar fallback ou `null`
+- **Parsers Zod**: usar `safeParse()` → retornar `null` em falha, nunca re-throw
+- **Async**: sempre `try-catch` + log contextual (`log.warn("Failed to fill field ${field.selector}:", err)`)
+
+### Validation (Duas camadas)
+
+- **Full Zod** (`messaging/validators.ts`) — Background, options, caminhos críticos
+- **Light validators** (`messaging/light-validators.ts`) — Content script (hot paths), apenas `typeof` checks
 
 ---
 
@@ -84,6 +130,11 @@ Geradores de dados válidos para preenchimento de formulários:
 |---------|-----------|
 | `form-detector.ts` | Detecta e analisa campos de formulário na página |
 | `form-filler.ts` | Preenche os campos de acordo com regras e geradores |
+| `detectors/pipeline.ts` | Pipeline de classificação imutável e composável |
+| `detectors/*.ts` | Classificadores individuais (html-type, keyword, tensorflow, chrome-ai) |
+| `dom-watcher.ts` | Observa mutações DOM para detectar novos campos |
+| `field-icon.ts` / `field-overlay.ts` | UI de feedback visual nos campos |
+| `floating-panel.ts` | Painel flutuante de controles |
 
 ### Storage (`src/lib/storage/`)
 | Arquivo | Descrição |
@@ -126,7 +177,7 @@ Geradores de dados válidos para preenchimento de formulários:
 ## 📋 Convenções
 
 - **Linguagem**: TypeScript strict
-- **Bundler**: Webpack
+- **Bundler**: Vite + @crxjs/vite-plugin
 - **Manifest**: V3
 - **Storage**: `chrome.storage.local`
 - **Comunicação**: `chrome.runtime.sendMessage` / `chrome.runtime.onMessage`
