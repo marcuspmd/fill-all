@@ -78,6 +78,8 @@ export interface FormField {
   interactiveType?: InteractiveFieldType;
   /** Normalised signals string used for classification (name+id+label+placeholder) */
   contextSignals?: string;
+  /** Time taken by the detection pipeline for this field (ms) */
+  detectionDurationMs?: number;
   /** Refined semantic type for <select>/<textarea> without changing fieldType */
   contextualType?: FieldType;
 }

@@ -894,6 +894,12 @@ const STATE_SAMPLES: TrainingSample[] = [
     difficulty: "medium",
   },
   {
+    signals: "uf_nascimento uf_nasc state_of_birth",
+    type: "state",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  {
     signals: "estado_input inp_state uf",
     type: "state",
     source: "augmented",
@@ -903,6 +909,12 @@ const STATE_SAMPLES: TrainingSample[] = [
     signals: "provincia province estado",
     type: "state",
     source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "state code uf abbreviation",
+    type: "state",
+    source: "synthetic",
     difficulty: "medium",
   },
 ];
@@ -1877,9 +1889,9 @@ const NUMBER_SAMPLES: TrainingSample[] = [
     difficulty: "easy",
   },
   {
-    signals: "complemento complemento num_compl",
-    type: "number",
-    source: "synthetic",
+    signals: "complemento complemento addr_complement",
+    type: "text",
+    source: "augmented",
     difficulty: "medium",
   },
   {
@@ -1904,6 +1916,55 @@ const NUMBER_SAMPLES: TrainingSample[] = [
     signals: "qtd qtd_input quantidade",
     type: "number",
     source: "augmented",
+    difficulty: "easy",
+  },
+  // Bank-related numeric fields
+  {
+    signals: "agencia bank_agency agencia bancaria banco",
+    type: "number",
+    source: "real-world",
+    difficulty: "medium",
+  },
+  {
+    signals: "conta bank_account conta bancaria numero conta",
+    type: "number",
+    source: "real-world",
+    difficulty: "medium",
+  },
+  {
+    signals: "dv agencia bank_agency_digit digito agencia",
+    type: "number",
+    source: "real-world",
+    difficulty: "medium",
+  },
+  {
+    signals: "dv conta bank_account_digit digito conta verificador",
+    type: "number",
+    source: "real-world",
+    difficulty: "medium",
+  },
+  {
+    signals: "codigo code codigo da promotora promoter_code",
+    type: "number",
+    source: "real-world",
+    difficulty: "medium",
+  },
+  {
+    signals: "codigo agencia cod_agencia bank_code codigo banco",
+    type: "number",
+    source: "real-world",
+    difficulty: "medium",
+  },
+  {
+    signals: "numero number numero endereco address_number",
+    type: "number",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "numero da casa numero imovel house_number num",
+    type: "number",
+    source: "synthetic",
     difficulty: "easy",
   },
 ];
@@ -2000,6 +2061,534 @@ const TEXT_SAMPLES: TrainingSample[] = [
     type: "text",
     source: "augmented",
     difficulty: "medium",
+  },
+  {
+    signals: "complemento complement_address complemento apto bloco",
+    type: "text",
+    source: "real-world",
+    difficulty: "easy",
+  },
+  {
+    signals: "complemento endereco addr_complement complemento",
+    type: "text",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "complemento apto apartamento bloco casa",
+    type: "text",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+];
+
+// ── BILINGUAL EXPANSION (pt-BR + en) ───────────────────────────────────────
+// Extra synthetic samples to improve multilingual generalisation and reduce
+// confusion on ambiguous labels/ids commonly seen in production forms.
+
+const BILINGUAL_EXPANSION_SAMPLES: TrainingSample[] = [
+  // cpf
+  {
+    signals: "taxpayer cpf customer_document cpf_number",
+    type: "cpf",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "national id brazil cpf_holder person_doc",
+    type: "cpf",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  {
+    signals: "documento do cliente client_cpf id_fiscal",
+    type: "cpf",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "owner cpf owner_document cpf_owner",
+    type: "cpf",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  // cnpj
+  {
+    signals: "company tax id cnpj_company legal_document",
+    type: "cnpj",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "corporate cnpj business_document cnpj_id",
+    type: "cnpj",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "registration number cnpj legal_entity_doc",
+    type: "cnpj",
+    source: "synthetic",
+    difficulty: "hard",
+  },
+  {
+    signals: "cnpj payer payer_company_doc",
+    type: "cnpj",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  // cpf-cnpj
+  {
+    signals: "document cpf or cnpj taxpayer_document",
+    type: "cpf-cnpj",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "personal or company tax id doc_fiscal",
+    type: "cpf-cnpj",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "cpf_cnpj customer_or_business_document",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "identificacao fiscal cpf cnpj entry_doc",
+    type: "cpf-cnpj",
+    source: "synthetic",
+    difficulty: "hard",
+  },
+  // rg
+  {
+    signals: "identity card rg state_id id_card_number",
+    type: "rg",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "civil id rg_number documento identidade",
+    type: "rg",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  {
+    signals: "numero identidade civil rg_citizen",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "state identity registro geral rg_doc",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "hard",
+  },
+  // email
+  {
+    signals: "contact email business_mail user_mail",
+    type: "email",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "email for invoices billing_email",
+    type: "email",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "work e-mail corporate_mail_addr",
+    type: "email",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  // phone
+  {
+    signals: "contact phone mobile_contact whatsapp_phone",
+    type: "phone",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "phone with area code ddd_phone_number",
+    type: "phone",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "customer cellphone tel_cliente",
+    type: "phone",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  // name variants
+  {
+    signals: "applicant name candidate_name full person name",
+    type: "name",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "given name first_name_value",
+    type: "first-name",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "family name surname_value last_name_value",
+    type: "last-name",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "legal full name legal_name_complete",
+    type: "full-name",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "nome completo do cliente customer_full_name",
+    type: "full-name",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  // address
+  {
+    signals: "residential address home_street_address",
+    type: "address",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "mailing address correspondence_address",
+    type: "address",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "street line road_name endereco_rua",
+    type: "street",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "logradouro principal address_street_name",
+    type: "street",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "city town municipality city_name",
+    type: "city",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "state province region uf_estado",
+    type: "state",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "federal state code uf_code",
+    type: "state",
+    source: "synthetic",
+    difficulty: "hard",
+  },
+  {
+    signals: "postal code br cep_code endereco_cep",
+    type: "cep",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "cep lookup zip brasil",
+    type: "cep",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "us zip code postal zip_input",
+    type: "zip-code",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "international postal code zipcode_field",
+    type: "zip-code",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  // dates
+  {
+    signals: "effective date start period date_effective",
+    type: "date",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "requested date request_date_field",
+    type: "date",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "birth day birthdate applicant_bday",
+    type: "birth-date",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "date of birth of dependent dependent_dob",
+    type: "birth-date",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  // auth
+  {
+    signals: "account password access_password",
+    type: "password",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "user login id username_value",
+    type: "username",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "screen name user_handle nickname_login",
+    type: "username",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  // business
+  {
+    signals: "company legal name corporate_name",
+    type: "company",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "business name trade_name empresa_nome_fantasia",
+    type: "company",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "supplier legal name vendor_name",
+    type: "supplier",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "main supplier fornecedor_principal",
+    type: "supplier",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "product title product_label item_name",
+    type: "product",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "service or product descricao_item",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "company website web_url homepage",
+    type: "website",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "official site company_domain",
+    type: "website",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "employee count total staff headcount",
+    type: "employee-count",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "number of employees qtd_colaboradores",
+    type: "employee-count",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "job role position_name occupation",
+    type: "job-title",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "current position cargo_atual",
+    type: "job-title",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  // numeric/money/text
+  {
+    signals: "amount in currency total_value money_field",
+    type: "money",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "invoice amount valor_fatura",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "quantity number quantity_input",
+    type: "number",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "house number endereco_numero",
+    type: "number",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "reference number generic_numeric_code",
+    type: "number",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  {
+    signals: "notes additional information free_text",
+    type: "text",
+    source: "augmented",
+    difficulty: "easy",
+  },
+  {
+    signals: "comments field message_notes",
+    type: "text",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "details observation descricao_livre",
+    type: "text",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+];
+
+// ── TARGETED EXPANSION (residual errors) ───────────────────────────────────
+// Focus on patterns that still caused misses in validation.
+const TARGETED_EXPANSION_SAMPLES: TrainingSample[] = [
+  {
+    signals: "doc documento id_doc cpf",
+    type: "cpf",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  {
+    signals: "documento id_doc doc_cliente",
+    type: "cpf",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  {
+    signals: "doc fiscal pessoa fisica doc_pf",
+    type: "cpf",
+    source: "synthetic",
+    difficulty: "hard",
+  },
+  {
+    signals: "numero_imovel house_number num_address",
+    type: "number",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "codigo_promotora cod_agencia promoter_code",
+    type: "number",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "agencia_banco banco_agencia bank_agency",
+    type: "number",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "conta_banco conta_corrente bank_account",
+    type: "number",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "dv_agencia digito_agencia bank_agency_digit",
+    type: "number",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "dv_conta digito_conta bank_account_digit",
+    type: "number",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "numeric code internal_code only_numbers",
+    type: "number",
+    source: "synthetic",
+    difficulty: "hard",
+  },
+  {
+    signals: "doc number document_number",
+    type: "number",
+    source: "synthetic",
+    difficulty: "hard",
+  },
+  {
+    signals: "num_dependentes dependentes dependents",
+    type: "number",
+    source: "augmented",
+    difficulty: "hard",
+  },
+  {
+    signals: "qtde qtde_input quantidade items",
+    type: "number",
+    source: "augmented",
+    difficulty: "medium",
+  },
+  {
+    signals: "amount_of_items item_count quantity_total",
+    type: "number",
+    source: "synthetic",
+    difficulty: "medium",
+  },
+  {
+    signals: "numero inteiro whole_number numeric_value",
+    type: "number",
+    source: "synthetic",
+    difficulty: "easy",
+  },
+  {
+    signals: "text details additional_info notes_field",
+    type: "text",
+    source: "synthetic",
+    difficulty: "easy",
   },
 ];
 
@@ -2148,6 +2737,8 @@ export const TRAINING_SAMPLES: TrainingSample[] = [
   ...MONEY_SAMPLES,
   ...NUMBER_SAMPLES,
   ...TEXT_SAMPLES,
+  ...BILINGUAL_EXPANSION_SAMPLES,
+  ...TARGETED_EXPANSION_SAMPLES,
   ...HARD_SAMPLES,
 ];
 

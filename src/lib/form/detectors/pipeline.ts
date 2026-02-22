@@ -56,6 +56,8 @@ export interface PipelineResult {
   type: FieldType;
   method: DetectionMethod;
   confidence: number;
+  /** Wall-clock time the pipeline spent classifying this field (ms) */
+  durationMs: number;
 }
 
 // ── Pipeline class ────────────────────────────────────────────────────────────
@@ -69,13 +71,23 @@ export class DetectionPipeline {
    * if no classifier produces a match.
    */
   run(field: FormField): PipelineResult {
+    const t0 = performance.now();
     for (const classifier of this.classifiers) {
       const result = classifier.detect(field);
       if (result !== null && result.type !== "unknown") {
-        return { ...result, method: classifier.name };
+        return {
+          ...result,
+          method: classifier.name,
+          durationMs: performance.now() - t0,
+        };
       }
     }
-    return { type: "unknown", method: "html-fallback", confidence: 0.1 };
+    return {
+      type: "unknown",
+      method: "html-fallback",
+      confidence: 0.1,
+      durationMs: performance.now() - t0,
+    };
   }
 
   /**
@@ -85,15 +97,25 @@ export class DetectionPipeline {
    * the synchronous API used by dom-watcher and other sync callers.
    */
   async runAsync(field: FormField): Promise<PipelineResult> {
+    const t0 = performance.now();
     for (const classifier of this.classifiers) {
       const result = classifier.detectAsync
         ? await classifier.detectAsync(field)
         : classifier.detect(field);
       if (result !== null && result.type !== "unknown") {
-        return { ...result, method: classifier.name };
+        return {
+          ...result,
+          method: classifier.name,
+          durationMs: performance.now() - t0,
+        };
       }
     }
-    return { type: "unknown", method: "html-fallback", confidence: 0.1 };
+    return {
+      type: "unknown",
+      method: "html-fallback",
+      confidence: 0.1,
+      durationMs: performance.now() - t0,
+    };
   }
 
   /**

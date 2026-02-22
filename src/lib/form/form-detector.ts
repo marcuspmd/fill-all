@@ -72,6 +72,7 @@ export interface AsyncDetectionResult extends DetectionResult {
  */
 export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
   const url = window.location.href;
+  const t0 = performance.now();
 
   console.groupCollapsed(
     `%c[Fill All] 🚀 Detecção iniciada — ${new URL(url).hostname}`,
@@ -121,9 +122,21 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
     );
     console.log(`📌 Label: "${field.label ?? "(nenhum)"}"`);
     console.log(`📡 Sinais: "${field.contextSignals || "(nenhum)"}"`);
+    const fieldMs = field.detectionDurationMs ?? 0;
+    const fieldMsStr =
+      fieldMs >= 1
+        ? `${fieldMs.toFixed(1)}ms`
+        : `${(fieldMs * 1000).toFixed(0)}µs`;
+    const fieldMsStyle =
+      fieldMs > 100
+        ? "color: #ef4444; font-weight: bold"
+        : fieldMs > 20
+          ? "color: #f59e0b"
+          : "color: #94a3b8";
     console.log(
-      `%c✅ Tipo final: "${field.fieldType}" [${method} | ${((field.detectionConfidence ?? 0) * 100).toFixed(0)}%]`,
+      `%c✅ Tipo final: "${field.fieldType}" [${method} | ${((field.detectionConfidence ?? 0) * 100).toFixed(0)}%] %c⚡ ${fieldMsStr}`,
       `color: ${methodColor[method]}; font-weight: bold`,
+      fieldMsStyle,
     );
     console.groupEnd();
   });
@@ -136,6 +149,24 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
   console.log(
     `%c[Fill All] ✅ ${fields.length} campo(s)  ·  ${summary}`,
     "color: #22c55e; font-weight: bold",
+  );
+
+  // ── Performance summary ────────────────────────────────────────────────────
+  const totalMs = performance.now() - t0;
+  const perfSorted = [...fields]
+    .filter((f) => (f.detectionDurationMs ?? 0) > 0)
+    .sort(
+      (a, b) => (b.detectionDurationMs ?? 0) - (a.detectionDurationMs ?? 0),
+    );
+  const slowTop = perfSorted.slice(0, 3).map((f) => {
+    const fIdx = fields.indexOf(f) + 1;
+    const ms = (f.detectionDurationMs ?? 0).toFixed(1);
+    const label = f.label ?? f.id ?? f.name ?? "?";
+    return `#${fIdx} "${label}" ${ms}ms [${f.detectionMethod}]`;
+  });
+  console.log(
+    `%c[Fill All] ⏱ ${totalMs.toFixed(0)}ms total${slowTop.length ? ` · 🐢 ${slowTop.join(" · ")}` : ""}`,
+    "color: #94a3b8",
   );
   console.groupEnd();
 

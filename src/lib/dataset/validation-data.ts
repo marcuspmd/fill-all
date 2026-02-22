@@ -391,6 +391,125 @@ export const VALIDATION_SAMPLES: ValidationSample[] = [
     expectedType: "date",
     note: "Abrev. genérica data",
   },
+
+  // ── BANK FIELDS ──
+  {
+    signals: "agencia_banco banco_agencia bank_agency",
+    expectedType: "number",
+    note: "Agência bancária",
+  },
+  {
+    signals: "conta_banco conta_corrente bank_account",
+    expectedType: "number",
+    note: "Conta bancária",
+  },
+  {
+    signals: "dv_agencia digito_agencia bank_agency_digit",
+    expectedType: "number",
+    note: "DV da agência",
+  },
+  {
+    signals: "dv_conta digito_conta bank_account_digit",
+    expectedType: "number",
+    note: "DV da conta",
+  },
+  // ── ADDRESS COMPLEMENT ──
+  {
+    signals: "complemento_endereco complement_address apto",
+    expectedType: "text",
+    note: "Complemento de endereço",
+  },
+  {
+    signals: "complemento apto bloco casa apartamento",
+    expectedType: "text",
+    note: "Complemento com contexto",
+  },
+  // ── ADDRESS NUMBER / GENERIC CODE ──
+  {
+    signals: "numero_imovel house_number num_address",
+    expectedType: "number",
+    note: "Número do imóvel",
+  },
+  {
+    signals: "codigo_promotora cod_agencia promoter_code",
+    expectedType: "number",
+    note: "Código numérico genérico",
+  },
+  {
+    signals: "cpf do cliente customer_cpf cpf_id",
+    expectedType: "cpf",
+    note: "CPF bilíngue claro",
+  },
+  {
+    signals: "documento pessoa fisica cpf_document",
+    expectedType: "cpf",
+    note: "Documento PF",
+  },
+  {
+    signals: "cnpj empresa contractor_cnpj",
+    expectedType: "cnpj",
+    note: "CNPJ contratante",
+  },
+  {
+    signals: "city_name municipality city",
+    expectedType: "city",
+    note: "Cidade em ingles",
+  },
+  {
+    signals: "state_code uf estado",
+    expectedType: "state",
+    note: "Estado com uf",
+  },
+  {
+    signals: "cep_input buscar cep_code",
+    expectedType: "cep",
+    note: "CEP com busca",
+  },
+  {
+    signals: "work_email corporate_email e-mail",
+    expectedType: "email",
+    note: "Email corporativo bilíngue",
+  },
+  {
+    signals: "mobile_contact tel_whatsapp phone",
+    expectedType: "phone",
+    note: "Telefone contato mobile",
+  },
+  {
+    signals: "employee_total headcount employees_count",
+    expectedType: "employee-count",
+    note: "Contagem de funcionarios",
+  },
+  {
+    signals: "position_name cargo profissional",
+    expectedType: "job-title",
+    note: "Cargo bilíngue",
+  },
+  {
+    signals: "house_number number_endereco num_casa",
+    expectedType: "number",
+    note: "Numero de endereco",
+  },
+  {
+    signals: "bank_account_digit dv_conta",
+    expectedType: "number",
+    note: "Digito conta bancario",
+  },
+  {
+    signals: "product_name nome do produto item",
+    expectedType: "product",
+    note: "Produto bilíngue",
+  },
+  {
+    signals: "supplier_name fornecedor principal vendor",
+    expectedType: "supplier",
+    note: "Fornecedor bilíngue",
+  },
+  {
+    signals: "company_website url site empresa",
+    expectedType: "website",
+    note: "Website corporativo",
+  },
 ];
 
 /** Run validation pass: returns per-type accuracy and global accuracy */

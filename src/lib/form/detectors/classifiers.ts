@@ -7,21 +7,17 @@
  * Exported classifiers (in default priority order):
  *
  *   htmlTypeClassifier    — deterministic mapping from input[type] / tagName
- *   keywordClassifier     — exact substring keyword match (fast, high precision)
- *   tensorflowClassifier  — TF.js cosine-similarity soft match
+ *   tensorflowClassifier  — TF.js cosine-similarity soft match (pre-trained model)
  *   htmlFallbackClassifier— last-resort input[type] → FieldType mapping
  *
  * Exported pipelines:
  *
- *   DEFAULT_PIPELINE           — field-level: html-type → keyword → tensorflow → html-fallback
+ *   DEFAULT_PIPELINE           — field-level: html-type → tensorflow → html-fallback
  *   DEFAULT_COLLECTION_PIPELINE— page-level:  native-inputs → custom-selects → interactive-fields
  */
 
 import type { FormField, FieldType } from "@/types";
-import {
-  classifyByKeyword,
-  classifyByTfSoft,
-} from "@/lib/ai/tensorflow-generator";
+import { classifyByTfSoft } from "@/lib/ai/tensorflow-generator";
 import { detectBasicType } from "./html-type-detector";
 import {
   detectCustomSelects,
@@ -35,6 +31,7 @@ import { getUniqueSelector } from "./selector-builder";
 import { findLabelWithStrategy } from "./label-detector";
 import { buildSignals } from "./signals-builder";
 import { chromeAiClassifier } from "./chrome-ai-classifier";
+import { keywordClassifier } from "./keyword-classifier";
 import {
   DetectionPipeline,
   FieldCollectionPipeline,
@@ -52,20 +49,6 @@ export const htmlTypeClassifier: FieldClassifier = {
   detect(field): ClassifierResult | null {
     const { type } = detectBasicType(field.element);
     if (type === "unknown") return null;
-    return { type, confidence: 1.0 };
-  },
-};
-
-// ── keywordClassifier ─────────────────────────────────────────────────────────
-// Hard exact substring match against the FIELD_TYPE_KEYWORDS dictionary.
-// Longer keyword wins (score = keyword.length).
-
-export const keywordClassifier: FieldClassifier = {
-  name: "keyword",
-  detect(field): ClassifierResult | null {
-    const signals = field.contextSignals ?? "";
-    const type = classifyByKeyword(signals);
-    if (type === null) return null;
     return { type, confidence: 1.0 };
   },
 };
@@ -114,7 +97,7 @@ export const htmlFallbackClassifier: FieldClassifier = {
 /**
  * Default field-level classification pipeline.
  * Classifies a single FormField:
- *   html-type → keyword → tensorflow → chrome-ai (async) → html-fallback
+ *   html-type → tensorflow → chrome-ai (async) → html-fallback
  *
  * chrome-ai participates only when the pipeline is run via runAsync().
  * The synchronous run() skips it transparently (detect() returns null).
@@ -170,6 +153,7 @@ export async function detectNativeFieldsAsync(): Promise<FormField[]> {
     field.fieldType = result.type;
     field.detectionMethod = result.method;
     field.detectionConfidence = result.confidence;
+    field.detectionDurationMs = result.durationMs;
 
     fields.push(field);
   }
@@ -228,6 +212,7 @@ export const nativeInputDetector: PageDetector = {
       field.fieldType = result.type;
       field.detectionMethod = result.method;
       field.detectionConfidence = result.confidence;
+      field.detectionDurationMs = result.durationMs;
 
       fields.push(field);
     }

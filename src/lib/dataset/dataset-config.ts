@@ -12,15 +12,15 @@ import { TEST_SAMPLES } from "./test-data";
 
 // ── Version & metadata ──────────────────────────────────────────────────────
 
-export const DATASET_VERSION = "1.0.0";
+export const DATASET_VERSION = "1.1.0";
 
 export const DATASET_META = {
   version: DATASET_VERSION,
-  locale: "pt-BR",
+  locale: "pt-BR + en-US",
   createdAt: "2025-01-01",
   description:
-    "Dataset completo para classificação de campos de formulário (pt-BR). " +
-    "Inclui treino, validação e teste com cobertura de ~25 tipos de campo.",
+    "Dataset completo para classificacao de campos de formulario (pt-BR + en-US). " +
+    "Inclui treino, validacao e teste com cobertura de ~30 tipos de campo.",
   splits: {
     training: TRAINING_SAMPLES.length,
     validation: VALIDATION_SAMPLES.length,

@@ -2,10 +2,9 @@
  * TensorFlow.js-based field classifier
  *
  * Classification strategy (in order of priority):
- *  1. Hard keyword match  — exact substring on field signals (fast, high precision)
- *  2. TF.js soft match    — character n-gram cosine similarity via tf.matMul
- *                           handles fuzzy/partial/novel signal strings
- *  3. HTML input[type]    — last-resort fallback from the DOM attribute
+ *  1. TF.js soft match    — character n-gram cosine similarity via pre-trained model
+ *                           loaded from public/model/ at extension startup
+ *  2. HTML input[type]    — last-resort fallback from the DOM attribute
  *
  * DEBUG: Set `window.__FILL_ALL_DEBUG__ = true` in the browser DevTools console
  * of the page being filled, then trigger a fill. You will see a collapsed log
@@ -16,349 +15,12 @@ import * as tf from "@tensorflow/tfjs";
 import type { FormField, FieldType } from "@/types";
 import { generate } from "@/lib/generators";
 
-// Field type keywords mapping for classification
-// ORDER MATTERS: longer/more-specific keywords score higher (score = keyword.length).
-// Add new terms here to "teach" the classifier new fields.
-const FIELD_TYPE_KEYWORDS: Record<FieldType, string[]> = {
-  // ── Brazilian documents ──────────────────────────────────────────────────
-  cpf: ["cpf", "cadastro-pessoa", "cadastro-de-pessoa"],
-  cnpj: [
-    "cnpj",
-    "company-doc",
-    "cadastro-nacional",
-    "inscricao-federal",
-    "inscrição-federal",
-  ],
-  rg: [
-    "rg",
-    "registro-geral",
-    "identidade",
-    "carteira-identidade",
-    "numero-rg",
-    "doc-rg",
-  ],
-
-  // ── Contact ──────────────────────────────────────────────────────────────
-  email: [
-    "email",
-    "e-mail",
-    "mail",
-    "correo",
-    "emailaddress",
-    "e_mail",
-    "contato-email",
-  ],
-  phone: [
-    "phone",
-    "telefone",
-    "celular",
-    "tel",
-    "mobile",
-    "fone",
-    "whatsapp",
-    "ddd",
-    "numero-telefone",
-    "numero-celular",
-    "contato-tel",
-    "phonenumber",
-    "cell",
-    "cellular",
-  ],
-
-  // ── Name variants ────────────────────────────────────────────────────────
-  "full-name": [
-    "fullname",
-    "full-name",
-    "nome-completo",
-    "nomecompleto",
-    "full_name",
-  ],
-  "first-name": [
-    "first-name",
-    "firstname",
-    "primeiro-nome",
-    "primeironome",
-    "given-name",
-    "first_name",
-    "nome-proprio",
-    "prenome",
-  ],
-  "last-name": [
-    "last-name",
-    "lastname",
-    "sobrenome",
-    "family-name",
-    "last_name",
-    "surname",
-    "apelido-familia",
-  ],
-  name: ["name", "nome"],
-
-  // ── Address ──────────────────────────────────────────────────────────────
-  cep: ["cep", "codigo-postal", "codigopostal", "cod-postal", "postalcode"],
-  "zip-code": [
-    "zip",
-    "zipcode",
-    "zip-code",
-    "zip_code",
-    "postal",
-    "postalcode",
-  ],
-  street: [
-    "street",
-    "rua",
-    "avenida",
-    "logradouro",
-    "av.",
-    "alameda",
-    "travessa",
-    "rodovia",
-    "estrada",
-    "streetaddress",
-    "street-address",
-    "street_address",
-  ],
-  address: [
-    "address",
-    "endereco",
-    "endereço",
-    "addr",
-    "address1",
-    "address2",
-    "address_line",
-    "billing-address",
-    "shipping-address",
-    "endereco-completo",
-  ],
-  city: [
-    "city",
-    "cidade",
-    "municipio",
-    "município",
-    "localidade",
-    "billing-city",
-    "shipping-city",
-  ],
-  state: [
-    "state",
-    "estado",
-    "uf",
-    "unidade-federativa",
-    "province",
-    "billing-state",
-    "shipping-state",
-  ],
-
-  // ── Date ─────────────────────────────────────────────────────────────────
-  "birth-date": [
-    "birth",
-    "nascimento",
-    "birthday",
-    "dob",
-    "data-nascimento",
-    "datanascimento",
-    "date-of-birth",
-    "birth_date",
-    "birthdate",
-    "data_nascimento",
-    "aniversario",
-    "dt-nasc",
-    "dt-nascimento",
-  ],
-  date: [
-    "date",
-    "data",
-    "datainicio",
-    "datafim",
-    "data-inicio",
-    "data-fim",
-    "start-date",
-    "end-date",
-    "expiry",
-    "expiration",
-    "validade",
-    "vigencia",
-    "vencimento",
-  ],
-
-  // ── Auth ─────────────────────────────────────────────────────────────────
-  password: [
-    "password",
-    "senha",
-    "pass",
-    "pwd",
-    "passwd",
-    "current-password",
-    "new-password",
-    "confirm-password",
-    "nova-senha",
-    "confirmar-senha",
-    "repeat-password",
-    "retype-password",
-  ],
-  username: [
-    "username",
-    "usuario",
-    "user",
-    "login",
-    "user-name",
-    "user_name",
-    "handle",
-    "nick",
-    "apelido",
-    "login-name",
-  ],
-
-  // ── Business ─────────────────────────────────────────────────────────────
-  company: [
-    "company",
-    "empresa",
-    "razao-social",
-    "razão-social",
-    "organization",
-    "org",
-    "organization-name",
-    "nome-empresa",
-    "nome-fantasia",
-    "fantasy-name",
-    "companyname",
-  ],
-  "cpf-cnpj": [
-    "cpf-cnpj",
-    "cpfcnpj",
-    "cpf_cnpj",
-    "cpf/cnpj",
-    "cpf-ou-cnpj",
-    "documento-fiscal",
-    "doc-fiscal",
-    "informe-cpf-cnpj",
-  ],
-  website: [
-    "website",
-    "site",
-    "homepage",
-    "pagina-web",
-    "endereco-web",
-    "dominio",
-    "domain",
-  ],
-  product: ["produto", "product", "nome-produto", "item", "mercadoria", "sku"],
-  supplier: [
-    "fornecedor",
-    "supplier",
-    "vendor",
-    "parceiro",
-    "nome-fornecedor",
-    "empresa-fornecedora",
-    "razao-fornecedor",
-  ],
-  "employee-count": [
-    "funcionarios",
-    "colaboradores",
-    "headcount",
-    "employee-count",
-    "num-funcionarios",
-    "qtd-funcionarios",
-    "workforce",
-    "employees",
-    "quadro-pessoal",
-    "tamanho-empresa",
-  ],
-  "job-title": [
-    "cargo",
-    "funcao",
-    "função",
-    "profissao",
-    "profissão",
-    "occupation",
-    "job-title",
-    "jobtitle",
-    "position",
-    "role",
-    "titulo-profissional",
-    "area-atuacao",
-  ],
-
-  // ── Numeric / financial ──────────────────────────────────────────────────
-  money: [
-    "money",
-    "valor",
-    "preco",
-    "preço",
-    "price",
-    "amount",
-    "margem",
-    "salario",
-    "salário",
-    "renda",
-    "receita",
-    "custo",
-    "cost",
-    "total",
-    "subtotal",
-    "desconto",
-    "discount",
-  ],
-  number: [
-    "number",
-    "numero",
-    "número",
-    "quantidade",
-    "qty",
-    "num",
-    "count",
-    "age",
-    "idade",
-    "complemento",
-  ],
-
-  // ── Generic text ─────────────────────────────────────────────────────────
-  text: [
-    "text",
-    "description",
-    "descricao",
-    "descrição",
-    "obs",
-    "observacao",
-    "observação",
-    "comentario",
-    "comentário",
-    "message",
-    "mensagem",
-    "nota",
-    "note",
-    "anotacao",
-    "anotação",
-    "bio",
-    "about",
-    "sobre",
-    "informacoes",
-    "informações",
-    "details",
-    "detalhe",
-    // ── Brazilian financial / consignado ────────────────────────────────────
-    "convenio",
-    "convênio",
-    "agreement",
-    "agreement-id",
-    "convenio-id",
-    "matricula",
-    "matrícula",
-  ],
-
-  // ── Element-type only (no keywords needed) ───────────────────────────────
-  select: [],
-  checkbox: [],
-  radio: [],
-  unknown: [],
-};
-
 // ── Debug flag ───────────────────────────────────────────────────────────────
 // Activate in the browser DevTools console of the page being filled:
 //   window.__FILL_ALL_DEBUG__ = true
 // Then trigger a fill to see detailed classifier logs for every field.
 function isDebugEnabled(): boolean {
-  return true;
+  return true; // deixar sempre ligado por enquanto.
   return !!(globalThis as Record<string, unknown>)["__FILL_ALL_DEBUG__"];
 }
 
@@ -367,26 +29,23 @@ function isDebugEnabled(): boolean {
 const NGRAM_SIZE = 3;
 
 // Minimum cosine similarity for TF.js prediction to be accepted.
-// Increase to be more conservative; decrease to allow fuzzier matches.
-const TF_THRESHOLD = 0.7;
+// 0.65 keeps good precision while reducing fallback frequency on noisy labels.
+const TF_THRESHOLD = 0.4;
 
 function charNgrams(text: string): string[] {
-  const padded = `_${text}_`;
+  const normalized = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_\-/.]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const padded = `_${normalized}_`;
   const result: string[] = [];
   for (let i = 0; i <= padded.length - NGRAM_SIZE; i++) {
     result.push(padded.slice(i, i + NGRAM_SIZE));
   }
   return result;
-}
-
-function buildVocab(texts: string[]): Map<string, number> {
-  const vocab = new Map<string, number>();
-  for (const t of texts) {
-    for (const ng of charNgrams(t)) {
-      if (!vocab.has(ng)) vocab.set(ng, vocab.size);
-    }
-  }
-  return vocab;
 }
 
 function vectorize(text: string, vocab: Map<string, number>): Float32Array {
@@ -445,9 +104,14 @@ export async function loadPretrainedModel(): Promise<void> {
           `[Fill All] Pre-trained model loaded — ${labelsRaw.length} classes, vocab ${_pretrained.vocab.size} n-grams`,
         );
       }
-    } catch {
-      // Model artefacts not yet generated — runtime classifier is used instead.
-      // Run `npm run train:model` to generate public/model/.
+    } catch (err) {
+      console.error(
+        "[Fill All] ❌ Falha ao carregar modelo pré-treinado:",
+        err,
+      );
+      console.warn(
+        "[Fill All] ⚠️  Classificação usará apenas HTML input[type] como fallback.",
+      );
     }
   })();
 
@@ -475,7 +139,13 @@ function tfSoftClassify(
   signals: string,
 ): { type: FieldType; score: number } | null {
   if (!signals.trim()) return null;
-  if (!_pretrained) return null; // model not loaded — keyword/html-fallback handles it
+  if (!_pretrained) {
+    console.warn(
+      "[Fill All] ⚠️  Modelo não carregado ainda — usando html-fallback. Sinais:",
+      signals,
+    );
+    return null;
+  }
 
   const inputVec = vectorize(signals, _pretrained.vocab);
   if (!inputVec.some((v) => v > 0)) return null;
@@ -494,39 +164,19 @@ function tfSoftClassify(
     return { bestIdx: idx, bestScore: score };
   });
 
-  if (bestScore < TF_THRESHOLD) return null;
+  if (bestScore < TF_THRESHOLD) {
+    console.warn(
+      `[Fill All] ⚠️  TF.js score baixo (${bestScore.toFixed(3)} < threshold ${TF_THRESHOLD}) para sinais: "${signals}" — melhor palpite: "${_pretrained.labels[bestIdx]}"`,
+    );
+    return null;
+  }
   return { type: _pretrained.labels[bestIdx], score: bestScore };
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
- * Step 1: Hard keyword match over a normalised signals string.
- * Returns the best matching FieldType, or null if nothing matches.
- */
-export function classifyByKeyword(signals: string): FieldType | null {
-  if (!signals.trim()) return null;
-
-  let best: FieldType = "unknown";
-  let bestScore = 0;
-
-  for (const [fieldType, keywords] of Object.entries(FIELD_TYPE_KEYWORDS)) {
-    for (const keyword of keywords) {
-      if (signals.includes(keyword)) {
-        const score = keyword.length;
-        if (score > bestScore) {
-          bestScore = score;
-          best = fieldType as FieldType;
-        }
-      }
-    }
-  }
-
-  return best !== "unknown" ? best : null;
-}
-
-/**
- * Step 2: TF.js cosine-similarity soft match over a normalised signals string.
+ * TF.js cosine-similarity soft match over a normalised signals string.
  * Returns the best matching FieldType + confidence score, or null if below threshold.
  */
 export function classifyByTfSoft(
@@ -536,11 +186,10 @@ export function classifyByTfSoft(
 }
 
 /**
- * Classifies a form field into a FieldType using TF.js-powered classification.
+ * Classifies a form field into a FieldType using the pre-trained TF.js model.
  *
- * To teach the classifier about new field types or signal words:
- *   → extend FIELD_TYPE_KEYWORDS above with more keywords.
- *   → the TF.js prototypes are rebuilt automatically on the next page load.
+ * To re-train the model with new data:
+ *   → update the dataset and run `npm run train:model`.
  */
 export function classifyField(field: FormField): FieldType {
   const signals = [
@@ -553,28 +202,7 @@ export function classifyField(field: FormField): FieldType {
     .filter(Boolean)
     .join(" ");
 
-  // ── Step 1: Hard keyword match ────────────────────────────────────────────
-  const kwType = classifyByKeyword(signals);
-  if (kwType !== null) {
-    if (isDebugEnabled()) {
-      console.groupCollapsed(
-        `[Fill All] classify → %c${kwType}%c  (keyword)  ${field.selector}`,
-        "color: #22c55e; font-weight: bold",
-        "color: inherit",
-      );
-      console.log("📡 signals:", signals || "(none)");
-      console.log("🔖 field:", {
-        label: field.label,
-        name: field.name,
-        id: field.id,
-        placeholder: field.placeholder,
-      });
-      console.groupEnd();
-    }
-    return kwType;
-  }
-
-  // ── Step 2: TF.js soft / fuzzy match ─────────────────────────────────────
+  // ── Step 1: TF.js soft / fuzzy match (pre-trained model) ─────────────────
   const tfResult = classifyByTfSoft(signals);
   if (tfResult) {
     if (isDebugEnabled()) {
@@ -598,7 +226,7 @@ export function classifyField(field: FormField): FieldType {
     return tfResult.type;
   }
 
-  // ── Step 3: HTML input[type] fallback ─────────────────────────────────────
+  // ── Step 2: HTML input[type] fallback ─────────────────────────────────────
   const inputType = field.element.type?.toLowerCase();
   const htmlTypeMap: Record<string, FieldType> = {
     email: "email",

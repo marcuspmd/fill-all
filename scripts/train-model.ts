@@ -38,6 +38,7 @@ const OUTPUT_DIR = path.resolve(process.cwd(), "public/model");
 const LABELS = [
   "cpf",
   "cnpj",
+  "cpf-cnpj",
   "rg",
   "email",
   "phone",
@@ -56,6 +57,11 @@ const LABELS = [
   "password",
   "username",
   "company",
+  "website",
+  "product",
+  "supplier",
+  "employee-count",
+  "job-title",
   "money",
   "number",
   "text",
@@ -74,7 +80,14 @@ const LABEL_SET = new Set<string>(LABELS);
 // ── Character n-gram helpers ─────────────────────────────────────────────────
 
 function charNgrams(text: string): string[] {
-  const padded = `_${text}_`;
+  const normalized = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_\-/.]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const padded = `_${normalized}_`;
   const result: string[] = [];
   for (let i = 0; i <= padded.length - NGRAM_SIZE; i++) {
     result.push(padded.slice(i, i + NGRAM_SIZE));
@@ -85,7 +98,7 @@ function charNgrams(text: string): string[] {
 function buildVocab(texts: string[]): Map<string, number> {
   const vocab = new Map<string, number>();
   for (const text of texts) {
-    for (const ng of charNgrams(text.toLowerCase())) {
+    for (const ng of charNgrams(text)) {
       if (!vocab.has(ng)) vocab.set(ng, vocab.size);
     }
   }
@@ -94,7 +107,7 @@ function buildVocab(texts: string[]): Map<string, number> {
 
 function vectorize(text: string, vocab: Map<string, number>): Float32Array {
   const v = new Float32Array(vocab.size);
-  for (const ng of charNgrams(text.toLowerCase())) {
+  for (const ng of charNgrams(text)) {
     const idx = vocab.get(ng);
     if (idx !== undefined) v[idx] += 1;
   }

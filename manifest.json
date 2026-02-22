@@ -53,5 +53,18 @@
       "description": "Preencher todos os campos"
     }
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "model/model.json",
+        "model/vocab.json",
+        "model/labels.json",
+        "model/group1-shard1of1.bin"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
   "minimum_chrome_version": "128"
 }
