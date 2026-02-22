@@ -1,3 +1,13 @@
+export type {
+  MessageHandler,
+  StorageRepository,
+  MutableStorageRepository,
+  UrlFilterableRepository,
+  UIModule,
+  DisposableUIModule,
+  FieldIconComponent,
+} from "./interfaces";
+
 /** How a field type was determined */
 export type DetectionMethod =
   | "html-type"
