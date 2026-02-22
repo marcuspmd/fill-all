@@ -46,7 +46,7 @@
   "commands": {
     "fill-all-fields": {
       "suggested_key": {
-        "default": "Ctrl+Shift+F",
+        "default": "Alt+Shift+F",
         "mac": "Command+Shift+F"
       },
       "description": "Preencher todos os campos"

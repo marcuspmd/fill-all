@@ -9,7 +9,7 @@
 
 import type { FormField, FieldRule, FieldType } from "@/types";
 import { fillSingleField } from "./form-filler";
-import { invalidateClassifier } from "@/lib/ai/tensorflow-generator";
+import { invalidateClassifier } from "@/lib/form/detectors/tensorflow-classifier";
 import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { DEFAULT_PIPELINE } from "./detectors/classifiers";
 import { buildSignals } from "./detectors/signals-builder";

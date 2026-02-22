@@ -17,7 +17,6 @@
  */
 
 import type { FormField, FieldType } from "@/types";
-import { classifyByTfSoft } from "@/lib/ai/tensorflow-generator";
 import { detectBasicType } from "./html-type-detector";
 import {
   detectCustomSelects,
@@ -32,6 +31,7 @@ import { findLabelWithStrategy } from "./label-detector";
 import { buildSignals } from "./signals-builder";
 import { chromeAiClassifier } from "./chrome-ai-classifier";
 import { keywordClassifier } from "./keyword-classifier";
+import { tensorflowClassifier } from "./tensorflow-classifier";
 import {
   DetectionPipeline,
   FieldCollectionPipeline,
@@ -50,20 +50,6 @@ export const htmlTypeClassifier: FieldClassifier = {
     const { type } = detectBasicType(field.element);
     if (type === "unknown") return null;
     return { type, confidence: 1.0 };
-  },
-};
-
-// ── tensorflowClassifier ──────────────────────────────────────────────────────
-// TF.js character n-gram cosine-similarity soft match.
-// Uses the pre-trained model when available, otherwise the runtime prototype-vector classifier.
-
-export const tensorflowClassifier: FieldClassifier = {
-  name: "tensorflow",
-  detect(field): ClassifierResult | null {
-    const signals = field.contextSignals ?? "";
-    const result = classifyByTfSoft(signals);
-    if (result === null) return null;
-    return { type: result.type, confidence: result.score };
   },
 };
 
@@ -114,6 +100,8 @@ export const DEFAULT_PIPELINE = new DetectionPipeline([
 
 /** Runtime-mutable pipeline — overridden by content-script based on user settings. */
 let _activePipeline: DetectionPipeline = DEFAULT_PIPELINE;
+
+export { tensorflowClassifier } from "./tensorflow-classifier";
 
 /** All named classifiers available for pipeline composition. */
 const NAMED_CLASSIFIERS: Record<string, FieldClassifier> = {
@@ -200,6 +188,8 @@ export async function detectNativeFieldsAsync(): Promise<FormField[]> {
     field.contextSignals = buildSignals(field);
 
     const result = await _activePipeline.runAsync(field);
+    field.fieldType = result.type;
+    field.detectionMethod = result.method;
     field.detectionConfidence = result.confidence;
     field.detectionDurationMs = result.durationMs;
 

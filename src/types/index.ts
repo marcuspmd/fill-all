@@ -280,7 +280,9 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultStrategy: "ai",
   useChromeAI: true,
   forceAIFirst: false,
-  shortcut: "Alt+F",
+  shortcut: navigator?.platform?.startsWith("Mac")
+    ? "Command+Shift+F"
+    : "Alt+Shift+F",
   locale: "pt-BR",
   highlightFilled: true,
   cacheEnabled: true,

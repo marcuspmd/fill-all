@@ -33,7 +33,7 @@ import {
   loadPretrainedModel,
   invalidateClassifier,
   reloadClassifier,
-} from "@/lib/ai/tensorflow-generator";
+} from "@/lib/form/detectors/tensorflow-classifier";
 import {
   setActivePipeline,
   buildPipelineFromSettings,
