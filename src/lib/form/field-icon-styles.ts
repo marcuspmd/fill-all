@@ -258,12 +258,17 @@ export function injectStyles(): void {
     #fa-modal-cancel:hover { background: #f1f5f9; }
     /* ── Rule Popup ──────────────────────────────────────────────────── */
     #${RULE_POPUP_ID} {
+      position: absolute;
+      z-index: 2147483646;
       box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
       width: 264px;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       font-size: 12px;
       overflow: hidden;
       display: none;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
     }
     #${RULE_POPUP_ID} .fa-rp-header {
       padding: 8px 12px;

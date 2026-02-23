@@ -10,7 +10,6 @@ import "./popup.css";
 import type {
   DetectedFieldSummary,
   FieldDetectionCacheEntry,
-  FieldRule,
   FieldType,
   IgnoredField,
   SavedForm,

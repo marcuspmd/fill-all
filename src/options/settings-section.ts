@@ -29,6 +29,77 @@ const STRATEGY_DESCRIPTIONS: Record<string, string> = {
 
 let _dragSrcIdx: number | null = null;
 
+// ── Debounce ─────────────────────────────────────────────────────────────────
+
+function debounce(fn: () => void, ms: number): () => void {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(fn, ms);
+  };
+}
+
+// ── Auto-save helpers ─────────────────────────────────────────────────────────
+
+async function saveGeneralSettings(): Promise<void> {
+  const settings: Partial<Settings> = {
+    autoFillOnLoad: (
+      document.getElementById("setting-auto-fill") as HTMLInputElement
+    ).checked,
+    highlightFilled: (
+      document.getElementById("setting-highlight") as HTMLInputElement
+    ).checked,
+    cacheEnabled: (
+      document.getElementById("setting-cache-enabled") as HTMLInputElement
+    ).checked,
+    defaultStrategy: (
+      document.getElementById("setting-strategy") as HTMLSelectElement
+    )?.value as Settings["defaultStrategy"],
+    locale: (document.getElementById("setting-locale") as HTMLSelectElement)
+      ?.value as Settings["locale"],
+    showPanel: (
+      document.getElementById("setting-show-panel") as HTMLInputElement
+    ).checked,
+    debugLog: (document.getElementById("setting-debug-log") as HTMLInputElement)
+      .checked,
+    logLevel: (
+      document.getElementById("setting-log-level") as HTMLSelectElement
+    ).value as Settings["logLevel"],
+  };
+  await chrome.runtime.sendMessage({
+    type: "SAVE_SETTINGS",
+    payload: settings,
+  });
+  showToast("Salvo automaticamente");
+}
+
+async function saveFieldIconSettings(): Promise<void> {
+  const settings: Partial<Settings> = {
+    showFieldIcon: (
+      document.getElementById("setting-show-field-icon") as HTMLInputElement
+    ).checked,
+    fieldIconPosition: (
+      document.getElementById(
+        "setting-field-icon-position",
+      ) as HTMLSelectElement
+    ).value as Settings["fieldIconPosition"],
+  };
+  await chrome.runtime.sendMessage({
+    type: "SAVE_SETTINGS",
+    payload: settings,
+  });
+  showToast("Salvo automaticamente");
+}
+
+async function saveStrategiesSettings(): Promise<void> {
+  const pipeline = getPipelineFromDOM();
+  await chrome.runtime.sendMessage({
+    type: "SAVE_SETTINGS",
+    payload: { detectionPipeline: pipeline } as Partial<Settings>,
+  });
+  showToast("Salvo automaticamente");
+}
+
 function getPipelineFromDOM(): DetectionStrategyEntry[] {
   const list = document.getElementById("strategy-list");
   if (!list) return [];
@@ -99,6 +170,12 @@ function renderStrategyList(pipeline: DetectionStrategyEntry[]): void {
       const [dragged] = current.splice(_dragSrcIdx, 1);
       current.splice(idx, 0, dragged);
       renderStrategyList(current);
+      void saveStrategiesSettings();
+    });
+
+    const toggle = item.querySelector<HTMLInputElement>(".strategy-toggle");
+    toggle?.addEventListener("change", () => {
+      void saveStrategiesSettings();
     });
 
     list.appendChild(item);
@@ -193,73 +270,36 @@ async function loadSettings(): Promise<void> {
 }
 
 function bindSettingsEvents(): void {
+  const debouncedSaveGeneral = debounce(() => {
+    void saveGeneralSettings();
+  }, 300);
+  const debouncedSaveFieldIcon = debounce(() => {
+    void saveFieldIconSettings();
+  }, 300);
+
+  // General settings — auto-save on any change
+  for (const id of [
+    "setting-auto-fill",
+    "setting-highlight",
+    "setting-cache-enabled",
+    "setting-show-panel",
+    "setting-debug-log",
+    "setting-log-level",
+    "setting-strategy",
+    "setting-locale",
+  ]) {
+    document
+      .getElementById(id)
+      ?.addEventListener("change", debouncedSaveGeneral);
+  }
+
+  // Field icon — auto-save on any change
   document
-    .getElementById("btn-save-settings")
-    ?.addEventListener("click", async () => {
-      const settings: Partial<Settings> = {
-        autoFillOnLoad: (
-          document.getElementById("setting-auto-fill") as HTMLInputElement
-        ).checked,
-        highlightFilled: (
-          document.getElementById("setting-highlight") as HTMLInputElement
-        ).checked,
-        cacheEnabled: (
-          document.getElementById("setting-cache-enabled") as HTMLInputElement
-        ).checked,
-        defaultStrategy: (
-          document.getElementById("setting-strategy") as HTMLSelectElement
-        ).value as Settings["defaultStrategy"],
-        locale: (document.getElementById("setting-locale") as HTMLSelectElement)
-          .value as Settings["locale"],
-        showPanel: (
-          document.getElementById("setting-show-panel") as HTMLInputElement
-        ).checked,
-        debugLog: (
-          document.getElementById("setting-debug-log") as HTMLInputElement
-        ).checked,
-        logLevel: (
-          document.getElementById("setting-log-level") as HTMLSelectElement
-        ).value as Settings["logLevel"],
-      };
-
-      await chrome.runtime.sendMessage({
-        type: "SAVE_SETTINGS",
-        payload: settings,
-      });
-      showToast("Configurações salvas!");
-    });
-
+    .getElementById("setting-show-field-icon")
+    ?.addEventListener("change", debouncedSaveFieldIcon);
   document
-    .getElementById("btn-save-field-icon")
-    ?.addEventListener("click", async () => {
-      const settings: Partial<Settings> = {
-        showFieldIcon: (
-          document.getElementById("setting-show-field-icon") as HTMLInputElement
-        ).checked,
-        fieldIconPosition: (
-          document.getElementById(
-            "setting-field-icon-position",
-          ) as HTMLSelectElement
-        ).value as Settings["fieldIconPosition"],
-      };
-
-      await chrome.runtime.sendMessage({
-        type: "SAVE_SETTINGS",
-        payload: settings,
-      });
-      showToast("Configurações do ícone salvas!");
-    });
-
-  document
-    .getElementById("btn-save-strategies")
-    ?.addEventListener("click", async () => {
-      const pipeline = getPipelineFromDOM();
-      await chrome.runtime.sendMessage({
-        type: "SAVE_SETTINGS",
-        payload: { detectionPipeline: pipeline } as Partial<Settings>,
-      });
-      showToast("Estratégias salvas!");
-    });
+    .getElementById("setting-field-icon-position")
+    ?.addEventListener("change", debouncedSaveFieldIcon);
 
   document
     .getElementById("btn-download-chrome-ai")

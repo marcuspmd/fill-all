@@ -52,9 +52,6 @@ export async function initChromeAIStatus(): Promise<void> {
       iconEl.textContent = "🤖";
       textEl.textContent = "Chrome AI ativo e pronto.";
       banner.style.display = "flex";
-      setTimeout(() => {
-        banner.style.display = "none";
-      }, 3000);
     } else if (
       availability === "downloadable" ||
       availability === "downloading"
@@ -79,9 +76,6 @@ export async function initChromeAIStatus(): Promise<void> {
           iconEl.textContent = "🤖";
           textEl.textContent = "Chrome AI baixado com sucesso!";
           actionsEl.innerHTML = "";
-          setTimeout(() => {
-            banner.style.display = "none";
-          }, 3000);
         } catch {
           downloadBtn.disabled = false;
           downloadBtn.textContent = "⬇️ Baixar agora";
