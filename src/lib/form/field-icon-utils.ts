@@ -6,7 +6,7 @@
  * functions that field-icon modules still need, plus UI helpers.
  */
 
-import type { FormField, FieldType } from "@/types";
+import { FIELD_TYPES, type FormField, type FieldType } from "@/types";
 import { DEFAULT_PIPELINE } from "./detectors/classifiers";
 import { getUniqueSelector, findLabel, buildSignals } from "./extractors";
 
@@ -17,35 +17,7 @@ export { getUniqueSelector, findLabel };
 const CUSTOM_SELECT_ANCESTOR =
   ".ant-select, [class*='react-select'], .MuiSelect-root, [class*='MuiAutocomplete'], [class*='select2']";
 
-export const ALL_FIELD_TYPES: FieldType[] = [
-  "cpf",
-  "cnpj",
-  "rg",
-  "email",
-  "phone",
-  "full-name",
-  "first-name",
-  "last-name",
-  "name",
-  "address",
-  "street",
-  "city",
-  "state",
-  "cep",
-  "zip-code",
-  "date",
-  "birth-date",
-  "password",
-  "username",
-  "company",
-  "money",
-  "number",
-  "text",
-  "select",
-  "checkbox",
-  "radio",
-  "unknown",
-];
+export const ALL_FIELD_TYPES: FieldType[] = [...FIELD_TYPES];
 
 export function isFillableField(el: HTMLElement): boolean {
   if (el instanceof HTMLTextAreaElement) return true;
@@ -74,6 +46,7 @@ export function buildFormField(
   const field: FormField = {
     element: el,
     selector: getUniqueSelector(el),
+    category: "unknown",
     fieldType: "unknown",
     label: findLabel(el),
     name: el.name || undefined,

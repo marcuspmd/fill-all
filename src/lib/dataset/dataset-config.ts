@@ -5,7 +5,7 @@
  * and provides utility functions for dataset health-checks.
  */
 
-import type { FieldType } from "@/types";
+import { FIELD_TYPES, type FieldType } from "@/types";
 import { TRAINING_SAMPLES, getTrainingDistribution } from "./training-data";
 import { VALIDATION_SAMPLES } from "./validation-data";
 import { TEST_SAMPLES } from "./test-data";
@@ -115,38 +115,7 @@ export interface DatasetHealthReport {
   leakedSignals: string[];
 }
 
-const KNOWN_TYPES: FieldType[] = [
-  "cpf",
-  "cnpj",
-  "cpf-cnpj",
-  "rg",
-  "email",
-  "phone",
-  "name",
-  "first-name",
-  "last-name",
-  "full-name",
-  "address",
-  "street",
-  "city",
-  "state",
-  "cep",
-  "zip-code",
-  "date",
-  "birth-date",
-  "password",
-  "username",
-  "company",
-  "website",
-  "product",
-  "supplier",
-  "employee-count",
-  "job-title",
-  "money",
-  "number",
-  "text",
-  "unknown",
-];
+const KNOWN_TYPES: FieldType[] = [...FIELD_TYPES];
 
 /**
  * Run health checks on the combined dataset.

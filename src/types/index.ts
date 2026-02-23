@@ -44,114 +44,202 @@ export type FieldCategory =
   | "generic"
   | "unknown";
 
-const FieldTypeByCategory = {
-  personal: ["first-name", "last-name", "full-name", "birth-date", "gender"],
-  contact: ["email", "phone", "mobile", "whatsapp"],
-  address: ["street", "house-number", "city", "state", "cep", "country"],
-  document: ["cpf", "cnpj", "rg", "passport", "cnh"],
+/** Fonte única dos tipos suportados pela extensão (UI, validações e classificadores). */
+export const FIELD_TYPES = [
+  // Identificação
+  "cpf",
+  "cnpj",
+  "cpf-cnpj",
+  "rg",
+  "passport",
+  "cnh",
+  "pis",
+  "national-id",
+  "tax-id",
+
+  // Nome
+  "name",
+  "first-name",
+  "last-name",
+  "full-name",
+
+  // Contato
+  "email",
+  "phone",
+  "mobile",
+  "whatsapp",
+
+  // Endereço
+  "address",
+  "street",
+  "house-number",
+  "complement",
+  "neighborhood",
+  "city",
+  "state",
+  "country",
+  "cep",
+  "zip-code",
+
+  // Datas
+  "date",
+  "birth-date",
+  "start-date",
+  "end-date",
+  "due-date",
+
+  // Financeiro
+  "money",
+  "price",
+  "amount",
+  "discount",
+  "tax",
+  "credit-card-number",
+  "credit-card-expiration",
+  "credit-card-cvv",
+  "pix-key",
+
+  // Empresa
+  "company",
+  "supplier",
+  "employee-count",
+  "job-title",
+  "department",
+
+  // Autenticação
+  "username",
+  "password",
+  "confirm-password",
+  "otp",
+  "verification-code",
+
+  // E-commerce
+  "product",
+  "product-name",
+  "sku",
+  "quantity",
+  "coupon",
+
+  // Genéricos
+  "text",
+  "description",
+  "notes",
+  "search",
+  "website",
+  "url",
+  "number",
+
+  // Componentes
+  "select",
+  "checkbox",
+  "radio",
+  "file",
+  "unknown",
+] as const;
+
+/** Field types that the extension can detect and generate values for */
+export type FieldType = (typeof FIELD_TYPES)[number];
+
+/** Subconjunto de tipos treináveis no modelo de texto (TF.js). */
+export const TRAINABLE_FIELD_TYPES = [
+  "cpf",
+  "cnpj",
+  "cpf-cnpj",
+  "rg",
+  "email",
+  "phone",
+  "name",
+  "first-name",
+  "last-name",
+  "full-name",
+  "address",
+  "street",
+  "city",
+  "state",
+  "cep",
+  "zip-code",
+  "date",
+  "birth-date",
+  "password",
+  "username",
+  "company",
+  "website",
+  "product",
+  "supplier",
+  "employee-count",
+  "job-title",
+  "money",
+  "number",
+  "text",
+] as const satisfies readonly FieldType[];
+
+export const FIELD_TYPES_BY_CATEGORY: Record<FieldCategory, FieldType[]> = {
+  personal: ["name", "first-name", "last-name", "full-name", "birth-date"],
+  contact: ["email", "phone", "mobile", "whatsapp", "website", "url"],
+  address: [
+    "address",
+    "street",
+    "house-number",
+    "complement",
+    "neighborhood",
+    "city",
+    "state",
+    "country",
+    "cep",
+    "zip-code",
+  ],
+  document: [
+    "cpf",
+    "cnpj",
+    "cpf-cnpj",
+    "rg",
+    "passport",
+    "cnh",
+    "pis",
+    "national-id",
+    "tax-id",
+  ],
   financial: [
     "money",
     "price",
+    "amount",
     "discount",
+    "tax",
     "credit-card-number",
+    "credit-card-expiration",
     "credit-card-cvv",
     "pix-key",
+    "number",
   ],
-  authentication: ["username", "password", "confirm-password", "otp"],
-  ecommerce: ["product-name", "sku", "quantity", "coupon"],
+  authentication: [
+    "username",
+    "password",
+    "confirm-password",
+    "otp",
+    "verification-code",
+  ],
+  professional: ["job-title", "department", "employee-count"],
+  ecommerce: [
+    "product",
+    "product-name",
+    "sku",
+    "quantity",
+    "coupon",
+    "supplier",
+    "company",
+  ],
+  system: ["search", "select", "checkbox", "radio", "file", "unknown"],
+  generic: [
+    "text",
+    "description",
+    "notes",
+    "date",
+    "start-date",
+    "end-date",
+    "due-date",
+  ],
+  unknown: [],
 };
-
-/** Field types that the extension can detect and generate values for */
-export type FieldType =
-  // Identificação
-  | "cpf"
-  | "cnpj"
-  | "cpf-cnpj"
-  | "rg"
-  | "passport"
-  | "cnh"
-  | "pis"
-  | "national-id"
-  | "tax-id"
-
-  // Nome
-  | "name"
-  | "first-name"
-  | "last-name"
-  | "full-name"
-
-  // Contato
-  | "email"
-  | "phone"
-  | "mobile"
-  | "whatsapp"
-
-  // Endereço
-  | "address"
-  | "street"
-  | "house-number"
-  | "complement"
-  | "neighborhood"
-  | "city"
-  | "state"
-  | "country"
-  | "cep"
-  | "zip-code"
-
-  // Datas
-  | "date"
-  | "birth-date"
-  | "start-date"
-  | "end-date"
-  | "due-date"
-
-  // Financeiro
-  | "money"
-  | "price"
-  | "amount"
-  | "discount"
-  | "tax"
-  | "credit-card-number"
-  | "credit-card-expiration"
-  | "credit-card-cvv"
-  | "pix-key"
-
-  // Empresa
-  | "company"
-  | "supplier"
-  | "employee-count"
-  | "job-title"
-  | "department"
-
-  // Autenticação
-  | "username"
-  | "password"
-  | "confirm-password"
-  | "otp"
-  | "verification-code"
-
-  // E-commerce
-  | "product"
-  | "product-name"
-  | "sku"
-  | "quantity"
-  | "coupon"
-
-  // Genéricos
-  | "text"
-  | "description"
-  | "notes"
-  | "search"
-  | "website"
-  | "url"
-  | "number"
-
-  // Componentes
-  | "select"
-  | "checkbox"
-  | "radio"
-  | "file"
-  | "unknown";
 
 export type signalType =
   | "name"
@@ -453,14 +541,15 @@ export const DEFAULT_DETECTION_PIPELINE: DetectionStrategyEntry[] = [
   { name: "html-fallback", enabled: true },
 ];
 
+const IS_MAC_PLATFORM =
+  typeof navigator !== "undefined" && navigator.platform?.startsWith("Mac");
+
 export const DEFAULT_SETTINGS: Settings = {
   autoFillOnLoad: false,
   defaultStrategy: "ai",
   useChromeAI: true,
   forceAIFirst: false,
-  shortcut: navigator?.platform?.startsWith("Mac")
-    ? "Command+Shift+F"
-    : "Alt+Shift+F",
+  shortcut: IS_MAC_PLATFORM ? "Command+Shift+F" : "Alt+Shift+F",
   locale: "pt-BR",
   highlightFilled: true,
   cacheEnabled: true,

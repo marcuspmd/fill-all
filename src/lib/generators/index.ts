@@ -37,7 +37,7 @@ import {
 
 export type GeneratorFn = () => string;
 
-const generatorMap: Record<FieldType, GeneratorFn> = {
+const generatorMap: Partial<Record<FieldType, GeneratorFn>> = {
   cpf: () => generateCpf(true),
   cnpj: () => generateCnpj(true),
   "cpf-cnpj": generateCpfCnpj,

@@ -5,6 +5,7 @@
 import type { FieldRule } from "@/types";
 import { RULE_POPUP_ID } from "./field-icon-styles";
 import { getUniqueSelector, findLabel } from "./extractors";
+import { getFieldTypeOptions } from "@/lib/shared/field-type-catalog";
 
 let rulePopupElement: HTMLElement | null = null;
 let currentRuleField: {
@@ -108,6 +109,10 @@ function positionRulePopup(anchor: HTMLElement): void {
 }
 
 function getRulePopupHTML(): string {
+  const generatorTypeOptions = getFieldTypeOptions()
+    .map((option) => `<option value="${option.value}">${option.label}</option>`)
+    .join("");
+
   return `
     <div class="fa-rp-header">📌 Regra — <span id="fa-rp-field-name"></span></div>
     <div class="fa-rp-body">
@@ -119,25 +124,7 @@ function getRulePopupHTML(): string {
         <label class="fa-rp-label">Gerador automático</label>
         <select id="fa-rp-generator" class="fa-rp-select">
           <option value="auto">Auto (detectar)</option>
-          <option value="cpf">CPF</option>
-          <option value="cnpj">CNPJ</option>
-          <option value="email">E-mail</option>
-          <option value="name">Nome completo</option>
-          <option value="first-name">Primeiro nome</option>
-          <option value="last-name">Sobrenome</option>
-          <option value="phone">Telefone</option>
-          <option value="date">Data</option>
-          <option value="birth-date">Data de nascimento</option>
-          <option value="address">Endereço</option>
-          <option value="cep">CEP</option>
-          <option value="city">Cidade</option>
-          <option value="state">Estado</option>
-          <option value="rg">RG</option>
-          <option value="password">Senha</option>
-          <option value="username">Username</option>
-          <option value="company">Empresa</option>
-          <option value="number">Número</option>
-          <option value="text">Texto livre</option>
+          ${generatorTypeOptions}
         </select>
       </div>
       <div class="fa-rp-actions">

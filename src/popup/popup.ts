@@ -14,9 +14,11 @@ import type {
   IgnoredField,
   SavedForm,
 } from "@/types";
+import { FIELD_TYPES } from "@/types";
 import { matchUrlPattern } from "@/lib/url/match-url-pattern";
 import { generate, generateMoney, generateNumber } from "@/lib/generators";
 import { generateWithConstraints } from "@/lib/generators/adaptive";
+import { getFieldTypeOptions } from "@/lib/shared/field-type-catalog";
 import {
   renderTabBar,
   renderConfidenceBadge,
@@ -55,34 +57,8 @@ let watcherActive = false;
 let panelActive = false;
 let pageUrl = "";
 
-const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> = (
-  [
-    { value: "cpf", label: "CPF" },
-    { value: "cnpj", label: "CNPJ" },
-    { value: "email", label: "E-mail" },
-    { value: "phone", label: "Telefone" },
-    { value: "full-name", label: "Nome Completo" },
-    { value: "first-name", label: "Primeiro Nome" },
-    { value: "last-name", label: "Sobrenome" },
-    { value: "rg", label: "RG" },
-    { value: "company", label: "Empresa" },
-    { value: "cep", label: "CEP" },
-    { value: "address", label: "Endereço" },
-    { value: "city", label: "Cidade" },
-    { value: "state", label: "Estado" },
-    { value: "date", label: "Data" },
-    { value: "birth-date", label: "Nascimento" },
-    { value: "money", label: "Dinheiro" },
-    { value: "number", label: "Número" },
-    { value: "password", label: "Senha" },
-    { value: "username", label: "Username" },
-    { value: "text", label: "Texto" },
-    { value: "select", label: "Select" },
-    { value: "checkbox", label: "Checkbox" },
-    { value: "radio", label: "Radio" },
-    { value: "unknown", label: "Desconhecido" },
-  ] as Array<{ value: FieldType; label: string }>
-).sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> =
+  getFieldTypeOptions(FIELD_TYPES);
 
 // ── Tab Management ───────────────────────────────────────────────────────────
 
@@ -466,28 +442,13 @@ function renderFormsTab(): void {
 
 // ── Generators Tab ───────────────────────────────────────────────────────────
 
-const GENERATOR_CHIPS: Array<{ type: FieldType; label: string }> = [
-  { type: "cpf", label: "CPF" },
-  { type: "cnpj", label: "CNPJ" },
-  { type: "email", label: "E-mail" },
-  { type: "phone", label: "Telefone" },
-  { type: "full-name", label: "Nome" },
-  { type: "first-name", label: "1º Nome" },
-  { type: "last-name", label: "Sobrenome" },
-  { type: "rg", label: "RG" },
-  { type: "cep", label: "CEP" },
-  { type: "address", label: "Endereço" },
-  { type: "city", label: "Cidade" },
-  { type: "state", label: "Estado" },
-  { type: "date", label: "Data" },
-  { type: "birth-date", label: "Nascimento" },
-  { type: "password", label: "Senha" },
-  { type: "username", label: "Username" },
-  { type: "company", label: "Empresa" },
-  { type: "money", label: "Dinheiro" },
-  { type: "number", label: "Número" },
-  { type: "text", label: "Texto" },
-];
+const GENERATOR_CHIPS: Array<{ type: FieldType; label: string }> =
+  FIELD_TYPE_OPTIONS.filter(
+    (option) =>
+      !["select", "checkbox", "radio", "file", "unknown"].includes(
+        option.value,
+      ),
+  ).map((option) => ({ type: option.value, label: option.label }));
 
 function renderGeneratorsTab(): void {
   const content = document.getElementById("content");

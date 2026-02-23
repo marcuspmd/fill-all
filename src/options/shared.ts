@@ -2,6 +2,12 @@
  * Shared utilities for the Options page.
  */
 
+import { FIELD_TYPES, type FieldType } from "@/types";
+import {
+  getFieldTypeLabel,
+  getFieldTypeOptions,
+} from "@/lib/shared/field-type-catalog";
+
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -48,5 +54,66 @@ export function initTabs(): void {
       const target = document.getElementById(`tab-${tabId}`);
       if (target) target.classList.add("active");
     });
+  }
+}
+
+function buildOptionEntries(types: readonly FieldType[]): Array<{
+  value: FieldType;
+  label: string;
+}> {
+  return getFieldTypeOptions(types);
+}
+
+function buildOptionsHtml(
+  types: readonly FieldType[],
+  selected?: string,
+): string {
+  return buildOptionEntries(types)
+    .map(
+      (entry) =>
+        `<option value="${entry.value}" ${entry.value === selected ? "selected" : ""}>${entry.label}</option>`,
+    )
+    .join("");
+}
+
+export function syncFieldTypeOptionsInOptionsPage(): void {
+  const ruleTypeSelect = document.getElementById(
+    "rule-type",
+  ) as HTMLSelectElement | null;
+  const ruleGeneratorSelect = document.getElementById(
+    "rule-generator",
+  ) as HTMLSelectElement | null;
+  const datasetTypeSelect = document.getElementById(
+    "dataset-type",
+  ) as HTMLSelectElement | null;
+
+  if (ruleTypeSelect) {
+    const selected = ruleTypeSelect.value;
+    ruleTypeSelect.innerHTML = buildOptionsHtml(FIELD_TYPES, selected);
+  }
+
+  if (ruleGeneratorSelect) {
+    const selected = ruleGeneratorSelect.value || "auto";
+    const fieldTypeOptions = buildOptionEntries(FIELD_TYPES)
+      .map(
+        (entry) =>
+          `<option value="${entry.value}" ${entry.value === selected ? "selected" : ""}>${entry.label}</option>`,
+      )
+      .join("");
+
+    ruleGeneratorSelect.innerHTML = [
+      '<option value="auto">Automático</option>',
+      '<option value="ai">Chrome AI</option>',
+      '<option value="tensorflow">TensorFlow.js</option>',
+      fieldTypeOptions,
+    ].join("");
+    if (["auto", "ai", "tensorflow"].includes(selected)) {
+      ruleGeneratorSelect.value = selected;
+    }
+  }
+
+  if (datasetTypeSelect) {
+    const selected = datasetTypeSelect.value;
+    datasetTypeSelect.innerHTML = buildOptionsHtml(FIELD_TYPES, selected);
   }
 }

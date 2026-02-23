@@ -21,9 +21,16 @@
  */
 
 import type { FieldType } from "@/types";
+import { TRAINABLE_FIELD_TYPES } from "@/types";
 import type { DatasetEntry } from "@/lib/dataset/runtime-dataset";
 import type { LayersModel, Tensor } from "@tensorflow/tfjs";
 import { createLogger } from "@/lib/logger";
+import {
+  buildFeatureText,
+  fromFlatSignals,
+  inferCategoryFromType,
+  inferLanguageFromSignals,
+} from "@/lib/shared/structured-signals";
 
 const log = createLogger("RuntimeTrainer");
 
@@ -75,37 +82,7 @@ const BATCH_SIZE = 32;
 const PATIENCE = 20;
 
 // All trainable FieldType labels (must match train-model.ts)
-const LABELS: FieldType[] = [
-  "cpf",
-  "cnpj",
-  "cpf-cnpj",
-  "rg",
-  "email",
-  "phone",
-  "name",
-  "first-name",
-  "last-name",
-  "full-name",
-  "address",
-  "street",
-  "city",
-  "state",
-  "cep",
-  "zip-code",
-  "date",
-  "birth-date",
-  "password",
-  "username",
-  "company",
-  "website",
-  "product",
-  "supplier",
-  "employee-count",
-  "job-title",
-  "money",
-  "number",
-  "text",
-];
+const LABELS: FieldType[] = [...TRAINABLE_FIELD_TYPES];
 
 const LABEL_SET = new Set<string>(LABELS);
 
@@ -290,8 +267,25 @@ export async function trainModelFromDataset(
 ): Promise<TrainingResult> {
   const t0 = Date.now();
 
-  // Filter to supported labels only
-  const samples = entries.filter((e) => LABEL_SET.has(e.type));
+  // Filter to supported labels only + convert to structured feature text
+  const samples = entries
+    .filter((e) => LABEL_SET.has(e.type))
+    .map((entry) => {
+      const structured = fromFlatSignals(entry.signals);
+      const category = inferCategoryFromType(entry.type);
+      const language = inferLanguageFromSignals(entry.signals);
+      const featureText = buildFeatureText(structured, {
+        category,
+        language,
+      });
+
+      return {
+        ...entry,
+        featureText,
+      };
+    })
+    .filter((entry) => entry.featureText.length > 0);
+
   if (samples.length < 10) {
     return {
       success: false,
@@ -327,13 +321,15 @@ export async function trainModelFromDataset(
     };
   }
 
-  // Build vocab from all signals
-  const allSignals = samples.map((s) => s.signals);
-  const vocab = buildVocab(allSignals);
+  // Build vocab from all structured feature texts
+  const featureTexts = samples.map((sample) => sample.featureText);
+  const vocab = buildVocab(featureTexts);
   const vocabSize = vocab.size;
 
   // Vectorise
-  const X = samples.map((s) => Array.from(vectorize(s.signals, vocab)));
+  const X = samples.map((sample) =>
+    Array.from(vectorize(sample.featureText, vocab)),
+  );
   const Y = samples.map((s) => {
     const oneHot = new Array<number>(numClasses).fill(0);
     oneHot[labelToIdx[s.type]] = 1;

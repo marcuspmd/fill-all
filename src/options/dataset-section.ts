@@ -136,12 +136,18 @@ async function seedBuiltinDataset(): Promise<{
   success: boolean;
   added: number;
 }> {
-  const { TRAINING_SAMPLES } = await import("@/lib/dataset/training-data");
-  const seeds = TRAINING_SAMPLES.map((s) => ({
-    signals: s.signals,
-    type: s.type,
+  const { TRAINING_SAMPLES_V2 } =
+    await import("@/lib/dataset/training-data-v2");
+  const { buildFeatureText } = await import("@/lib/shared/structured-signals");
+  const seeds = TRAINING_SAMPLES_V2.map((sample) => ({
+    signals: buildFeatureText(sample.signals, {
+      category: sample.category,
+      language: sample.language,
+      domFeatures: sample.domFeatures,
+    }),
+    type: sample.type,
     source: "builtin" as const,
-    difficulty: s.difficulty,
+    difficulty: sample.difficulty,
   }));
   const result = (await chrome.runtime.sendMessage({
     type: "IMPORT_DATASET",

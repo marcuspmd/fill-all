@@ -19,6 +19,15 @@ import type { LayersModel, Tensor } from "@tensorflow/tfjs";
 import { getLearnedEntries } from "@/lib/ai/learning-store";
 import { loadRuntimeModel } from "@/lib/ai/runtime-trainer";
 import { dotProduct, vectorize } from "@/lib/shared/ngram";
+import {
+  buildFeatureText,
+  fromFlatSignals,
+  inferCategoryFromType,
+  inferLanguageFromSignals,
+  structuredSignalsFromField,
+  type StructuredSignalContext,
+  type StructuredSignals,
+} from "@/lib/shared/structured-signals";
 import type { FieldClassifier, ClassifierResult } from "../pipeline";
 import { createLogger } from "@/lib/logger";
 
@@ -135,10 +144,17 @@ async function loadLearnedVectors(): Promise<void> {
   try {
     const entries = await getLearnedEntries();
     _learnedVectors = entries
-      .map((e) => ({
-        vector: vectorize(e.signals, _pretrained!.vocab),
-        type: e.type,
-      }))
+      .map((entry) => {
+        const featureText = buildFeatureText(fromFlatSignals(entry.signals), {
+          category: inferCategoryFromType(entry.type),
+          language: inferLanguageFromSignals(entry.signals),
+        });
+
+        return {
+          vector: vectorize(featureText, _pretrained!.vocab),
+          type: entry.type,
+        };
+      })
       .filter((e) => e.vector.some((v) => v > 0));
     log.debug(
       `loadLearnedVectors: ${entries.length} entradas no storage, ` +
@@ -194,18 +210,24 @@ export async function reloadClassifier(): Promise<void> {
  * score is below the threshold.
  */
 export function classifyByTfSoft(
-  signals: string,
+  input: string | StructuredSignals,
+  context?: StructuredSignalContext,
 ): { type: FieldType; score: number } | null {
-  if (!signals.trim()) return null;
+  const featureText =
+    typeof input === "string"
+      ? buildFeatureText(fromFlatSignals(input), context)
+      : buildFeatureText(input, context);
+
+  if (!featureText.trim()) return null;
   if (!_pretrained || !_tfModule) {
     log.warn(
       "⚠️  Modelo não carregado ainda — usando html-fallback. Sinais:",
-      signals,
+      featureText,
     );
     return null;
   }
 
-  const inputVec = vectorize(signals, _pretrained.vocab);
+  const inputVec = vectorize(featureText, _pretrained.vocab);
   if (!inputVec.some((v) => v > 0)) return null;
 
   // Step 1: Learned vectors (user corrections + Chrome AI)
@@ -221,7 +243,7 @@ export function classifyByTfSoft(
     }
     if (bestLearnedScore >= LEARNED_THRESHOLD && bestLearnedType) {
       log.debug(
-        `🎓 Learned match: "${bestLearnedType}" (cosine=${bestLearnedScore.toFixed(3)}, threshold=${LEARNED_THRESHOLD}) para "${signals}"`,
+        `🎓 Learned match: "${bestLearnedType}" (cosine=${bestLearnedScore.toFixed(3)}, threshold=${LEARNED_THRESHOLD}) para "${featureText}"`,
       );
       return { type: bestLearnedType, score: bestLearnedScore };
     }
@@ -244,7 +266,7 @@ export function classifyByTfSoft(
 
   if (bestScore < TF_THRESHOLD) {
     log.warn(
-      `⚠️  TF.js score baixo (${bestScore.toFixed(3)} < threshold ${TF_THRESHOLD}) para sinais: "${signals}" — melhor palpite: "${_pretrained.labels[bestIdx]}"`,
+      `⚠️  TF.js score baixo (${bestScore.toFixed(3)} < threshold ${TF_THRESHOLD}) para sinais: "${featureText}" — melhor palpite: "${_pretrained.labels[bestIdx]}"`,
     );
     return null;
   }
@@ -268,22 +290,15 @@ const HTML_TYPE_FALLBACK: Record<string, FieldType> = {
  * not confident enough.
  */
 export function classifyField(field: FormField): FieldType {
-  const signals = [
-    field.label?.toLowerCase(),
-    field.name?.toLowerCase(),
-    field.id?.toLowerCase(),
-    field.placeholder?.toLowerCase(),
-    field.autocomplete?.toLowerCase(),
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const structured = structuredSignalsFromField(field);
+  const tfResult = classifyByTfSoft(structured.signals, structured.context);
+  const featureText = buildFeatureText(structured.signals, structured.context);
 
-  const tfResult = classifyByTfSoft(signals);
   if (tfResult) {
     log.groupCollapsed(
       `classify → ${tfResult.type}  (tf.js cosine=${tfResult.score.toFixed(3)})  ${field.selector}`,
     );
-    log.debug("📡 signals:", signals || "(none)");
+    log.debug("📡 featureText:", featureText || "(none)");
     log.debug(
       `🤖 TF.js best match: "${tfResult.type}" (similarity ${tfResult.score.toFixed(3)}, threshold ${TF_THRESHOLD})`,
     );
@@ -304,7 +319,7 @@ export function classifyField(field: FormField): FieldType {
   log.groupCollapsed(
     `classify → ${htmlType}  (html-type / fallback)  ${field.selector}`,
   );
-  log.debug("📡 signals:", signals || "(none)");
+  log.debug("📡 featureText:", featureText || "(none)");
   log.debug(`⚠️  no keyword or TF.js match — using input[type="${inputType}"]`);
   log.debug("🔖 field:", {
     label: field.label,
@@ -326,8 +341,8 @@ export function classifyField(field: FormField): FieldType {
 export const tensorflowClassifier: FieldClassifier = {
   name: "tensorflow",
   detect(field: FormField): ClassifierResult | null {
-    const signals = field.contextSignals ?? "";
-    const result = classifyByTfSoft(signals);
+    const structured = structuredSignalsFromField(field);
+    const result = classifyByTfSoft(structured.signals, structured.context);
     if (result === null) return null;
     return { type: result.type, confidence: result.score };
   },

@@ -126,6 +126,7 @@ function classifySignals(signals: string): FieldType {
   const mockField: FormField = {
     element: document.createElement("input"),
     selector: "",
+    category: "unknown",
     fieldType: "unknown",
     label: signals,
     name: "",

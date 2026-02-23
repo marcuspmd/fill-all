@@ -204,6 +204,7 @@ async function handleIconClick(e: Event): Promise<void> {
   const field: FormField = {
     element: el,
     selector: getUniqueSelector(el),
+    category: "unknown",
     fieldType: "unknown",
     label: findLabel(el),
     name: el.name || undefined,

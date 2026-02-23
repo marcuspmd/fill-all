@@ -15,7 +15,7 @@
  * the pipeline continues to the html-fallback classifier.
  */
 
-import type { FormField, FieldType } from "@/types";
+import { FIELD_TYPES, type FormField, type FieldType } from "@/types";
 import type { FieldClassifier, ClassifierResult } from "../pipeline";
 import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { invalidateClassifier } from "./tensorflow-classifier";
@@ -29,35 +29,8 @@ const log = createLogger("ChromeAIClassifier");
 const CLASSIFY_TIMEOUT_MS = 60000;
 const MIN_CONFIDENCE = 0.6;
 
-const VALID_FIELD_TYPES = new Set<string>([
-  "cpf",
-  "cnpj",
-  "email",
-  "phone",
-  "name",
-  "first-name",
-  "last-name",
-  "full-name",
-  "address",
-  "street",
-  "city",
-  "state",
-  "zip-code",
-  "cep",
-  "date",
-  "birth-date",
-  "number",
-  "password",
-  "username",
-  "company",
-  "rg",
-  "text",
-  "money",
-  "select",
-  "checkbox",
-  "radio",
-  "unknown",
-]);
+const VALID_FIELD_TYPES = new Set<string>(FIELD_TYPES);
+const VALID_FIELD_TYPES_TEXT = FIELD_TYPES.join(", ");
 
 /**
  * Inline instructions embedded in every prompt so the model always has context,
@@ -72,16 +45,10 @@ You MUST respond ONLY with a JSON object in this exact format — no other text,
 {"fieldType": "<type>", "confidence": <number>, "generatorType": "<generator>"}
 
 Valid fieldType values:
-cpf, cnpj, email, phone, name, first-name, last-name, full-name,
-address, street, city, state, zip-code, cep, date, birth-date,
-number, password, username, company, rg, text, money,
-select, checkbox, radio, unknown
+${VALID_FIELD_TYPES_TEXT}
 
 Valid generatorType values (same list — pick the most specific generator):
-cpf, cnpj, email, phone, name, first-name, last-name, full-name,
-address, street, city, state, zip-code, cep, date, birth-date,
-number, password, username, company, rg, text, money,
-select, checkbox, radio, unknown
+${VALID_FIELD_TYPES_TEXT}
 
 Rules:
 - Return ONLY the JSON object, nothing else. No introductory text.

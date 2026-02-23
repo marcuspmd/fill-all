@@ -6,13 +6,20 @@ import type {
   TrainingLanguage,
   TrainingSampleSource,
 } from "@/types";
-import type { TrainingSample as LegacyTrainingSample } from "./training-data";
+import {
+  buildFeatureText,
+  fromLegacySignalText,
+  inferCategoryFromType,
+  inferLanguageFromSignals,
+  normalizeStructuredSignals as normalizeSignalsShared,
+  type StructuredSignals,
+} from "@/lib/shared/structured-signals";
+import {
+  TRAINING_SAMPLES as LEGACY_TRAINING_SAMPLES,
+  type TrainingSample as LegacyTrainingSample,
+} from "./training-data";
 
-export interface StructuredSignals {
-  primary: string[];
-  secondary: string[];
-  structural: string[];
-}
+export type { StructuredSignals } from "@/lib/shared/structured-signals";
 
 export interface TrainingSampleV2 {
   signals: StructuredSignals;
@@ -34,74 +41,73 @@ export type TrainingSample = TrainingSampleV2;
 export interface FlattenSignalsOptions {
   includeSecondary?: boolean;
   includeStructural?: boolean;
+  includeMetadata?: boolean;
+  primaryWeight?: number;
+  secondaryWeight?: number;
+  structuralWeight?: number;
 }
 
 const DEFAULT_FLATTEN_OPTIONS: Required<FlattenSignalsOptions> = {
   includeSecondary: true,
   includeStructural: true,
+  includeMetadata: false,
+  primaryWeight: 1,
+  secondaryWeight: 1,
+  structuralWeight: 1,
 };
-
-function normalizeSignalToken(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function dedupeAndNormalize(values: string[]): string[] {
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-
-  for (const value of values) {
-    const token = normalizeSignalToken(value);
-    if (!token || seen.has(token)) continue;
-    seen.add(token);
-    normalized.push(token);
-  }
-
-  return normalized;
-}
 
 export function normalizeStructuredSignals(
   signals: StructuredSignals,
 ): StructuredSignals {
-  return {
-    primary: dedupeAndNormalize(signals.primary),
-    secondary: dedupeAndNormalize(signals.secondary),
-    structural: dedupeAndNormalize(signals.structural),
-  };
+  return normalizeSignalsShared(signals);
 }
 
 export function flattenStructuredSignals(
   signals: StructuredSignals,
   options: FlattenSignalsOptions = DEFAULT_FLATTEN_OPTIONS,
 ): string {
-  const normalized = normalizeStructuredSignals(signals);
-  const chunks = [normalized.primary];
-
-  if (options.includeSecondary) chunks.push(normalized.secondary);
-  if (options.includeStructural) chunks.push(normalized.structural);
-
-  return chunks.flat().join(" ").trim();
+  return buildFeatureText(signals, undefined, options);
 }
 
 export function createTrainingSampleV2FromLegacy(
   sample: LegacyTrainingSample,
-  category: FieldCategory = "unknown",
+  category: FieldCategory = inferCategoryFromType(sample.type),
 ): TrainingSampleV2 {
+  const language = inferLanguageFromSignals(sample.signals);
+
   return {
-    signals: {
-      primary: [sample.signals],
-      secondary: [],
-      structural: [],
-    },
+    signals: normalizeStructuredSignals(fromLegacySignalText(sample.signals)),
     category,
     type: sample.type,
     source: sample.source,
     domain: sample.domain,
     difficulty: sample.difficulty,
+    language,
+    domFeatures: undefined,
   };
+}
+
+export const TRAINING_SAMPLES_V2: TrainingSampleV2[] =
+  LEGACY_TRAINING_SAMPLES.map((sample) =>
+    createTrainingSampleV2FromLegacy(sample),
+  );
+
+export function getTrainingV2ByDifficulty(
+  difficulty: TrainingDifficulty,
+): TrainingSampleV2[] {
+  return TRAINING_SAMPLES_V2.filter(
+    (sample) => sample.difficulty === difficulty,
+  );
+}
+
+export function getTrainingV2ByType(type: FieldType): TrainingSampleV2[] {
+  return TRAINING_SAMPLES_V2.filter((sample) => sample.type === type);
+}
+
+export function getTrainingV2Distribution(): Record<string, number> {
+  const distribution: Record<string, number> = {};
+  for (const sample of TRAINING_SAMPLES_V2) {
+    distribution[sample.type] = (distribution[sample.type] || 0) + 1;
+  }
+  return distribution;
 }

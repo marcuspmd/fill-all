@@ -22,8 +22,15 @@ import * as fs from "fs";
 import * as path from "path";
 
 // Dataset imports — tsx resolves "@/*" aliases via tsconfig.json paths
-import { TRAINING_SAMPLES } from "../src/lib/dataset/training-data";
+import { TRAINING_SAMPLES_V2 } from "../src/lib/dataset/training-data-v2";
 import { VALIDATION_SAMPLES } from "../src/lib/dataset/validation-data";
+import { TRAINABLE_FIELD_TYPES } from "../src/types";
+import {
+  buildFeatureText,
+  fromFlatSignals,
+  inferCategoryFromType,
+  inferLanguageFromSignals,
+} from "../src/lib/shared/structured-signals";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -35,37 +42,7 @@ const OUTPUT_DIR = path.resolve(process.cwd(), "public/model");
  * Excludes element-type fields (select/checkbox/radio/unknown) since those
  * are detected from HTML structure, not text signals.
  */
-const LABELS = [
-  "cpf",
-  "cnpj",
-  "cpf-cnpj",
-  "rg",
-  "email",
-  "phone",
-  "name",
-  "first-name",
-  "last-name",
-  "full-name",
-  "address",
-  "street",
-  "city",
-  "state",
-  "cep",
-  "zip-code",
-  "date",
-  "birth-date",
-  "password",
-  "username",
-  "company",
-  "website",
-  "product",
-  "supplier",
-  "employee-count",
-  "job-title",
-  "money",
-  "number",
-  "text",
-] as const;
+const LABELS = [...TRAINABLE_FIELD_TYPES] as const;
 
 type Label = (typeof LABELS)[number];
 
@@ -173,9 +150,9 @@ async function main(): Promise<void> {
   await tf.ready();
   console.log(`[TF.js] Backend: ${tf.getBackend()}\n`);
   // Filter to trainable types only
-  const trainSamples = TRAINING_SAMPLES.filter((s) =>
+  const trainSamples = TRAINING_SAMPLES_V2.filter((s) =>
     LABEL_SET.has(s.type),
-  ) as Array<(typeof TRAINING_SAMPLES)[number] & { type: Label }>;
+  ) as Array<(typeof TRAINING_SAMPLES_V2)[number] & { type: Label }>;
 
   const valSamples = VALIDATION_SAMPLES.filter((s) =>
     LABEL_SET.has(s.expectedType),
@@ -195,15 +172,21 @@ async function main(): Promise<void> {
     `   Samples/class    : min=${minCount}, max=${maxCount} (good balance ≥ 5)`,
   );
 
-  // Build vocabulary from training signals only (prevents test leakage)
-  const trainSignals = trainSamples.map((s) => s.signals);
-  const vocab = buildVocab(trainSignals);
+  // Build vocabulary from structured feature text only (prevents test leakage)
+  const trainFeatureText = trainSamples.map((sample) =>
+    buildFeatureText(sample.signals, {
+      category: sample.category,
+      language: sample.language,
+      domFeatures: sample.domFeatures,
+    }),
+  );
+  const vocab = buildVocab(trainFeatureText);
   const vocabSize = vocab.size;
   console.log(`\n🔤 Vocabulary size: ${vocabSize} tri-grams`);
 
   // Vectorise
-  const trainX = trainSamples.map((s) =>
-    Array.from(vectorize(s.signals, vocab)),
+  const trainX = trainFeatureText.map((featureText) =>
+    Array.from(vectorize(featureText, vocab)),
   );
   const trainY = trainSamples.map((s) => {
     const oneHot = new Array<number>(NUM_CLASSES).fill(0);
@@ -211,7 +194,16 @@ async function main(): Promise<void> {
     return oneHot;
   });
 
-  const valX = valSamples.map((s) => Array.from(vectorize(s.signals, vocab)));
+  const valFeatureText = valSamples.map((sample) =>
+    buildFeatureText(fromFlatSignals(sample.signals), {
+      category: inferCategoryFromType(sample.expectedType),
+      language: inferLanguageFromSignals(sample.signals),
+    }),
+  );
+
+  const valX = valFeatureText.map((featureText) =>
+    Array.from(vectorize(featureText, vocab)),
+  );
   const valY = valSamples.map((s) => {
     const oneHot = new Array<number>(NUM_CLASSES).fill(0);
     oneHot[LABEL_TO_IDX[s.expectedType as Label]] = 1;

@@ -6,6 +6,7 @@ import type { FormField, FieldType } from "@/types";
 import { invalidateClassifier } from "@/lib/form/detectors/strategies";
 import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { createLogger } from "@/lib/logger";
+import { getFieldTypeLabel } from "@/lib/shared/field-type-catalog";
 import { MODAL_ID } from "./field-icon-styles";
 import { ALL_FIELD_TYPES, escHtml, buildFormField } from "./field-icon-utils";
 
@@ -53,7 +54,7 @@ function showInspectModal(field: FormField): void {
 
   const typeOptions = ALL_FIELD_TYPES.map(
     (t) =>
-      `<option value="${t}" ${t === field.fieldType ? "selected" : ""}>${t}</option>`,
+      `<option value="${t}" ${t === field.fieldType ? "selected" : ""}>${getFieldTypeLabel(t)}</option>`,
   ).join("");
 
   inspectModalElement.innerHTML = `
