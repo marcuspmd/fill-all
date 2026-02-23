@@ -292,6 +292,25 @@ body {
   font-size: 11px;
 }
 
+/* ── Settings Link (bottom of Actions tab) ── */
+
+.btn-settings-link {
+  display: block;
+  margin-top: 10px;
+  padding: 8px 0;
+  text-align: center;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 12px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.btn-settings-link:hover {
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+
 /* ── Buttons ── */
 
 .fields-toolbar {

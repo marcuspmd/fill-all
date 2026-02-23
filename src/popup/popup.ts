@@ -164,6 +164,7 @@ function renderActionsTab(): void {
     <div class="status-bar" id="status-bar">
       ${detectedFields.length > 0 ? `${detectedFields.length} campos detectados` : "Nenhum campo detectado ainda"}
     </div>
+    <a href="#" id="btn-options" class="btn-settings-link">⚙️ Configurações</a>
   `;
 
   document
@@ -178,6 +179,7 @@ function renderActionsTab(): void {
   document
     .getElementById("btn-toggle-panel")
     ?.addEventListener("click", handleTogglePanel);
+  bindOptionsLink();
 }
 
 async function handleFillAll(): Promise<void> {

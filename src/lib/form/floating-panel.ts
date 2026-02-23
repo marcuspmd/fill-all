@@ -1,6 +1,6 @@
 /**
- * Floating Panel — DevTools-style docked panel with tabs
- * Provides full-screen access to Fill All controls without opening the popup
+ * Floating Panel — Painel flutuante fixado na parte inferior da página.
+ * Oferece acesso rápido aos controles do Fill All sem abrir o popup.
  */
 
 import {
@@ -31,6 +31,8 @@ import {
 
 const PANEL_ID = "fill-all-floating-panel";
 const STORAGE_KEY = "fill_all_panel_state";
+const BODY_OFFSET_ATTR = "data-fill-all-panel-offset";
+const MINIMIZED_HEIGHT = 38;
 
 type TabId = "actions" | "fields" | "forms" | "log";
 
@@ -59,6 +61,27 @@ async function loadIgnoredFields(): Promise<void> {
   ignoredFieldsMap = new Map(ignored.map((f) => [f.selector, f]));
 }
 
+/* ─── Body Offset (evita que o painel cubra conteúdo) ─── */
+
+function applyBodyOffset(height: number): void {
+  if (!document.body.hasAttribute(BODY_OFFSET_ATTR)) {
+    const computed =
+      parseInt(getComputedStyle(document.body).paddingBottom, 10) || 0;
+    document.body.setAttribute(BODY_OFFSET_ATTR, String(computed));
+  }
+  const original = parseInt(document.body.getAttribute(BODY_OFFSET_ATTR)!, 10);
+  document.body.style.paddingBottom = `${original + height}px`;
+}
+
+function removeBodyOffset(): void {
+  const original = document.body.getAttribute(BODY_OFFSET_ATTR);
+  if (original !== null) {
+    const val = parseInt(original, 10);
+    document.body.style.paddingBottom = val ? `${val}px` : "";
+    document.body.removeAttribute(BODY_OFFSET_ATTR);
+  }
+}
+
 /**
  * Creates and injects the floating panel into the page
  */
@@ -72,6 +95,7 @@ export function createFloatingPanel(): void {
 
   document.body.appendChild(panel);
   panelElement = panel;
+  applyBodyOffset(panelHeight);
 
   restoreState(panel);
   setupResizeHandle(panel);
@@ -94,6 +118,7 @@ export function removeFloatingPanel(): void {
   if (panel) {
     panel.remove();
     panelElement = null;
+    removeBodyOffset();
   }
 }
 
@@ -725,6 +750,7 @@ function setupTabHandlers(panel: HTMLElement): void {
     const isMinimized = panel.classList.toggle("fa-minimized");
     const btn = panel.querySelector("#fa-btn-minimize") as HTMLButtonElement;
     btn.textContent = isMinimized ? "▲" : "▼";
+    applyBodyOffset(isMinimized ? MINIMIZED_HEIGHT : panelHeight);
     savePanelState();
   });
 
@@ -778,6 +804,7 @@ function setupResizeHandle(panel: HTMLElement): void {
     );
     panelHeight = newHeight;
     panel.style.height = `${newHeight}px`;
+    applyBodyOffset(newHeight);
   });
 
   document.addEventListener("mouseup", () => {
@@ -1293,6 +1320,7 @@ function restoreState(panel: HTMLElement): void {
           if (btn) btn.textContent = "▲";
         }
 
+        applyBodyOffset(state.minimized ? MINIMIZED_HEIGHT : panelHeight);
         renderActiveTab(panel);
       }
     });
