@@ -4,7 +4,7 @@
 
 import type { FieldRule } from "@/types";
 import { RULE_POPUP_ID } from "./field-icon-styles";
-import { getUniqueSelector, findLabel } from "./field-icon-utils";
+import { getUniqueSelector, findLabel } from "./extractors";
 
 let rulePopupElement: HTMLElement | null = null;
 let currentRuleField: {

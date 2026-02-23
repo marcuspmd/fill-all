@@ -2,18 +2,28 @@
  * Built-in Field Classifiers
  *
  * Each classifier wraps one detection strategy and implements FieldClassifier.
- * They are designed to be composed into a DetectionPipeline.
+ * Classifiers are injected into FieldProcessingChain.classify(...) explicitly —
+ * every active step is visible at the call site.
  *
- * Exported classifiers (in default priority order):
+ * Exported classifiers (in default priority order inside ALL_CLASSIFIERS):
  *
  *   htmlTypeClassifier    — deterministic mapping from input[type] / tagName
+ *   keywordClassifier     — Portuguese keyword / label matching rules
  *   tensorflowClassifier  — TF.js cosine-similarity soft match (pre-trained model)
+ *   chromeAiClassifier    — Gemini Nano via Chrome Built-in AI (async only)
  *   htmlFallbackClassifier— last-resort input[type] → FieldType mapping
+ *
+ * Runtime injection:
+ *
+ *   ALL_CLASSIFIERS            — default ordered list of all classifiers
+ *   getActiveClassifiers()     — returns current active list (may be customised)
+ *   setActiveClassifiers()     — overrides active list (called by content-script)
+ *   buildClassifiersFromSettings() — builds list from user settings
  *
  * Exported pipelines:
  *
- *   DEFAULT_PIPELINE           — field-level: html-type → tensorflow → html-fallback
- *   DEFAULT_COLLECTION_PIPELINE— page-level:  native-inputs → custom-selects → interactive-fields
+ *   DEFAULT_PIPELINE           — static DetectionPipeline over ALL_CLASSIFIERS
+ *   DEFAULT_COLLECTION_PIPELINE— page-level: native-inputs → custom-selects → interactive-fields
  */
 
 import type { FormField, FieldType } from "@/types";
@@ -26,9 +36,13 @@ import {
   detectInteractiveFields,
   interactiveFieldToFormField,
 } from "./interactive-field-detector";
-import { getUniqueSelector } from "./selector-builder";
-import { findLabelWithStrategy } from "./label-detector";
-import { buildSignals } from "./signals-builder";
+import { FieldProcessingChain } from "../extractors/field-processing-chain";
+import {
+  INPUT_SELECTOR,
+  isVisible,
+  isNotCustomSelect,
+  buildNativeField,
+} from "./native-input-config";
 import { chromeAiClassifier } from "./chrome-ai-classifier";
 import { keywordClassifier } from "./keyword-classifier";
 import { tensorflowClassifier } from "./tensorflow-classifier";
@@ -78,30 +92,38 @@ export const htmlFallbackClassifier: FieldClassifier = {
   },
 };
 
-// ── Default pipelines ─────────────────────────────────────────────────────────
+// ── All classifiers (canonical ordered list) ─────────────────────────────────
 
 /**
- * Default field-level classification pipeline.
- * Classifies a single FormField:
- *   html-type → keyword → tensorflow → chrome-ai (async) → html-fallback
+ * All available field classifiers in default priority order:
+ *   html-type → keyword → tensorflow → chrome-ai (async only) → html-fallback
  *
- * chrome-ai participates only when the pipeline is run via runAsync().
- * The synchronous run() skips it transparently (detect() returns null).
+ * This is the source of truth for the default classification sequence.
+ * Inject a subset or reordered list via setActiveClassifiers().
  */
-export const DEFAULT_PIPELINE = new DetectionPipeline([
+export const ALL_CLASSIFIERS: ReadonlyArray<FieldClassifier> = [
   htmlTypeClassifier,
   keywordClassifier,
   tensorflowClassifier,
   chromeAiClassifier,
   htmlFallbackClassifier,
-]);
+];
 
-// ── Configurable active pipeline ──────────────────────────────────────────────
+// ── Default pipeline (static, for field-icon and other direct consumers) ──────
 
-/** Runtime-mutable pipeline — overridden by content-script based on user settings. */
-let _activePipeline: DetectionPipeline = DEFAULT_PIPELINE;
+/**
+ * Static DetectionPipeline wrapping ALL_CLASSIFIERS.
+ * Used by field-icon.ts and field-icon-utils.ts for single-field re-classification.
+ * For page-level scanning, prefer FieldProcessingChain + getActiveClassifiers().
+ */
+export const DEFAULT_PIPELINE = new DetectionPipeline([...ALL_CLASSIFIERS]);
 
-/** All named classifiers available for pipeline composition. */
+// ── Configurable active classifiers ──────────────────────────────────────────
+
+/** Runtime-mutable list — overridden by content-script based on user settings. */
+let _activeClassifiers: FieldClassifier[] = [...ALL_CLASSIFIERS];
+
+/** All named classifiers available for dynamic composition. */
 const NAMED_CLASSIFIERS: Record<string, FieldClassifier> = {
   "html-type": htmlTypeClassifier,
   keyword: keywordClassifier,
@@ -111,29 +133,29 @@ const NAMED_CLASSIFIERS: Record<string, FieldClassifier> = {
 };
 
 /**
- * Returns the currently active detection pipeline.
- * Defaults to DEFAULT_PIPELINE unless overridden via setActivePipeline().
+ * Returns the currently active classifier list.
+ * Defaults to ALL_CLASSIFIERS unless overridden via setActiveClassifiers().
  */
-export function getActivePipeline(): DetectionPipeline {
-  return _activePipeline;
+export function getActiveClassifiers(): ReadonlyArray<FieldClassifier> {
+  return _activeClassifiers;
 }
 
 /**
- * Overrides the active detection pipeline used by nativeInputDetector.
+ * Overrides the active classifier list used by the native-input chain.
  * Called by the content script on startup based on user settings.
  */
-export function setActivePipeline(pipeline: DetectionPipeline): void {
-  _activePipeline = pipeline;
+export function setActiveClassifiers(classifiers: FieldClassifier[]): void {
+  _activeClassifiers = classifiers;
 }
 
 /**
- * Builds a DetectionPipeline from a user-defined ordered config.
+ * Builds a classifier list from a user-defined ordered config.
  * Strategies not listed or disabled are excluded.
  * html-fallback is always appended last when not already present.
  */
-export function buildPipelineFromSettings(
+export function buildClassifiersFromSettings(
   config: Array<{ name: string; enabled: boolean }>,
-): DetectionPipeline {
+): FieldClassifier[] {
   const ordered = config
     .filter((s) => s.enabled && NAMED_CLASSIFIERS[s.name])
     .map((s) => NAMED_CLASSIFIERS[s.name]);
@@ -143,135 +165,58 @@ export function buildPipelineFromSettings(
     ordered.push(htmlFallbackClassifier);
   }
 
-  return new DetectionPipeline(ordered);
+  return ordered;
 }
 
-// ── Shared selectors ─────────────────────────────────────────────────────────
-
-const INPUT_SELECTOR = [
-  'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="reset"]):not([type="file"]):not([disabled])',
-  "select:not([disabled])",
-  "textarea:not([disabled])",
-].join(", ");
-
-const CUSTOM_SELECT_ANCESTOR =
-  ".ant-select, [class*='react-select'], .MuiSelect-root, [class*='MuiAutocomplete']";
-
-// ── Shared field builder ──────────────────────────────────────────────────────
+// ── Chain factory ─────────────────────────────────────────────────────────────
 
 /**
- * Builds a bare FormField from a DOM element (no classification yet).
- * Shared by the sync detector, async detector, and streaming generator
- * to avoid duplication.
+ * Builds the native-input processing chain with all 4 steps wired:
+ *
+ *   Step 1 — collect  : INPUT_SELECTOR (input / select / textarea)
+ *   Step 2 — filter   : isVisible + isNotCustomSelect
+ *   Step 3 — extract  : buildNativeField (selector, label, signals)
+ *   Step 4 — classify : active classifiers (explicit, injectable)
+ *
+ * getActiveClassifiers() is called at chain-build time so each scan starts
+ * fresh with the current classifier list.
  */
-function buildNativeField(
-  element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): FormField {
-  const labelResult = findLabelWithStrategy(element);
-  const field: FormField = {
-    element,
-    selector: getUniqueSelector(element),
-    fieldType: "unknown",
-    label: labelResult?.text,
-    name: element.name || undefined,
-    id: element.id || undefined,
-    placeholder:
-      ("placeholder" in element ? element.placeholder : undefined) || undefined,
-    autocomplete: element.autocomplete || undefined,
-    required: element.required,
-  };
-  field.contextSignals = buildSignals(field);
-  return field;
+function buildNativeChain(): FieldProcessingChain {
+  return new FieldProcessingChain()
+    .collect(INPUT_SELECTOR)
+    .filter(isVisible, isNotCustomSelect)
+    .extract(buildNativeField)
+    .classify(...getActiveClassifiers());
 }
 
-// ── Native-input async scanners ───────────────────────────────────────────────
+// ── Native-input scanners (all backed by the same chain) ─────────────────────
 
 /**
- * Classifies all visible native inputs asynchronously (including Chrome AI).
- * Waits for every field before returning — use streamNativeFieldsAsync()
- * when you need real-time feedback as each field is classified.
+ * Async run — classifies every native input (including Chrome AI) and returns
+ * all fields at once. Use streamNativeFieldsAsync() for real-time feedback.
  */
 export async function detectNativeFieldsAsync(): Promise<FormField[]> {
-  const elements = document.querySelectorAll<
-    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-  >(INPUT_SELECTOR);
-
-  const fields: FormField[] = [];
-
-  for (const element of elements) {
-    const rect = element.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) continue;
-    if (element.closest(CUSTOM_SELECT_ANCESTOR)) continue;
-
-    const field = buildNativeField(element);
-    const result = await _activePipeline.runAsync(field);
-    field.fieldType = result.type;
-    field.detectionMethod = result.method;
-    field.detectionConfidence = result.confidence;
-    field.detectionDurationMs = result.durationMs;
-
-    fields.push(field);
-  }
-
-  return fields;
+  return buildNativeChain().runAsync();
 }
 
 /**
- * Streaming variant: yields each FormField immediately after it is classified.
+ * Streaming run — yields each FormField immediately after it is classified.
  * Enables real-time UI updates while the rest of the page is still being scanned.
  */
 export async function* streamNativeFieldsAsync(): AsyncGenerator<FormField> {
-  const elements = document.querySelectorAll<
-    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-  >(INPUT_SELECTOR);
-
-  for (const element of elements) {
-    const rect = element.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) continue;
-    if (element.closest(CUSTOM_SELECT_ANCESTOR)) continue;
-
-    const field = buildNativeField(element);
-    const result = await _activePipeline.runAsync(field);
-    field.fieldType = result.type;
-    field.detectionMethod = result.method;
-    field.detectionConfidence = result.confidence;
-    field.detectionDurationMs = result.durationMs;
-
-    yield field;
-  }
+  yield* buildNativeChain().stream();
 }
 
 // ── Page-level detectors ──────────────────────────────────────────────────────
 
 /**
- * Scans native input/select/textarea elements and classifies each one
- * synchronously using the active pipeline. Used by dom-watcher.
+ * Scans native input/select/textarea elements synchronously using the active
+ * pipeline. Chrome AI is skipped in sync mode. Used by dom-watcher.
  */
 export const nativeInputDetector: PageDetector = {
   name: "native-inputs",
   detect(): FormField[] {
-    const elements = document.querySelectorAll<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >(INPUT_SELECTOR);
-
-    const fields: FormField[] = [];
-
-    for (const element of elements) {
-      const rect = element.getBoundingClientRect();
-      if (rect.width === 0 && rect.height === 0) continue;
-      if (element.closest(CUSTOM_SELECT_ANCESTOR)) continue;
-
-      const field = buildNativeField(element);
-      const result = _activePipeline.run(field);
-      field.fieldType = result.type;
-      field.detectionMethod = result.method;
-      field.detectionConfidence = result.confidence;
-      field.detectionDurationMs = result.durationMs;
-
-      fields.push(field);
-    }
-
-    return fields;
+    return buildNativeChain().runSync();
   },
 };
 

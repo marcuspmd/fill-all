@@ -11,18 +11,14 @@
 import type { FormField } from "@/types";
 import { fillSingleField } from "./form-filler";
 import { DEFAULT_PIPELINE } from "./detectors/classifiers";
-import { buildSignals } from "./detectors/signals-builder";
+import { buildSignals, getUniqueSelector, findLabel } from "./extractors";
 import {
   ICON_ID,
   RULE_POPUP_ID,
   injectStyles,
   removeStyles,
 } from "./field-icon-styles";
-import {
-  isFillableField,
-  getUniqueSelector,
-  findLabel,
-} from "./field-icon-utils";
+import { isFillableField } from "./field-icon-utils";
 import { handleInspectClick, hideInspectModal } from "./field-icon-inspect";
 import {
   handleRuleButtonClick,

@@ -35,8 +35,8 @@ import {
   reloadClassifier,
 } from "@/lib/form/detectors/tensorflow-classifier";
 import {
-  setActivePipeline,
-  buildPipelineFromSettings,
+  setActiveClassifiers,
+  buildClassifiersFromSettings,
 } from "@/lib/form/detectors/classifiers";
 import {
   parseIncomingMessage,
@@ -350,7 +350,9 @@ async function initContentScript(): Promise<void> {
 
   // Configure the detection pipeline from user settings
   if (settings.detectionPipeline?.length) {
-    setActivePipeline(buildPipelineFromSettings(settings.detectionPipeline));
+    setActiveClassifiers(
+      buildClassifiersFromSettings(settings.detectionPipeline),
+    );
   }
 
   // Init the per-field icon only if enabled

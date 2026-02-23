@@ -1,11 +1,11 @@
 /**
- * Selector Builder
+ * Selector Extractor
  *
  * Builds a unique CSS selector for a given DOM element.
  * Used to identify fields reliably across page re-renders.
  */
 
-import type { Detector } from "./detector.interface";
+import type { Extractor } from "./extractor.interface";
 
 export function getUniqueSelector(element: Element): string {
   if (element.id) return `#${CSS.escape(element.id)}`;
@@ -40,8 +40,8 @@ export function getUniqueSelector(element: Element): string {
   return parts.join(" > ");
 }
 
-/** Detector object — wraps {@link getUniqueSelector} under the common Detector contract. */
-export const selectorBuilder: Detector<Element, string> = {
+/** Extractor object — wraps {@link getUniqueSelector} under the common Extractor contract. */
+export const selectorExtractor: Extractor<Element, string> = {
   name: "selector",
-  detect: getUniqueSelector,
+  extract: getUniqueSelector,
 };

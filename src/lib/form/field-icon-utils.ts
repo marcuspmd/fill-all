@@ -1,9 +1,17 @@
 /**
  * Field Icon — shared utility functions
+ *
+ * Extraction logic (getUniqueSelector, findLabel, buildSignals) is now
+ * centralised in `@/lib/form/extractors`. This file re-exports the
+ * functions that field-icon modules still need, plus UI helpers.
  */
 
 import type { FormField, FieldType } from "@/types";
 import { DEFAULT_PIPELINE } from "./detectors/classifiers";
+import { getUniqueSelector, findLabel, buildSignals } from "./extractors";
+
+// Re-export so existing consumers keep working
+export { getUniqueSelector, findLabel };
 
 /** Selectors whose descendants are custom-select components */
 const CUSTOM_SELECT_ANCESTOR =
@@ -49,56 +57,6 @@ export function isFillableField(el: HTMLElement): boolean {
   return false;
 }
 
-export function getUniqueSelector(element: Element): string {
-  if (element.id) return `#${CSS.escape(element.id)}`;
-
-  const parts: string[] = [];
-  let current: Element | null = element;
-
-  while (current && current !== document.body) {
-    let selector = current.tagName.toLowerCase();
-
-    if (current.id) {
-      selector = `#${CSS.escape(current.id)}`;
-      parts.unshift(selector);
-      break;
-    }
-
-    const parent: Element | null = current.parentElement;
-    if (parent) {
-      const siblings = Array.from(parent.children).filter(
-        (c: Element) => c.tagName === current!.tagName,
-      );
-      if (siblings.length > 1) {
-        const index = siblings.indexOf(current) + 1;
-        selector += `:nth-of-type(${index})`;
-      }
-    }
-
-    parts.unshift(selector);
-    current = parent;
-  }
-
-  return parts.join(" > ");
-}
-
-export function findLabel(element: HTMLElement): string | undefined {
-  if (element.id) {
-    const label = document.querySelector(
-      `label[for="${CSS.escape(element.id)}"]`,
-    );
-    if (label?.textContent) return label.textContent.trim();
-  }
-
-  const parentLabel = element.closest("label");
-  if (parentLabel?.textContent) return parentLabel.textContent.trim();
-
-  const ariaLabel = element.getAttribute("aria-label");
-  if (ariaLabel) return ariaLabel;
-
-  return undefined;
-}
-
 export function escHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -128,15 +86,7 @@ export function buildFormField(
     detectionConfidence: 0.5,
   };
 
-  field.contextSignals = [
-    field.label?.toLowerCase(),
-    field.name?.toLowerCase(),
-    field.id?.toLowerCase(),
-    field.placeholder?.toLowerCase(),
-    field.autocomplete?.toLowerCase(),
-  ]
-    .filter(Boolean)
-    .join(" ");
+  field.contextSignals = buildSignals(field);
 
   // Custom-select ancestry overrides all keyword matching
   const isInsideCustomSelect = !!el.closest(CUSTOM_SELECT_ANCESTOR);

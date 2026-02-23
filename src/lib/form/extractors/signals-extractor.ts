@@ -1,5 +1,5 @@
 /**
- * Signals Builder
+ * Signals Extractor
  *
  * Builds a normalised string of context signals for a form field,
  * combining label, name, id, placeholder and autocomplete into a
@@ -7,7 +7,7 @@
  */
 
 import type { FormField } from "@/types";
-import type { Detector } from "./detector.interface";
+import type { Extractor } from "./extractor.interface";
 
 export function buildSignals(field: Partial<FormField>): string {
   return [
@@ -21,8 +21,8 @@ export function buildSignals(field: Partial<FormField>): string {
     .join(" ");
 }
 
-/** Detector object — wraps {@link buildSignals} under the common Detector contract. */
-export const signalsBuilder: Detector<Partial<FormField>, string> = {
+/** Extractor object — wraps {@link buildSignals} under the common Extractor contract. */
+export const signalsExtractor: Extractor<Partial<FormField>, string> = {
   name: "signals",
-  detect: buildSignals,
+  extract: buildSignals,
 };
