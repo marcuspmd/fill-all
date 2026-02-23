@@ -36,7 +36,7 @@ import {
   type AccuracyThresholds,
   type DatasetHealthReport,
 } from "./dataset-config";
-import { classifyField } from "@/lib/form/detectors/tensorflow-classifier";
+import { classifyField } from "@/lib/form/detectors/strategies";
 import type { FormField } from "@/types";
 
 // ── Build keywords from dictionary ──────────────────────────────────────────

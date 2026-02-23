@@ -154,12 +154,11 @@ async function refillNewFields(): Promise<void> {
  * Generates a signature string from current form fields for change detection
  */
 function getCurrentFieldSignature(): string {
-  const { fields, customSelects } = detectAllFields();
+  const { fields } = detectAllFields();
 
   const fieldSigs = fields.map((f) => `${f.selector}:${f.fieldType}`);
-  const csSigs = customSelects.map((cs) => `cs:${cs.selector}:${cs.framework}`);
 
-  return [...fieldSigs, ...csSigs].sort().join("|");
+  return fieldSigs.sort().join("|");
 }
 
 /**

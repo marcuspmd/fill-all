@@ -16,16 +16,9 @@
 
 import type { FormField, DetectionMethod } from "@/types";
 import {
-  detectCustomSelects,
-  type CustomSelectField,
-} from "./detectors/custom-select-handler";
-import { detectInteractiveFields } from "./detectors/interactive-field-detector";
-import {
   DEFAULT_PIPELINE,
   DEFAULT_COLLECTION_PIPELINE,
   nativeInputDetector,
-  customSelectPageDetector,
-  interactivePageDetector,
   detectNativeFieldsAsync,
   streamNativeFieldsAsync,
 } from "./detectors/classifiers";
@@ -42,39 +35,29 @@ export type {
   FieldCollectionPipeline,
 } from "./detectors/pipeline";
 
-export interface DetectionResult {
-  fields: FormField[];
-  /** Raw custom-select objects needed by form-filler to call selectCustomOption() */
-  customSelects: CustomSelectField[];
-}
-
 export function detectFormFields(): FormField[] {
   return detectAllFields().fields;
+}
+
+export interface DetectionResult {
+  fields: FormField[];
 }
 
 /**
  * Synchronous detection — used by dom-watcher and any context that cannot await.
  * Delegates to the PageDetectors in DEFAULT_COLLECTION_PIPELINE.
- * Raw customSelects are exposed for form-filler backward compatibility.
  */
 export function detectAllFields(): DetectionResult {
   const nativeFields = nativeInputDetector.detect();
-  const customSelects = detectCustomSelects();
-  const csFields = customSelectPageDetector.detect();
-  return { fields: [...nativeFields, ...csFields], customSelects };
-}
-
-// ── Async detection — full pipeline with logging ──────────────────────────────
-
-export interface AsyncDetectionResult extends DetectionResult {
-  interactiveFields: ReturnType<typeof detectInteractiveFields>;
+  log.debug("fields detectados :", nativeFields);
+  return { fields: [...nativeFields] };
 }
 
 /**
  * Async detection — runs the full DEFAULT_COLLECTION_PIPELINE and adds
  * per-detector summary logging.
  */
-export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
+export async function detectAllFieldsAsync(): Promise<DetectionResult> {
   const url = window.location.href;
   const t0 = performance.now();
 
@@ -84,9 +67,7 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
   // Use the async pipeline so the Chrome AI classifier (detectAsync) is active
   // for native inputs. Custom selects and interactive fields remain synchronous.
   const nativeFields = await detectNativeFieldsAsync();
-  const csFields = customSelectPageDetector.detect();
-  const interactiveFormFields = interactivePageDetector.detect();
-  const fields = [...nativeFields, ...csFields, ...interactiveFormFields];
+  const fields = [...nativeFields];
 
   const byMethod: Record<DetectionMethod, number> = {
     "html-type": 0,
@@ -99,20 +80,10 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
     "user-override": 0,
   };
 
-  const methodColor: Record<DetectionMethod, string> = {
-    "html-type": "#f59e0b",
-    keyword: "#22c55e",
-    tensorflow: "#6366f1",
-    "chrome-ai": "#a855f7",
-    "html-fallback": "#ef4444",
-    "custom-select": "#06b6d4",
-    interactive: "#06b6d4",
-    "user-override": "#f97316",
-  };
-
   fields.forEach((field, idx) => {
+    log.debug(`🔍 Campo #${idx + 1} detectado:`, field);
     const method = field.detectionMethod ?? "html-fallback";
-    byMethod[method]++;
+    byMethod[method as DetectionMethod]++;
 
     const tag = field.element.tagName.toLowerCase();
     const htmlType =
@@ -160,10 +131,7 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
   );
   log.groupEnd();
 
-  const customSelects = detectCustomSelects();
-  const interactiveFields = detectInteractiveFields();
-
-  return { fields, customSelects, interactiveFields };
+  return { fields };
 }
 
 /**
@@ -176,12 +144,6 @@ export async function detectAllFieldsAsync(): Promise<AsyncDetectionResult> {
  */
 export async function* streamAllFields(): AsyncGenerator<FormField> {
   for await (const field of streamNativeFieldsAsync()) {
-    yield field;
-  }
-  for (const field of customSelectPageDetector.detect()) {
-    yield field;
-  }
-  for (const field of interactivePageDetector.detect()) {
     yield field;
   }
 }

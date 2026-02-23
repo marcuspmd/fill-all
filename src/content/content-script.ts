@@ -33,7 +33,7 @@ import {
   loadPretrainedModel,
   invalidateClassifier,
   reloadClassifier,
-} from "@/lib/form/detectors/tensorflow-classifier";
+} from "@/lib/form/detectors/strategies";
 import {
   setActiveClassifiers,
   buildClassifiersFromSettings,

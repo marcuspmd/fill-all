@@ -12,7 +12,7 @@
  */
 
 import type { FormField, FieldType } from "@/types";
-import type { FieldClassifier, ClassifierResult } from "./pipeline";
+import type { FieldClassifier, ClassifierResult } from "../pipeline";
 
 // ── Normalisation ─────────────────────────────────────────────────────────────
 

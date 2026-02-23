@@ -220,6 +220,9 @@ export interface FormField {
   pattern?: string;
   maxLength?: number;
   minLength?: number;
+  options?: Array<{ value: string; text: string }>; // for selects
+  checkboxValue?: string; // for checkboxes/radios
+  checkboxChecked?: boolean; // for checkboxes/radios
 
   // Interactive widgets
   isInteractive?: boolean;

@@ -18,7 +18,13 @@ import {
   addIgnoredField,
   removeIgnoredField,
 } from "@/lib/storage/storage";
-import type { SavedForm, IgnoredField } from "@/types";
+import type {
+  SavedForm,
+  IgnoredField,
+  FieldType,
+  FieldCategory,
+  DetectionMethod,
+} from "@/types";
 import { showDetectionBadge, clearAllBadges } from "./field-overlay";
 import {
   escapeHtml,
@@ -149,6 +155,7 @@ function getPanelHTML(): string {
         </div>
       </div>
       <div class="fa-toolbar-right">
+        <button class="fa-toolbar-btn fa-btn-fill-minimized" id="fa-btn-fill-minimized" title="Preencher Tudo">⚡</button>
         <button class="fa-toolbar-btn" id="fa-btn-minimize" title="Minimizar">▼</button>
         <button class="fa-toolbar-btn" id="fa-btn-close" title="Fechar">✕</button>
       </div>
@@ -271,6 +278,26 @@ function getPanelCSS(): string {
     }
     #${PANEL_ID}.fa-minimized .fa-content,
     #${PANEL_ID}.fa-minimized .fa-resize-handle {
+      display: none;
+    }
+    #${PANEL_ID} .fa-btn-fill-minimized {
+      display: none;
+      width: auto;
+      padding: 0 10px;
+      background: #4f46e5;
+      border-color: #6366f1;
+      color: #fff;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    #${PANEL_ID} .fa-btn-fill-minimized:hover {
+      background: #6366f1;
+      color: #fff;
+    }
+    #${PANEL_ID}.fa-minimized .fa-btn-fill-minimized {
+      display: flex;
+    }
+    #${PANEL_ID}.fa-minimized .fa-tabs {
       display: none;
     }
 
@@ -754,6 +781,26 @@ function setupTabHandlers(panel: HTMLElement): void {
     savePanelState();
   });
 
+  // Fill All (minimized quick button)
+  panel
+    .querySelector("#fa-btn-fill-minimized")
+    ?.addEventListener("click", async () => {
+      const btn = panel.querySelector(
+        "#fa-btn-fill-minimized",
+      ) as HTMLButtonElement;
+      btn.textContent = "⏳...";
+      btn.style.pointerEvents = "none";
+      try {
+        const results = await fillAllFields();
+        addLog(`${results.length} campos preenchidos com sucesso`, "success");
+      } catch {
+        addLog("Erro ao preencher campos", "error");
+      } finally {
+        btn.textContent = "⚡";
+        btn.style.pointerEvents = "";
+      }
+    });
+
   // Close
   panel.querySelector("#fa-btn-close")?.addEventListener("click", () => {
     removeFloatingPanel();
@@ -903,6 +950,7 @@ function setupFieldHandlers(panel: HTMLElement): void {
       countEl.textContent = `${count} campo(s)`;
       showDetectionBadge(field.element, field.fieldType, field.detectionMethod);
       appendFieldRow(tbody, count, field);
+      console.log(`[Fill All] Campo detectado:`, field);
     }
 
     btn.textContent = "🔍 Detectar Campos";
@@ -1038,13 +1086,16 @@ function appendFieldRow(
       }
 
       const formField = {
+        ...field,
         element: field.element as
           | HTMLInputElement
           | HTMLSelectElement
           | HTMLTextAreaElement,
         selector: field.selector,
-        fieldType: field.fieldType as import("@/types").FieldType,
         required: false,
+        category: "unknown" as FieldCategory,
+        fieldType: field.fieldType as FieldType,
+        detectionMethod: field.detectionMethod as DetectionMethod | undefined,
       };
       const result = await fillSingleField(formField);
       if (result) {

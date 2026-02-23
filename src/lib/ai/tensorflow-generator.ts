@@ -10,7 +10,7 @@
 
 import type { FormField } from "@/types";
 import { generate } from "@/lib/generators";
-import { classifyField } from "@/lib/form/detectors/tensorflow-classifier";
+import { classifyField } from "@/lib/form/detectors/strategies";
 
 export {
   loadPretrainedModel,
@@ -18,7 +18,7 @@ export {
   reloadClassifier,
   classifyField,
   classifyByTfSoft,
-} from "@/lib/form/detectors/tensorflow-classifier";
+} from "@/lib/form/detectors/strategies";
 
 /**
  * Generate a value using TF.js classification + built-in generators.

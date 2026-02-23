@@ -10,16 +10,7 @@ import {
   isAvailable as isChromeAiAvailable,
 } from "@/lib/ai/chrome-ai";
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
-import {
-  getSettings,
-  getSavedFormsForUrl,
-  getIgnoredFieldsForUrl,
-} from "@/lib/storage/storage";
-import {
-  selectCustomOption,
-  getCustomSelectValue,
-  type CustomSelectField,
-} from "./detectors/custom-select-handler";
+import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
 import { createLogger } from "@/lib/logger";
 
@@ -153,7 +144,7 @@ export async function fillAllFields(): Promise<GenerationResult[]> {
 }
 
 async function doFillAllFields(): Promise<GenerationResult[]> {
-  const { fields, customSelects } = detectAllFields();
+  const { fields } = detectAllFields();
   const url = window.location.href;
   const settings = await getSettings();
   const results: GenerationResult[] = [];
@@ -161,18 +152,11 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
   // Determine AI function based on settings
   const aiGenerateFn = await getAiFunction(settings);
 
-  // Get saved forms for resolving custom select values
-  const savedForms = await getSavedFormsForUrl(url);
-
   // Load ignored fields for current URL
   const ignoredFields = await getIgnoredFieldsForUrl(url);
   const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
 
-  // Fill regular fields first
   for (const field of fields) {
-    // Skip pseudo-fields created from custom selects (handled below)
-    if (customSelects.some((cs) => cs.selector === field.selector)) continue;
-
     // Skip ignored fields
     if (ignoredSelectors.has(field.selector)) continue;
 
@@ -196,50 +180,6 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
       results.push(result);
     } catch (error) {
       log.warn(`Failed to fill field ${field.selector}:`, error);
-    }
-  }
-
-  // Fill custom selects (one at a time, waiting for DOM to settle)
-  for (const cs of customSelects) {
-    // Skip ignored custom selects
-    if (ignoredSelectors.has(cs.selector)) continue;
-
-    try {
-      // Check if there's a saved value for this custom select
-      let targetValue: string | undefined;
-
-      for (const form of savedForms) {
-        const key = cs.id || cs.name || cs.selector;
-        if (form.fields[key]) {
-          targetValue = form.fields[key];
-          break;
-        }
-        if (cs.name && form.fields[cs.name]) {
-          targetValue = form.fields[cs.name];
-          break;
-        }
-        if (cs.id && form.fields[cs.id]) {
-          targetValue = form.fields[cs.id];
-          break;
-        }
-      }
-
-      const selectedText = await selectCustomOption(cs, targetValue);
-
-      if (settings.highlightFilled) {
-        highlightField(cs.container);
-      }
-
-      results.push({
-        fieldSelector: cs.selector,
-        value: selectedText,
-        source: targetValue ? "fixed" : "generator",
-      });
-
-      // Wait for DOM to settle after selecting (forms may change dynamically)
-      await waitForDomSettle(500);
-    } catch (error) {
-      log.warn(`Failed to fill custom select ${cs.selector}:`, error);
     }
   }
 
@@ -352,13 +292,10 @@ async function getAiFunction(
  * Captures current form values and returns them as a map
  */
 export function captureFormValues(): Record<string, string> {
-  const { fields, customSelects } = detectAllFields();
+  const { fields } = detectAllFields();
   const values: Record<string, string> = {};
 
   for (const field of fields) {
-    // Skip pseudo-fields from custom selects
-    if (customSelects.some((cs) => cs.selector === field.selector)) continue;
-
     const el = field.element;
     const key = field.id || field.name || field.selector;
 
@@ -373,12 +310,6 @@ export function captureFormValues(): Record<string, string> {
     } else {
       values[key] = el.value;
     }
-  }
-
-  // Capture custom select values
-  for (const cs of customSelects) {
-    const key = cs.id || cs.name || cs.selector;
-    values[key] = getCustomSelectValue(cs);
   }
 
   return values;

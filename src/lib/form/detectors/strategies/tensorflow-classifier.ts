@@ -19,7 +19,7 @@ import type { LayersModel, Tensor } from "@tensorflow/tfjs";
 import { getLearnedEntries } from "@/lib/ai/learning-store";
 import { loadRuntimeModel } from "@/lib/ai/runtime-trainer";
 import { dotProduct, vectorize } from "@/lib/shared/ngram";
-import type { FieldClassifier, ClassifierResult } from "./pipeline";
+import type { FieldClassifier, ClassifierResult } from "../pipeline";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("TFClassifier");

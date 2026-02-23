@@ -27,6 +27,6 @@
     },
     "types": ["chrome"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/lib/form/detectors/strategies/interactive-field-detector.ts.old", "src/lib/form/detectors/strategies/custom-select-handler.ts.old"],
   "exclude": ["node_modules", "dist"]
 }

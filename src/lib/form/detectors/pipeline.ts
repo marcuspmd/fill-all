@@ -58,6 +58,12 @@ export interface PipelineResult {
   confidence: number;
   /** Wall-clock time the pipeline spent classifying this field (ms) */
   durationMs: number;
+  /** Per-classifier wall-clock times (only classifiers that actually ran) */
+  timings: Array<{ strategy: string; durationMs: number }>;
+  /** All non-null predictions collected across classifiers (including non-winners) */
+  predictions: Array<{ type: FieldType; confidence: number }>;
+  /** Human-readable trace of each classifier decision */
+  decisionTrace: string[];
 }
 
 // ── Pipeline class ────────────────────────────────────────────────────────────
@@ -72,21 +78,47 @@ export class DetectionPipeline {
    */
   run(field: FormField): PipelineResult {
     const t0 = performance.now();
+    const timings: PipelineResult["timings"] = [];
+    const predictions: PipelineResult["predictions"] = [];
+    const decisionTrace: string[] = [];
+
     for (const classifier of this.classifiers) {
+      const ct = performance.now();
       const result = classifier.detect(field);
-      if (result !== null && result.type !== "unknown") {
+      const classifierMs = performance.now() - ct;
+      timings.push({ strategy: classifier.name, durationMs: classifierMs });
+
+      if (result === null) {
+        decisionTrace.push(`${classifier.name}: null — skipped`);
+      } else if (result.type === "unknown") {
+        decisionTrace.push(
+          `${classifier.name}: unknown (${(result.confidence * 100).toFixed(0)}%) — skipped`,
+        );
+        predictions.push({ type: result.type, confidence: result.confidence });
+      } else {
+        predictions.push({ type: result.type, confidence: result.confidence });
+        decisionTrace.push(
+          `${classifier.name}: ${result.type} (${(result.confidence * 100).toFixed(0)}%) — selected`,
+        );
         return {
           ...result,
           method: classifier.name,
           durationMs: performance.now() - t0,
+          timings,
+          predictions,
+          decisionTrace,
         };
       }
     }
+    decisionTrace.push("html-fallback: unknown — no classifier matched");
     return {
       type: "unknown",
       method: "html-fallback",
       confidence: 0.1,
       durationMs: performance.now() - t0,
+      timings,
+      predictions,
+      decisionTrace,
     };
   }
 
@@ -98,24 +130,49 @@ export class DetectionPipeline {
    */
   async runAsync(field: FormField): Promise<PipelineResult> {
     const t0 = performance.now();
+    const timings: PipelineResult["timings"] = [];
+    const predictions: PipelineResult["predictions"] = [];
+    const decisionTrace: string[] = [];
+
     for (const classifier of this.classifiers) {
+      const ct = performance.now();
       const result = classifier.detectAsync
         ? await classifier.detectAsync(field)
         : classifier.detect(field);
+      const classifierMs = performance.now() - ct;
+      timings.push({ strategy: classifier.name, durationMs: classifierMs });
 
-      if (result !== null && result.type !== "unknown") {
+      if (result === null) {
+        decisionTrace.push(`${classifier.name}: null — skipped`);
+      } else if (result.type === "unknown") {
+        decisionTrace.push(
+          `${classifier.name}: unknown (${(result.confidence * 100).toFixed(0)}%) — skipped`,
+        );
+        predictions.push({ type: result.type, confidence: result.confidence });
+      } else {
+        predictions.push({ type: result.type, confidence: result.confidence });
+        decisionTrace.push(
+          `${classifier.name}: ${result.type} (${(result.confidence * 100).toFixed(0)}%) — selected`,
+        );
         return {
           ...result,
           method: classifier.name,
           durationMs: performance.now() - t0,
+          timings,
+          predictions,
+          decisionTrace,
         };
       }
     }
+    decisionTrace.push("html-fallback: unknown — no classifier matched");
     return {
       type: "unknown",
       method: "html-fallback",
       confidence: 0.1,
       durationMs: performance.now() - t0,
+      timings,
+      predictions,
+      decisionTrace,
     };
   }
 

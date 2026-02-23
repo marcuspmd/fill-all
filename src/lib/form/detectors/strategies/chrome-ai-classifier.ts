@@ -16,7 +16,7 @@
  */
 
 import type { FormField, FieldType } from "@/types";
-import type { FieldClassifier, ClassifierResult } from "./pipeline";
+import type { FieldClassifier, ClassifierResult } from "../pipeline";
 import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { invalidateClassifier } from "./tensorflow-classifier";
 import { addDatasetEntry } from "@/lib/dataset/runtime-dataset";

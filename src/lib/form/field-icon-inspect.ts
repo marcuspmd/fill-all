@@ -3,7 +3,7 @@
  */
 
 import type { FormField, FieldType } from "@/types";
-import { invalidateClassifier } from "@/lib/form/detectors/tensorflow-classifier";
+import { invalidateClassifier } from "@/lib/form/detectors/strategies";
 import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { createLogger } from "@/lib/logger";
 import { MODAL_ID } from "./field-icon-styles";

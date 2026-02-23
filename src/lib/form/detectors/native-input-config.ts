@@ -1,8 +1,8 @@
 /**
- * Native Input Chain Configuration
+ * Native Input Configuration
  *
- * Shared selectors, filters and the field builder used by the native-input
- * processing chain (Step 1 → 2 → 3 of FieldProcessingChain).
+ * Shared selectors, filters and the field builder used by collectNativeFields()
+ * in classifiers.ts (Steps 1–3: collect → filter → extract).
  *
  * Keeping these separate from classifiers.ts avoids polluting the classifier
  * registry with DOM-querying concerns.
@@ -52,10 +52,50 @@ export function isNotCustomSelect(el: NativeElement): boolean {
 
 /**
  * Builds a bare FormField from a native DOM element.
- * Extracts selector, label and context signals — no classification yet.
+ * Extracts selector, label, DOM metadata and context signals — no classification yet.
  */
 export function buildNativeField(element: NativeElement): FormField {
   const labelResult = findLabelWithStrategy(element);
+
+  // ── DOM metadata ────────────────────────────────────────────────────────────
+  const inputType =
+    element instanceof HTMLInputElement ? element.type : undefined;
+  const pattern =
+    element instanceof HTMLInputElement && element.pattern
+      ? element.pattern
+      : undefined;
+  const maxLength =
+    (element instanceof HTMLInputElement ||
+      element instanceof HTMLTextAreaElement) &&
+    element.maxLength > 0
+      ? element.maxLength
+      : undefined;
+  const minLength =
+    (element instanceof HTMLInputElement ||
+      element instanceof HTMLTextAreaElement) &&
+    element.minLength > 0
+      ? element.minLength
+      : undefined;
+
+  // ── Select options ──────────────────────────────────────────────────────────
+  const options =
+    element instanceof HTMLSelectElement
+      ? Array.from(element.options)
+          .filter((o) => o.value !== "")
+          .map((o) => ({ value: o.value, text: o.text.trim() }))
+      : undefined;
+
+  // ── Checkbox / Radio ────────────────────────────────────────────────────────
+  const isCheckable =
+    element instanceof HTMLInputElement &&
+    (element.type === "checkbox" || element.type === "radio");
+  const checkboxValue = isCheckable
+    ? (element as HTMLInputElement).value || undefined
+    : undefined;
+  const checkboxChecked = isCheckable
+    ? (element as HTMLInputElement).checked
+    : undefined;
+
   const field: FormField = {
     element,
     selector: getUniqueSelector(element),
@@ -67,7 +107,14 @@ export function buildNativeField(element: NativeElement): FormField {
     placeholder:
       ("placeholder" in element ? element.placeholder : undefined) || undefined,
     autocomplete: element.autocomplete || undefined,
+    inputType,
     required: element.required,
+    pattern,
+    maxLength,
+    minLength,
+    options,
+    checkboxValue,
+    checkboxChecked,
   };
   field.contextSignals = buildSignals(field);
   return field;
