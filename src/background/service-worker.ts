@@ -7,7 +7,10 @@
 
 import type { ExtensionMessage } from "@/types";
 import { parseIncomingMessage } from "@/lib/messaging/validators";
-import { sendToActiveTab } from "@/lib/chrome/active-tab-messaging";
+import {
+  sendToActiveTab,
+  sendToSpecificTab,
+} from "@/lib/chrome/active-tab-messaging";
 import { setupContextMenu, handleContextMenuClick } from "./context-menu";
 import { dispatchMessage } from "./handler-registry";
 import { initLogger, createLogger } from "@/lib/logger";
@@ -62,6 +65,19 @@ chrome.runtime.onMessage.addListener(
 );
 
 async function handleMessage(message: ExtensionMessage): Promise<unknown> {
+  // DevTools relay: forward inner message to a specific tab's content script
+  if (message.type === "DEVTOOLS_RELAY") {
+    const payload = message.payload as
+      | { tabId: number; message: ExtensionMessage }
+      | undefined;
+    if (!payload?.tabId || !payload?.message) {
+      return { error: "Invalid DEVTOOLS_RELAY payload" };
+    }
+    return sendToSpecificTab(payload.tabId, undefined, payload.message, {
+      injectIfNeeded: true,
+    });
+  }
+
   // Forward content-script-bound messages to the active tab
   if (CONTENT_SCRIPT_MESSAGES.has(message.type)) {
     return sendToActiveTab(message, { injectIfNeeded: true });

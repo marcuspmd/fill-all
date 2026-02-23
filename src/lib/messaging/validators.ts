@@ -19,6 +19,7 @@ const settingsSchema = z
     cacheEnabled: z.boolean(),
     showFieldIcon: z.boolean(),
     fieldIconPosition: z.enum(["above", "inside", "below"]),
+    showPanel: z.boolean(),
     detectionPipeline: z
       .array(z.object({ name: z.string().min(1), enabled: z.boolean() }))
       .optional(),

@@ -164,6 +164,8 @@ export interface DetectedFieldSummary {
   required?: boolean;
   contextualType?: FieldType;
   detectionMethod?: DetectionMethod;
+  /** Confidence score 0–1 from the detection pipeline */
+  detectionConfidence?: number;
   options?: Array<{ value: string; text: string }>;
   checkboxValue?: string;
   checkboxChecked?: boolean;
@@ -218,6 +220,8 @@ export interface Settings {
   /** Number generator range */
   numberMin: number;
   numberMax: number;
+  /** Whether to always show the DevTools-style panel on every page */
+  showPanel: boolean;
   /** Whether debug logging is enabled (all console output is suppressed when false) */
   debugLog: boolean;
   /** Minimum log level to output: debug < info < warn < error */
@@ -267,7 +271,8 @@ export type MessageType =
   | "SEED_DATASET"
   | "EXPORT_DATASET"
   | "GET_RUNTIME_MODEL_META"
-  | "DELETE_RUNTIME_MODEL";
+  | "DELETE_RUNTIME_MODEL"
+  | "DEVTOOLS_RELAY";
 
 export interface ExtensionMessage {
   type: MessageType;
@@ -307,6 +312,7 @@ export const DEFAULT_SETTINGS: Settings = {
   moneyMax: 10000,
   numberMin: 1,
   numberMax: 99999,
+  showPanel: false,
   debugLog: false,
   logLevel: "warn",
 };
