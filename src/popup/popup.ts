@@ -396,38 +396,6 @@ function renderFormsTab(): void {
   const content = document.getElementById("content");
   if (!content) return;
 
-  const ignoredHtml =
-    ignoredFields.length > 0
-      ? `
-      <h3 style="font-size:12px;font-weight:600;color:#475569;margin:14px 0 6px;text-transform:uppercase;letter-spacing:0.5px">
-        🚫 Campos Ignorados (${ignoredFields.length})
-      </h3>
-      <div class="forms-list">
-        ${ignoredFields
-          .map((field) => {
-            let displayUrl = field.urlPattern;
-            try {
-              displayUrl = new URL(field.urlPattern).hostname;
-            } catch {
-              /* keep */
-            }
-            return `
-            <div class="form-card">
-              <div class="form-info">
-                <span class="form-name">${escapeHtml(field.label)}</span>
-                <span class="form-url">${escapeHtml(displayUrl)}</span>
-              </div>
-              <div class="form-actions">
-                <button class="btn btn-sm btn-delete" data-ignored-id="${escapeHtml(field.id)}" title="Parar de ignorar">✕</button>
-              </div>
-            </div>
-          `;
-          })
-          .join("")}
-      </div>
-    `
-      : "";
-
   content.innerHTML = `
     <div class="fields-toolbar">
       <button class="btn" id="btn-load-forms">🔄 Carregar</button>
@@ -456,7 +424,6 @@ function renderFormsTab(): void {
               .join("")
       }
     </div>
-    ${ignoredHtml}
   `;
 
   document
