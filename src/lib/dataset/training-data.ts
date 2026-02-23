@@ -17,7 +17,11 @@
  * ──────────────────────────────────────────────────────────────────────────
  */
 
-import type { FieldType } from "@/types";
+import type {
+  FieldType,
+  TrainingDifficulty,
+  TrainingSampleSource,
+} from "@/types";
 
 export interface TrainingSample {
   /** Normalised signals string (label+name+id+placeholder concatenated) */
@@ -25,11 +29,11 @@ export interface TrainingSample {
   /** Expected field type */
   type: FieldType;
   /** Where this sample came from */
-  source: "synthetic" | "real-world" | "augmented" | "learned";
+  source: TrainingSampleSource;
   /** Optional: original URL domain (for real-world samples) */
   domain?: string;
   /** Difficulty level for curriculum learning */
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: TrainingDifficulty;
 }
 
 // ── CPF ─────────────────────────────────────────────────────────────────────

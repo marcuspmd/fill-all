@@ -177,6 +177,28 @@ export interface FieldSignals {
   structural: Signal[];
 }
 
+export type TrainingSampleSource =
+  | "synthetic"
+  | "real-world"
+  | "augmented"
+  | "learned";
+
+export type TrainingDifficulty = "easy" | "medium" | "hard";
+
+export type TrainingLanguage = "pt" | "en" | "es";
+
+export interface DomFeatureHints {
+  inputType?: string;
+  maxLength?: number;
+  pattern?: string;
+}
+
+export type DatasetExtractionStrategy =
+  | "primary"
+  | "secondary"
+  | "structural"
+  | "dom-features";
+
 /** Represents a detected form field on the page */
 export interface FormField {
   element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;

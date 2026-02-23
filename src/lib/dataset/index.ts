@@ -33,6 +33,14 @@ export {
   type TrainingSample,
 } from "./training-data";
 
+export {
+  flattenStructuredSignals,
+  normalizeStructuredSignals,
+  createTrainingSampleV2FromLegacy,
+  type StructuredSignals,
+  type TrainingSampleV2,
+} from "./training-data-v2";
+
 // ── Validation Data ────────────────────────────────────────────────────────
 export {
   VALIDATION_SAMPLES,
