@@ -31,67 +31,201 @@ export type InteractiveFieldType =
   | "color-picker"
   | "autocomplete";
 
+export type FieldCategory =
+  | "personal"
+  | "contact"
+  | "address"
+  | "document"
+  | "financial"
+  | "authentication"
+  | "professional"
+  | "ecommerce"
+  | "system"
+  | "generic"
+  | "unknown";
+
+const FieldTypeByCategory = {
+  personal: ["first-name", "last-name", "full-name", "birth-date", "gender"],
+  contact: ["email", "phone", "mobile", "whatsapp"],
+  address: ["street", "house-number", "city", "state", "cep", "country"],
+  document: ["cpf", "cnpj", "rg", "passport", "cnh"],
+  financial: [
+    "money",
+    "price",
+    "discount",
+    "credit-card-number",
+    "credit-card-cvv",
+    "pix-key",
+  ],
+  authentication: ["username", "password", "confirm-password", "otp"],
+  ecommerce: ["product-name", "sku", "quantity", "coupon"],
+};
+
 /** Field types that the extension can detect and generate values for */
 export type FieldType =
+  // Identificação
   | "cpf"
   | "cnpj"
   | "cpf-cnpj"
-  | "email"
-  | "phone"
+  | "rg"
+  | "passport"
+  | "cnh"
+  | "pis"
+  | "national-id"
+  | "tax-id"
+
+  // Nome
   | "name"
   | "first-name"
   | "last-name"
   | "full-name"
+
+  // Contato
+  | "email"
+  | "phone"
+  | "mobile"
+  | "whatsapp"
+
+  // Endereço
   | "address"
   | "street"
+  | "house-number"
+  | "complement"
+  | "neighborhood"
   | "city"
   | "state"
-  | "zip-code"
+  | "country"
   | "cep"
+  | "zip-code"
+
+  // Datas
   | "date"
   | "birth-date"
-  | "number"
-  | "password"
-  | "username"
-  | "company"
-  | "rg"
-  | "text"
+  | "start-date"
+  | "end-date"
+  | "due-date"
+
+  // Financeiro
   | "money"
-  | "website"
-  | "product"
+  | "price"
+  | "amount"
+  | "discount"
+  | "tax"
+  | "credit-card-number"
+  | "credit-card-expiration"
+  | "credit-card-cvv"
+  | "pix-key"
+
+  // Empresa
+  | "company"
   | "supplier"
   | "employee-count"
   | "job-title"
+  | "department"
+
+  // Autenticação
+  | "username"
+  | "password"
+  | "confirm-password"
+  | "otp"
+  | "verification-code"
+
+  // E-commerce
+  | "product"
+  | "product-name"
+  | "sku"
+  | "quantity"
+  | "coupon"
+
+  // Genéricos
+  | "text"
+  | "description"
+  | "notes"
+  | "search"
+  | "website"
+  | "url"
+  | "number"
+
+  // Componentes
   | "select"
   | "checkbox"
   | "radio"
+  | "file"
   | "unknown";
+
+export type signalType =
+  | "name"
+  | "id"
+  | "label"
+  | "placeholder"
+  | "autocomplete"
+  | "aria-label"
+  | "nearby-text"
+  | "section-title"
+  | "form-title"
+  | "table-header";
+
+export interface Signal {
+  source: signalType;
+  value: string;
+  weight?: number;
+}
+
+export interface FieldSignals {
+  primary: Signal[];
+  secondary: Signal[];
+  structural: Signal[];
+}
 
 /** Represents a detected form field on the page */
 export interface FormField {
   element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
   selector: string;
+
+  // Final result
+  category: FieldCategory;
   fieldType: FieldType;
+  contextualType?: FieldType;
+
+  // Raw DOM metadata
   label?: string;
   name?: string;
   id?: string;
   placeholder?: string;
   autocomplete?: string;
+  inputType?: string;
   required: boolean;
+  pattern?: string;
+  maxLength?: number;
+  minLength?: number;
+
+  // Interactive widgets
+  isInteractive?: boolean;
+  interactiveType?: InteractiveFieldType;
+
+  // Structured signals
+  signals?: FieldSignals;
+
+  languageDetected?: "pt" | "en" | "es" | "unknown";
+
   /** Which method produced fieldType */
   detectionMethod?: DetectionMethod;
   /** Confidence score 0–1 from TF.js or AI (1.0 for keyword/html-type) */
   detectionConfidence?: number;
-  /** True when the field is a non-native interactive widget */
-  isInteractive?: boolean;
-  /** Sub-type for interactive widgets */
-  interactiveType?: InteractiveFieldType;
   /** Normalised signals string used for classification (name+id+label+placeholder) */
   contextSignals?: string;
+
   /** Time taken by the detection pipeline for this field (ms) */
   detectionDurationMs?: number;
-  /** Refined semantic type for <select>/<textarea> without changing fieldType */
-  contextualType?: FieldType;
+  timings?: Array<{
+    strategy: string;
+    durationMs: number;
+  }>;
+  predictions?: Array<{
+    type: FieldType;
+    confidence: number;
+  }>;
+  decisionTrace?: string[];
 }
 
 /** Rule to define how a specific field should be filled on a specific site */
