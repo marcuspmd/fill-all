@@ -58,7 +58,7 @@ export const antdTransferAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "select",
       adapterName: "antd-transfer",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper),

@@ -53,7 +53,7 @@ export const select2Adapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "select",
       adapterName: "select2",
       label: labelResult?.text,
       name: hiddenSelect?.name || undefined,

@@ -52,7 +52,7 @@ export const antdSelectAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "select",
       adapterName: "antd-select",
       label: findAntLabel(wrapper),
       name: findAntName(wrapper),

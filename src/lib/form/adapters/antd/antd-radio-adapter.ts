@@ -45,7 +45,7 @@ export const antdRadioAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "radio",
       adapterName: "antd-radio",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper),

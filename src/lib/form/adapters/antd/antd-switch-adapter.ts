@@ -42,7 +42,7 @@ export const antdSwitchAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "checkbox",
       adapterName: "antd-switch",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper),

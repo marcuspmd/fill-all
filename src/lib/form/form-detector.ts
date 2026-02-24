@@ -21,6 +21,7 @@ import {
   nativeInputDetector,
   detectNativeFieldsAsync,
   streamNativeFieldsAsync,
+  classifyCustomFieldsSync,
 } from "./detectors/classifiers";
 export { DEFAULT_PIPELINE, DEFAULT_COLLECTION_PIPELINE };
 import { detectCustomComponents } from "./adapters/adapter-registry";
@@ -95,7 +96,7 @@ export async function detectAllFieldsAsync(): Promise<DetectionResult> {
   // Use the async pipeline so the Chrome AI classifier (detectAsync) is active
   // for native inputs. Custom selects and interactive fields remain synchronous.
   const nativeFields = await detectNativeFieldsAsync();
-  const customFields = detectCustomComponents();
+  const customFields = classifyCustomFieldsSync(detectCustomComponents());
   const fields = deduplicateFields(nativeFields, customFields);
 
   const byMethod: Record<DetectionMethod, number> = {
@@ -173,6 +174,11 @@ export async function detectAllFieldsAsync(): Promise<DetectionResult> {
  */
 export async function* streamAllFields(): AsyncGenerator<FormField> {
   for await (const field of streamNativeFieldsAsync()) {
+    yield field;
+  }
+  // Yield custom component fields (antd, select2, …) with keyword classification
+  const customFields = classifyCustomFieldsSync(detectCustomComponents());
+  for (const field of customFields) {
     yield field;
   }
 }

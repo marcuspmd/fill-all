@@ -46,7 +46,7 @@ export const antdDatepickerAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "date",
       adapterName: "antd-datepicker",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper) ?? input?.id ?? undefined,

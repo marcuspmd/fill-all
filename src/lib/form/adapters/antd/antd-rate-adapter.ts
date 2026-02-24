@@ -46,7 +46,7 @@ export const antdRateAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "number",
       adapterName: "antd-rate",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper),

@@ -46,7 +46,7 @@ export const antdSliderAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "number",
       adapterName: "antd-slider",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper),

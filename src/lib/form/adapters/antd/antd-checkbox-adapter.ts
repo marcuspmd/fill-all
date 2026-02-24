@@ -41,7 +41,7 @@ export const antdCheckboxAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "checkbox",
       adapterName: "antd-checkbox",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper),

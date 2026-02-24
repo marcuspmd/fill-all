@@ -54,7 +54,7 @@ export const antdCascaderAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "select",
       adapterName: "antd-cascader",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper),

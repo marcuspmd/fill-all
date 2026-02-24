@@ -203,3 +203,30 @@ export const nativeInputDetector: PageDetector = {
 export const DEFAULT_COLLECTION_PIPELINE = new FieldCollectionPipeline([
   nativeInputDetector,
 ]);
+
+/**
+ * Applies keyword classification to custom component fields in-place.
+ *
+ * Custom component adapters know the semantic widget type (select, checkbox,
+ * datepicker, etc.) but cannot infer domain-level context (e.g. "CPF", "email")
+ * from the DOM structure alone.  Running keywordClassifier here allows
+ * label-based patterns ("cpf", "e-mail", "data de nascimento" …) to upgrade the
+ * fieldType even for Ant Design / Select2 components.
+ *
+ * If no keyword pattern matches the adapter-set fieldType is preserved and
+ * detectionMethod is stamped as "custom-select".
+ */
+export function classifyCustomFieldsSync(fields: FormField[]): FormField[] {
+  for (const field of fields) {
+    const result = keywordClassifier.detect(field);
+    if (result) {
+      field.fieldType = result.type;
+      field.detectionMethod = "keyword";
+      field.detectionConfidence = result.confidence;
+    } else if (!field.detectionMethod) {
+      field.detectionMethod = "custom-select";
+      field.detectionConfidence = 0.9;
+    }
+  }
+  return fields;
+}

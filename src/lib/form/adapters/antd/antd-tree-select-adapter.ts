@@ -54,7 +54,7 @@ export const antdTreeSelectAdapter: CustomComponentAdapter = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: "select",
       adapterName: "antd-tree-select",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper),
