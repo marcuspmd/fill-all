@@ -215,12 +215,28 @@ export const DEFAULT_COLLECTION_PIPELINE = new FieldCollectionPipeline([
  *
  * If no keyword pattern matches the adapter-set fieldType is preserved and
  * detectionMethod is stamped as "custom-select".
+ *
+ * Keyword results with generic types ("text", "unknown") never override a
+ * concrete adapter-set type (e.g. "select"), preventing lorem-ipsum generators
+ * from being used on dropdown components.
  */
+
+/** Types that are too generic to override a concrete adapter-set type. */
+const GENERIC_TYPES = new Set<FormField["fieldType"]>(["text", "unknown"]);
+
 export function classifyCustomFieldsSync(fields: FormField[]): FormField[] {
   for (const field of fields) {
     const result = keywordClassifier.detect(field);
     if (result) {
-      field.fieldType = result.type;
+      // Only upgrade when keyword adds semantic specificity.
+      // Never let a generic type ("text", "unknown") override a concrete
+      // adapter-set type such as "select" — that would cause the fill logic
+      // to generate lorem-ipsum and type it into a dropdown search box.
+      const shouldOverride =
+        !GENERIC_TYPES.has(result.type) || GENERIC_TYPES.has(field.fieldType);
+      if (shouldOverride) {
+        field.fieldType = result.type;
+      }
       field.detectionMethod = "keyword";
       field.detectionConfidence = result.confidence;
     } else if (!field.detectionMethod) {

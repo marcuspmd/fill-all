@@ -18,7 +18,7 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("RuleEngine");
 
-const AI_TIMEOUT_MS = 5_000;
+const AI_TIMEOUT_MS = 5000;
 
 /**
  * Field types that have deterministic, high-quality generators.

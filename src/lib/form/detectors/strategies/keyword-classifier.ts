@@ -313,6 +313,23 @@ const KEYWORD_RULES: KeywordRule[] = [
   // ── Numeric ───────────────────────────────────────────────────────────────
   { patterns: ["quantidade", "qtdade"], type: "number" },
   { patterns: ["qtd", "qtde"], type: "number", wholeWord: true },
+  {
+    // Portuguese and English patterns for benefit, account and registration numbers
+    // (English IDs like "client_benefit_number" → normalised → "client benefit number")
+    patterns: [
+      "numero beneficio",
+      "numero do beneficio",
+      "beneficio",
+      "benefit number",
+      "account number",
+      "policy number",
+      "order number",
+      "registration number",
+      "contract number",
+      "invoice number",
+    ],
+    type: "number",
+  },
   { patterns: ["numero"], type: "number", wholeWord: true },
   { patterns: ["codigo"], type: "number", wholeWord: true },
 
