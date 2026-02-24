@@ -19,7 +19,6 @@ import {
   removeStyles,
 } from "./field-icon-styles";
 import { isFillableField } from "./field-icon-utils";
-import { handleInspectClick, hideInspectModal } from "./field-icon-inspect";
 import {
   handleRuleButtonClick,
   hideRulePopup,
@@ -58,7 +57,6 @@ export function destroyFieldIcon(): void {
   removeIcon();
   removeStyles();
   destroyRulePopup();
-  hideInspectModal();
 }
 
 // ── Focus handling ────────────────────────────────────────────────────────────
@@ -109,12 +107,6 @@ function showIcon(target: HTMLElement): void {
           <path d="M15.98 1.804a1 1 0 0 0-1.96 0l-.24 1.192a1 1 0 0 1-.784.785l-1.192.238a1 1 0 0 0 0 1.962l1.192.238a1 1 0 0 1 .785.785l.238 1.192a1 1 0 0 0 1.962 0l.238-1.192a1 1 0 0 1 .785-.785l1.192-.238a1 1 0 0 0 0-1.962l-1.192-.238a1 1 0 0 1-.785-.785l-.238-1.192ZM6.949 5.684a1 1 0 0 0-1.898 0l-.683 2.051a1 1 0 0 1-.633.633l-2.051.683a1 1 0 0 0 0 1.898l2.051.684a1 1 0 0 1 .633.632l.683 2.051a1 1 0 0 0 1.898 0l.683-2.051a1 1 0 0 1 .633-.633l2.051-.683a1 1 0 0 0 0-1.898l-2.051-.683a1 1 0 0 1-.633-.633L6.95 5.684ZM13.949 13.684a1 1 0 0 0-1.898 0l-.184.551a1 1 0 0 1-.632.633l-.551.183a1 1 0 0 0 0 1.898l.551.183a1 1 0 0 1 .633.633l.183.551a1 1 0 0 0 1.898 0l.184-.551a1 1 0 0 1 .632-.633l.551-.183a1 1 0 0 0 0-1.898l-.551-.184a1 1 0 0 1-.633-.632l-.183-.551Z"/>
         </svg>
       </button>
-      <button id="fill-all-field-inspect-btn" title="Inspecionar campo" type="button">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
-          <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
-          <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41Z" clip-rule="evenodd"/>
-        </svg>
-      </button>
       <button id="fill-all-field-rule-btn" title="Salvar regra para este campo" type="button">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
           <path fill-rule="evenodd" d="M4.5 2A2.5 2.5 0 0 0 2 4.5v3.879a2.5 2.5 0 0 0 .732 1.767l7.5 7.5a2.5 2.5 0 0 0 3.536 0l3.878-3.878a2.5 2.5 0 0 0 0-3.536l-7.5-7.5A2.5 2.5 0 0 0 8.38 2H4.5ZM5 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
@@ -126,10 +118,6 @@ function showIcon(target: HTMLElement): void {
     iconElement
       .querySelector("#fill-all-field-icon-btn")!
       .addEventListener("mousedown", handleIconClick);
-
-    iconElement
-      .querySelector("#fill-all-field-inspect-btn")!
-      .addEventListener("mousedown", onInspectClick);
 
     iconElement
       .querySelector("#fill-all-field-rule-btn")!
@@ -230,13 +218,6 @@ async function handleIconClick(e: Event): Promise<void> {
 
   if (btn) btn.classList.remove("loading");
   el.focus();
-}
-
-function onInspectClick(e: Event): void {
-  e.preventDefault();
-  e.stopPropagation();
-  if (!currentTarget) return;
-  handleInspectClick(currentTarget);
 }
 
 function onRuleClick(e: Event): void {
