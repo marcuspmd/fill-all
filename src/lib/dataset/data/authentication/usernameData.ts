@@ -1,0 +1,96 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_USERNAME: TrainingSample[] = [
+  {
+    signals: { primary: ["Usuário"], secondary: [], structural: ["Login"] },
+    category: "authentication",
+    type: "username",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Username"], secondary: [], structural: ["Login"] },
+    category: "authentication",
+    type: "username",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Nome de Usuário"],
+      secondary: [],
+      structural: ["Cadastro"],
+    },
+    category: "authentication",
+    type: "username",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["User"], secondary: [], structural: ["Sign In"] },
+    category: "authentication",
+    type: "username",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["username"], secondary: [], structural: [] },
+    category: "authentication",
+    type: "username",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Login"],
+      secondary: ["Informe seu usuário"],
+      structural: ["Autenticação"],
+    },
+    category: "authentication",
+    type: "username",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["User ID"],
+      secondary: ["Enter your username"],
+      structural: ["Account"],
+    },
+    category: "authentication",
+    type: "username",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Seu Usuário"],
+      secondary: [],
+      structural: ["Acesso"],
+    },
+    category: "authentication",
+    type: "username",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Identificação"],
+      secondary: ["Nome de acesso"],
+      structural: [],
+    },
+    category: "authentication",
+    type: "username",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+];

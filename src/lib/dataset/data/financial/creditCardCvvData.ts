@@ -1,0 +1,97 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_CREDIT_CARD_CVV: TrainingSample[] = [
+  {
+    signals: { primary: ["CVV"], secondary: [], structural: ["Pagamento"] },
+    category: "financial",
+    type: "credit-card-cvv",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["CVV"], secondary: [], structural: ["Payment"] },
+    category: "financial",
+    type: "credit-card-cvv",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Security Code"],
+      secondary: [],
+      structural: ["Card Details"],
+    },
+    category: "financial",
+    type: "credit-card-cvv",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["CVC"],
+      secondary: [],
+      structural: ["Payment Method"],
+    },
+    category: "financial",
+    type: "credit-card-cvv",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["cvv"], secondary: [], structural: [] },
+    category: "financial",
+    type: "credit-card-cvv",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Código de Segurança"],
+      secondary: ["3 dígitos"],
+      structural: ["Checkout"],
+    },
+    category: "financial",
+    type: "credit-card-cvv",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Card Verification Value"],
+      secondary: ["3-4 digits on back"],
+      structural: ["Billing"],
+    },
+    category: "financial",
+    type: "credit-card-cvv",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Código"],
+      secondary: ["Verso do cartão"],
+      structural: [],
+    },
+    category: "financial",
+    type: "credit-card-cvv",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["CVV"], secondary: [], structural: [] },
+    category: "financial",
+    type: "credit-card-cvv",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { maxLength: 4, inputType: "tel" },
+  },
+];

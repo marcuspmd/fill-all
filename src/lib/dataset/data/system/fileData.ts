@@ -1,0 +1,97 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_FILE: TrainingSample[] = [
+  {
+    signals: { primary: ["Arquivo"], secondary: [], structural: ["Upload"] },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["File"], secondary: [], structural: ["Upload"] },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Enviar Arquivo"],
+      secondary: [],
+      structural: ["Documentos"],
+    },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Upload File"],
+      secondary: [],
+      structural: ["Documents"],
+    },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["file"], secondary: [], structural: [] },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Anexar Documento"],
+      secondary: ["PDF, JPG ou PNG"],
+      structural: ["Formulário"],
+    },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Attach"],
+      secondary: ["Drag and drop or click to upload"],
+      structural: ["Form"],
+    },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Comprovante"],
+      secondary: ["Envie um comprovante de residência"],
+      structural: [],
+    },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Arquivo"], secondary: [], structural: [] },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "file" },
+  },
+];

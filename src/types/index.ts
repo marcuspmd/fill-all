@@ -144,35 +144,7 @@ export type FieldType = (typeof FIELD_TYPES)[number];
 
 /** Subconjunto de tipos treináveis no modelo de texto (TF.js). */
 export const TRAINABLE_FIELD_TYPES = [
-  "cpf",
-  "cnpj",
-  "cpf-cnpj",
-  "rg",
-  "email",
-  "phone",
-  "name",
-  "first-name",
-  "last-name",
-  "full-name",
-  "address",
-  "street",
-  "city",
-  "state",
-  "cep",
-  "zip-code",
-  "date",
-  "birth-date",
-  "password",
-  "username",
-  "company",
-  "website",
-  "product",
-  "supplier",
-  "employee-count",
-  "job-title",
-  "money",
-  "number",
-  "text",
+  ...FIELD_TYPES,
 ] as const satisfies readonly FieldType[];
 
 export const FIELD_TYPES_BY_CATEGORY: Record<FieldCategory, FieldType[]> = {

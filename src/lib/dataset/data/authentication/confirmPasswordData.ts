@@ -1,0 +1,105 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_CONFIRM_PASSWORD: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Confirmar Senha"],
+      secondary: [],
+      structural: ["Cadastro"],
+    },
+    category: "authentication",
+    type: "confirm-password",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Confirm Password"],
+      secondary: [],
+      structural: ["Register"],
+    },
+    category: "authentication",
+    type: "confirm-password",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Repetir Senha"],
+      secondary: [],
+      structural: ["Registro"],
+    },
+    category: "authentication",
+    type: "confirm-password",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Re-enter Password"],
+      secondary: [],
+      structural: ["Sign Up"],
+    },
+    category: "authentication",
+    type: "confirm-password",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["confirm_password"], secondary: [], structural: [] },
+    category: "authentication",
+    type: "confirm-password",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Confirme sua Senha"],
+      secondary: ["As senhas devem coincidir"],
+      structural: ["Alterar Senha"],
+    },
+    category: "authentication",
+    type: "confirm-password",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Retype Password"],
+      secondary: ["Must match above"],
+      structural: ["Account Setup"],
+    },
+    category: "authentication",
+    type: "confirm-password",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Verificação de Senha"],
+      secondary: ["Repita a senha anterior"],
+      structural: [],
+    },
+    category: "authentication",
+    type: "confirm-password",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Confirmar Senha"], secondary: [], structural: [] },
+    category: "authentication",
+    type: "confirm-password",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "password" },
+  },
+];

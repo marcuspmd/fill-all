@@ -1,0 +1,93 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_SEARCH: TrainingSample[] = [
+  {
+    signals: { primary: ["Buscar"], secondary: [], structural: ["Pesquisa"] },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Search"], secondary: [], structural: ["Search"] },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Pesquisar"],
+      secondary: [],
+      structural: ["Barra de Pesquisa"],
+    },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Search..."], secondary: [], structural: ["Header"] },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["search"], secondary: [], structural: [] },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["O que você procura?"],
+      secondary: ["Digite para buscar"],
+      structural: ["Topo"],
+    },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Find"],
+      secondary: ["Type to search products"],
+      structural: ["Navigation"],
+    },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Localizar"],
+      secondary: ["Procure por nome ou código"],
+      structural: [],
+    },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Buscar"], secondary: [], structural: [] },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "search" },
+  },
+];

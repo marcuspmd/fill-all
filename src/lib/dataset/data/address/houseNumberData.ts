@@ -1,0 +1,97 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_HOUSE_NUMBER: TrainingSample[] = [
+  {
+    signals: { primary: ["Número"], secondary: [], structural: ["Endereço"] },
+    category: "address",
+    type: "house-number",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Nº"], secondary: [], structural: ["Endereço"] },
+    category: "address",
+    type: "house-number",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["House Number"],
+      secondary: [],
+      structural: ["Address"],
+    },
+    category: "address",
+    type: "house-number",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Number"],
+      secondary: [],
+      structural: ["Address Details"],
+    },
+    category: "address",
+    type: "house-number",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["house_number"], secondary: [], structural: [] },
+    category: "address",
+    type: "house-number",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Número da Casa"],
+      secondary: [],
+      structural: ["Dados do Endereço"],
+    },
+    category: "address",
+    type: "house-number",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Nr."],
+      secondary: ["Número do imóvel"],
+      structural: [],
+    },
+    category: "address",
+    type: "house-number",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Apt/Suite/Unit"],
+      secondary: [],
+      structural: ["Address"],
+    },
+    category: "address",
+    type: "house-number",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: { primary: ["Número"], secondary: [], structural: [] },
+    category: "address",
+    type: "house-number",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { maxLength: 6 },
+  },
+];

@@ -1,0 +1,97 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_DESCRIPTION: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Descrição"],
+      secondary: [],
+      structural: ["Cadastro"],
+    },
+    category: "generic",
+    type: "description",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Description"], secondary: [], structural: ["Form"] },
+    category: "generic",
+    type: "description",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Descrição do Item"],
+      secondary: [],
+      structural: ["Produto"],
+    },
+    category: "generic",
+    type: "description",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Details"], secondary: [], structural: ["Product"] },
+    category: "generic",
+    type: "description",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["description"], secondary: [], structural: [] },
+    category: "generic",
+    type: "description",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Descreva"],
+      secondary: ["Informe uma descrição detalhada"],
+      structural: ["Formulário"],
+    },
+    category: "generic",
+    type: "description",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Summary"],
+      secondary: ["Provide a brief description"],
+      structural: ["Listing"],
+    },
+    category: "generic",
+    type: "description",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Detalhes"],
+      secondary: ["Informações adicionais"],
+      structural: [],
+    },
+    category: "generic",
+    type: "description",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Descrição"], secondary: [], structural: [] },
+    category: "generic",
+    type: "description",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "text" },
+  },
+];

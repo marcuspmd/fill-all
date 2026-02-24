@@ -1,0 +1,93 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_QUANTITY: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Quantidade"],
+      secondary: [],
+      structural: ["Carrinho"],
+    },
+    category: "ecommerce",
+    type: "quantity",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Quantity"], secondary: [], structural: ["Cart"] },
+    category: "ecommerce",
+    type: "quantity",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["Qtde"], secondary: [], structural: ["Pedido"] },
+    category: "ecommerce",
+    type: "quantity",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Qty"], secondary: [], structural: ["Order"] },
+    category: "ecommerce",
+    type: "quantity",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["quantity"], secondary: [], structural: [] },
+    category: "ecommerce",
+    type: "quantity",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Qtde. Desejada"],
+      secondary: ["Informe a quantidade"],
+      structural: ["Compra"],
+    },
+    category: "ecommerce",
+    type: "quantity",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Amount"],
+      secondary: ["How many units?"],
+      structural: ["Product Detail"],
+    },
+    category: "ecommerce",
+    type: "quantity",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Unidades"],
+      secondary: ["Número de itens"],
+      structural: [],
+    },
+    category: "ecommerce",
+    type: "quantity",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Quantidade"], secondary: [], structural: [] },
+    category: "ecommerce",
+    type: "quantity",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "number" },
+  },
+];

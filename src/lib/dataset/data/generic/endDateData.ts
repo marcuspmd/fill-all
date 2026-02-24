@@ -1,0 +1,93 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_END_DATE: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Data de Término"],
+      secondary: [],
+      structural: ["Período"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["End Date"], secondary: [], structural: ["Period"] },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["Data Final"], secondary: [], structural: ["Filtro"] },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["To"], secondary: [], structural: ["Date Range"] },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["end_date"], secondary: [], structural: [] },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Término"],
+      secondary: ["Data de término do contrato"],
+      structural: ["Contrato"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Expiry Date"],
+      secondary: ["When does it end?"],
+      structural: ["Schedule"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Até"],
+      secondary: ["Data de encerramento"],
+      structural: [],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Data de Término"], secondary: [], structural: [] },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "date" },
+  },
+];

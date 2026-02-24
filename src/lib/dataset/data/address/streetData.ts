@@ -1,0 +1,112 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_STREET: TrainingSample[] = [
+  {
+    signals: { primary: ["Rua"], secondary: [], structural: ["Endereço"] },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Logradouro"],
+      secondary: [],
+      structural: ["Endereço"],
+    },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Street"], secondary: [], structural: ["Address"] },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Street Name"],
+      secondary: [],
+      structural: ["Shipping"],
+    },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["street_name"], secondary: [], structural: [] },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Avenida / Rua"],
+      secondary: [],
+      structural: ["Dados do Endereço"],
+    },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Nome da Rua"],
+      secondary: ["Av, Rua, Trav..."],
+      structural: [],
+    },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Address Line 1"],
+      secondary: [],
+      structural: ["Shipping Address"],
+    },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Street Address"],
+      secondary: [],
+      structural: ["Billing"],
+    },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Endereço"],
+      secondary: ["Nome da rua"],
+      structural: ["Localização"],
+    },
+    category: "address",
+    type: "street",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+];

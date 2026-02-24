@@ -1,0 +1,97 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_START_DATE: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Data de Início"],
+      secondary: [],
+      structural: ["Período"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Start Date"], secondary: [], structural: ["Period"] },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Data Inicial"],
+      secondary: [],
+      structural: ["Filtro"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["From"], secondary: [], structural: ["Date Range"] },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["start_date"], secondary: [], structural: [] },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Início"],
+      secondary: ["Data de início do contrato"],
+      structural: ["Contrato"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Begin Date"],
+      secondary: ["When does it start?"],
+      structural: ["Schedule"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["De"],
+      secondary: ["Data de partida"],
+      structural: [],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Data de Início"], secondary: [], structural: [] },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "date" },
+  },
+];

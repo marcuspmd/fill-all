@@ -1,0 +1,93 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_DUE_DATE: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Data de Vencimento"],
+      secondary: [],
+      structural: ["Pagamento"],
+    },
+    category: "generic",
+    type: "due-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Due Date"], secondary: [], structural: ["Payment"] },
+    category: "generic",
+    type: "due-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["Vencimento"], secondary: [], structural: ["Fatura"] },
+    category: "generic",
+    type: "due-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Deadline"], secondary: [], structural: ["Task"] },
+    category: "generic",
+    type: "due-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["due_date"], secondary: [], structural: [] },
+    category: "generic",
+    type: "due-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Data Limite"],
+      secondary: ["Prazo máximo para pagamento"],
+      structural: ["Cobrança"],
+    },
+    category: "generic",
+    type: "due-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Expiration Date"],
+      secondary: ["Payment due by this date"],
+      structural: ["Invoice"],
+    },
+    category: "generic",
+    type: "due-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Prazo"],
+      secondary: ["Data limite para entrega"],
+      structural: [],
+    },
+    category: "generic",
+    type: "due-date",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Data de Vencimento"], secondary: [], structural: [] },
+    category: "generic",
+    type: "due-date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "date" },
+  },
+];

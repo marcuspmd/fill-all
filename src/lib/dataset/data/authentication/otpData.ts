@@ -1,0 +1,97 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_OTP: TrainingSample[] = [
+  {
+    signals: { primary: ["OTP"], secondary: [], structural: ["Verificação"] },
+    category: "authentication",
+    type: "otp",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["OTP"], secondary: [], structural: ["Verification"] },
+    category: "authentication",
+    type: "otp",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Código OTP"],
+      secondary: [],
+      structural: ["Autenticação"],
+    },
+    category: "authentication",
+    type: "otp",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["One-Time Password"],
+      secondary: [],
+      structural: ["2FA"],
+    },
+    category: "authentication",
+    type: "otp",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["otp_code"], secondary: [], structural: [] },
+    category: "authentication",
+    type: "otp",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Código de Autenticação"],
+      secondary: ["6 dígitos"],
+      structural: ["Segurança"],
+    },
+    category: "authentication",
+    type: "otp",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Authentication Code"],
+      secondary: ["Enter 6-digit code"],
+      structural: ["Two-Factor"],
+    },
+    category: "authentication",
+    type: "otp",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Token"],
+      secondary: ["Código enviado por SMS"],
+      structural: [],
+    },
+    category: "authentication",
+    type: "otp",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["OTP"], secondary: [], structural: [] },
+    category: "authentication",
+    type: "otp",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+    domFeatures: { maxLength: 6, inputType: "tel" },
+  },
+];

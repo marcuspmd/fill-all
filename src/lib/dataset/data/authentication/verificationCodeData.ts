@@ -1,0 +1,105 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_VERIFICATION_CODE: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Código de Verificação"],
+      secondary: [],
+      structural: ["Segurança"],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Verification Code"],
+      secondary: [],
+      structural: ["Security"],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Código de Confirmação"],
+      secondary: [],
+      structural: ["Verificação"],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Confirm Code"],
+      secondary: [],
+      structural: ["Account Verification"],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["verification_code"], secondary: [], structural: [] },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Código Enviado"],
+      secondary: ["Verifique seu e-mail"],
+      structural: ["Confirmação"],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Enter Code"],
+      secondary: ["We sent a code to your email"],
+      structural: ["Verify Identity"],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Código"],
+      secondary: ["Enviado via SMS ou e-mail"],
+      structural: [],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Verification Code"], secondary: [], structural: [] },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+    domFeatures: { maxLength: 8 },
+  },
+];

@@ -1,0 +1,101 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_CHECKBOX: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Aceito os termos"],
+      secondary: [],
+      structural: ["Cadastro"],
+    },
+    category: "system",
+    type: "checkbox",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["I agree"], secondary: [], structural: ["Register"] },
+    category: "system",
+    type: "checkbox",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Termos de Uso"],
+      secondary: [],
+      structural: ["Formulário"],
+    },
+    category: "system",
+    type: "checkbox",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Terms and Conditions"],
+      secondary: [],
+      structural: ["Sign Up"],
+    },
+    category: "system",
+    type: "checkbox",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["checkbox"], secondary: [], structural: [] },
+    category: "system",
+    type: "checkbox",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Li e aceito"],
+      secondary: ["Política de privacidade"],
+      structural: ["Registro"],
+    },
+    category: "system",
+    type: "checkbox",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Subscribe"],
+      secondary: ["Receive newsletter updates"],
+      structural: ["Preferences"],
+    },
+    category: "system",
+    type: "checkbox",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Concordo"],
+      secondary: ["Marque para concordar"],
+      structural: [],
+    },
+    category: "system",
+    type: "checkbox",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Aceito"], secondary: [], structural: [] },
+    category: "system",
+    type: "checkbox",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "checkbox" },
+  },
+];

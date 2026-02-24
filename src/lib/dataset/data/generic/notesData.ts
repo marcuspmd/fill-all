@@ -1,0 +1,93 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_NOTES: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Observações"],
+      secondary: [],
+      structural: ["Formulário"],
+    },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Notes"], secondary: [], structural: ["Form"] },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["Notas"], secondary: [], structural: ["Pedido"] },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Comments"], secondary: [], structural: ["Order"] },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["notes"], secondary: [], structural: [] },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Observações Adicionais"],
+      secondary: ["Alguma informação extra?"],
+      structural: ["Checkout"],
+    },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Additional Notes"],
+      secondary: ["Any special instructions?"],
+      structural: ["Delivery"],
+    },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Comentários"],
+      secondary: ["Mensagem para o vendedor"],
+      structural: [],
+    },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Observações"], secondary: [], structural: [] },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "text" },
+  },
+];

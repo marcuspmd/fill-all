@@ -1,0 +1,97 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_DATE: TrainingSample[] = [
+  {
+    signals: { primary: ["Data"], secondary: [], structural: ["Formulário"] },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Date"], secondary: [], structural: ["Form"] },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Data do Evento"],
+      secondary: [],
+      structural: ["Evento"],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Event Date"],
+      secondary: [],
+      structural: ["Event Details"],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["date"], secondary: [], structural: [] },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Data de Registro"],
+      secondary: ["dd/mm/aaaa"],
+      structural: ["Cadastro"],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Registration Date"],
+      secondary: ["MM/DD/YYYY"],
+      structural: ["Registration"],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Quando?"],
+      secondary: ["Informe a data"],
+      structural: [],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Data"], secondary: [], structural: [] },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "date" },
+  },
+];
