@@ -36,6 +36,9 @@ import {
   waitForElement,
 } from "./antd-utils";
 import { buildSignals } from "../../extractors";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("AntdTreeSelect");
 
 export const antdTreeSelectAdapter: CustomComponentAdapter = {
   name: "antd-tree-select",
@@ -69,19 +72,34 @@ export const antdTreeSelectAdapter: CustomComponentAdapter = {
   async fill(wrapper: HTMLElement, _value: string): Promise<boolean> {
     // Open the tree select dropdown
     const selector = wrapper.querySelector<HTMLElement>(".ant-select-selector");
-    if (!selector) return false;
+    if (!selector) {
+      log.warn(
+        `Seletor .ant-select-selector não encontrado em: ${getUniqueSelector(wrapper)}`,
+      );
+      return false;
+    }
 
     simulateClick(selector);
 
     // Wait for the dropdown to appear
     const dropdown = await waitForElement(".ant-tree-select-dropdown", 500);
-    if (!dropdown) return false;
+    if (!dropdown) {
+      log.warn(
+        `Dropdown .ant-tree-select-dropdown não apareceu (timeout 500ms) para: ${getUniqueSelector(wrapper)}`,
+      );
+      return false;
+    }
 
     // Find leaf nodes (nodes without children that can be selected)
     const nodes = dropdown.querySelectorAll<HTMLElement>(
       ".ant-select-tree-treenode:not(.ant-select-tree-treenode-disabled)",
     );
-    if (nodes.length === 0) return false;
+    if (nodes.length === 0) {
+      log.warn(
+        `Nenhum nó disponível no tree-select dropdown para: ${getUniqueSelector(wrapper)}`,
+      );
+      return false;
+    }
 
     // Pick a random node
     const idx = Math.floor(Math.random() * nodes.length);

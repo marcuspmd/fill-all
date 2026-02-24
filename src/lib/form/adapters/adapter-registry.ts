@@ -149,9 +149,18 @@ export async function fillCustomComponent(
   }
 
   try {
-    return await adapter.fill(field.element as HTMLElement, value);
+    const result = await adapter.fill(field.element as HTMLElement, value);
+    if (!result) {
+      log.warn(
+        `[${adapter.name}] fill() retornou false para: ${field.selector}`,
+      );
+    }
+    return result;
   } catch (err) {
-    log.warn(`[${adapter.name}] Erro ao preencher campo:`, err);
+    log.warn(
+      `[${adapter.name}] Erro ao preencher campo ${field.selector}:`,
+      err,
+    );
     return false;
   }
 }

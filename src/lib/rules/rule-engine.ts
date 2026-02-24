@@ -18,6 +18,107 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("RuleEngine");
 
+const AI_TIMEOUT_MS = 5_000;
+
+/**
+ * Field types that have deterministic, high-quality generators.
+ * AI adds no value for these — calling it only wastes time.
+ * AI is only useful for `text`, `description`, `notes`, `search`, `unknown`.
+ */
+const GENERATOR_ONLY_TYPES = new Set<FieldType>([
+  "cpf",
+  "cnpj",
+  "cpf-cnpj",
+  "rg",
+  "passport",
+  "cnh",
+  "pis",
+  "national-id",
+  "tax-id",
+  "name",
+  "first-name",
+  "last-name",
+  "full-name",
+  "email",
+  "phone",
+  "mobile",
+  "whatsapp",
+  "address",
+  "street",
+  "house-number",
+  "complement",
+  "neighborhood",
+  "city",
+  "state",
+  "country",
+  "cep",
+  "zip-code",
+  "date",
+  "birth-date",
+  "start-date",
+  "end-date",
+  "due-date",
+  "money",
+  "price",
+  "amount",
+  "discount",
+  "tax",
+  "credit-card-number",
+  "credit-card-expiration",
+  "credit-card-cvv",
+  "pix-key",
+  "company",
+  "supplier",
+  "employee-count",
+  "job-title",
+  "department",
+  "username",
+  "password",
+  "confirm-password",
+  "otp",
+  "verification-code",
+  "product",
+  "product-name",
+  "sku",
+  "quantity",
+  "coupon",
+  "number",
+  "website",
+  "url",
+  "select",
+  "checkbox",
+  "radio",
+  "file",
+]);
+
+/** Wraps an AI call with a hard timeout so it never blocks indefinitely. */
+async function callAiWithTimeout(
+  fn: (field: FormField) => Promise<string>,
+  field: FormField,
+  context: string,
+): Promise<string> {
+  const label = field.label ?? field.id ?? field.selector;
+  log.info(
+    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${AI_TIMEOUT_MS}ms)...`,
+  );
+  const start = Date.now();
+
+  const result = await Promise.race([
+    fn(field),
+    new Promise<string>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`AI timeout (${AI_TIMEOUT_MS}ms)`)),
+        AI_TIMEOUT_MS,
+      ),
+    ),
+  ]);
+
+  log.info(
+    `✅ AI concluiu em ${Date.now() - start}ms: "${result.slice(0, 60)}"`,
+  );
+  return result;
+}
+
 /**
  * Resolves the value for a single field, using this priority:
  * 1. (optional) AI first — when forceAIFirst is true
@@ -40,17 +141,23 @@ export async function resolveFieldValue(
     `Resolvendo campo: ${fieldDesc}${forceAIFirst ? " [forceAIFirst=true]" : ""}`,
   );
 
-  // 1. AI first (when flag is enabled)
-  if (forceAIFirst && aiGenerateFn) {
-    log.debug(`Tentando AI primeiro (forceAIFirst)...`);
+  // 1. AI first (when flag is enabled) — only for fields where AI genuinely helps
+  if (
+    forceAIFirst &&
+    aiGenerateFn &&
+    !GENERATOR_ONLY_TYPES.has(field.fieldType)
+  ) {
     try {
-      const aiValue = await aiGenerateFn(field);
+      const aiValue = await callAiWithTimeout(
+        aiGenerateFn,
+        field,
+        "forceAIFirst",
+      );
       const value = adaptGeneratedValue(aiValue, {
         element: field.element,
         requireValidity: true,
       });
       if (value) {
-        log.debug(`AI (forceAIFirst) gerou: "${value}"`);
         return { fieldSelector: selector, value, source: "ai" };
       }
     } catch (err) {
@@ -153,12 +260,16 @@ export async function resolveFieldValue(
 
     // If the rule says to use AI
     if (matchingRule.generator === "ai" && aiGenerateFn) {
-      const aiValue = await aiGenerateFn(field);
-      const value = adaptGeneratedValue(aiValue, {
-        element: field.element,
-        requireValidity: false,
-      });
-      return { fieldSelector: selector, value, source: "ai" };
+      try {
+        const aiValue = await callAiWithTimeout(aiGenerateFn, field, "rule:ai");
+        const value = adaptGeneratedValue(aiValue, {
+          element: field.element,
+          requireValidity: false,
+        });
+        return { fieldSelector: selector, value, source: "ai" };
+      } catch (err) {
+        log.warn(`AI (rule) falhou:`, err);
+      }
     }
   }
 
@@ -205,18 +316,21 @@ export async function resolveFieldValue(
   }
 
   // 6. AI as last resort — only for free-text fields where the generator returned empty
-  if (aiGenerateFn) {
-    log.debug(
-      `Gerador padrão retornou vazio, tentando AI como último recurso para: ${fieldDesc}`,
+  if (aiGenerateFn && !GENERATOR_ONLY_TYPES.has(field.fieldType)) {
+    log.info(
+      `Gerador padrão vazio — tentando AI como último recurso para: ${fieldDesc}`,
     );
     try {
-      const aiValue = await aiGenerateFn(field);
+      const aiValue = await callAiWithTimeout(
+        aiGenerateFn,
+        field,
+        "último recurso",
+      );
       const adaptedAiValue = adaptGeneratedValue(aiValue, {
         element: field.element,
         requireValidity: true,
       });
       if (adaptedAiValue) {
-        log.debug(`AI (último recurso) gerou: "${adaptedAiValue}"`);
         return { fieldSelector: selector, value: adaptedAiValue, source: "ai" };
       }
       log.warn(`AI (último recurso) retornou vazio para: ${fieldDesc}`);

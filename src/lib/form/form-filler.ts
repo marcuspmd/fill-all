@@ -161,6 +161,15 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
     // Skip ignored fields
     if (ignoredSelectors.has(field.selector)) continue;
 
+    const fieldLabel =
+      field.label ??
+      field.name ??
+      field.id ??
+      field.fieldType ??
+      field.selector;
+    log.info(`⏳ Preenchendo [${field.fieldType}] "${fieldLabel}"...`);
+    const start = Date.now();
+
     try {
       const result = await resolveFieldValue(
         field,
@@ -171,6 +180,10 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
 
       await applyValueToField(field, result.value);
 
+      log.info(
+        `✅ Preenchido em ${Date.now() - start}ms via ${result.source}: "${String(result.value).slice(0, 40)}"`,
+      );
+
       if (settings.highlightFilled) {
         highlightField(
           field.element,
@@ -180,7 +193,10 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
 
       results.push(result);
     } catch (error) {
-      log.warn(`Failed to fill field ${field.selector}:`, error);
+      log.warn(
+        `❌ Falhou em ${Date.now() - start}ms — campo ${field.selector}:`,
+        error,
+      );
     }
   }
 
@@ -193,6 +209,10 @@ export async function fillSingleField(
   const url = window.location.href;
   const settings = await getSettings();
   const aiGenerateFn = await getAiFunction(settings);
+  const fieldLabel =
+    field.label ?? field.name ?? field.id ?? field.fieldType ?? field.selector;
+  log.info(`⏳ Preenchendo [${field.fieldType}] "${fieldLabel}"...`);
+  const start = Date.now();
 
   try {
     const result = await resolveFieldValue(
@@ -202,6 +222,9 @@ export async function fillSingleField(
       settings.forceAIFirst,
     );
     await applyValueToField(field, result.value);
+    log.info(
+      `✅ Preenchido em ${Date.now() - start}ms via ${result.source}: "${String(result.value).slice(0, 40)}"`,
+    );
 
     if (settings.highlightFilled) {
       highlightField(
@@ -212,7 +235,10 @@ export async function fillSingleField(
 
     return result;
   } catch (error) {
-    log.warn(`Failed to fill field:`, error);
+    log.warn(
+      `❌ Falhou em ${Date.now() - start}ms — campo ${field.selector}:`,
+      error,
+    );
     return null;
   }
 }

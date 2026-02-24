@@ -36,6 +36,9 @@ import {
   waitForElement,
 } from "./antd-utils";
 import { buildSignals } from "../../extractors";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("AntdCascader");
 
 export const antdCascaderAdapter: CustomComponentAdapter = {
   name: "antd-cascader",
@@ -69,13 +72,23 @@ export const antdCascaderAdapter: CustomComponentAdapter = {
   async fill(wrapper: HTMLElement, _value: string): Promise<boolean> {
     // Open the cascader dropdown
     const selector = wrapper.querySelector<HTMLElement>(".ant-select-selector");
-    if (!selector) return false;
+    if (!selector) {
+      log.warn(
+        `Seletor .ant-select-selector não encontrado em: ${getUniqueSelector(wrapper)}`,
+      );
+      return false;
+    }
 
     simulateClick(selector);
 
     // Wait for dropdown to appear
     const dropdown = await waitForElement(".ant-cascader-dropdown", 500);
-    if (!dropdown) return false;
+    if (!dropdown) {
+      log.warn(
+        `Dropdown .ant-cascader-dropdown não apareceu (timeout 500ms) para: ${getUniqueSelector(wrapper)}`,
+      );
+      return false;
+    }
 
     // Navigate through cascader levels
     return selectCascaderLevels(dropdown);
@@ -103,7 +116,10 @@ async function selectCascaderLevels(dropdown: HTMLElement): Promise<boolean> {
     const items = currentMenu.querySelectorAll<HTMLElement>(
       ".ant-cascader-menu-item:not(.ant-cascader-menu-item-disabled)",
     );
-    if (items.length === 0) break;
+    if (items.length === 0) {
+      log.warn(`Nenhum item disponível no nível ${level} do cascader`);
+      break;
+    }
 
     // Pick a random item
     const idx = Math.floor(Math.random() * items.length);

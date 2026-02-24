@@ -26,8 +26,12 @@ import {
   isAntRequired,
   simulateClick,
   getUniqueSelector,
+  waitForElement,
 } from "./antd-utils";
 import { buildSignals } from "../../extractors";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("AntdSelect");
 
 export const antdSelectAdapter: CustomComponentAdapter = {
   name: "antd-select",
@@ -66,14 +70,57 @@ export const antdSelectAdapter: CustomComponentAdapter = {
     return field;
   },
 
-  fill(wrapper: HTMLElement, value: string): boolean {
-    // Open the dropdown
-    const selector = wrapper.querySelector<HTMLElement>(".ant-select-selector");
-    if (!selector) return false;
+  async fill(wrapper: HTMLElement, value: string): Promise<boolean> {
+    const wrapperSelector = getUniqueSelector(wrapper);
 
+    // Open the dropdown — try multiple trigger strategies for React/antd compatibility
+    const selector = wrapper.querySelector<HTMLElement>(".ant-select-selector");
+    const combobox = wrapper.querySelector<HTMLInputElement>(
+      "input[role='combobox'], .ant-select-selection-search-input",
+    );
+
+    if (!selector) {
+      log.warn(
+        `Seletor .ant-select-selector não encontrado em: ${wrapperSelector}`,
+      );
+      return false;
+    }
+
+    // Strategy 1: focus the inner combobox input (React registers this reliably)
+    if (combobox) {
+      combobox.focus();
+      combobox.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    }
+    // Strategy 2: click the selector container
     simulateClick(selector);
 
-    // Wait a tick for the dropdown to render, then pick an option
+    // Wait for the dropdown to render
+    const dropdown = await waitForElement(
+      ".ant-select-dropdown:not(.ant-select-dropdown-hidden)",
+      800,
+    );
+
+    if (!dropdown) {
+      // Last attempt: try pointerdown which some antd versions listen to
+      wrapper.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
+      );
+      selector.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
+      );
+      await new Promise((r) => setTimeout(r, 300));
+
+      const retryDropdown = document.querySelector<HTMLElement>(
+        ".ant-select-dropdown:not(.ant-select-dropdown-hidden)",
+      );
+      if (!retryDropdown) {
+        log.warn(
+          `Dropdown .ant-select-dropdown não apareceu para: ${wrapperSelector}`,
+        );
+        return false;
+      }
+    }
+
     return selectOption(wrapper, value);
   },
 };

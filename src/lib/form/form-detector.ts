@@ -76,7 +76,7 @@ function deduplicateFields(
  */
 export function detectAllFields(): DetectionResult {
   const nativeFields = nativeInputDetector.detect();
-  const customFields = detectCustomComponents();
+  const customFields = classifyCustomFieldsSync(detectCustomComponents());
   const fields = deduplicateFields(nativeFields, customFields);
   log.debug("fields detectados :", fields);
   return { fields };

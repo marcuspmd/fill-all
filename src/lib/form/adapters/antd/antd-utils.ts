@@ -120,7 +120,12 @@ export function waitForElement(
       }
     });
 
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
 
     setTimeout(() => {
       observer.disconnect();

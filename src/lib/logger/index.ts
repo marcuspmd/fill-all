@@ -56,6 +56,8 @@ const buffer: BufferedEntry[] = [];
 // ── Funções internas ───────────────────────────────────────────────────────────
 
 function shouldLog(level: LogLevel): boolean {
+  // warn and error are always visible so critical issues surface even without debugLog
+  if (level === "error" || level === "warn") return true;
   return state.enabled && LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[state.level];
 }
 
