@@ -31,9 +31,27 @@ export const INPUT_SELECTOR = [
   "textarea:not([disabled])",
 ].join(", ");
 
-/** Ancestor selector for custom-select components (Ant, MUI, React Select, etc.). */
-export const CUSTOM_SELECT_ANCESTOR =
-  ".ant-select, [class*='react-select'], .MuiSelect-root, [class*='MuiAutocomplete']";
+/**
+ * Ancestor selector for custom component wrappers (Ant Design, MUI, React Select, etc.).
+ * Native <input>/<select>/<textarea> inside these wrappers are handled by adapters,
+ * so the native detector must skip them to avoid duplicates.
+ */
+export const CUSTOM_SELECT_ANCESTOR = [
+  // Ant Design
+  ".ant-select",
+  ".ant-picker",
+  ".ant-input-number",
+  ".ant-input-affix-wrapper",
+  ".ant-mentions",
+  ".ant-checkbox-group",
+  ".ant-radio-group",
+  ".ant-transfer",
+  // React Select
+  "[class*='react-select']",
+  // Material UI
+  ".MuiSelect-root",
+  "[class*='MuiAutocomplete']",
+].join(", ");
 
 // ── Step 2: Filters ───────────────────────────────────────────────────────────
 

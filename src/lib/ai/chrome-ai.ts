@@ -87,7 +87,7 @@ export async function generateFieldValue(field: FormField): Promise<string> {
     field.id && `ID: ${field.id}`,
     field.placeholder && `Placeholder: ${field.placeholder}`,
     field.autocomplete && `Autocomplete: ${field.autocomplete}`,
-    `Type: ${field.element.type || "text"}`,
+    `Type: ${(field.element as HTMLInputElement).type || "text"}`,
     `Detected as: ${field.fieldType}`,
   ]
     .filter(Boolean)

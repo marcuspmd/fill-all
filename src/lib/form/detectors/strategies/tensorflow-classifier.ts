@@ -312,7 +312,7 @@ export function classifyField(field: FormField): FieldType {
     return tfResult.type;
   }
 
-  const inputType = field.element.type?.toLowerCase();
+  const inputType = (field.element as HTMLInputElement).type?.toLowerCase();
   const htmlType: FieldType =
     (HTML_TYPE_FALLBACK[inputType] as FieldType) ?? "unknown";
 

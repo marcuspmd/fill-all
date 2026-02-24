@@ -12,6 +12,7 @@ import {
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
 import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
+import { fillCustomComponent } from "./adapters/adapter-registry";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("FormFiller");
@@ -168,7 +169,7 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
         settings.forceAIFirst,
       );
 
-      applyValueToField(field, result.value);
+      await applyValueToField(field, result.value);
 
       if (settings.highlightFilled) {
         highlightField(
@@ -200,7 +201,7 @@ export async function fillSingleField(
       aiGenerateFn,
       settings.forceAIFirst,
     );
-    applyValueToField(field, result.value);
+    await applyValueToField(field, result.value);
 
     if (settings.highlightFilled) {
       highlightField(
@@ -241,7 +242,16 @@ function waitForDomSettle(ms: number): Promise<void> {
   });
 }
 
-function applyValueToField(field: FormField, value: string): void {
+async function applyValueToField(
+  field: FormField,
+  value: string,
+): Promise<void> {
+  // Delegate to custom adapter if the field was detected by one
+  if (field.adapterName) {
+    const handled = await fillCustomComponent(field, value);
+    if (handled) return;
+  }
+
   const el = field.element;
 
   if (el instanceof HTMLSelectElement) {
@@ -308,7 +318,7 @@ export function captureFormValues(): Record<string, string> {
         values[key] = el.value;
       }
     } else {
-      values[key] = el.value;
+      values[key] = (el as HTMLTextAreaElement).value;
     }
   }
 

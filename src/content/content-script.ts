@@ -146,7 +146,7 @@ async function handleContentMessage(
           if (field.element instanceof HTMLInputElement && nativeValueSetter) {
             nativeValueSetter.call(field.element, value);
           } else {
-            field.element.value = value;
+            (field.element as HTMLInputElement).value = value;
           }
         }
 
@@ -310,7 +310,7 @@ function findSingleFieldTarget(fields: FormField[]): FormField | undefined {
     }
   }
 
-  return fields.find((f) => !f.element.disabled);
+  return fields.find((f) => !(f.element as HTMLInputElement).disabled);
 }
 
 function showNotification(text: string): void {

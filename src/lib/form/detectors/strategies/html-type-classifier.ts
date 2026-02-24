@@ -7,11 +7,16 @@
 
 import type { FieldClassifier, ClassifierResult } from "../pipeline";
 import { detectBasicType } from "../html-type-detector";
+import { isNativeFormElement } from "@/types";
 
 export const htmlTypeClassifier: FieldClassifier = {
   name: "html-type",
   detect(field): ClassifierResult | null {
-    const { type } = detectBasicType(field.element);
+    const el = field.element;
+    if (!isNativeFormElement(el as HTMLElement)) return null;
+    const { type } = detectBasicType(
+      el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+    );
     if (type === "unknown") return null;
     return { type, confidence: 1.0 };
   },

@@ -276,15 +276,38 @@ export interface TrainingSample {
   domFeatures?: DomFeatureHints;
 }
 
+/** Native form element types (input, select, textarea) */
+export type NativeFormElement =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement;
+
+/** Type guard: narrows FormField.element to NativeFormElement */
+export function isNativeFormElement(el: HTMLElement): el is NativeFormElement {
+  return (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLSelectElement ||
+    el instanceof HTMLTextAreaElement
+  );
+}
+
 /** Represents a detected form field on the page */
 export interface FormField {
-  element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+  element:
+    | HTMLInputElement
+    | HTMLSelectElement
+    | HTMLTextAreaElement
+    | HTMLElement;
   selector: string;
 
   // Final result
   category: FieldCategory;
   fieldType: FieldType;
   contextualType?: FieldType;
+
+  // Custom component adapter
+  /** Name of the adapter that detected this field (undefined for native elements). */
+  adapterName?: string;
 
   // Raw DOM metadata
   label?: string;

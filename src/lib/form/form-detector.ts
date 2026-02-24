@@ -23,6 +23,7 @@ import {
   streamNativeFieldsAsync,
 } from "./detectors/classifiers";
 export { DEFAULT_PIPELINE, DEFAULT_COLLECTION_PIPELINE };
+import { detectCustomComponents } from "./adapters/adapter-registry";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("FormDetector");
@@ -44,13 +45,40 @@ export interface DetectionResult {
 }
 
 /**
+ * Removes native fields whose underlying element is already contained within
+ * a custom component wrapper. Adapter-detected fields take precedence because
+ * they carry richer context (label, options, etc.).
+ */
+function deduplicateFields(
+  nativeFields: FormField[],
+  customFields: FormField[],
+): FormField[] {
+  if (customFields.length === 0) return nativeFields;
+
+  // Collect all custom wrapper elements
+  const customWrappers = new Set(customFields.map((f) => f.element));
+
+  const filtered = nativeFields.filter((nf) => {
+    // If the native element is a descendant of any custom wrapper, skip it
+    for (const wrapper of customWrappers) {
+      if (wrapper.contains(nf.element)) return false;
+    }
+    return true;
+  });
+
+  return [...filtered, ...customFields];
+}
+
+/**
  * Synchronous detection — used by dom-watcher and any context that cannot await.
  * Delegates to the PageDetectors in DEFAULT_COLLECTION_PIPELINE.
  */
 export function detectAllFields(): DetectionResult {
   const nativeFields = nativeInputDetector.detect();
-  log.debug("fields detectados :", nativeFields);
-  return { fields: [...nativeFields] };
+  const customFields = detectCustomComponents();
+  const fields = deduplicateFields(nativeFields, customFields);
+  log.debug("fields detectados :", fields);
+  return { fields };
 }
 
 /**
@@ -67,7 +95,8 @@ export async function detectAllFieldsAsync(): Promise<DetectionResult> {
   // Use the async pipeline so the Chrome AI classifier (detectAsync) is active
   // for native inputs. Custom selects and interactive fields remain synchronous.
   const nativeFields = await detectNativeFieldsAsync();
-  const fields = [...nativeFields];
+  const customFields = detectCustomComponents();
+  const fields = deduplicateFields(nativeFields, customFields);
 
   const byMethod: Record<DetectionMethod, number> = {
     "html-type": 0,

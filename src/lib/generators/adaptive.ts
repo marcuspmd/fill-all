@@ -4,7 +4,11 @@
  */
 
 export interface ValueConstraints {
-  element?: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+  element?:
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | HTMLSelectElement
+    | HTMLElement;
   maxLength?: number;
   requireValidity?: boolean;
   attempts?: number;
@@ -123,7 +127,9 @@ function isValueValidForElement(
     return true;
   }
 
-  const probe = element.cloneNode(false) as HTMLInputElement | HTMLTextAreaElement;
+  const probe = element.cloneNode(false) as
+    | HTMLInputElement
+    | HTMLTextAreaElement;
 
   try {
     probe.value = value;
