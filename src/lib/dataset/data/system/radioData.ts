@@ -1,0 +1,105 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_RADIO: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Gênero"],
+      secondary: [],
+      structural: ["Dados Pessoais"],
+    },
+    category: "system",
+    type: "radio",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Gender"],
+      secondary: [],
+      structural: ["Personal Info"],
+    },
+    category: "system",
+    type: "radio",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Tipo de Pagamento"],
+      secondary: [],
+      structural: ["Checkout"],
+    },
+    category: "system",
+    type: "radio",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Payment Type"],
+      secondary: [],
+      structural: ["Payment"],
+    },
+    category: "system",
+    type: "radio",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["radio"], secondary: [], structural: [] },
+    category: "system",
+    type: "radio",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Escolha"],
+      secondary: ["Selecione uma das opções"],
+      structural: ["Preferências"],
+    },
+    category: "system",
+    type: "radio",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Option"],
+      secondary: ["Choose one"],
+      structural: ["Settings"],
+    },
+    category: "system",
+    type: "radio",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Alternativa"],
+      secondary: ["Marque uma opção"],
+      structural: [],
+    },
+    category: "system",
+    type: "radio",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Gênero"], secondary: [], structural: [] },
+    category: "system",
+    type: "radio",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "radio" },
+  },
+];

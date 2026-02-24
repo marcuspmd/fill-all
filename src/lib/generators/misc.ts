@@ -1,80 +1,131 @@
 /**
- * Miscellaneous generators: password, username, number
+ * Miscellaneous generators — powered by faker (pt_BR locale)
  */
 
-function randomItem<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+import { fakerPT_BR as faker } from "@faker-js/faker";
+import { generateCpf } from "./cpf";
+import { generateCnpj } from "./cnpj";
 
 export function generatePassword(length = 12): string {
-  const chars =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
-  const array = new Uint32Array(length);
-  crypto.getRandomValues(array);
-  return Array.from(array, (v) => chars[v % chars.length]).join("");
+  return faker.internet.password({ length });
 }
 
 export function generateUsername(): string {
-  const adjectives = [
-    "cool",
-    "fast",
-    "smart",
-    "brave",
-    "dark",
-    "epic",
-    "wild",
-    "neo",
-    "dev",
-    "pro",
-  ];
-  const nouns = [
-    "coder",
-    "ninja",
-    "tiger",
-    "wolf",
-    "hawk",
-    "fox",
-    "byte",
-    "node",
-    "pixel",
-    "stack",
-  ];
-  const num = Math.floor(Math.random() * 999);
-  return `${randomItem(adjectives)}_${randomItem(nouns)}${num}`;
+  return faker.internet.username();
 }
 
 export function generateNumber(min = 1, max = 99999): string {
-  return String(Math.floor(Math.random() * (max - min + 1)) + min);
+  return String(faker.number.int({ min, max }));
 }
 
 export function generateText(wordCount = 5): string {
-  const words = [
-    "lorem",
-    "ipsum",
-    "dolor",
-    "sit",
-    "amet",
-    "consectetur",
-    "adipiscing",
-    "elit",
-    "sed",
-    "tempor",
-    "incididunt",
-    "labore",
-    "magna",
-    "aliqua",
-    "enim",
-    "minim",
-    "veniam",
-    "quis",
-    "nostrud",
-    "exercitation",
-  ];
-  return Array.from({ length: wordCount }, () => randomItem(words)).join(" ");
+  return faker.lorem.words(wordCount);
+}
+
+export function generateDescription(): string {
+  return faker.lorem.sentence();
+}
+
+export function generateNotes(): string {
+  return faker.lorem.sentences(2);
 }
 
 export function generateMoney(min = 1, max = 10000): string {
-  if (min === max) return min.toFixed(2);
-  const raw = min + Math.random() * (max - min);
-  return raw.toFixed(2);
+  return faker.finance.amount({ min, max, dec: 2 });
+}
+
+export function generateWebsite(): string {
+  return faker.internet.url();
+}
+
+export function generateProductName(): string {
+  return faker.commerce.productName();
+}
+
+export function generateSku(): string {
+  return faker.string.alphanumeric({ length: 8, casing: "upper" });
+}
+
+export function generateCoupon(): string {
+  return faker.string.alphanumeric({ length: 10, casing: "upper" });
+}
+
+export function generateJobTitle(): string {
+  return faker.person.jobTitle();
+}
+
+export function generateDepartment(): string {
+  return faker.commerce.department();
+}
+
+export function generateCpfCnpj(): string {
+  return Math.random() < 0.6 ? generateCpf(true) : generateCnpj(true);
+}
+
+export function generateEmployeeCount(): string {
+  return String(faker.number.int({ min: 1, max: 10_000 }));
+}
+
+export function generateOtp(length = 6): string {
+  return faker.string.numeric(length);
+}
+
+export function generateVerificationCode(length = 6): string {
+  return faker.string.numeric(length);
+}
+
+export function generatePassport(): string {
+  return faker.string.alphanumeric({ length: 8, casing: "upper" });
+}
+
+export function generateNationalId(): string {
+  return faker.string.numeric(10);
+}
+
+export function generateTaxId(): string {
+  return faker.string.numeric(11);
+}
+
+const DOCUMENT_ISSUERS = [
+  "SSP",
+  "SDS",
+  "DETRAN",
+  "IFP",
+  "PC",
+  "PM",
+  "CBM",
+  "SESP",
+  "SEJUSP",
+  "POLITEC",
+  "IGP",
+  "SSP/SP",
+  "SSP/RJ",
+  "SSP/MG",
+  "SSP/BA",
+  "SSP/PR",
+  "SSP/RS",
+  "SSP/SC",
+  "SSP/PE",
+  "SSP/CE",
+  "SSP/GO",
+  "SSP/DF",
+  "SSP/PA",
+  "SSP/AM",
+  "SSP/MT",
+  "SSP/MS",
+  "SSP/MA",
+  "SSP/PB",
+  "SSP/ES",
+  "SSP/RN",
+  "SDS/PE",
+  "SDS/AL",
+  "SESP/MT",
+  "DGPC/GO",
+  "IGP/RS",
+  "IGP/SC",
+  "POLITEC/MT",
+];
+
+export function generateDocumentIssuer(): string {
+  return faker.helpers.arrayElement(DOCUMENT_ISSUERS);
 }

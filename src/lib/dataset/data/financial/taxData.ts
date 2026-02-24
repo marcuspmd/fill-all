@@ -1,0 +1,92 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_TAX: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Imposto"],
+      secondary: [],
+      structural: ["Financeiro"],
+    },
+    category: "financial",
+    type: "tax",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Tax"], secondary: [], structural: ["Billing"] },
+    category: "financial",
+    type: "tax",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["Taxa"], secondary: [], structural: ["Pagamento"] },
+    category: "financial",
+    type: "tax",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Tax Rate"], secondary: [], structural: ["Pricing"] },
+    category: "financial",
+    type: "tax",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["tax_amount"], secondary: [], structural: [] },
+    category: "financial",
+    type: "tax",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["ICMS"], secondary: [], structural: ["Nota Fiscal"] },
+    category: "financial",
+    type: "tax",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["ISS / Imposto"],
+      secondary: ["Alíquota"],
+      structural: ["Tributação"],
+    },
+    category: "financial",
+    type: "tax",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Sales Tax"],
+      secondary: ["Tax percentage"],
+      structural: ["Checkout"],
+    },
+    category: "financial",
+    type: "tax",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Tributo"],
+      secondary: ["Valor do imposto"],
+      structural: [],
+    },
+    category: "financial",
+    type: "tax",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+];

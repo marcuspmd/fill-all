@@ -2,14 +2,23 @@
  * Content script — runs on every page, listens for fill commands
  */
 
-import type { ExtensionMessage, SavedForm } from "@/types";
+import type {
+  DetectedFieldSummary,
+  ExtensionMessage,
+  FormField,
+  SavedForm,
+} from "@/types";
 import {
   fillAllFields,
   fillSingleField,
   captureFormValues,
+  applyTemplate,
 } from "@/lib/form/form-filler";
-import { detectFormFields } from "@/lib/form/form-detector";
-import { saveForm } from "@/lib/storage/storage";
+import {
+  detectAllFieldsAsync,
+  detectFormFields,
+} from "@/lib/form/form-detector";
+import { saveForm, getSettings } from "@/lib/storage/storage";
 import {
   startWatching,
   stopWatching,
@@ -21,20 +30,65 @@ import {
   toggleFloatingPanel,
 } from "@/lib/form/floating-panel";
 import { initFieldIcon } from "@/lib/form/field-icon";
-import { loadLearnedClassifications } from "@/lib/ai/tensorflow-generator";
+import {
+  loadPretrainedModel,
+  invalidateClassifier,
+  reloadClassifier,
+} from "@/lib/form/detectors/strategies";
+import {
+  setActiveClassifiers,
+  buildClassifiersFromSettings,
+} from "@/lib/form/detectors/classifiers";
+import {
+  parseIncomingMessage,
+  parseSavedFormPayload,
+  parseStartWatchingPayload,
+  parseStringPayload,
+} from "@/lib/messaging/light-validators";
+import { initLogger } from "@/lib/logger";
+
+type FillableElement =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement;
+
+let lastContextMenuElement: FillableElement | null = null;
+
+document.addEventListener(
+  "contextmenu",
+  (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const field = target.closest("input, select, textarea");
+    if (
+      field instanceof HTMLInputElement ||
+      field instanceof HTMLSelectElement ||
+      field instanceof HTMLTextAreaElement
+    ) {
+      lastContextMenuElement = field;
+    }
+  },
+  true,
+);
 
 function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  return crypto.randomUUID();
 }
 
 // Listen for messages from background / popup
 chrome.runtime.onMessage.addListener(
   (
-    message: ExtensionMessage,
+    message: unknown,
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response: unknown) => void,
   ) => {
-    handleContentMessage(message)
+    const parsed = parseIncomingMessage(message);
+    if (!parsed) {
+      sendResponse({ error: "Invalid message format" });
+      return false;
+    }
+
+    handleContentMessage(parsed as ExtensionMessage)
       .then(sendResponse)
       .catch((err) => sendResponse({ error: (err as Error).message }));
     return true;
@@ -48,18 +102,6 @@ async function handleContentMessage(
     case "FILL_ALL_FIELDS": {
       const results = await fillAllFields();
       showNotification(`✓ ${results.length} campos preenchidos`);
-
-      // Auto-start watcher to detect dynamic form changes after fill
-      if (!isWatcherActive()) {
-        startWatching((newFieldsCount) => {
-          if (newFieldsCount > 0) {
-            showNotification(
-              `🔄 ${newFieldsCount} novo(s) campo(s) detectado(s) — re-preenchendo...`,
-            );
-          }
-        }, true);
-      }
-
       return { success: true, filled: results.length };
     }
 
@@ -81,14 +123,22 @@ async function handleContentMessage(
     }
 
     case "LOAD_SAVED_FORM": {
-      const form = message.payload as SavedForm;
+      const form = parseSavedFormPayload(message.payload);
+      if (!form) return { error: "Invalid payload for LOAD_SAVED_FORM" };
       const fields = detectFormFields();
 
       let filled = 0;
       for (const field of fields) {
         const key = field.id || field.name || field.selector;
         const value = form.fields[key];
-        if (value) {
+        if (value === undefined) continue;
+
+        if (
+          field.element instanceof HTMLInputElement &&
+          (field.element.type === "checkbox" || field.element.type === "radio")
+        ) {
+          field.element.checked = value === "true";
+        } else {
           const nativeValueSetter = Object.getOwnPropertyDescriptor(
             window.HTMLInputElement.prototype,
             "value",
@@ -97,17 +147,39 @@ async function handleContentMessage(
           if (field.element instanceof HTMLInputElement && nativeValueSetter) {
             nativeValueSetter.call(field.element, value);
           } else {
-            field.element.value = value;
+            (field.element as HTMLInputElement).value = value;
           }
-
-          field.element.dispatchEvent(new Event("input", { bubbles: true }));
-          field.element.dispatchEvent(new Event("change", { bubbles: true }));
-          filled++;
         }
+
+        field.element.dispatchEvent(new Event("input", { bubbles: true }));
+        field.element.dispatchEvent(new Event("change", { bubbles: true }));
+        filled++;
       }
 
       showNotification(`✓ ${filled} campos carregados do template`);
       return { success: true, filled };
+    }
+
+    case "APPLY_TEMPLATE": {
+      const form = parseSavedFormPayload(message.payload);
+      if (!form) return { error: "Invalid payload for APPLY_TEMPLATE" };
+      const { filled } = await applyTemplate(form);
+      showNotification(`✓ Template "${form.name}" aplicado: ${filled} campos`);
+      return { success: true, filled };
+    }
+
+    case "FILL_SINGLE_FIELD": {
+      const fields = detectFormFields();
+      const targetField = findSingleFieldTarget(fields);
+      if (!targetField) return { error: "No target field found" };
+
+      const result = await fillSingleField(targetField);
+      if (result) {
+        showNotification(
+          `✓ Campo "${targetField.label || targetField.name || targetField.id || targetField.selector}" preenchido`,
+        );
+      }
+      return result ?? { error: "Failed to fill field" };
     }
 
     case "GET_FORM_FIELDS": {
@@ -124,19 +196,21 @@ async function handleContentMessage(
     }
 
     case "DETECT_FIELDS": {
-      const detected = detectFormFields();
+      const { fields: detected } = await detectAllFieldsAsync();
       return {
         count: detected.length,
-        fields: detected.map((f) => {
-          const item: {
-            selector: string;
-            fieldType: string;
-            label: string;
-            options?: Array<{ value: string; text: string }>;
-          } = {
+        fields: detected.map((f): DetectedFieldSummary => {
+          const item: DetectedFieldSummary = {
             selector: f.selector,
             fieldType: f.fieldType,
             label: f.label || f.name || f.id || "unknown",
+            name: f.name,
+            id: f.id,
+            placeholder: f.placeholder,
+            required: f.required,
+            contextualType: f.contextualType,
+            detectionMethod: f.detectionMethod,
+            detectionConfidence: f.detectionConfidence,
           };
           if (f.element instanceof HTMLSelectElement) {
             item.options = Array.from(f.element.options).map((o) => ({
@@ -144,13 +218,22 @@ async function handleContentMessage(
               text: o.text.trim(),
             }));
           }
+          if (
+            f.element instanceof HTMLInputElement &&
+            (f.element.type === "checkbox" || f.element.type === "radio")
+          ) {
+            item.checkboxValue = f.element.value;
+            item.checkboxChecked = f.element.checked;
+          }
           return item;
         }),
       };
     }
 
     case "FILL_FIELD_BY_SELECTOR": {
-      const selector = message.payload as string;
+      const selector = parseStringPayload(message.payload);
+      if (!selector)
+        return { error: "Invalid payload for FILL_FIELD_BY_SELECTOR" };
       const fields = detectFormFields();
       const field = fields.find((f) => f.selector === selector);
       if (!field) return { error: "Field not found" };
@@ -162,8 +245,9 @@ async function handleContentMessage(
     }
 
     case "START_WATCHING": {
-      const autoRefill =
-        (message.payload as { autoRefill?: boolean })?.autoRefill ?? true;
+      const payload = parseStartWatchingPayload(message.payload);
+      if (!payload) return { error: "Invalid payload for START_WATCHING" };
+      const autoRefill = payload.autoRefill ?? true;
       startWatching((newFieldsCount) => {
         if (newFieldsCount > 0) {
           showNotification(
@@ -198,9 +282,44 @@ async function handleContentMessage(
       return { success: true };
     }
 
+    case "INVALIDATE_CLASSIFIER": {
+      invalidateClassifier();
+      return { success: true };
+    }
+
+    case "RELOAD_CLASSIFIER": {
+      void reloadClassifier();
+      return { success: true };
+    }
+
     default:
       return { error: `Unknown message type: ${message.type}` };
   }
+}
+
+function findSingleFieldTarget(fields: FormField[]): FormField | undefined {
+  if (lastContextMenuElement) {
+    const byContextMenu = fields.find(
+      (f) => f.element === lastContextMenuElement,
+    );
+    if (byContextMenu) return byContextMenu;
+  }
+
+  if (document.activeElement instanceof HTMLElement) {
+    const activeField = document.activeElement.closest(
+      "input, select, textarea",
+    );
+    if (
+      activeField instanceof HTMLInputElement ||
+      activeField instanceof HTMLSelectElement ||
+      activeField instanceof HTMLTextAreaElement
+    ) {
+      const byFocus = fields.find((f) => f.element === activeField);
+      if (byFocus) return byFocus;
+    }
+  }
+
+  return fields.find((f) => !(f.element as HTMLInputElement).disabled);
 }
 
 function showNotification(text: string): void {
@@ -234,8 +353,30 @@ function showNotification(text: string): void {
 }
 
 // --- Init ---
-initFieldIcon();
-// Load AI-learned classifications so TF.js prototypes reflect real-world data.
-loadLearnedClassifications().catch(() => {
-  // Non-critical — silently ignore storage errors on init
-});
+async function initContentScript(): Promise<void> {
+  await initLogger();
+  const settings = await getSettings();
+
+  // Configure the detection pipeline from user settings
+  if (settings.detectionPipeline?.length) {
+    setActiveClassifiers(
+      buildClassifiersFromSettings(settings.detectionPipeline),
+    );
+  }
+
+  // Init the per-field icon only if enabled
+  if (settings.showFieldIcon !== false) {
+    initFieldIcon(settings.fieldIconPosition ?? "inside");
+  }
+
+  // Auto-open the DevTools-style panel if enabled in settings
+  if (settings.showPanel) {
+    createFloatingPanel();
+  }
+
+  // Load pre-trained model artefacts (generated by `npm run train:model`).
+  // Falls back silently to runtime keyword classifier if artefacts are absent.
+  loadPretrainedModel().catch(() => {});
+}
+
+void initContentScript();

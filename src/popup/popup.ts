@@ -1,831 +1,671 @@
 /**
- * Popup script — handles UI interactions
+ * Popup script — tabbed UI orchestrator.
+ *
+ * Architecture mirrors devtools/panel.ts: one central orchestrator that
+ * manages tabs, renders content, and delegates to sub-modules for logic.
  */
 
 import "./popup.css";
+
 import type {
-  ExtensionMessage,
-  FieldRule,
+  DetectedFieldSummary,
+  FieldDetectionCacheEntry,
   FieldType,
   IgnoredField,
   SavedForm,
 } from "@/types";
+import { FIELD_TYPES, getRange } from "@/types";
+import { matchUrlPattern } from "@/lib/url/match-url-pattern";
 import { generate, generateMoney, generateNumber } from "@/lib/generators";
+import { generateWithConstraints } from "@/lib/generators/adaptive";
+import { getFieldTypeOptions } from "@/lib/shared/field-type-catalog";
+import {
+  renderTabBar,
+  renderConfidenceBadge,
+  renderTypeBadge,
+  renderMethodBadge,
+  TYPE_COLORS,
+} from "@/lib/ui";
+import {
+  sendToActiveTab,
+  sendToBackground,
+  getActivePageUrl,
+  escapeHtml,
+} from "./popup-messaging";
+import { initChromeAIStatus } from "./popup-chrome-ai";
 
-async function sendToActiveTab(message: ExtensionMessage): Promise<unknown> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return null;
+// ── Types ────────────────────────────────────────────────────────────────────
 
-  const url = tab.url ?? "";
-  if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    console.warn("[fill-all] Content script não disponível nesta página:", url);
-    return null;
-  }
+// const TAB_IDS = ["actions", "fields", "forms", "generators"] as const;
+const TAB_IDS = ["actions", "generators"] as const;
+type TabId = (typeof TAB_IDS)[number];
 
-  try {
-    return await chrome.tabs.sendMessage(tab.id, message);
-  } catch (err) {
-    console.warn("[fill-all] Content script não encontrado na aba ativa.", err);
-    return null;
+// const TAB_LABELS: Record<TabId, string> = {
+//   actions: "⚡ Ações",
+//   fields: "🔍 Campos",
+//   forms: "📄 Forms",
+//   generators: "🎲 Gerar",
+// };
+
+const TAB_LABELS: Record<TabId, string> = {
+  actions: "⚡ Ações",
+  generators: "🎲 Gerar",
+};
+
+// ── State ────────────────────────────────────────────────────────────────────
+
+let activeTab: TabId = "actions";
+let detectedFields: DetectedFieldSummary[] = [];
+let savedForms: SavedForm[] = [];
+let ignoredFields: IgnoredField[] = [];
+let ignoredSelectors = new Set<string>();
+let watcherActive = false;
+let panelActive = false;
+let pageUrl = "";
+
+const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> =
+  getFieldTypeOptions(FIELD_TYPES);
+
+// ── Tab Management ───────────────────────────────────────────────────────────
+
+function initTabs(): void {
+  const tabsEl = document.getElementById("tabs");
+  if (!tabsEl) return;
+
+  tabsEl.innerHTML = renderTabBar(
+    TAB_IDS.map((id) => ({
+      id,
+      label: TAB_LABELS[id],
+      active: id === activeTab,
+    })),
+  );
+
+  tabsEl.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.tab as TabId;
+      if (tab) switchTab(tab);
+    });
+  });
+}
+
+function switchTab(tab: TabId): void {
+  activeTab = tab;
+  document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+  renderActiveTab();
+}
+
+function renderActiveTab(): void {
+  switch (activeTab) {
+    case "actions":
+      renderActionsTab();
+      break;
+    case "generators":
+      renderGeneratorsTab();
+      break;
   }
 }
 
-async function sendToBackground(message: ExtensionMessage): Promise<unknown> {
-  return chrome.runtime.sendMessage(message);
+// ── Actions Tab ──────────────────────────────────────────────────────────────
+
+function renderActionsTab(): void {
+  const content = document.getElementById("content");
+  if (!content) return;
+
+  content.innerHTML = `
+    <div class="actions-grid">
+      <button class="action-card primary" id="btn-fill-all">
+        <span class="card-icon">⚡</span>
+        <span class="card-label">Preencher Tudo</span>
+        <span class="card-desc">Preenche todos os campos detectados</span>
+      </button>
+      <button class="action-card secondary" id="btn-save-form">
+        <span class="card-icon">💾</span>
+        <span class="card-label">Salvar Form</span>
+        <span class="card-desc">Salva os valores atuais do formulário</span>
+      </button>
+      <button class="action-card ${watcherActive ? "active" : ""}" id="btn-toggle-watch">
+        <span class="card-icon">${watcherActive ? "⏹️" : "👁️"}</span>
+        <span class="card-label">${watcherActive ? "Stop Watch" : "Watch"}</span>
+        <span class="card-desc">${watcherActive ? "Parar observação do DOM" : "Observa mudanças e preenche novos"}</span>
+      </button>
+      <button class="action-card ${panelActive ? "active" : ""}" id="btn-toggle-panel">
+        <span class="card-icon">📌</span>
+        <span class="card-label">${panelActive ? "Painel Ativo" : "Painel Flutuante"}</span>
+        <span class="card-desc">Mostra painel flutuante na página</span>
+      </button>
+    </div>
+    <div class="status-bar" id="status-bar">
+      ${detectedFields.length > 0 ? `${detectedFields.length} campos detectados` : "Nenhum campo detectado ainda"}
+    </div>
+    <a href="#" id="btn-options" class="btn-settings-link">⚙️ Configurações</a>
+  `;
+
+  document
+    .getElementById("btn-fill-all")
+    ?.addEventListener("click", handleFillAll);
+  document
+    .getElementById("btn-save-form")
+    ?.addEventListener("click", handleSaveForm);
+  document
+    .getElementById("btn-toggle-watch")
+    ?.addEventListener("click", handleToggleWatch);
+  document
+    .getElementById("btn-toggle-panel")
+    ?.addEventListener("click", handleTogglePanel);
+  bindOptionsLink();
 }
 
-// --- Fill All ---
-document.getElementById("btn-fill-all")?.addEventListener("click", async () => {
-  const btn = document.getElementById("btn-fill-all") as HTMLButtonElement;
+async function handleFillAll(): Promise<void> {
+  const btn = document.getElementById("btn-fill-all");
+  if (!btn) return;
   const result = await sendToActiveTab({ type: "FILL_ALL_FIELDS" });
-  if (result === null) {
-    btn.textContent = "⚠️ Não disponível aqui";
-  } else {
-    const res = result as { filled?: number } | null;
-    btn.textContent = `✓ ${res?.filled ?? 0} campos preenchidos`;
-  }
-  setTimeout(() => {
-    btn.textContent = "⚡ Preencher Todos os Campos";
-  }, 2000);
-});
-
-// --- Save Form ---
-document
-  .getElementById("btn-save-form")
-  ?.addEventListener("click", async () => {
-    await sendToActiveTab({ type: "SAVE_FORM" });
-    await loadSavedForms();
-  });
-
-// --- Detect Fields ---
-const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> = (
-  [
-    { value: "cpf", label: "CPF" },
-    { value: "cnpj", label: "CNPJ" },
-    { value: "email", label: "E-mail" },
-    { value: "phone", label: "Telefone" },
-    { value: "full-name", label: "Nome Completo" },
-    { value: "first-name", label: "Primeiro Nome" },
-    { value: "last-name", label: "Sobrenome" },
-    { value: "rg", label: "RG" },
-    { value: "company", label: "Empresa" },
-    { value: "cep", label: "CEP" },
-    { value: "address", label: "Endereço" },
-    { value: "city", label: "Cidade" },
-    { value: "state", label: "Estado" },
-    { value: "date", label: "Data" },
-    { value: "birth-date", label: "Nascimento" },
-    { value: "money", label: "Dinheiro" },
-    { value: "number", label: "Número" },
-    { value: "password", label: "Senha" },
-    { value: "username", label: "Username" },
-    { value: "text", label: "Texto" },
-    { value: "select", label: "Select" },
-    { value: "unknown", label: "Desconhecido" },
-  ] as Array<{ value: FieldType; label: string }>
-).sort((a, b) => b.label.localeCompare(a.label, "pt-BR"));
-
-document.getElementById("btn-detect")?.addEventListener("click", async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const pageUrl = tab?.url ?? "";
-
-  const result = (await sendToActiveTab({ type: "DETECT_FIELDS" })) as {
-    count: number;
-    fields: Array<{
-      selector: string;
-      fieldType: string;
-      label: string;
-      options?: Array<{ value: string; text: string }>;
-    }>;
-  } | null;
-
-  const list = document.getElementById("fields-list");
-  if (!list || !result) return;
-
-  const hostname = pageUrl ? new URL(pageUrl).hostname : "";
-
-  // Load ignored fields and existing rules in parallel
-  const [ignoredList, rulesList] = (await Promise.all([
-    sendToBackground({ type: "GET_IGNORED_FIELDS" }),
-    sendToBackground({ type: "GET_RULES" }),
-  ])) as [IgnoredField[] | null, FieldRule[] | null];
-
-  const ignoredSelectors = new Set(
-    (ignoredList ?? [])
-      .filter((f) => f.urlPattern.includes(hostname))
-      .map((f) => f.selector),
-  );
-
-  // Rules that apply to this page (by hostname)
-  const pageRules = (rulesList ?? []).filter((r) =>
-    r.urlPattern.includes(hostname),
-  );
-
-  list.innerHTML = "";
-  if (!result || !Array.isArray(result.fields) || result.count === 0) {
-    list.innerHTML = '<div class="empty">Nenhum campo encontrado</div>';
-    return;
-  }
-
-  for (const field of result.fields) {
-    const isIgnored = ignoredSelectors.has(field.selector);
-    const existingRule = pageRules.find(
-      (r) => r.fieldSelector === field.selector,
-    );
-    const effectiveType = (existingRule?.fieldType ??
-      field.fieldType) as FieldType;
-
-    const item = document.createElement("div");
-    item.className = "list-item field-detect-item";
-    if (existingRule?.id) item.dataset.ruleId = existingRule.id;
-
-    const typeOptions = FIELD_TYPE_OPTIONS.map(
-      (opt) =>
-        `<option value="${escapeHtml(opt.value)}"${
-          opt.value === effectiveType ? " selected" : ""
-        }>${escapeHtml(opt.label)}</option>`,
-    ).join("");
-
-    const isMoney = effectiveType === "money";
-    const isNumber = effectiveType === "number";
-    const isSelect = effectiveType === "select";
-
-    // Build select option picker (only if this field is actually a <select>)
-    const selectOptPickerOptions = (field.options ?? [])
-      .map(
-        (opt, i) =>
-          `<option value="${i + 1}"${
-            existingRule?.selectOptionIndex === i + 1 ? " selected" : ""
-          }>${i + 1}ª: ${escapeHtml(opt.text)}</option>`,
-      )
-      .join("");
-
-    const hasSelectOptions = (field.options ?? []).length > 0;
-
-    item.innerHTML = `
-      <div class="field-header">
-        <span class="field-label">${escapeHtml(field.label)}</span>
-        <select class="field-type-select" title="Tipo do campo">${typeOptions}</select>
-        <div class="field-actions">
-          <button class="btn btn-sm btn-fill-field" title="Preencher" ${
-            isIgnored ? "disabled" : ""
-          }>▶</button>
-          <button class="btn btn-sm ${
-            isIgnored ? "btn-ignored-active" : "btn-ignore-field"
-          }"
-            title="${isIgnored ? "Remover dos ignorados" : "Ignorar campo"}"
-            data-selector="${escapeHtml(field.selector)}"
-            data-label="${escapeHtml(field.label)}"
-            data-ignored="${isIgnored}">
-            ${isIgnored ? "✓" : "🚫"}
-          </button>
-          <button class="btn btn-sm btn-rules-toggle" title="Configurar regra">⚙️</button>
-        </div>
-      </div>
-      <div class="field-rules-panel" style="display:none">
-        <input type="text" class="rule-fixed-value"
-          placeholder="Valor fixo (vazio = gerar automaticamente)"
-          value="${escapeHtml(existingRule?.fixedValue ?? "")}">
-        <div class="rule-range-row rule-money-range" style="display:${
-          isMoney ? "flex" : "none"
-        }">
-          <span class="rule-range-label">R$</span>
-          <input type="number" class="rule-money-min" placeholder="Mín" min="0" step="0.01"
-            value="${existingRule?.moneyMin ?? ""}">
-          <span class="rule-range-sep">–</span>
-          <input type="number" class="rule-money-max" placeholder="Máx" min="0" step="0.01"
-            value="${existingRule?.moneyMax ?? ""}">
-        </div>
-        <div class="rule-range-row rule-number-range" style="display:${
-          isNumber ? "flex" : "none"
-        }">
-          <span class="rule-range-label">#</span>
-          <input type="number" class="rule-number-min" placeholder="Mín" min="0" step="1"
-            value="${existingRule?.numberMin ?? ""}">
-          <span class="rule-range-sep">–</span>
-          <input type="number" class="rule-number-max" placeholder="Máx" min="0" step="1"
-            value="${existingRule?.numberMax ?? ""}">
-        </div>
-        ${
-          hasSelectOptions
-            ? `
-        <div class="rule-range-row rule-select-option-row" style="display:${
-          isSelect ? "flex" : "none"
-        }">
-          <span class="rule-range-label">Opção:</span>
-          <select class="rule-select-option-idx">
-            <option value="0"${
-              !existingRule?.selectOptionIndex ? " selected" : ""
-            }>Automático (aleatório)</option>
-            ${selectOptPickerOptions}
-          </select>
-        </div>`
-            : ""
-        }
-        <div class="rule-footer">
-          <button class="btn btn-sm btn-save-rule">💾 Salvar Regra</button>
-          <span class="rule-saved-msg hidden">✓ Salvo!</span>
-          ${
-            existingRule
-              ? `<button class="btn btn-sm btn-delete btn-delete-rule" title="Excluir regra">✕ Regra</button>`
-              : ""
-          }
-        </div>
-      </div>
-    `;
-
-    const typeSelect =
-      item.querySelector<HTMLSelectElement>(".field-type-select");
-
-    // Helper: build and persist the rule with the current panel state
-    const saveFieldRule = async (silent = false): Promise<void> => {
-      const selectedType = (typeSelect?.value ?? field.fieldType) as FieldType;
-      const fixedValue =
-        item
-          .querySelector<HTMLInputElement>(".rule-fixed-value")
-          ?.value.trim() || undefined;
-      const moneyMinVal =
-        item.querySelector<HTMLInputElement>(".rule-money-min")?.value;
-      const moneyMaxVal =
-        item.querySelector<HTMLInputElement>(".rule-money-max")?.value;
-      const numberMinVal =
-        item.querySelector<HTMLInputElement>(".rule-number-min")?.value;
-      const numberMaxVal =
-        item.querySelector<HTMLInputElement>(".rule-number-max")?.value;
-      const selectOptIdxVal = item.querySelector<HTMLSelectElement>(
-        ".rule-select-option-idx",
-      )?.value;
-
-      const origin = new URL(pageUrl).origin;
-      const pathname = new URL(pageUrl).pathname;
-      const urlPattern = `${origin}${pathname}*`;
-
-      const rule: FieldRule = {
-        id:
-          item.dataset.ruleId ??
-          `rule-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        urlPattern,
-        fieldSelector: field.selector,
-        fieldType: selectedType,
-        fixedValue,
-        generator: fixedValue ? "auto" : selectedType,
-        priority: 10,
-        createdAt: existingRule?.createdAt ?? Date.now(),
-        updatedAt: Date.now(),
-      };
-
-      if (selectedType === "money") {
-        const mn = parseFloat(moneyMinVal ?? "");
-        const mx = parseFloat(moneyMaxVal ?? "");
-        if (!isNaN(mn)) rule.moneyMin = mn;
-        if (!isNaN(mx)) rule.moneyMax = mx;
-      }
-      if (selectedType === "number") {
-        const mn = parseInt(numberMinVal ?? "", 10);
-        const mx = parseInt(numberMaxVal ?? "", 10);
-        if (!isNaN(mn)) rule.numberMin = mn;
-        if (!isNaN(mx)) rule.numberMax = mx;
-      }
-      if (selectedType === "select" && selectOptIdxVal !== undefined) {
-        rule.selectOptionIndex = parseInt(selectOptIdxVal, 10);
-      }
-
-      await sendToBackground({ type: "SAVE_RULE", payload: rule });
-      item.dataset.ruleId = rule.id;
-
-      if (!silent) {
-        const savedMsg = item.querySelector<HTMLElement>(".rule-saved-msg");
-        if (savedMsg) {
-          savedMsg.classList.remove("hidden");
-          setTimeout(() => savedMsg.classList.add("hidden"), 2000);
-        }
-      }
-
-      // Add delete button if this was a new rule
-      if (!item.querySelector(".btn-delete-rule")) {
-        const footer = item.querySelector<HTMLElement>(".rule-footer");
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "btn btn-sm btn-delete btn-delete-rule";
-        deleteBtn.title = "Excluir regra";
-        deleteBtn.textContent = "✕ Regra";
-        deleteBtn.addEventListener("click", handleDeleteRule);
-        footer?.appendChild(deleteBtn);
-      }
-    };
-
-    // Show/hide range inputs when type changes, and auto-save the new type
-    typeSelect?.addEventListener("change", () => {
-      const t = typeSelect.value;
-      const moneyRange = item.querySelector<HTMLElement>(".rule-money-range");
-      const numberRange = item.querySelector<HTMLElement>(".rule-number-range");
-      const selectOptionRow = item.querySelector<HTMLElement>(
-        ".rule-select-option-row",
-      );
-      if (moneyRange)
-        moneyRange.style.display = t === "money" ? "flex" : "none";
-      if (numberRange)
-        numberRange.style.display = t === "number" ? "flex" : "none";
-      if (selectOptionRow)
-        selectOptionRow.style.display = t === "select" ? "flex" : "none";
-      // Auto-save the type change immediately
-      saveFieldRule(true);
-    });
-
-    // Fill button
-    item
-      .querySelector(".btn-fill-field")
-      ?.addEventListener("click", async () => {
-        await sendToActiveTab({
-          type: "FILL_FIELD_BY_SELECTOR",
-          payload: field.selector,
-        });
-      });
-
-    // Ignore/unignore button
-    const ignoreBtn = item.querySelector<HTMLButtonElement>("[data-selector]");
-    ignoreBtn?.addEventListener("click", async () => {
-      const isCurrentlyIgnored = ignoreBtn.dataset.ignored === "true";
-
-      if (isCurrentlyIgnored) {
-        const current = (await sendToBackground({
-          type: "GET_IGNORED_FIELDS",
-        })) as IgnoredField[] | null;
-        const entry = (current ?? []).find(
-          (f) =>
-            f.selector === field.selector && f.urlPattern.includes(hostname),
-        );
-        if (entry) {
-          await sendToBackground({
-            type: "REMOVE_IGNORED_FIELD",
-            payload: entry.id,
-          });
-        }
-        ignoreBtn.textContent = "🚫";
-        ignoreBtn.className = "btn btn-sm btn-ignore-field";
-        ignoreBtn.dataset.ignored = "false";
-        ignoreBtn.title = "Ignorar campo";
-        const fillBtn =
-          item.querySelector<HTMLButtonElement>(".btn-fill-field");
-        if (fillBtn) fillBtn.disabled = false;
-      } else {
-        const origin = new URL(pageUrl).origin;
-        const pathname = new URL(pageUrl).pathname;
-        const urlPattern = `${origin}${pathname}*`;
-        await sendToBackground({
-          type: "ADD_IGNORED_FIELD",
-          payload: { urlPattern, selector: field.selector, label: field.label },
-        });
-        ignoreBtn.textContent = "✓";
-        ignoreBtn.className = "btn btn-sm btn-ignored-active";
-        ignoreBtn.dataset.ignored = "true";
-        ignoreBtn.title = "Remover dos ignorados";
-        const fillBtn =
-          item.querySelector<HTMLButtonElement>(".btn-fill-field");
-        if (fillBtn) fillBtn.disabled = true;
-      }
-
-      await loadIgnoredFields();
-    });
-
-    // Toggle rules panel
-    item.querySelector(".btn-rules-toggle")?.addEventListener("click", () => {
-      const panel = item.querySelector<HTMLElement>(".field-rules-panel");
-      if (panel) {
-        panel.style.display = panel.style.display === "none" ? "flex" : "none";
-      }
-    });
-
-    // Save rule button
-    item
-      .querySelector(".btn-save-rule")
-      ?.addEventListener("click", () => saveFieldRule(false));
-
-    // Delete rule
-    const handleDeleteRule = (): void => {
-      const ruleId = item.dataset.ruleId;
-      if (ruleId) {
-        sendToBackground({ type: "DELETE_RULE", payload: ruleId });
-        item.removeAttribute("data-rule-id");
-        item.querySelector(".btn-delete-rule")?.remove();
-        if (typeSelect) typeSelect.value = field.fieldType;
-      }
-    };
-
-    item
-      .querySelector(".btn-delete-rule")
-      ?.addEventListener("click", handleDeleteRule);
-
-    list.appendChild(item);
-  }
-});
-
-// --- Quick Generators ---
-
-async function getMoneyCfg(): Promise<{ min: number; max: number }> {
-  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as {
-    moneyMin?: number;
-    moneyMax?: number;
-  } | null;
-  return {
-    min: settings?.moneyMin ?? 1,
-    max: settings?.moneyMax ?? 10000,
-  };
-}
-
-async function getNumberCfg(): Promise<{ min: number; max: number }> {
-  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as {
-    numberMin?: number;
-    numberMax?: number;
-  } | null;
-  return {
-    min: settings?.numberMin ?? 1,
-    max: settings?.numberMax ?? 99999,
-  };
-}
-
-// Init money/number config inputs from stored settings
-async function initGeneratorConfigs(): Promise<void> {
-  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as Record<
-    string,
-    number
-  > | null;
-  const moneyMin = document.getElementById("money-min") as HTMLInputElement;
-  const moneyMax = document.getElementById("money-max") as HTMLInputElement;
-  const numMin = document.getElementById("number-min") as HTMLInputElement;
-  const numMax = document.getElementById("number-max") as HTMLInputElement;
-  if (moneyMin) moneyMin.value = String(settings?.moneyMin ?? 1);
-  if (moneyMax) moneyMax.value = String(settings?.moneyMax ?? 10000);
-  if (numMin) numMin.value = String(settings?.numberMin ?? 1);
-  if (numMax) numMax.value = String(settings?.numberMax ?? 99999);
-}
-
-function saveMoneyCfg(): void {
-  const min = parseFloat(
-    (document.getElementById("money-min") as HTMLInputElement)?.value,
-  );
-  const max = parseFloat(
-    (document.getElementById("money-max") as HTMLInputElement)?.value,
-  );
-  if (!isNaN(min) && !isNaN(max)) {
-    sendToBackground({
-      type: "SAVE_SETTINGS",
-      payload: { moneyMin: min, moneyMax: max },
-    });
-  }
-}
-
-function saveNumberCfg(): void {
-  const min = parseInt(
-    (document.getElementById("number-min") as HTMLInputElement)?.value,
-    10,
-  );
-  const max = parseInt(
-    (document.getElementById("number-max") as HTMLInputElement)?.value,
-    10,
-  );
-  if (!isNaN(min) && !isNaN(max)) {
-    sendToBackground({
-      type: "SAVE_SETTINGS",
-      payload: { numberMin: min, numberMax: max },
-    });
-  }
-}
-
-document.getElementById("money-min")?.addEventListener("change", saveMoneyCfg);
-document.getElementById("money-max")?.addEventListener("change", saveMoneyCfg);
-document
-  .getElementById("number-min")
-  ?.addEventListener("change", saveNumberCfg);
-document
-  .getElementById("number-max")
-  ?.addEventListener("change", saveNumberCfg);
-
-document.querySelectorAll("[data-generator]").forEach((btn) => {
-  btn.addEventListener("click", async () => {
-    const type = (btn as HTMLElement).dataset.generator as FieldType;
-
-    const moneyConfig = document.getElementById("money-config")!;
-    const numberConfig = document.getElementById("number-config")!;
-    moneyConfig.style.display = type === "money" ? "flex" : "none";
-    numberConfig.style.display = type === "number" ? "flex" : "none";
-
-    let value: string;
-    if (type === "money") {
-      const cfg = await getMoneyCfg();
-      const min = parseFloat(
-        (document.getElementById("money-min") as HTMLInputElement)?.value,
-      );
-      const max = parseFloat(
-        (document.getElementById("money-max") as HTMLInputElement)?.value,
-      );
-      value = generateMoney(
-        isNaN(min) ? cfg.min : min,
-        isNaN(max) ? cfg.max : max,
-      );
-    } else if (type === "number") {
-      const cfg = await getNumberCfg();
-      const min = parseInt(
-        (document.getElementById("number-min") as HTMLInputElement)?.value,
-        10,
-      );
-      const max = parseInt(
-        (document.getElementById("number-max") as HTMLInputElement)?.value,
-        10,
-      );
-      value = generateNumber(
-        isNaN(min) ? cfg.min : min,
-        isNaN(max) ? cfg.max : max,
-      );
-    } else {
-      value = generate(type);
-    }
-
-    const container = document.getElementById("generated-value")!;
-    const text = document.getElementById("generated-text")!;
-    text.textContent = value;
-    container.style.display = "flex";
-  });
-});
-
-// --- Copy to Clipboard ---
-document.getElementById("btn-copy")?.addEventListener("click", () => {
-  const text = document.getElementById("generated-text")?.textContent;
-  if (text) {
-    navigator.clipboard.writeText(text);
-    const btn = document.getElementById("btn-copy")!;
-    btn.textContent = "✓";
+  const res = result as { filled?: number } | null;
+  const label = btn.querySelector(".card-label");
+  if (label) {
+    label.textContent =
+      result === null
+        ? "⚠️ Não disponível"
+        : `✓ ${res?.filled ?? 0} preenchidos`;
     setTimeout(() => {
-      btn.textContent = "📋";
-    }, 1000);
+      label.textContent = "Preencher Tudo";
+    }, 2000);
   }
-});
+}
 
-// --- Saved Forms ---
-async function loadSavedForms(): Promise<void> {
-  const forms = (await sendToBackground({ type: "GET_SAVED_FORMS" })) as
-    | SavedForm[]
-    | null;
-  const list = document.getElementById("saved-forms-list");
+async function handleSaveForm(): Promise<void> {
+  await sendToActiveTab({ type: "SAVE_FORM" });
+  await loadFormsData();
+}
+
+async function handleToggleWatch(): Promise<void> {
+  if (watcherActive) {
+    await sendToActiveTab({ type: "STOP_WATCHING" });
+    watcherActive = false;
+  } else {
+    await sendToActiveTab({
+      type: "START_WATCHING",
+      payload: { autoRefill: true },
+    });
+    watcherActive = true;
+  }
+  renderActionsTab();
+}
+
+async function handleTogglePanel(): Promise<void> {
+  panelActive = !panelActive;
+  await chrome.runtime.sendMessage({
+    type: "SAVE_SETTINGS",
+    payload: { showPanel: panelActive },
+  });
+  if (panelActive) {
+    await sendToActiveTab({ type: "SHOW_PANEL" });
+  } else {
+    await sendToActiveTab({ type: "HIDE_PANEL" });
+  }
+  renderActionsTab();
+}
+
+// ── Fields Tab ───────────────────────────────────────────────────────────────
+
+function renderFieldsTab(): void {
+  const content = document.getElementById("content");
+  if (!content) return;
+
+  content.innerHTML = `
+    <div class="fields-toolbar">
+      <button class="btn btn-primary-solid" id="btn-detect">🔍 Detectar</button>
+      <button class="btn" id="btn-fill-all-fields">⚡ Preencher Todos</button>
+      <span class="fields-count">${detectedFields.length} campo(s)</span>
+    </div>
+    <div id="fields-list"></div>
+  `;
+
+  document
+    .getElementById("btn-detect")
+    ?.addEventListener("click", handleDetect);
+  document
+    .getElementById("btn-fill-all-fields")
+    ?.addEventListener("click", handleFillAll);
+
+  renderFieldsList();
+}
+
+function renderFieldsList(): void {
+  const list = document.getElementById("fields-list");
   if (!list) return;
 
-  list.innerHTML = "";
-  if (!Array.isArray(forms) || forms.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhum formulário salvo</div>';
+  if (detectedFields.length === 0) {
+    list.innerHTML =
+      '<div class="empty">Clique em "Detectar" para escanear os campos</div>';
     return;
   }
 
-  for (const form of forms) {
-    const item = document.createElement("div");
-    item.className = "list-item";
-    item.innerHTML = `
-      <div class="form-info">
-        <span class="form-name">${escapeHtml(form.name)}</span>
-        <span class="form-fields">${Object.keys(form.fields || {}).length} campos</span>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-sm btn-load" data-form-id="${escapeHtml(form.id)}">Carregar</button>
-        <button class="btn btn-sm btn-delete" data-form-id="${escapeHtml(form.id)}">✕</button>
-      </div>
-    `;
+  list.innerHTML = `
+    <div class="table-wrap">
+      <table class="fields-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tipo</th>
+            <th>Método</th>
+            <th>Conf.</th>
+            <th>ID / Name</th>
+            <th>Label</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${detectedFields
+            .map((f, i) => {
+              const isIgnored = ignoredSelectors.has(f.selector);
+              const displayType = f.contextualType || f.fieldType;
+              const method = f.detectionMethod || "-";
+              return `<tr class="${isIgnored ? "row-ignored" : ""}">
+              <td class="cell-num">${i + 1}</td>
+              <td>${renderTypeBadge(displayType)}</td>
+              <td>${renderMethodBadge(method)}</td>
+              <td>${renderConfidenceBadge(f.detectionConfidence)}</td>
+              <td class="cell-mono">${escapeHtml(f.id || f.name || "-")}</td>
+              <td>${escapeHtml(f.label || "-")}</td>
+              <td class="cell-actions">
+                <button class="icon-btn" data-action="fill" data-selector="${escapeHtml(f.selector)}" title="Preencher">⚡</button>
+                <button class="icon-btn ${isIgnored ? "icon-btn-off" : ""}" data-action="toggle-ignore" data-selector="${escapeHtml(f.selector)}" data-label="${escapeHtml(f.label || f.name || f.id || f.selector)}" title="${isIgnored ? "Reativar" : "Ignorar"}">
+                  ${isIgnored ? "🚫" : "👁️"}
+                </button>
+              </td>
+            </tr>`;
+            })
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
 
-    item.querySelector(".btn-load")?.addEventListener("click", async () => {
-      await sendToActiveTab({ type: "LOAD_SAVED_FORM", payload: form });
+  list.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const action = btn.dataset.action;
+      const selector = btn.dataset.selector;
+      if (!selector) return;
+      if (action === "fill") {
+        void sendToActiveTab({
+          type: "FILL_FIELD_BY_SELECTOR",
+          payload: selector,
+        });
+      } else if (action === "toggle-ignore") {
+        void handleToggleIgnore(selector, btn.dataset.label || selector);
+      }
     });
-
-    item.querySelector(".btn-delete")?.addEventListener("click", async () => {
-      await sendToBackground({ type: "DELETE_FORM", payload: form.id });
-      await loadSavedForms();
-    });
-
-    list.appendChild(item);
-  }
+  });
 }
 
-// --- Options link ---
-document.getElementById("btn-options")?.addEventListener("click", (e) => {
-  e.preventDefault();
-  chrome.runtime.openOptionsPage();
-});
+async function handleDetect(): Promise<void> {
+  const btn = document.getElementById("btn-detect") as HTMLButtonElement | null;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Detectando...";
+  }
 
-// --- Toggle Floating Panel ---
-document
-  .getElementById("btn-toggle-panel")
-  ?.addEventListener("click", async () => {
-    await sendToActiveTab({ type: "TOGGLE_PANEL" });
-  });
-
-// --- Toggle Watch ---
-document
-  .getElementById("btn-toggle-watch")
-  ?.addEventListener("click", async () => {
-    const btn = document.getElementById(
-      "btn-toggle-watch",
-    ) as HTMLButtonElement;
-    const status = (await sendToActiveTab({ type: "GET_WATCHER_STATUS" })) as {
-      watching: boolean;
-    } | null;
-
-    if (status?.watching) {
-      await sendToActiveTab({ type: "STOP_WATCHING" });
-      btn.textContent = "👁️ Watch";
-      btn.classList.remove("btn-active");
-    } else {
-      await sendToActiveTab({
-        type: "START_WATCHING",
-        payload: { autoRefill: true },
-      });
-      btn.textContent = "👁️ Ativo";
-      btn.classList.add("btn-active");
-    }
-  });
-
-// --- Init Watcher Status ---
-async function initWatcherStatus(): Promise<void> {
   try {
-    const status = (await sendToActiveTab({ type: "GET_WATCHER_STATUS" })) as {
-      watching: boolean;
+    pageUrl = await getActivePageUrl();
+    const result = (await sendToActiveTab({ type: "DETECT_FIELDS" })) as {
+      count: number;
+      fields: DetectedFieldSummary[];
     } | null;
-    const btn = document.getElementById(
-      "btn-toggle-watch",
-    ) as HTMLButtonElement;
-    if (btn && status?.watching) {
-      btn.textContent = "👁️ Ativo";
-      btn.classList.add("btn-active");
+
+    if (result?.fields) {
+      detectedFields = result.fields;
+      await sendToBackground({
+        type: "SAVE_FIELD_CACHE",
+        payload: { url: pageUrl, fields: result.fields },
+      });
+    } else {
+      detectedFields = [];
     }
-  } catch {
-    // Content script may not be loaded yet
+
+    await loadIgnoredData();
+    renderFieldsList();
+    updateStatusBar();
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "🔍 Detectar";
+    }
   }
 }
 
-// --- Ignored Fields ---
-async function loadIgnoredFields(): Promise<void> {
-  const ignored = (await sendToBackground({ type: "GET_IGNORED_FIELDS" })) as
-    | IgnoredField[]
-    | null;
-  const list = document.getElementById("ignored-fields-list");
-  const section = document.getElementById("section-ignored");
-  if (!list || !section) return;
+async function handleToggleIgnore(
+  selector: string,
+  label: string,
+): Promise<void> {
+  const isIgnored = ignoredSelectors.has(selector);
 
-  list.innerHTML = "";
-  if (!Array.isArray(ignored) || ignored.length === 0) {
-    section.style.display = "none";
-    return;
-  }
-
-  section.style.display = "";
-
-  for (const field of ignored) {
-    const item = document.createElement("div");
-    item.className = "list-item";
-
-    // Show hostname + selector
-    let displayUrl = field.urlPattern;
-    try {
-      displayUrl = new URL(field.urlPattern).hostname;
-    } catch {
-      // keep original
-    }
-
-    item.innerHTML = `
-      <div class="field-info">
-        <span class="field-label">${escapeHtml(field.label)}</span>
-        <span class="ignored-url">${escapeHtml(displayUrl)}</span>
-      </div>
-      <button class="btn btn-sm btn-delete" title="Parar de ignorar">✕</button>
-    `;
-
-    item.querySelector(".btn-delete")?.addEventListener("click", async () => {
+  if (isIgnored) {
+    const entry = ignoredFields.find(
+      (f) => f.selector === selector && matchUrlPattern(pageUrl, f.urlPattern),
+    );
+    if (entry) {
       await sendToBackground({
         type: "REMOVE_IGNORED_FIELD",
-        payload: field.id,
+        payload: entry.id,
       });
-      await loadIgnoredFields();
+    }
+  } else {
+    const origin = new URL(pageUrl).origin;
+    const pathname = new URL(pageUrl).pathname;
+    const urlPattern = `${origin}${pathname}*`;
+    await sendToBackground({
+      type: "ADD_IGNORED_FIELD",
+      payload: { urlPattern, selector, label },
     });
-
-    list.appendChild(item);
   }
+
+  await loadIgnoredData();
+  renderFieldsList();
 }
 
-// --- Chrome AI Status ---
-async function initChromeAIStatus(): Promise<void> {
-  const banner = document.getElementById("chrome-ai-banner");
-  const iconEl = document.getElementById("chrome-ai-icon");
-  const textEl = document.getElementById("chrome-ai-text");
-  const actionsEl = document.getElementById("chrome-ai-actions");
-  if (!banner || !iconEl || !textEl || !actionsEl) return;
+// ── Forms Tab ────────────────────────────────────────────────────────────────
 
-  // New Prompt API (Chrome 131+): LanguageModel global
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const newApi = (globalThis as any).LanguageModel as
-    | LanguageModelStatic
-    | undefined;
+function renderFormsTab(): void {
+  const content = document.getElementById("content");
+  if (!content) return;
 
-  const openSetupPage = (): void => {
-    chrome.tabs.create({
-      url: "https://developer.chrome.com/docs/ai/get-started",
+  content.innerHTML = `
+    <div class="fields-toolbar">
+      <button class="btn" id="btn-load-forms">🔄 Carregar</button>
+      <span class="fields-count">${savedForms.length} formulário(s)</span>
+    </div>
+    <div class="forms-list" id="forms-list">
+      ${
+        savedForms.length === 0
+          ? '<div class="empty">Clique em "Carregar" para buscar formulários salvos</div>'
+          : savedForms
+              .map(
+                (form) => `
+          <div class="form-card">
+            <div class="form-info">
+              <span class="form-name">${escapeHtml(form.name)}</span>
+              <span class="form-meta">${Object.keys(form.fields).length} campos · ${new Date(form.updatedAt).toLocaleDateString("pt-BR")}</span>
+              <span class="form-url">${escapeHtml(form.urlPattern)}</span>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-sm btn-load" data-form-id="${escapeHtml(form.id)}" data-action="apply">▶️</button>
+              <button class="btn btn-sm btn-delete" data-form-id="${escapeHtml(form.id)}" data-action="delete">🗑️</button>
+            </div>
+          </div>
+        `,
+              )
+              .join("")
+      }
+    </div>
+  `;
+
+  document
+    .getElementById("btn-load-forms")
+    ?.addEventListener("click", async () => {
+      await loadFormsData();
+      renderFormsTab();
     });
-  };
 
-  const makeLinkBtn = (label: string): HTMLButtonElement => {
-    const btn = document.createElement("button");
-    btn.className = "btn btn-ai-action btn-ai-link";
-    btn.textContent = label;
-    btn.addEventListener("click", openSetupPage);
-    return btn;
-  };
-
-  if (!newApi) {
-    banner.className = "chrome-ai-banner chrome-ai-banner--unavailable";
-    iconEl.textContent = "🤖";
-    textEl.textContent = "Chrome AI não disponível neste navegador.";
-    actionsEl.appendChild(makeLinkBtn("Como configurar →"));
-    banner.style.display = "flex";
-    return;
-  }
-
-  try {
-    // Resolve availability using whichever API is present
-    let availability: string;
-    if (newApi) {
-      availability = await newApi.availability({
-        outputLanguage: "en",
-      });
-      // new API: "available" | "downloadable" | "downloading" | "unavailable"
-    } else {
-      availability = "unavailable";
-    }
-
-    if (availability === "available") {
-      banner.className = "chrome-ai-banner chrome-ai-banner--ready";
-      iconEl.textContent = "🤖";
-      textEl.textContent = "Chrome AI ativo e pronto.";
-      banner.style.display = "flex";
-      setTimeout(() => {
-        banner.style.display = "none";
-      }, 3000);
-    } else if (
-      availability === "downloadable" ||
-      availability === "downloading"
-    ) {
-      banner.className = "chrome-ai-banner chrome-ai-banner--download";
-      iconEl.textContent = "🤖";
-      textEl.textContent =
-        availability === "downloading"
-          ? "Chrome AI está sendo baixado…"
-          : "Chrome AI disponível, mas o modelo precisa ser baixado.";
-
-      const downloadBtn = document.createElement("button");
-      downloadBtn.className = "btn btn-ai-action btn-ai-download";
-      downloadBtn.textContent = "⬇️ Baixar agora";
-      downloadBtn.addEventListener("click", async () => {
-        downloadBtn.disabled = true;
-        downloadBtn.textContent = "⏳ Baixando…";
-        try {
-          // Creating a session triggers the model download
-          const session = await newApi!.create({ outputLanguage: "en" });
-          session.destroy();
-          banner.className = "chrome-ai-banner chrome-ai-banner--ready";
-          iconEl.textContent = "🤖";
-          textEl.textContent = "Chrome AI baixado com sucesso!";
-          actionsEl.innerHTML = "";
-          setTimeout(() => {
-            banner.style.display = "none";
-          }, 3000);
-        } catch {
-          downloadBtn.disabled = false;
-          downloadBtn.textContent = "⬇️ Baixar agora";
-          textEl.textContent = "Falha ao iniciar download. Tente manualmente.";
-          actionsEl.appendChild(makeLinkBtn("Como configurar →"));
+  content
+    .querySelectorAll<HTMLButtonElement>("[data-form-id]")
+    .forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const formId = btn.dataset.formId;
+        const action = btn.dataset.action;
+        const form = savedForms.find((f) => f.id === formId);
+        if (!form) return;
+        if (action === "apply") {
+          await sendToActiveTab({ type: "LOAD_SAVED_FORM", payload: form });
+        } else if (action === "delete") {
+          await sendToBackground({ type: "DELETE_FORM", payload: form.id });
+          await loadFormsData();
+          renderFormsTab();
         }
       });
+    });
 
-      actionsEl.appendChild(downloadBtn);
-      actionsEl.appendChild(makeLinkBtn("Como configurar →"));
-      banner.style.display = "flex";
-    } else {
-      // "unavailable" — not supported on this device/channel
-      banner.className = "chrome-ai-banner chrome-ai-banner--unavailable";
-      iconEl.textContent = "🤖";
-      textEl.textContent =
-        "Chrome AI não suportado neste dispositivo ou canal.";
-      actionsEl.appendChild(makeLinkBtn("Ver requisitos →"));
-      banner.style.display = "flex";
+  content
+    .querySelectorAll<HTMLButtonElement>("[data-ignored-id]")
+    .forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.ignoredId;
+        if (id) {
+          await sendToBackground({ type: "REMOVE_IGNORED_FIELD", payload: id });
+          await loadIgnoredData();
+          renderFormsTab();
+        }
+      });
+    });
+}
+
+// ── Generators Tab ───────────────────────────────────────────────────────────
+
+const GENERATOR_CHIPS: Array<{ type: FieldType; label: string }> =
+  FIELD_TYPE_OPTIONS.filter(
+    (option) =>
+      !["select", "checkbox", "radio", "file", "unknown"].includes(
+        option.value,
+      ),
+  ).map((option) => ({ type: option.value, label: option.label }));
+
+function renderGeneratorsTab(): void {
+  const content = document.getElementById("content");
+  if (!content) return;
+
+  content.innerHTML = `
+    <div class="generators-grid">
+      ${GENERATOR_CHIPS.map(
+        (g) =>
+          `<button class="btn-chip" data-generator="${g.type}">${g.label}</button>`,
+      ).join("")}
+    </div>
+
+    <div class="range-config" id="money-config" style="display:none">
+      <span class="range-label">R$</span>
+      <input type="number" class="range-input" id="money-min" placeholder="Mín" value="1">
+      <span class="range-sep">–</span>
+      <input type="number" class="range-input" id="money-max" placeholder="Máx" value="10000">
+    </div>
+
+    <div class="range-config" id="number-config" style="display:none">
+      <span class="range-label">#</span>
+      <input type="number" class="range-input" id="number-min" placeholder="Mín" value="1">
+      <span class="range-sep">–</span>
+      <input type="number" class="range-input" id="number-max" placeholder="Máx" value="99999">
+    </div>
+
+    <div class="generated-value" id="generated-value" style="display:none">
+      <span id="generated-text"></span>
+      <button class="btn-copy" id="btn-copy" title="Copiar">📋</button>
+    </div>
+  `;
+
+  initGeneratorConfigsInContainer(content);
+  bindGeneratorEventsInContainer(content);
+}
+
+function initGeneratorConfigsInContainer(container: HTMLElement): void {
+  const moneyRange = getRange("money", 1, 10_000);
+  const numberRange = getRange("number", 1, 99_999);
+
+  const moneyMin = container.querySelector<HTMLInputElement>("#money-min");
+  const moneyMax = container.querySelector<HTMLInputElement>("#money-max");
+  const numMin = container.querySelector<HTMLInputElement>("#number-min");
+  const numMax = container.querySelector<HTMLInputElement>("#number-max");
+  if (moneyMin) moneyMin.value = String(moneyRange.min);
+  if (moneyMax) moneyMax.value = String(moneyRange.max);
+  if (numMin) numMin.value = String(numberRange.min);
+  if (numMax) numMax.value = String(numberRange.max);
+}
+
+function bindGeneratorEventsInContainer(container: HTMLElement): void {
+  container
+    .querySelectorAll<HTMLButtonElement>("[data-generator]")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.generator as FieldType;
+
+        const moneyConfig =
+          container.querySelector<HTMLElement>("#money-config");
+        const numberConfig =
+          container.querySelector<HTMLElement>("#number-config");
+        if (moneyConfig)
+          moneyConfig.style.display = type === "money" ? "flex" : "none";
+        if (numberConfig)
+          numberConfig.style.display = type === "number" ? "flex" : "none";
+
+        let value: string;
+        if (type === "money") {
+          const defaults = getRange("money", 1, 10_000);
+          const min = parseFloat(
+            container.querySelector<HTMLInputElement>("#money-min")?.value ??
+              "",
+          );
+          const max = parseFloat(
+            container.querySelector<HTMLInputElement>("#money-max")?.value ??
+              "",
+          );
+          value = generateWithConstraints(
+            () =>
+              generateMoney(
+                isNaN(min) ? defaults.min : min,
+                isNaN(max) ? defaults.max : max,
+              ),
+            { requireValidity: true },
+          );
+        } else if (type === "number") {
+          const defaults = getRange("number", 1, 99_999);
+          const min = parseInt(
+            container.querySelector<HTMLInputElement>("#number-min")?.value ??
+              "",
+            10,
+          );
+          const max = parseInt(
+            container.querySelector<HTMLInputElement>("#number-max")?.value ??
+              "",
+            10,
+          );
+          value = generateWithConstraints(
+            () =>
+              generateNumber(
+                isNaN(min) ? defaults.min : min,
+                isNaN(max) ? defaults.max : max,
+              ),
+            { requireValidity: true },
+          );
+        } else {
+          value = generateWithConstraints(() => generate(type), {
+            requireValidity: true,
+          });
+        }
+
+        const valContainer =
+          container.querySelector<HTMLElement>("#generated-value");
+        const text = container.querySelector<HTMLElement>("#generated-text");
+        if (text) text.textContent = value;
+        if (valContainer) valContainer.style.display = "flex";
+      });
+    });
+
+  container.querySelector("#btn-copy")?.addEventListener("click", () => {
+    const text =
+      container.querySelector<HTMLElement>("#generated-text")?.textContent;
+    if (text) {
+      navigator.clipboard.writeText(text);
+      const btn = container.querySelector<HTMLElement>("#btn-copy");
+      if (btn) {
+        btn.textContent = "✓";
+        setTimeout(() => {
+          btn.textContent = "📋";
+        }, 1000);
+      }
     }
-  } catch {
-    // Silently skip if capabilities check fails
+  });
+}
+
+// ── Data Loading ─────────────────────────────────────────────────────────────
+
+async function loadFormsData(): Promise<void> {
+  const result = (await sendToBackground({ type: "GET_SAVED_FORMS" })) as
+    | SavedForm[]
+    | null;
+  savedForms = Array.isArray(result) ? result : [];
+}
+
+async function loadIgnoredData(): Promise<void> {
+  const result = (await sendToBackground({ type: "GET_IGNORED_FIELDS" })) as
+    | IgnoredField[]
+    | null;
+  ignoredFields = Array.isArray(result) ? result : [];
+  ignoredSelectors = new Set(
+    ignoredFields
+      .filter((f) => matchUrlPattern(pageUrl, f.urlPattern))
+      .map((f) => f.selector),
+  );
+}
+
+async function loadFieldsFromCache(): Promise<void> {
+  if (!pageUrl.startsWith("http://") && !pageUrl.startsWith("https://")) return;
+
+  const cache = (await sendToBackground({
+    type: "GET_FIELD_CACHE",
+    payload: { url: pageUrl },
+  })) as FieldDetectionCacheEntry | null;
+
+  if (cache?.fields) {
+    detectedFields = cache.fields;
   }
 }
 
-// --- Init ---
-loadSavedForms();
-loadIgnoredFields();
-initWatcherStatus();
-initGeneratorConfigs();
-initChromeAIStatus();
-
-function escapeHtml(text: string | undefined | null): string {
-  if (!text) return "";
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+function updateStatusBar(): void {
+  const bar = document.getElementById("status-bar");
+  if (bar) {
+    bar.textContent =
+      detectedFields.length > 0
+        ? `${detectedFields.length} campos detectados`
+        : "Nenhum campo detectado ainda";
+  }
 }
+
+// ── Options Link ─────────────────────────────────────────────────────────────
+
+function bindOptionsLink(): void {
+  document.getElementById("btn-options")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    chrome.runtime.openOptionsPage();
+  });
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+async function init(): Promise<void> {
+  pageUrl = await getActivePageUrl();
+
+  initTabs();
+  bindOptionsLink();
+  initChromeAIStatus();
+
+  // Load initial state
+  const [, , settings, watcherStatus] = await Promise.all([
+    loadFieldsFromCache(),
+    loadIgnoredData(),
+    chrome.runtime.sendMessage({ type: "GET_SETTINGS" }) as Promise<{
+      showPanel?: boolean;
+    } | null>,
+    sendToActiveTab({ type: "GET_WATCHER_STATUS" }).catch(
+      () => null,
+    ) as Promise<{ watching: boolean } | null>,
+  ]);
+
+  panelActive = settings?.showPanel ?? false;
+  watcherActive = watcherStatus?.watching ?? false;
+
+  // Load forms in background
+  void loadFormsData();
+
+  renderActiveTab();
+}
+
+void init();

@@ -1,0 +1,84 @@
+/**
+ * Dataset — Central barrel export
+ *
+ * Import everything from `@/lib/dataset` for a single entry point.
+ */
+
+// ── Field Dictionary ───────────────────────────────────────────────────────
+export {
+  FIELD_DICTIONARY,
+  SELECT_CONTEXT_PATTERNS,
+  getDictionaryEntry,
+  getEntriesByCategory,
+  getEntriesByTag,
+  matchSelectContext,
+  getSelectableTypes,
+  type FieldDictionaryEntry,
+  type SelectOption,
+  type GeneratorStrategy,
+  type GeneratorDescriptor,
+  type ElementKind,
+  type InputCharacteristics,
+  type LocaleFormat,
+  type ContextDependency,
+  type SelectContextPattern,
+} from "./field-dictionary";
+
+// ── Training Data ──────────────────────────────────────────────────────────
+export {
+  TRAINING_SAMPLES,
+  toTrainingSignalText,
+  getTrainingSamplesByDifficulty,
+  getTrainingSamplesByType,
+  getTrainingDistribution,
+} from "./training-data";
+
+export {
+  flattenStructuredSignals,
+  normalizeStructuredSignals,
+  TRAINING_SAMPLES_V2,
+  getTrainingV2ByDifficulty,
+  getTrainingV2ByType,
+  getTrainingV2Distribution,
+  type StructuredSignals,
+} from "./training-data";
+
+// ── Validation Data ────────────────────────────────────────────────────────
+export {
+  VALIDATION_SAMPLES,
+  evaluateClassifier,
+  type ValidationSample,
+} from "./validation-data";
+
+// ── Test Data (Control) ────────────────────────────────────────────────────
+export { TEST_SAMPLES, runTestEvaluation, type TestSample } from "./test-data";
+
+// ── Configuration & Metadata ───────────────────────────────────────────────
+export {
+  DATASET_VERSION,
+  DATASET_META,
+  DEFAULT_THRESHOLDS,
+  DEFAULT_CURRICULUM,
+  DEFAULT_CONTINUOUS_LEARNING,
+  normalizeSignals,
+  augmentShuffle,
+  augmentDrop,
+  augmentTypo,
+  checkDatasetHealth,
+  type AccuracyThresholds,
+  type CurriculumConfig,
+  type ContinuousLearningConfig,
+  type DatasetHealthReport,
+} from "./dataset-config";
+
+// ── Integration (Dataset ↔ Classifier) ────────────────────────────────────
+export {
+  buildKeywordsFromDictionary,
+  augmentTrainingSamples,
+  validateClassifier,
+  testClassifier,
+  getBalancingNeeds,
+  getUncoveredDictionaryTypes,
+  type AugmentationConfig,
+  type ClassifierReport,
+} from "./integration";

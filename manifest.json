@@ -7,11 +7,10 @@
     "storage",
     "activeTab",
     "scripting",
-    "contextMenus"
-  ],
-  "optional_permissions": [
+    "contextMenus",
     "tabs"
   ],
+  "optional_permissions": [],
   "host_permissions": [
     "<all_urls>"
   ],
@@ -38,6 +37,7 @@
       "128": "icons/icon-128.png"
     }
   },
+  "devtools_page": "src/devtools/devtools.html",
   "options_page": "src/options/options.html",
   "icons": {
     "16": "icons/icon-16.png",
@@ -47,11 +47,24 @@
   "commands": {
     "fill-all-fields": {
       "suggested_key": {
-        "default": "Ctrl+Shift+F",
+        "default": "Alt+Shift+F",
         "mac": "Command+Shift+F"
       },
       "description": "Preencher todos os campos"
     }
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "model/model.json",
+        "model/vocab.json",
+        "model/labels.json",
+        "model/group1-shard1of1.bin"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
   "minimum_chrome_version": "128"
 }

@@ -1,83 +1,32 @@
 /**
- * Background service worker — handles messages and context menu
+ * Background service worker — message router, context menu and keyboard commands.
+ *
+ * Business logic is delegated to domain-specific handlers via the handler registry.
+ * This file stays thin: setup listeners → parse → dispatch → respond.
  */
 
-import type { ExtensionMessage, FieldRule, SavedForm, Settings } from "@/types";
-import type { IgnoredField } from "@/types";
+import type { ExtensionMessage } from "@/types";
+import { parseIncomingMessage } from "@/lib/messaging/validators";
 import {
-  getRules,
-  saveRule,
-  deleteRule,
-  getSavedForms,
-  saveForm,
-  deleteForm,
-  getSettings,
-  saveSettings,
-  getIgnoredFields,
-  addIgnoredField,
-  removeIgnoredField,
-} from "@/lib/storage/storage";
+  sendToActiveTab,
+  sendToSpecificTab,
+} from "@/lib/chrome/active-tab-messaging";
+import { setupContextMenu, handleContextMenuClick } from "./context-menu";
+import { dispatchMessage } from "./handler-registry";
+import { initLogger, createLogger } from "@/lib/logger";
 
-// Create context menu on install
+void initLogger();
+const log = createLogger("ServiceWorker");
+
+// ── Context Menu ──────────────────────────────────────────────────────────────
+
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: "fill-all-fields",
-    title: "Fill All - Preencher todos os campos",
-    contexts: ["page"],
-  });
-
-  chrome.contextMenus.create({
-    id: "fill-all-save-form",
-    title: "Fill All - Salvar dados do formulário",
-    contexts: ["page"],
-  });
-
-  chrome.contextMenus.create({
-    id: "fill-all-field-rule",
-    title: "Fill All - Criar regra para este campo",
-    contexts: ["editable"],
-  });
-
-  chrome.contextMenus.create({
-    id: "fill-all-toggle-panel",
-    title: "Fill All - Abrir/fechar painel flutuante",
-    contexts: ["page"],
-  });
+  setupContextMenu();
 });
 
-// Handle context menu clicks
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (!tab?.id) return;
+chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
-  switch (info.menuItemId) {
-    case "fill-all-fields":
-      chrome.tabs.sendMessage(tab.id, { type: "FILL_ALL_FIELDS" });
-      break;
-    case "fill-all-save-form":
-      chrome.tabs.sendMessage(tab.id, { type: "SAVE_FORM" });
-      break;
-    case "fill-all-field-rule":
-      chrome.tabs.sendMessage(tab.id, { type: "FILL_SINGLE_FIELD" });
-      break;
-    case "fill-all-toggle-panel":
-      chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_PANEL" });
-      break;
-  }
-});
-
-// Handle messages from popup and content script
-chrome.runtime.onMessage.addListener(
-  (
-    message: ExtensionMessage,
-    _sender,
-    sendResponse: (response: unknown) => void,
-  ) => {
-    handleMessage(message)
-      .then(sendResponse)
-      .catch((err) => sendResponse({ error: err.message }));
-    return true; // Keep message channel open for async
-  },
-);
+// ── Message Router ────────────────────────────────────────────────────────────
 
 /** Messages that must be forwarded to the active tab's content script */
 const CONTENT_SCRIPT_MESSAGES = new Set([
@@ -85,6 +34,7 @@ const CONTENT_SCRIPT_MESSAGES = new Set([
   "FILL_SINGLE_FIELD",
   "SAVE_FORM",
   "LOAD_SAVED_FORM",
+  "APPLY_TEMPLATE",
   "DETECT_FIELDS",
   "GET_FORM_FIELDS",
   "START_WATCHING",
@@ -95,78 +45,56 @@ const CONTENT_SCRIPT_MESSAGES = new Set([
   "HIDE_PANEL",
 ]);
 
-async function forwardToActiveTab(message: ExtensionMessage): Promise<unknown> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return { error: "No active tab" };
+chrome.runtime.onMessage.addListener(
+  (message: unknown, _sender, sendResponse: (response: unknown) => void) => {
+    const parsed = parseIncomingMessage(message);
+    if (!parsed) {
+      sendResponse({ error: "Invalid message format" });
+      return false;
+    }
 
-  const url = tab.url ?? "";
-  if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    return { error: "Content script not available on this page" };
-  }
-
-  try {
-    return await chrome.tabs.sendMessage(tab.id, message);
-  } catch (err) {
-    return { error: "Content script not responding", details: String(err) };
-  }
-}
+    handleMessage(parsed as ExtensionMessage)
+      .then(sendResponse)
+      .catch((err) => {
+        log.warn("Message handling failed:", err);
+        sendResponse({
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+    return true; // Keep message channel open for async
+  },
+);
 
 async function handleMessage(message: ExtensionMessage): Promise<unknown> {
+  // DevTools relay: forward inner message to a specific tab's content script
+  if (message.type === "DEVTOOLS_RELAY") {
+    const payload = message.payload as
+      | { tabId: number; message: ExtensionMessage }
+      | undefined;
+    if (!payload?.tabId || !payload?.message) {
+      return { error: "Invalid DEVTOOLS_RELAY payload" };
+    }
+    return sendToSpecificTab(payload.tabId, undefined, payload.message, {
+      injectIfNeeded: true,
+    });
+  }
+
   // Forward content-script-bound messages to the active tab
   if (CONTENT_SCRIPT_MESSAGES.has(message.type)) {
-    return forwardToActiveTab(message);
+    return sendToActiveTab(message, { injectIfNeeded: true });
   }
 
-  switch (message.type) {
-    case "GET_RULES":
-      return getRules();
+  // Dispatch to the appropriate domain handler
+  const result = await dispatchMessage(message);
+  if (result !== null) return result;
 
-    case "SAVE_RULE":
-      await saveRule(message.payload as FieldRule);
-      return { success: true };
-
-    case "DELETE_RULE":
-      await deleteRule(message.payload as string);
-      return { success: true };
-
-    case "GET_SETTINGS":
-      return getSettings();
-
-    case "SAVE_SETTINGS":
-      await saveSettings(message.payload as Partial<Settings>);
-      return { success: true };
-
-    case "GET_SAVED_FORMS":
-      return getSavedForms();
-
-    case "DELETE_FORM":
-      await deleteForm(message.payload as string);
-      return { success: true };
-
-    case "GET_IGNORED_FIELDS":
-      return getIgnoredFields();
-
-    case "ADD_IGNORED_FIELD":
-      return addIgnoredField(
-        message.payload as Omit<IgnoredField, "id" | "createdAt">,
-      );
-
-    case "REMOVE_IGNORED_FIELD":
-      await removeIgnoredField(message.payload as string);
-      return { success: true };
-
-    default:
-      return { error: `Unknown message type: ${message.type}` };
-  }
+  return { error: `Unknown message type: ${message.type}` };
 }
 
-// Handle keyboard shortcut
+// ── Keyboard Shortcut ─────────────────────────────────────────────────────────
+
 chrome.commands?.onCommand?.addListener((command) => {
   if (command === "fill-all-fields") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { type: "FILL_ALL_FIELDS" });
-      }
-    });
+    void sendToActiveTab({ type: "FILL_ALL_FIELDS" }, { injectIfNeeded: true });
   }
 });

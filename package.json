@@ -7,14 +7,21 @@
     "dev": "vite",
     "build": "vite build",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "train:model": "tsx --tsconfig tsconfig.json scripts/train-model.ts",
+    "import:rules": "tsx --tsconfig tsconfig.json scripts/import-rules-to-dataset.ts"
   },
   "dependencies": {
-    "@tensorflow/tfjs": "^4.22.0"
+    "@faker-js/faker": "^10.3.0",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.3.0",
     "@types/chrome": "^0.0.287",
+    "@types/node": "^22.19.11",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.3",
     "vite": "^7.3.1"
   },

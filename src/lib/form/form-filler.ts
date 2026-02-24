@@ -2,7 +2,7 @@
  * Form filler — fills detected fields with generated or saved values
  */
 
-import type { FormField, GenerationResult, Settings } from "@/types";
+import type { FormField, GenerationResult, SavedForm, Settings } from "@/types";
 import { detectAllFields } from "./form-detector";
 import { resolveFieldValue } from "@/lib/rules/rule-engine";
 import {
@@ -10,17 +10,13 @@ import {
   isAvailable as isChromeAiAvailable,
 } from "@/lib/ai/chrome-ai";
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
-import {
-  getSettings,
-  getSavedFormsForUrl,
-  getIgnoredFieldsForUrl,
-} from "@/lib/storage/storage";
-import {
-  selectCustomOption,
-  getCustomSelectValue,
-  type CustomSelectField,
-} from "./custom-select-handler";
+import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
+import { fillCustomComponent } from "./adapters/adapter-registry";
+import { generate } from "@/lib/generators";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("FormFiller");
 
 function setNativeValue(element: HTMLElement, value: string): void {
   // Trigger React/Vue/Angular change detection
@@ -87,14 +83,57 @@ function handleCheckboxOrRadio(element: HTMLInputElement): void {
   element.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function highlightField(element: HTMLElement): void {
+function highlightField(element: HTMLElement, detectedLabel?: string): void {
   const original = element.style.outline;
   element.style.outline = "2px solid #4F46E5";
   element.style.outlineOffset = "1px";
+
+  let badge: HTMLElement | null = null;
+  if (detectedLabel) {
+    badge = createFieldLabelBadge(element, detectedLabel);
+  }
+
   setTimeout(() => {
     element.style.outline = original;
     element.style.outlineOffset = "";
+    badge?.remove();
   }, 2000);
+}
+
+function createFieldLabelBadge(
+  target: HTMLElement,
+  label: string,
+): HTMLElement {
+  const rect = target.getBoundingClientRect();
+  const badge = document.createElement("div");
+  badge.textContent = label;
+
+  const top = rect.top - 20;
+  const left = rect.left;
+
+  badge.style.cssText = `
+    position: fixed;
+    top: ${Math.max(2, top)}px;
+    left: ${left}px;
+    background: rgba(79, 70, 229, 0.9);
+    color: #fff;
+    font-size: 10px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    z-index: 2147483645;
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    letter-spacing: 0.2px;
+  `;
+  document.body.appendChild(badge);
+  return badge;
 }
 
 export async function fillAllFields(): Promise<GenerationResult[]> {
@@ -107,7 +146,7 @@ export async function fillAllFields(): Promise<GenerationResult[]> {
 }
 
 async function doFillAllFields(): Promise<GenerationResult[]> {
-  const { fields, customSelects } = detectAllFields();
+  const { fields } = detectAllFields();
   const url = window.location.href;
   const settings = await getSettings();
   const results: GenerationResult[] = [];
@@ -115,20 +154,22 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
   // Determine AI function based on settings
   const aiGenerateFn = await getAiFunction(settings);
 
-  // Get saved forms for resolving custom select values
-  const savedForms = await getSavedFormsForUrl(url);
-
   // Load ignored fields for current URL
   const ignoredFields = await getIgnoredFieldsForUrl(url);
   const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
 
-  // Fill regular fields first
   for (const field of fields) {
-    // Skip pseudo-fields created from custom selects (handled below)
-    if (customSelects.some((cs) => cs.selector === field.selector)) continue;
-
     // Skip ignored fields
     if (ignoredSelectors.has(field.selector)) continue;
+
+    const fieldLabel =
+      field.label ??
+      field.name ??
+      field.id ??
+      field.fieldType ??
+      field.selector;
+    log.info(`⏳ Preenchendo [${field.fieldType}] "${fieldLabel}"...`);
+    const start = Date.now();
 
     try {
       const result = await resolveFieldValue(
@@ -138,60 +179,23 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
         settings.forceAIFirst,
       );
 
-      applyValueToField(field, result.value);
+      await applyValueToField(field, result.value);
+
+      log.info(
+        `✅ Preenchido em ${Date.now() - start}ms via ${result.source}: "${String(result.value).slice(0, 40)}"`,
+      );
 
       if (settings.highlightFilled) {
-        highlightField(field.element);
+        highlightField(
+          field.element,
+          field.label ?? field.fieldType ?? undefined,
+        );
       }
 
       results.push(result);
     } catch (error) {
-      console.warn(`[Fill All] Failed to fill field ${field.selector}:`, error);
-    }
-  }
-
-  // Fill custom selects (one at a time, waiting for DOM to settle)
-  for (const cs of customSelects) {
-    // Skip ignored custom selects
-    if (ignoredSelectors.has(cs.selector)) continue;
-
-    try {
-      // Check if there's a saved value for this custom select
-      let targetValue: string | undefined;
-
-      for (const form of savedForms) {
-        const key = cs.id || cs.name || cs.selector;
-        if (form.fields[key]) {
-          targetValue = form.fields[key];
-          break;
-        }
-        if (cs.name && form.fields[cs.name]) {
-          targetValue = form.fields[cs.name];
-          break;
-        }
-        if (cs.id && form.fields[cs.id]) {
-          targetValue = form.fields[cs.id];
-          break;
-        }
-      }
-
-      const selectedText = await selectCustomOption(cs, targetValue);
-
-      if (settings.highlightFilled) {
-        highlightField(cs.container);
-      }
-
-      results.push({
-        fieldSelector: cs.selector,
-        value: selectedText,
-        source: targetValue ? "fixed" : "generator",
-      });
-
-      // Wait for DOM to settle after selecting (forms may change dynamically)
-      await waitForDomSettle(500);
-    } catch (error) {
-      console.warn(
-        `[Fill All] Failed to fill custom select ${cs.selector}:`,
+      log.warn(
+        `❌ Falhou em ${Date.now() - start}ms — campo ${field.selector}:`,
         error,
       );
     }
@@ -206,6 +210,10 @@ export async function fillSingleField(
   const url = window.location.href;
   const settings = await getSettings();
   const aiGenerateFn = await getAiFunction(settings);
+  const fieldLabel =
+    field.label ?? field.name ?? field.id ?? field.fieldType ?? field.selector;
+  log.info(`⏳ Preenchendo [${field.fieldType}] "${fieldLabel}"...`);
+  const start = Date.now();
 
   try {
     const result = await resolveFieldValue(
@@ -214,15 +222,24 @@ export async function fillSingleField(
       aiGenerateFn,
       settings.forceAIFirst,
     );
-    applyValueToField(field, result.value);
+    await applyValueToField(field, result.value);
+    log.info(
+      `✅ Preenchido em ${Date.now() - start}ms via ${result.source}: "${String(result.value).slice(0, 40)}"`,
+    );
 
     if (settings.highlightFilled) {
-      highlightField(field.element);
+      highlightField(
+        field.element,
+        field.label ?? field.fieldType ?? undefined,
+      );
     }
 
     return result;
   } catch (error) {
-    console.warn(`[Fill All] Failed to fill field:`, error);
+    log.warn(
+      `❌ Falhou em ${Date.now() - start}ms — campo ${field.selector}:`,
+      error,
+    );
     return null;
   }
 }
@@ -252,7 +269,16 @@ function waitForDomSettle(ms: number): Promise<void> {
   });
 }
 
-function applyValueToField(field: FormField, value: string): void {
+async function applyValueToField(
+  field: FormField,
+  value: string,
+): Promise<void> {
+  // Delegate to custom adapter if the field was detected by one
+  if (field.adapterName) {
+    const handled = await fillCustomComponent(field, value);
+    if (handled) return;
+  }
+
   const el = field.element;
 
   if (el instanceof HTMLSelectElement) {
@@ -274,29 +300,27 @@ function applyValueToField(field: FormField, value: string): void {
 async function getAiFunction(
   settings: Settings,
 ): Promise<((field: FormField) => Promise<string>) | undefined> {
-  console.log(
-    `[Fill All / Form Filler] useChromeAI=${settings.useChromeAI} | defaultStrategy=${settings.defaultStrategy} | forceAIFirst=${settings.forceAIFirst}`,
+  log.debug(
+    `useChromeAI=${settings.useChromeAI} | defaultStrategy=${settings.defaultStrategy} | forceAIFirst=${settings.forceAIFirst}`,
   );
 
   if (settings.useChromeAI) {
     const available = await isChromeAiAvailable();
-    console.log(`[Fill All / Form Filler] Chrome AI disponível: ${available}`);
+    log.debug(`Chrome AI disponível: ${available}`);
     if (available) {
-      console.log("[Fill All / Form Filler] Usando Chrome AI (Gemini Nano).");
+      log.debug("Usando Chrome AI (Gemini Nano).");
       return chromeAiGenerate;
     }
   }
 
   // Fallback to TF.js-based generation
   if (settings.defaultStrategy === "tensorflow") {
-    console.log(
-      "[Fill All / Form Filler] Chrome AI indisponível — usando TensorFlow.js.",
-    );
+    log.debug("Chrome AI indisponível — usando TensorFlow.js.");
     return async (field: FormField) => await generateWithTensorFlow(field);
   }
 
-  console.warn(
-    "[Fill All / Form Filler] Nenhuma função de AI configurada. Será usado apenas o gerador padrão.",
+  log.warn(
+    "Nenhuma função de AI configurada. Será usado apenas o gerador padrão.",
   );
   return undefined;
 }
@@ -305,13 +329,10 @@ async function getAiFunction(
  * Captures current form values and returns them as a map
  */
 export function captureFormValues(): Record<string, string> {
-  const { fields, customSelects } = detectAllFields();
+  const { fields } = detectAllFields();
   const values: Record<string, string> = {};
 
   for (const field of fields) {
-    // Skip pseudo-fields from custom selects
-    if (customSelects.some((cs) => cs.selector === field.selector)) continue;
-
     const el = field.element;
     const key = field.id || field.name || field.selector;
 
@@ -324,15 +345,109 @@ export function captureFormValues(): Record<string, string> {
         values[key] = el.value;
       }
     } else {
-      values[key] = el.value;
+      values[key] = (el as HTMLTextAreaElement).value;
     }
   }
 
-  // Capture custom select values
-  for (const cs of customSelects) {
-    const key = cs.id || cs.name || cs.selector;
-    values[key] = getCustomSelectValue(cs);
+  return values;
+}
+
+/**
+ * Applies a saved form template to the current page.
+ * Uses templateFields (new format) if available, otherwise falls back to legacy fields.
+ * For generator-mode fields, calls the appropriate generator to produce a fresh value.
+ */
+export async function applyTemplate(
+  form: SavedForm,
+): Promise<{ filled: number }> {
+  const { fields: detectedFields } = detectAllFields();
+  const settings = await getSettings();
+  let filled = 0;
+
+  if (form.templateFields && form.templateFields.length > 0) {
+    // For type-based templates (matchByFieldType), track which fields were already handled
+    const handledSelectors = new Set<string>();
+
+    for (const tField of form.templateFields) {
+      // Type-based matching: find ALL fields of the given type
+      if (tField.matchByFieldType) {
+        const matchedFields = detectedFields.filter(
+          (f) =>
+            f.fieldType === tField.matchByFieldType &&
+            !handledSelectors.has(f.selector),
+        );
+        for (const matchedField of matchedFields) {
+          let value: string;
+          if (tField.mode === "generator" && tField.generatorType) {
+            value = generate(tField.generatorType);
+          } else {
+            value = tField.fixedValue ?? "";
+          }
+          if (!value && tField.mode === "fixed") continue;
+          await applyValueToField(matchedField, value);
+          if (settings.highlightFilled) {
+            highlightField(
+              matchedField.element,
+              matchedField.label ?? matchedField.fieldType ?? undefined,
+            );
+          }
+          handledSelectors.add(matchedField.selector);
+          filled++;
+        }
+        continue;
+      }
+
+      // Selector-based matching (legacy / saved-from-page templates)
+      const matchedField = detectedFields.find(
+        (f) =>
+          f.selector === tField.key ||
+          f.id === tField.key ||
+          f.name === tField.key,
+      );
+      if (!matchedField) continue;
+
+      let value: string;
+      if (tField.mode === "generator" && tField.generatorType) {
+        value = generate(tField.generatorType);
+      } else {
+        value = tField.fixedValue ?? "";
+      }
+
+      if (!value && tField.mode === "fixed") continue;
+
+      await applyValueToField(matchedField, value);
+      if (settings.highlightFilled) {
+        highlightField(
+          matchedField.element,
+          matchedField.label ?? matchedField.fieldType ?? undefined,
+        );
+      }
+      filled++;
+    }
+  } else {
+    // Legacy format: fields Record<string, string>
+    for (const detectedField of detectedFields) {
+      const key =
+        detectedField.id || detectedField.name || detectedField.selector;
+      const value =
+        form.fields[detectedField.selector] ??
+        form.fields[key] ??
+        (detectedField.name ? form.fields[detectedField.name] : undefined) ??
+        (detectedField.id ? form.fields[detectedField.id] : undefined);
+
+      if (value === undefined) continue;
+
+      await applyValueToField(detectedField, value);
+      if (settings.highlightFilled) {
+        highlightField(
+          detectedField.element,
+          detectedField.label ?? detectedField.fieldType ?? undefined,
+        );
+      }
+      filled++;
+    }
   }
 
-  return values;
+  log.info(`Template "${form.name}" aplicado: ${filled} campos`);
+  return { filled };
 }

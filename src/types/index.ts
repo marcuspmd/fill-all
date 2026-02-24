@@ -1,3 +1,28 @@
+import { StructuredSignals } from "@/lib/dataset";
+import { FIELD_TYPES_BY_CATEGORY_DERIVED } from "./field-type-definitions";
+
+export type {
+  GeneratorParams,
+  FieldTypeDefinition,
+} from "./field-type-definitions";
+
+export {
+  FIELD_TYPE_DEFINITIONS,
+  getDefinition,
+  getDefaultParams,
+  getRange,
+} from "./field-type-definitions";
+
+export type {
+  MessageHandler,
+  StorageRepository,
+  MutableStorageRepository,
+  UrlFilterableRepository,
+  UIModule,
+  DisposableUIModule,
+  FieldIconComponent,
+} from "./interfaces";
+
 /** How a field type was determined */
 export type DetectionMethod =
   | "html-type"
@@ -21,59 +46,260 @@ export type InteractiveFieldType =
   | "color-picker"
   | "autocomplete";
 
-/** Field types that the extension can detect and generate values for */
-export type FieldType =
-  | "cpf"
-  | "cnpj"
-  | "email"
-  | "phone"
-  | "name"
-  | "first-name"
-  | "last-name"
-  | "full-name"
+export type FieldCategory =
+  | "personal"
+  | "contact"
   | "address"
-  | "street"
-  | "city"
-  | "state"
-  | "zip-code"
-  | "cep"
-  | "date"
-  | "birth-date"
-  | "number"
-  | "password"
-  | "username"
-  | "company"
-  | "rg"
-  | "text"
-  | "money"
-  | "select"
-  | "checkbox"
-  | "radio"
+  | "document"
+  | "financial"
+  | "authentication"
+  | "professional"
+  | "ecommerce"
+  | "system"
+  | "generic"
   | "unknown";
+
+/** Fonte única dos tipos suportados pela extensão (UI, validações e classificadores). */
+export const FIELD_TYPES = [
+  // Identificação
+  "cpf",
+  "cnpj",
+  "cpf-cnpj",
+  "rg",
+  "passport",
+  "cnh",
+  "pis",
+  "national-id",
+  "tax-id",
+  "document-issuer",
+
+  // Nome
+  "name",
+  "first-name",
+  "last-name",
+  "full-name",
+
+  // Contato
+  "email",
+  "phone",
+  "mobile",
+  "whatsapp",
+
+  // Endereço
+  "address",
+  "street",
+  "house-number",
+  "complement",
+  "neighborhood",
+  "city",
+  "state",
+  "country",
+  "cep",
+  "zip-code",
+
+  // Datas
+  "date",
+  "birth-date",
+  "start-date",
+  "end-date",
+  "due-date",
+
+  // Financeiro
+  "money",
+  "price",
+  "amount",
+  "discount",
+  "tax",
+  "credit-card-number",
+  "credit-card-expiration",
+  "credit-card-cvv",
+  "pix-key",
+
+  // Empresa
+  "company",
+  "supplier",
+  "employee-count",
+  "job-title",
+  "department",
+
+  // Autenticação
+  "username",
+  "password",
+  "confirm-password",
+  "otp",
+  "verification-code",
+
+  // E-commerce
+  "product",
+  "product-name",
+  "sku",
+  "quantity",
+  "coupon",
+
+  // Genéricos
+  "text",
+  "description",
+  "notes",
+  "search",
+  "website",
+  "url",
+  "number",
+
+  // Componentes
+  "select",
+  "checkbox",
+  "radio",
+  "file",
+  "unknown",
+] as const;
+
+/** Field types that the extension can detect and generate values for */
+export type FieldType = (typeof FIELD_TYPES)[number];
+
+/** Subconjunto de tipos treináveis no modelo de texto (TF.js). */
+export const TRAINABLE_FIELD_TYPES = [
+  ...FIELD_TYPES,
+] as const satisfies readonly FieldType[];
+
+export const FIELD_TYPES_BY_CATEGORY: Record<FieldCategory, FieldType[]> =
+  FIELD_TYPES_BY_CATEGORY_DERIVED;
+
+export type signalType =
+  | "name"
+  | "id"
+  | "label"
+  | "placeholder"
+  | "autocomplete"
+  | "aria-label"
+  | "nearby-text"
+  | "section-title"
+  | "form-title"
+  | "table-header";
+
+export interface Signal {
+  source: signalType;
+  value: string;
+  weight?: number;
+}
+
+export interface FieldSignals {
+  primary: Signal[];
+  secondary: Signal[];
+  structural: Signal[];
+}
+
+export type TrainingSampleSource =
+  | "synthetic"
+  | "real-world"
+  | "augmented"
+  | "learned";
+
+export type TrainingDifficulty = "easy" | "medium" | "hard";
+
+export type TrainingLanguage = "pt" | "en" | "es";
+
+export interface DomFeatureHints {
+  inputType?: string;
+  maxLength?: number;
+  pattern?: string;
+}
+
+export type DatasetExtractionStrategy =
+  | "primary"
+  | "secondary"
+  | "structural"
+  | "dom-features";
+
+export interface TrainingSample {
+  signals: StructuredSignals;
+  category: FieldCategory;
+  type: FieldType;
+  source: TrainingSampleSource;
+  /** Optional: original URL domain (real-world samples) */
+  domain?: string;
+  /** Curriculum difficulty */
+  difficulty: TrainingDifficulty;
+  /** Optional language tag (helps multilingual training) */
+  language?: TrainingLanguage;
+  /** Optional DOM hints for advanced training */
+  domFeatures?: DomFeatureHints;
+}
+
+/** Native form element types (input, select, textarea) */
+export type NativeFormElement =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement;
+
+/** Type guard: narrows FormField.element to NativeFormElement */
+export function isNativeFormElement(el: HTMLElement): el is NativeFormElement {
+  return (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLSelectElement ||
+    el instanceof HTMLTextAreaElement
+  );
+}
 
 /** Represents a detected form field on the page */
 export interface FormField {
-  element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+  element:
+    | HTMLInputElement
+    | HTMLSelectElement
+    | HTMLTextAreaElement
+    | HTMLElement;
   selector: string;
+
+  // Final result
+  category: FieldCategory;
   fieldType: FieldType;
+  contextualType?: FieldType;
+
+  // Custom component adapter
+  /** Name of the adapter that detected this field (undefined for native elements). */
+  adapterName?: string;
+
+  // Raw DOM metadata
   label?: string;
   name?: string;
   id?: string;
   placeholder?: string;
   autocomplete?: string;
+  inputType?: string;
   required: boolean;
+  pattern?: string;
+  maxLength?: number;
+  minLength?: number;
+  options?: Array<{ value: string; text: string }>; // for selects
+  checkboxValue?: string; // for checkboxes/radios
+  checkboxChecked?: boolean; // for checkboxes/radios
+
+  // Interactive widgets
+  isInteractive?: boolean;
+  interactiveType?: InteractiveFieldType;
+
+  // Structured signals
+  signals?: FieldSignals;
+
+  languageDetected?: "pt" | "en" | "es" | "unknown";
+
   /** Which method produced fieldType */
   detectionMethod?: DetectionMethod;
   /** Confidence score 0–1 from TF.js or AI (1.0 for keyword/html-type) */
   detectionConfidence?: number;
-  /** True when the field is a non-native interactive widget */
-  isInteractive?: boolean;
-  /** Sub-type for interactive widgets */
-  interactiveType?: InteractiveFieldType;
   /** Normalised signals string used for classification (name+id+label+placeholder) */
   contextSignals?: string;
-  /** Refined semantic type for <select>/<textarea> without changing fieldType */
-  contextualType?: FieldType;
+
+  /** Time taken by the detection pipeline for this field (ms) */
+  detectionDurationMs?: number;
+  timings?: Array<{
+    strategy: string;
+    durationMs: number;
+  }>;
+  predictions?: Array<{
+    type: FieldType;
+    confidence: number;
+  }>;
+  decisionTrace?: string[];
 }
 
 /** Rule to define how a specific field should be filled on a specific site */
@@ -93,12 +319,7 @@ export interface FieldRule {
   generator: "auto" | "ai" | "tensorflow" | FieldType;
   /** Custom prompt for AI generation */
   aiPrompt?: string;
-  /** Money range (used when fieldType is "money") */
-  moneyMin?: number;
-  moneyMax?: number;
-  /** Number range (used when fieldType is "number") */
-  numberMin?: number;
-  numberMax?: number;
+
   /** Select option index: 0 = auto (random), 1 = first option, 2 = second, etc. */
   selectOptionIndex?: number;
   /** Priority (higher = takes precedence) */
@@ -109,14 +330,39 @@ export interface FieldRule {
   updatedAt: number;
 }
 
+/** How a template field should be filled */
+export type FormFieldMode = "fixed" | "generator";
+
+/** Structured field config for form templates */
+export interface FormTemplateField {
+  /** Field identifier (selector, name, or id). Use a FieldType value for type-based matching. */
+  key: string;
+  /** Human-readable label */
+  label: string;
+  /** Fill mode: fixed uses fixedValue, generator uses generatorType */
+  mode: FormFieldMode;
+  /** Value to use when mode === 'fixed' */
+  fixedValue?: string;
+  /** Generator type to use when mode === 'generator' */
+  generatorType?: FieldType;
+  /**
+   * When set, matches any detected field whose fieldType equals this value.
+   * Takes precedence over selector-based key matching.
+   * Allows templates to be site-agnostic (works on any form that has a field of this type).
+   */
+  matchByFieldType?: FieldType;
+}
+
 /** A saved form template with fixed data */
 export interface SavedForm {
   id: string;
   name: string;
-  /** URL pattern this form applies to */
+  /** URL pattern this form applies to (use '*' for global) */
   urlPattern: string;
-  /** Map of field selector → fixed value */
+  /** Map of field selector → fixed value (legacy format) */
   fields: Record<string, string>;
+  /** Structured template fields with mode support */
+  templateFields?: FormTemplateField[];
   /** When this template was created */
   createdAt: number;
   /** When this template was last updated */
@@ -135,6 +381,43 @@ export interface IgnoredField {
   createdAt: number;
 }
 
+/** Lightweight field snapshot used for popup cache and diagnostics */
+export interface DetectedFieldSummary {
+  selector: string;
+  fieldType: FieldType;
+  label: string;
+  name?: string;
+  id?: string;
+  placeholder?: string;
+  required?: boolean;
+  contextualType?: FieldType;
+  detectionMethod?: DetectionMethod;
+  /** Confidence score 0–1 from the detection pipeline */
+  detectionConfidence?: number;
+  options?: Array<{ value: string; text: string }>;
+  checkboxValue?: string;
+  checkboxChecked?: boolean;
+}
+
+/** Per-page cache entry for detected fields */
+export interface FieldDetectionCacheEntry {
+  url: string;
+  origin: string;
+  hostname: string;
+  path: string;
+  count: number;
+  fields: DetectedFieldSummary[];
+  updatedAt: number;
+}
+
+/** A single detection strategy entry in the pipeline config */
+export interface DetectionStrategyEntry {
+  /** Classifier name (html-type | keyword | tensorflow | chrome-ai | html-fallback) */
+  name: string;
+  /** Whether this strategy is active */
+  enabled: boolean;
+}
+
 /** Extension settings */
 export interface Settings {
   /** Whether to auto-fill on page load */
@@ -151,12 +434,21 @@ export interface Settings {
   locale: "pt-BR" | "en-US";
   /** Whether to highlight filled fields */
   highlightFilled: boolean;
-  /** Money generator range */
-  moneyMin: number;
-  moneyMax: number;
-  /** Number generator range */
-  numberMin: number;
-  numberMax: number;
+  /** Whether to enable field detection cache */
+  cacheEnabled: boolean;
+  /** Whether to show the per-field fill/inspect icon */
+  showFieldIcon: boolean;
+  /** Position of the field icon relative to the input */
+  fieldIconPosition: "above" | "inside" | "below";
+  /** Ordered list of classification strategies */
+  detectionPipeline: DetectionStrategyEntry[];
+
+  /** Whether to always show the DevTools-style panel on every page */
+  showPanel: boolean;
+  /** Whether debug logging is enabled (all console output is suppressed when false) */
+  debugLog: boolean;
+  /** Minimum log level to output: debug < info < warn < error */
+  logLevel: "debug" | "info" | "warn" | "error";
 }
 
 /** Message types for communication between extension parts */
@@ -184,7 +476,28 @@ export type MessageType =
   | "FILL_FIELD_BY_SELECTOR"
   | "GET_IGNORED_FIELDS"
   | "ADD_IGNORED_FIELD"
-  | "REMOVE_IGNORED_FIELD";
+  | "REMOVE_IGNORED_FIELD"
+  | "GET_FIELD_CACHE"
+  | "SAVE_FIELD_CACHE"
+  | "DELETE_FIELD_CACHE"
+  | "CLEAR_FIELD_CACHE"
+  | "GET_LEARNED_ENTRIES"
+  | "CLEAR_LEARNED_ENTRIES"
+  | "RETRAIN_LEARNING_DATABASE"
+  | "INVALIDATE_CLASSIFIER"
+  | "RELOAD_CLASSIFIER"
+  | "GET_DATASET"
+  | "ADD_DATASET_ENTRY"
+  | "REMOVE_DATASET_ENTRY"
+  | "CLEAR_DATASET"
+  | "IMPORT_DATASET"
+  | "SEED_DATASET"
+  | "EXPORT_DATASET"
+  | "GET_RUNTIME_MODEL_META"
+  | "DELETE_RUNTIME_MODEL"
+  | "APPLY_TEMPLATE"
+  | "UPDATE_FORM"
+  | "DEVTOOLS_RELAY";
 
 export interface ExtensionMessage {
   type: MessageType;
@@ -198,16 +511,31 @@ export interface GenerationResult {
   source: "fixed" | "rule" | "ai" | "tensorflow" | "generator";
 }
 
+export const DEFAULT_DETECTION_PIPELINE: DetectionStrategyEntry[] = [
+  { name: "html-type", enabled: true },
+  { name: "keyword", enabled: true },
+  { name: "tensorflow", enabled: true },
+  { name: "chrome-ai", enabled: true },
+  { name: "html-fallback", enabled: true },
+];
+
+const IS_MAC_PLATFORM =
+  typeof navigator !== "undefined" && navigator.platform?.startsWith("Mac");
+
 export const DEFAULT_SETTINGS: Settings = {
   autoFillOnLoad: false,
   defaultStrategy: "ai",
   useChromeAI: true,
   forceAIFirst: false,
-  shortcut: "Alt+F",
+  shortcut: IS_MAC_PLATFORM ? "Command+Shift+F" : "Alt+Shift+F",
   locale: "pt-BR",
   highlightFilled: true,
-  moneyMin: 1,
-  moneyMax: 10000,
-  numberMin: 1,
-  numberMax: 99999,
+  cacheEnabled: true,
+  showFieldIcon: true,
+  fieldIconPosition: "inside",
+  detectionPipeline: DEFAULT_DETECTION_PIPELINE,
+
+  showPanel: false,
+  debugLog: false,
+  logLevel: "warn",
 };

@@ -15,6 +15,8 @@
       <button class="tab active" data-tab="settings">Geral</button>
       <button class="tab" data-tab="rules">Regras</button>
       <button class="tab" data-tab="forms">Formulários Salvos</button>
+      <button class="tab" data-tab="dataset">Dataset & Treino</button>
+      <button class="tab" data-tab="cache">Cache & Aprendizado</button>
     </div>
 
     <!-- Settings Tab -->
@@ -24,41 +26,8 @@
 
         <div class="toggle-group">
           <div>
-            <label>Preencher automaticamente</label>
-            <div class="description">Preenche os campos ao carregar a página</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="setting-auto-fill" />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="toggle-group">
-          <div>
-            <label>Chrome Built-in AI</label>
-            <div class="description">Usar Gemini Nano quando disponível</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="setting-chrome-ai" />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="toggle-group">
-          <div>
-            <label>IA sempre primeiro</label>
-            <div class="description">Força a IA a ser usada antes de regras, formulários salvos e geradores</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="setting-force-ai-first" />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="toggle-group">
-          <div>
             <label>Destacar campos preenchidos</label>
-            <div class="description">Adiciona borda visual nos campos preenchidos</div>
+            <div class="description">Adiciona borda visual e exibe o nome detectado nos campos preenchidos</div>
           </div>
           <label class="toggle">
             <input type="checkbox" id="setting-highlight" />
@@ -66,25 +35,99 @@
           </label>
         </div>
 
-        <div class="form-row" style="margin-top: 16px">
-          <div class="form-group">
-            <label for="setting-strategy">Estratégia padrão:</label>
-            <select id="setting-strategy">
-              <option value="ai">AI (Chrome AI / TensorFlow)</option>
-              <option value="tensorflow">TensorFlow.js</option>
-              <option value="random">Geradores aleatórios</option>
-            </select>
+        <div class="toggle-group">
+          <div>
+            <label>Cache de detecção</label>
+            <div class="description">Guarda campos detectados por URL para carregamento rápido no popup</div>
           </div>
-          <div class="form-group">
-            <label for="setting-locale">Localidade:</label>
-            <select id="setting-locale">
-              <option value="pt-BR">Português (Brasil)</option>
-              <option value="en-US">English (US)</option>
-            </select>
+          <label class="toggle">
+            <input type="checkbox" id="setting-cache-enabled" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-group">
+          <div>
+            <label>Painel Flutuante</label>
+            <div class="description">Exibe automaticamente o painel flutuante de controles em todas as páginas</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-show-panel" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-group" style="margin-top: 16px">
+          <div>
+            <label>Logs de diagnóstico</label>
+            <div class="description">Exibe mensagens de depuração no console do navegador</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-debug-log" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" id="log-level-group" style="margin-top: 8px">
+          <label for="setting-log-level">Nível mínimo de log:</label>
+          <select id="setting-log-level">
+            <option value="debug">Debug (tudo)</option>
+            <option value="info">Info</option>
+            <option value="warn">Warn</option>
+            <option value="error">Error (somente erros)</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Field Icon Card -->
+      <div class="card">
+        <h2>Ícone de Campo</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
+          Configure a exibição do ícone de preenchimento rápido que aparece ao focar em um campo.
+        </p>
+
+        <div class="toggle-group">
+          <div>
+            <label>Exibir ícone de campo</label>
+            <div class="description">Mostra o botão de preencher e salvar regra ao focar num campo</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-show-field-icon" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" id="field-icon-position-group" style="margin-top: 12px;">
+          <label for="setting-field-icon-position">Posição do ícone:</label>
+          <select id="setting-field-icon-position">
+            <option value="above">Acima do campo</option>
+            <option value="inside">Dentro do campo (à direita)</option>
+            <option value="below">Abaixo do campo</option>
+          </select>
+          <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--text-muted);">
+            Recarregue a aba ativa para aplicar a mudança de posição.
           </div>
         </div>
 
-        <button id="btn-save-settings" class="btn btn-primary">Salvar Configurações</button>
+      </div>
+
+      <!-- Detection Strategies Card -->
+      <div class="card">
+        <h2>Estratégias de Detecção</h2>
+        <p class="description" style="margin-bottom: 12px; color: var(--text-muted); font-size: 13px;">
+          Arraste para reordenar as estratégias. A extensão tenta cada estratégia habilitada na ordem listada até encontrar um resultado.
+        </p>
+
+        <div id="strategy-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+
+        <div id="chrome-ai-status-block" style="display:none; margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); background: var(--bg);">
+          <div id="chrome-ai-status-text" style="color: var(--text-muted);"></div>
+          <button id="btn-download-chrome-ai" class="btn btn-secondary" style="display:none; margin-top: 8px; font-size: 12px;">
+            ⬇️ Iniciar download do modelo
+          </button>
+        </div>
+
       </div>
     </div>
 
@@ -119,38 +162,13 @@
           <div class="form-group">
             <label for="rule-type">Tipo do campo:</label>
             <select id="rule-type">
-              <option value="cpf">CPF</option>
-              <option value="cnpj">CNPJ</option>
-              <option value="email">E-mail</option>
-              <option value="phone">Telefone</option>
-              <option value="full-name">Nome Completo</option>
-              <option value="first-name">Primeiro Nome</option>
-              <option value="last-name">Sobrenome</option>
-              <option value="address">Endereço</option>
-              <option value="cep">CEP</option>
-              <option value="rg">RG</option>
-              <option value="date">Data</option>
-              <option value="birth-date">Data de Nascimento</option>
-              <option value="password">Senha</option>
-              <option value="username">Usuário</option>
-              <option value="company">Empresa</option>
-              <option value="number">Número</option>
-              <option value="text">Texto</option>
+              <!-- preenchido dinamicamente -->
             </select>
           </div>
           <div class="form-group">
             <label for="rule-generator">Gerador:</label>
             <select id="rule-generator">
-              <option value="auto">Automático</option>
-              <option value="ai">Chrome AI</option>
-              <option value="tensorflow">TensorFlow.js</option>
-              <option value="cpf">CPF válido</option>
-              <option value="cnpj">CNPJ válido</option>
-              <option value="email">E-mail</option>
-              <option value="phone">Telefone</option>
-              <option value="full-name">Nome</option>
-              <option value="cep">CEP</option>
-              <option value="rg">RG</option>
+              <!-- preenchido dinamicamente -->
             </select>
           </div>
         </div>
@@ -166,30 +184,143 @@
           </div>
         </div>
 
-        <button id="btn-save-rule" class="btn btn-primary">Salvar Regra</button>
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-save-rule" class="btn btn-primary">Salvar Regra</button>
+          <button id="btn-cancel-rule" class="btn btn-secondary" style="display: none;">Cancelar</button>
+        </div>
       </div>
     </div>
 
     <!-- Saved Forms Tab -->
     <div class="tab-content" id="tab-forms">
       <div class="card">
-        <h2>Formulários Salvos</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h2 style="margin:0;">Formulários Salvos</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button id="btn-import-forms" class="btn btn-secondary btn-sm" title="Importar backup JSON">⬇ Importar</button>
+            <button id="btn-export-forms" class="btn btn-secondary btn-sm" title="Exportar backup JSON">⬆ Exportar</button>
+            <button id="btn-create-template" class="btn btn-primary btn-sm">+ Criar Template</button>
+          </div>
+        </div>
+        <input type="file" id="import-forms-file" accept=".json" style="display:none;" />
+        <div class="description" style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
+          Templates definem valores padrão por tipo de campo (CPF, nome, data…) e se aplicam em qualquer site onde esses campos forem detectados.
+        </div>
         <div id="saved-forms-list"></div>
+      </div>
+    </div>
+
+    <!-- Dataset & Training Tab -->
+    <div class="tab-content" id="tab-dataset">
+
+      <!-- Model Status Card -->
+      <div class="card">
+        <h2>Estado do Modelo</h2>
+        <div id="model-status-block" style="margin-bottom: 12px; padding: 12px; border-radius: 6px; background: var(--bg-secondary, #1e1e1e); border: 1px solid var(--border-color, #333); font-size: 13px; line-height: 1.7;">
+          <div id="model-status-text" style="color: var(--text-muted, #888);">Verificando modelo...</div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button id="btn-train-model" class="btn btn-primary">&#x1F9E0; Treinar Modelo</button>
+          <button id="btn-delete-model" class="btn btn-delete" style="display:none;">&#x1F5D1; Remover Modelo Treinado</button>
+        </div>
+
+        <!-- Training Progress -->
+        <div id="training-progress-block" style="display:none; margin-top: 16px;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px;">Progresso do Treinamento</div>
+          <div style="background: var(--bg-secondary, #1e1e1e); border-radius: 4px; overflow: hidden; height: 8px; margin-bottom: 8px; border: 1px solid var(--border-color);">
+            <div id="training-progress-bar" style="height: 100%; background: #6366f1; width: 0%; transition: width .2s;"></div>
+          </div>
+          <div id="training-progress-label" style="font-size: 12px; color: var(--text-muted);">Epoch 0 / 0</div>
+          <pre id="training-log" style="
+            margin-top: 10px;
+            background: var(--bg-secondary, #1e1e1e);
+            color: var(--text-primary, #d4d4d4);
+            font-size: 11px;
+            line-height: 1.6;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color, #333);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 8px 0 0;
+          "></pre>
+        </div>
+      </div>
+
+      <!-- Add Entry Card -->
+      <div class="card">
+        <h2>Adicionar Entrada ao Dataset</h2>
+        <p class="description" style="color: var(--text-muted); font-size: 13px; margin-bottom: 14px;">
+          Digite os sinais do campo como você os vê no HTML (label + name + id + placeholder concatenados).
+          Ex: <code>cpf cpf_field digite seu cpf</code>
+        </p>
+        <div class="form-row">
+          <div class="form-group" style="flex: 2;">
+            <label for="dataset-signals">Sinais do campo:</label>
+            <input type="text" id="dataset-signals" placeholder="cpf cpf_field digite seu cpf" />
+          </div>
+          <div class="form-group">
+            <label for="dataset-type">Tipo:</label>
+            <select id="dataset-type">
+              <!-- preenchido dinamicamente -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="dataset-difficulty">Dificuldade:</label>
+            <select id="dataset-difficulty">
+              <option value="easy">Fácil</option>
+              <option value="medium">Médio</option>
+              <option value="hard">Difícil</option>
+            </select>
+          </div>
+        </div>
+        <button id="btn-add-dataset-entry" class="btn btn-primary">Adicionar Entrada</button>
+      </div>
+
+      <!-- Dataset List Card -->
+      <div class="card">
+        <h2>Entradas do Dataset</h2>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center;">
+          <span id="dataset-count-badge" class="badge" style="font-size: 13px; padding: 4px 10px;">0 entradas</span>
+          <button id="btn-seed-dataset" class="btn btn-secondary" style="font-size: 12px;">&#x1F331; Importar Dataset Padrão</button>
+          <button id="btn-import-dataset" class="btn btn-secondary" style="font-size: 12px;">&#x1F4C2; Importar JSON</button>
+          <button id="btn-export-dataset" class="btn btn-secondary" style="font-size: 12px;">&#x1F4E5; Exportar JSON</button>
+          <button id="btn-clear-dataset" class="btn btn-delete" style="font-size: 12px;">&#x1F5D1; Limpar Dataset</button>
+        </div>
+        <input type="text" id="dataset-filter" placeholder="Filtrar por sinais ou tipo..." style="margin-bottom: 12px; width: 100%; box-sizing: border-box;" />
+        <input type="file" id="dataset-import-file" accept=".json" style="display:none;" />
+        <div id="dataset-list"></div>
+      </div>
+    </div>
+
+    <!-- Cache & Learning Tab (renamed) -->
+    <div class="tab-content" id="tab-cache">
+      <div class="card">
+        <h2>Cache de Detecção por Página</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
+          Guarda os campos detectados por URL para que o popup recupere o estado rapidamente.
+        </p>
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <button id="btn-refresh-cache" class="btn btn-primary">Atualizar</button>
+          <button id="btn-clear-cache" class="btn btn-delete">Limpar Todo Cache</button>
+        </div>
+        <div id="cache-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Aprendizado</h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+          <button id="btn-clear-learning" class="btn btn-delete">Limpar Aprendizado</button>
+        </div>
+        <div id="learning-summary" class="empty" style="padding: 10px 0; text-align:left;"></div>
+        <div id="learned-list"></div>
       </div>
     </div>
   </div>
 
   <script type="module" src="./options.ts"></script>
-  <script>
-    document.querySelectorAll('.tab').forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-        document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
-        tab.classList.add('active');
-        var target = document.getElementById('tab-' + tab.getAttribute('data-tab'));
-        if (target) target.classList.add('active');
-      });
-    });
-  </script>
 </body>
 </html>

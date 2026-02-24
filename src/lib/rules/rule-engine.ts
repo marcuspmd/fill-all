@@ -2,9 +2,75 @@
  * Rule engine — determines which value to use for a given field
  */
 
-import type { FieldRule, FormField, GenerationResult } from "@/types";
-import { getRulesForUrl, getSavedFormsForUrl } from "@/lib/storage/storage";
-import { generate, generateMoney, generateNumber } from "@/lib/generators";
+import type {
+  FieldRule,
+  FormField,
+  GenerationResult,
+  FieldType,
+} from "@/types";
+import { FIELD_TYPE_DEFINITIONS } from "@/types";
+import { getRulesForUrl } from "@/lib/storage/storage";
+import { generate } from "@/lib/generators";
+import {
+  adaptGeneratedValue,
+  generateWithConstraints,
+} from "@/lib/generators/adaptive";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("RuleEngine");
+
+const AI_TIMEOUT_MS = 5000;
+
+/**
+ * Generator keys where AI genuinely adds value (free-text / open-ended).
+ * Every other type has a deterministic generator — calling AI wastes time.
+ */
+const AI_USEFUL_GENERATORS = new Set([
+  "text",
+  "description",
+  "notes",
+  "search-text",
+  "fallback-text",
+]);
+
+/**
+ * Field types that have deterministic, high-quality generators.
+ * Derived from FIELD_TYPE_DEFINITIONS: any type whose generator is NOT
+ * in the AI_USEFUL_GENERATORS set is considered generator-only.
+ */
+const GENERATOR_ONLY_TYPES = new Set<FieldType>(
+  FIELD_TYPE_DEFINITIONS.filter(
+    (d) => d.generator && !AI_USEFUL_GENERATORS.has(d.generator),
+  ).map((d) => d.type),
+);
+
+/** Wraps an AI call with a hard timeout so it never blocks indefinitely. */
+async function callAiWithTimeout(
+  fn: (field: FormField) => Promise<string>,
+  field: FormField,
+  context: string,
+): Promise<string> {
+  const label = field.label ?? field.id ?? field.selector;
+  log.info(
+    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${AI_TIMEOUT_MS}ms)...`,
+  );
+  const start = Date.now();
+
+  const result = await Promise.race([
+    fn(field),
+    new Promise<string>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`AI timeout (${AI_TIMEOUT_MS}ms)`)),
+        AI_TIMEOUT_MS,
+      ),
+    ),
+  ]);
+
+  log.info(
+    `✅ AI concluiu em ${Date.now() - start}ms: "${result.slice(0, 60)}"`,
+  );
+  return result;
+}
 
 /**
  * Resolves the value for a single field, using this priority:
@@ -12,8 +78,8 @@ import { generate, generateMoney, generateNumber } from "@/lib/generators";
  * 2. Saved form with fixed data (exact match)
  * 3. Field-specific rule with fixed value
  * 4. Field-specific rule with generator
- * 5. AI / TensorFlow fallback (all field types, not only "unknown")
- * 6. Default generator based on detected field type
+ * 5. Default generator based on detected field type
+ * 6. AI as last resort (only when default generator returns empty, e.g. select fields)
  */
 export async function resolveFieldValue(
   field: FormField,
@@ -24,57 +90,36 @@ export async function resolveFieldValue(
   const selector = field.selector;
 
   const fieldDesc = `selector="${selector}" label="${field.label ?? ""}" type="${field.fieldType}"`;
-  console.log(
-    `[Fill All / Rule Engine] Resolvendo campo: ${fieldDesc}${forceAIFirst ? " [forceAIFirst=true]" : ""}`,
+  log.debug(
+    `Resolvendo campo: ${fieldDesc}${forceAIFirst ? " [forceAIFirst=true]" : ""}`,
   );
 
-  // 1. AI first (when flag is enabled)
-  if (forceAIFirst && aiGenerateFn) {
-    console.log(
-      `[Fill All / Rule Engine] Tentando AI primeiro (forceAIFirst)...`,
-    );
+  // 1. AI first (when flag is enabled) — only for fields where AI genuinely helps
+  if (
+    forceAIFirst &&
+    aiGenerateFn &&
+    !GENERATOR_ONLY_TYPES.has(field.fieldType)
+  ) {
     try {
-      const value = await aiGenerateFn(field);
+      const aiValue = await callAiWithTimeout(
+        aiGenerateFn,
+        field,
+        "forceAIFirst",
+      );
+      const value = adaptGeneratedValue(aiValue, {
+        element: field.element,
+        requireValidity: true,
+      });
       if (value) {
-        console.log(
-          `[Fill All / Rule Engine] AI (forceAIFirst) gerou: "${value}"`,
-        );
         return { fieldSelector: selector, value, source: "ai" };
       }
     } catch (err) {
-      console.warn(`[Fill All / Rule Engine] AI (forceAIFirst) falhou:`, err);
+      log.warn(`AI (forceAIFirst) falhou:`, err);
       // Fall through to normal priority order
     }
   }
 
-  // 2. Check saved forms
-  const savedForms = await getSavedFormsForUrl(url);
-  for (const form of savedForms) {
-    if (form.fields[selector]) {
-      return {
-        fieldSelector: selector,
-        value: form.fields[selector],
-        source: "fixed",
-      };
-    }
-    // Also try matching by field name or id
-    if (field.name && form.fields[field.name]) {
-      return {
-        fieldSelector: selector,
-        value: form.fields[field.name],
-        source: "fixed",
-      };
-    }
-    if (field.id && form.fields[field.id]) {
-      return {
-        fieldSelector: selector,
-        value: form.fields[field.id],
-        source: "fixed",
-      };
-    }
-  }
-
-  // 2 & 3. Check field rules
+  // 2. Check field rules (saved forms are only applied manually via APPLY_TEMPLATE)
   const rules = await getRulesForUrl(url);
   const matchingRule = findMatchingRule(rules, field);
 
@@ -118,64 +163,118 @@ export async function resolveFieldValue(
       matchingRule.generator !== "ai" &&
       matchingRule.generator !== "tensorflow"
     ) {
-      let value: string;
-      if (matchingRule.generator === "money") {
-        value = generateMoney(matchingRule.moneyMin, matchingRule.moneyMax);
-      } else if (matchingRule.generator === "number") {
-        value = generateNumber(matchingRule.numberMin, matchingRule.numberMax);
-      } else {
-        value = generate(matchingRule.generator);
-      }
+      const ruleGenerator = matchingRule.generator as FieldType;
+      const value = generateWithConstraints(() => generate(ruleGenerator), {
+        element: field.element,
+        requireValidity: false,
+      });
       return { fieldSelector: selector, value, source: "generator" };
     }
 
     // If the rule says to use AI
     if (matchingRule.generator === "ai" && aiGenerateFn) {
-      const value = await aiGenerateFn(field);
-      return { fieldSelector: selector, value, source: "ai" };
+      try {
+        const aiValue = await callAiWithTimeout(aiGenerateFn, field, "rule:ai");
+        const value = adaptGeneratedValue(aiValue, {
+          element: field.element,
+          requireValidity: false,
+        });
+        return { fieldSelector: selector, value, source: "ai" };
+      } catch (err) {
+        log.warn(`AI (rule) falhou:`, err);
+      }
     }
   }
 
-  // 5. Try AI generation if available (all field types)
-  if (aiGenerateFn) {
-    console.log(
-      `[Fill All / Rule Engine] Tentando AI como fallback para campo: ${fieldDesc}`,
+  // 5. Default generator based on detected field type
+  const effectiveType = getEffectiveFieldType(field);
+  const value = generateWithConstraints(() => generate(effectiveType), {
+    element: field.element,
+    requireValidity: true,
+  });
+  if (value) {
+    log.debug(`Gerador padrão (${effectiveType}): "${value}"`);
+    return { fieldSelector: selector, value, source: "generator" };
+  }
+
+  // 5.5 For <select> elements: pick a random valid option directly.
+  // AI cannot know which options are available in the DOM, so we must handle this ourselves.
+  if (field.element instanceof HTMLSelectElement) {
+    const validOptions = Array.from(field.element.options).filter(
+      (opt) => opt.value,
+    );
+    if (validOptions.length > 0) {
+      const random =
+        validOptions[Math.floor(Math.random() * validOptions.length)];
+      log.debug(
+        `Select aleatório: "${random.value}" (${validOptions.length} opções disponíveis)`,
+      );
+      return {
+        fieldSelector: selector,
+        value: random.value,
+        source: "generator",
+      };
+    }
+    // No valid options — return empty, no point calling AI
+    log.warn(`Select sem opções válidas para: ${fieldDesc}`);
+    return { fieldSelector: selector, value: "", source: "generator" };
+  }
+
+  // 5.6 For checkbox/radio: the value is fixed (true/false), AI adds no value here.
+  if (
+    field.element instanceof HTMLInputElement &&
+    (field.element.type === "checkbox" || field.element.type === "radio")
+  ) {
+    return { fieldSelector: selector, value: "true", source: "generator" };
+  }
+
+  // 6. AI as last resort — only for free-text fields where the generator returned empty
+  if (aiGenerateFn && !GENERATOR_ONLY_TYPES.has(field.fieldType)) {
+    log.info(
+      `Gerador padrão vazio — tentando AI como último recurso para: ${fieldDesc}`,
     );
     try {
-      const value = await aiGenerateFn(field);
-      if (value) {
-        console.log(`[Fill All / Rule Engine] AI fallback gerou: "${value}"`);
-        return { fieldSelector: selector, value, source: "ai" };
+      const aiValue = await callAiWithTimeout(
+        aiGenerateFn,
+        field,
+        "último recurso",
+      );
+      const adaptedAiValue = adaptGeneratedValue(aiValue, {
+        element: field.element,
+        requireValidity: true,
+      });
+      if (adaptedAiValue) {
+        return { fieldSelector: selector, value: adaptedAiValue, source: "ai" };
       }
-      console.warn(
-        `[Fill All / Rule Engine] AI fallback retornou vazio para: ${fieldDesc}`,
-      );
+      log.warn(`AI (último recurso) retornou vazio para: ${fieldDesc}`);
     } catch (err) {
-      console.warn(
-        `[Fill All / Rule Engine] AI fallback falhou para: ${fieldDesc}`,
-        err,
-      );
-      // Fall through to default generator
+      log.warn(`AI (último recurso) falhou para: ${fieldDesc}`, err);
     }
-  } else {
-    console.log(
-      `[Fill All / Rule Engine] Sem função de AI disponível para: ${fieldDesc}`,
-    );
   }
 
-  // 6. Default generator
-  const value = generate(field.fieldType);
-  console.log(
-    `[Fill All / Rule Engine] Gerador padrão (${field.fieldType}): "${value}"`,
-  );
-  return { fieldSelector: selector, value, source: "generator" };
+  return { fieldSelector: selector, value: value || "", source: "generator" };
+}
+
+function getEffectiveFieldType(field: FormField): FieldType {
+  if (
+    (field.fieldType === "unknown" || field.fieldType === "select") &&
+    field.contextualType &&
+    field.contextualType !== "unknown" &&
+    field.contextualType !== "select"
+  ) {
+    return field.contextualType;
+  }
+  return field.fieldType;
 }
 
 function findMatchingRule(
   rules: FieldRule[],
   field: FormField,
 ): FieldRule | undefined {
-  return rules.find((rule) => {
+  // Sort by priority (descending) so higher priority rules take precedence
+  const sorted = [...rules].sort((a, b) => b.priority - a.priority);
+
+  return sorted.find((rule) => {
     // Match by CSS selector
     if (rule.fieldSelector && field.element.matches(rule.fieldSelector)) {
       return true;

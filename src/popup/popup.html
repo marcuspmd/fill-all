@@ -7,10 +7,12 @@
 </head>
 <body>
   <div id="app">
-    <header class="header">
-      <h1>🔧 Fill All</h1>
-      <p class="subtitle">Auto-fill inteligente para testes</p>
-    </header>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <span class="toolbar-title">🔧 Fill All</span>
+        <div class="tabs" id="tabs"></div>
+      </div>
+    </div>
 
     <!-- Chrome AI status banner — shown only when AI needs attention -->
     <div id="chrome-ai-banner" class="chrome-ai-banner" style="display:none">
@@ -21,77 +23,7 @@
       </div>
     </div>
 
-    <section class="section">
-      <button id="btn-fill-all" class="btn btn-primary">
-        ⚡ Preencher Todos os Campos
-      </button>
-      <div class="btn-row">
-        <button id="btn-toggle-panel" class="btn btn-outline btn-half">
-          📌 Painel Flutuante
-        </button>
-        <button id="btn-toggle-watch" class="btn btn-outline btn-half">
-          👁️ Watch
-        </button>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>Formulários Salvos</h2>
-      <div id="saved-forms-list" class="list"></div>
-      <button id="btn-save-form" class="btn btn-secondary">
-        💾 Salvar Formulário Atual
-      </button>
-    </section>
-
-    <section class="section">
-      <h2>Campos Detectados</h2>
-      <div id="fields-list" class="list"></div>
-      <button id="btn-detect" class="btn btn-outline">
-        🔍 Detectar Campos
-      </button>
-    </section>
-
-    <section class="section" id="section-ignored" style="display:none">
-      <h2>Campos Ignorados</h2>
-      <div id="ignored-fields-list" class="list"></div>
-    </section>
-
-    <section class="section">
-      <h2>Geradores Rápidos</h2>
-      <div class="generators-grid">
-        <button class="btn btn-chip" data-generator="cpf">CPF</button>
-        <button class="btn btn-chip" data-generator="cnpj">CNPJ</button>
-        <button class="btn btn-chip" data-generator="email">E-mail</button>
-        <button class="btn btn-chip" data-generator="phone">Telefone</button>
-        <button class="btn btn-chip" data-generator="full-name">Nome</button>
-        <button class="btn btn-chip" data-generator="rg">RG</button>
-        <button class="btn btn-chip" data-generator="cep">CEP</button>
-        <button class="btn btn-chip" data-generator="password">Senha</button>
-        <button class="btn btn-chip" data-generator="money">Dinheiro</button>
-        <button class="btn btn-chip" data-generator="number">Número</button>
-      </div>
-      <div id="money-config" class="money-config" style="display:none">
-        <span class="money-label">R$</span>
-        <input type="number" id="money-min" class="money-input" placeholder="Mín" min="0" step="0.01">
-        <span class="money-sep">–</span>
-        <input type="number" id="money-max" class="money-input" placeholder="Máx" min="0" step="0.01">
-      </div>
-      <div id="number-config" class="money-config" style="display:none">
-        <span class="money-label">#</span>
-        <input type="number" id="number-min" class="money-input" placeholder="Mín" min="0" step="1">
-        <span class="money-sep">–</span>
-        <input type="number" id="number-max" class="money-input" placeholder="Máx" min="0" step="1">
-      </div>
-      <div id="generated-value" class="generated-value" style="display:none">
-        <span id="generated-text"></span>
-        <button id="btn-copy" class="btn-copy" title="Copiar">📋</button>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <a href="#" id="btn-options">⚙️ Configurações</a>
-      <span class="version">v1.0.0</span>
-    </footer>
+    <div class="content" id="content"></div>
   </div>
   <script type="module" src="./popup.ts"></script>
 </body>

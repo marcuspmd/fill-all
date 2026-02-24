@@ -7,11 +7,24 @@
 - **Preenchimento automático** de formulários com um clique ou atalho
 - **Chrome Built-in AI** (Gemini Nano) para análise inteligente de campos
 - **TensorFlow.js** como fallback para classificação de campos
+- **Treinamento de modelo no browser** — treine e avalie modelos customizados direto na interface
 - **Geradores de dados brasileiros válidos**: CPF, CNPJ, RG, CEP, telefone, etc.
 - **Regras por site**: configure comportamentos diferentes para cada site
 - **Formulários salvos**: salve dados fixos para reutilização
+- **Dataset gerenciável**: importe, exporte e edite amostras de treino pela Options Page
 - **Atalho de teclado**: `Ctrl+Shift+F` (Mac: `Cmd+Shift+F`)
 - **Menu de contexto**: clique direito → "Fill All"
+
+## 🤖 Chrome Built-in AI (Gemini Nano)
+
+Requer **Chrome 131+** com a flag experimental ativada:
+
+1. Abra `chrome://flags`
+2. Procure por `#prompt-api-for-gemini-nano`
+3. Ative a flag
+4. Reinicie o Chrome
+
+Sem isso, o Chrome AI não será utilizado. Fallback automático para TensorFlow.js.
 
 ## 📦 Instalação
 
@@ -53,7 +66,7 @@ fill-all/
 │   │   └── storage/           # Chrome Storage wrapper
 │   └── types/                 # Type definitions
 ├── AGENTS.md                  # Documentação dos módulos
-├── webpack.config.js          # Webpack config
+├── vite.config.ts             # Vite + @crxjs/vite-plugin config
 ├── tsconfig.json              # TypeScript config
 └── package.json
 ```
@@ -92,10 +105,11 @@ Você pode salvar o estado atual de um formulário e reutilizar os mesmos dados:
 ## 🛠️ Tecnologias
 
 - **TypeScript** (strict mode)
-- **Webpack** (bundling)
+- **Vite** + **@crxjs/vite-plugin** (bundling + HMR)
 - **Chrome Extension Manifest V3**
 - **Chrome Built-in AI** (Gemini Nano)
 - **TensorFlow.js**
+- **Zod v4** (validação de schemas)
 - **Chrome Storage API**
 
 ## 📋 Scripts
@@ -103,8 +117,10 @@ Você pode salvar o estado atual de um formulário e reutilizar os mesmos dados:
 | Comando | Descrição |
 |---------|-----------|
 | `npm run build` | Build de produção |
-| `npm run dev` | Build com watch mode |
-| `npm run type-check` | Verificação de tipos |
+| `npm run dev` | Build com HMR |
+| `npm run type-check` | Verificação de tipos (`tsc --noEmit`) |
+| `npm run train:model` | Treina modelo TensorFlow.js com dataset |
+| `npm run clean` | Limpa pasta `dist/` |
 
 ## 📄 Licença
 

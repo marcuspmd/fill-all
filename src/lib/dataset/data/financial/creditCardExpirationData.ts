@@ -1,0 +1,105 @@
+import type { TrainingSample } from "@/types";
+
+export const TRAINING_SAMPLES_CREDIT_CARD_EXPIRATION: TrainingSample[] = [
+  {
+    signals: {
+      primary: ["Validade"],
+      secondary: [],
+      structural: ["Pagamento"],
+    },
+    category: "financial",
+    type: "credit-card-expiration",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Expiration Date"],
+      secondary: [],
+      structural: ["Payment"],
+    },
+    category: "financial",
+    type: "credit-card-expiration",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Expiry"],
+      secondary: [],
+      structural: ["Card Details"],
+    },
+    category: "financial",
+    type: "credit-card-expiration",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: { primary: ["card_expiry"], secondary: [], structural: [] },
+    category: "financial",
+    type: "credit-card-expiration",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Data de Validade"],
+      secondary: ["MM/AA"],
+      structural: ["Checkout"],
+    },
+    category: "financial",
+    type: "credit-card-expiration",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Exp. Date"],
+      secondary: ["MM/YY"],
+      structural: ["Payment Method"],
+    },
+    category: "financial",
+    type: "credit-card-expiration",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Vencimento do Cartão"],
+      secondary: ["Mês/Ano"],
+      structural: ["Dados do Cartão"],
+    },
+    category: "financial",
+    type: "credit-card-expiration",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Mês / Ano"],
+      secondary: ["Validade impressa no cartão"],
+      structural: [],
+    },
+    category: "financial",
+    type: "credit-card-expiration",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["Validade"], secondary: [], structural: [] },
+    category: "financial",
+    type: "credit-card-expiration",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { maxLength: 5, pattern: "\\d{2}/\\d{2}" },
+  },
+];
