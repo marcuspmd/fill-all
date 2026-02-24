@@ -194,7 +194,18 @@
     <!-- Saved Forms Tab -->
     <div class="tab-content" id="tab-forms">
       <div class="card">
-        <h2>Formulários Salvos</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h2 style="margin:0;">Formulários Salvos</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button id="btn-import-forms" class="btn btn-secondary btn-sm" title="Importar backup JSON">⬇ Importar</button>
+            <button id="btn-export-forms" class="btn btn-secondary btn-sm" title="Exportar backup JSON">⬆ Exportar</button>
+            <button id="btn-create-template" class="btn btn-primary btn-sm">+ Criar Template</button>
+          </div>
+        </div>
+        <input type="file" id="import-forms-file" accept=".json" style="display:none;" />
+        <div class="description" style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
+          Templates definem valores padrão por tipo de campo (CPF, nome, data…) e se aplicam em qualquer site onde esses campos forem detectados.
+        </div>
         <div id="saved-forms-list"></div>
       </div>
     </div>

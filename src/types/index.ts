@@ -335,7 +335,7 @@ export type FormFieldMode = "fixed" | "generator";
 
 /** Structured field config for form templates */
 export interface FormTemplateField {
-  /** Field identifier (selector, name, or id) */
+  /** Field identifier (selector, name, or id). Use a FieldType value for type-based matching. */
   key: string;
   /** Human-readable label */
   label: string;
@@ -345,6 +345,12 @@ export interface FormTemplateField {
   fixedValue?: string;
   /** Generator type to use when mode === 'generator' */
   generatorType?: FieldType;
+  /**
+   * When set, matches any detected field whose fieldType equals this value.
+   * Takes precedence over selector-based key matching.
+   * Allows templates to be site-agnostic (works on any form that has a field of this type).
+   */
+  matchByFieldType?: FieldType;
 }
 
 /** A saved form template with fixed data */

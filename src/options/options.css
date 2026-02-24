@@ -482,6 +482,15 @@ header h1 {
   width: 100%;
 }
 
+.template-fields-table td:last-child {
+  width: 36px;
+  text-align: center;
+}
+
+.template-fields-table .field-type-match-select {
+  min-width: 180px;
+}
+
 .field-label-cell {
   font-family: monospace;
   font-size: 12px;

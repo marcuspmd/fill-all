@@ -365,7 +365,39 @@ export async function applyTemplate(
   let filled = 0;
 
   if (form.templateFields && form.templateFields.length > 0) {
+    // For type-based templates (matchByFieldType), track which fields were already handled
+    const handledSelectors = new Set<string>();
+
     for (const tField of form.templateFields) {
+      // Type-based matching: find ALL fields of the given type
+      if (tField.matchByFieldType) {
+        const matchedFields = detectedFields.filter(
+          (f) =>
+            f.fieldType === tField.matchByFieldType &&
+            !handledSelectors.has(f.selector),
+        );
+        for (const matchedField of matchedFields) {
+          let value: string;
+          if (tField.mode === "generator" && tField.generatorType) {
+            value = generate(tField.generatorType);
+          } else {
+            value = tField.fixedValue ?? "";
+          }
+          if (!value && tField.mode === "fixed") continue;
+          await applyValueToField(matchedField, value);
+          if (settings.highlightFilled) {
+            highlightField(
+              matchedField.element,
+              matchedField.label ?? matchedField.fieldType ?? undefined,
+            );
+          }
+          handledSelectors.add(matchedField.selector);
+          filled++;
+        }
+        continue;
+      }
+
+      // Selector-based matching (legacy / saved-from-page templates)
       const matchedField = detectedFields.find(
         (f) =>
           f.selector === tField.key ||

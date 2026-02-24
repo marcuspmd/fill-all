@@ -93,6 +93,7 @@ const templateFieldSchema = z
     mode: z.enum(["fixed", "generator"]),
     fixedValue: z.string().optional(),
     generatorType: z.enum(FIELD_TYPES).optional(),
+    matchByFieldType: z.enum(FIELD_TYPES).optional(),
   })
   .strict();
 
