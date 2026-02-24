@@ -114,6 +114,16 @@ function isValueValidForElement(
 ): boolean {
   if (!element) return true;
 
+  // Custom component wrappers (div, span, etc.) are not native form elements.
+  // Skip the validity probe and trust the adapter to accept any generated value.
+  if (
+    !(element instanceof HTMLInputElement) &&
+    !(element instanceof HTMLTextAreaElement) &&
+    !(element instanceof HTMLSelectElement)
+  ) {
+    return true;
+  }
+
   if (element instanceof HTMLSelectElement) {
     return true;
   }

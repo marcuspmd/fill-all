@@ -159,8 +159,10 @@ function selectOption(wrapper: HTMLElement, value: string): boolean {
     ".ant-select-selection-search-input",
   );
 
-  if (searchInput) {
-    // Type the value to filter options
+  // Only type into the search box when we have a real search value.
+  // Typing an empty string can trigger React to re-render/close the dropdown
+  // before we get a chance to click an option.
+  if (searchInput && value) {
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
       window.HTMLInputElement.prototype,
       "value",
