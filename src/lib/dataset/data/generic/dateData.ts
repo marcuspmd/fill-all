@@ -94,4 +94,62 @@ export const TRAINING_SAMPLES_DATE: TrainingSample[] = [
     language: "pt",
     domFeatures: { inputType: "date" },
   },
+
+  // ── ABREVIAÇÕES / HARD ──
+  {
+    signals: { primary: ["dt"], secondary: [], structural: ["Formulário"] },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["dt_field"],
+      secondary: ["data"],
+      structural: [],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["dt_cadastro"],
+      secondary: [],
+      structural: ["Cadastro"],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["dt_inicio"],
+      secondary: ["data início"],
+      structural: [],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["dt_fim"],
+      secondary: ["data término"],
+      structural: [],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
 ];

@@ -113,7 +113,7 @@ export const VALIDATION_SAMPLES: ValidationSample[] = [
   },
   {
     signals: "num_cel celular-input numero-celular",
-    expectedType: "phone",
+    expectedType: "mobile",
     note: "Variação celular",
   },
   {
@@ -249,7 +249,7 @@ export const VALIDATION_SAMPLES: ValidationSample[] = [
   },
   {
     signals: "preco_unitario unit_price price",
-    expectedType: "money",
+    expectedType: "price",
     note: "Preço unitário",
   },
   {
@@ -269,7 +269,7 @@ export const VALIDATION_SAMPLES: ValidationSample[] = [
   },
   {
     signals: "comentarios comments_field notes",
-    expectedType: "text",
+    expectedType: "notes",
     note: "Comentários",
   },
 
@@ -416,18 +416,18 @@ export const VALIDATION_SAMPLES: ValidationSample[] = [
   // ── ADDRESS COMPLEMENT ──
   {
     signals: "complemento_endereco complement_address apto",
-    expectedType: "text",
+    expectedType: "complement",
     note: "Complemento de endereço",
   },
   {
     signals: "complemento apto bloco casa apartamento",
-    expectedType: "text",
+    expectedType: "complement",
     note: "Complemento com contexto",
   },
   // ── ADDRESS NUMBER / GENERIC CODE ──
   {
     signals: "numero_imovel house_number num_address",
-    expectedType: "number",
+    expectedType: "house-number",
     note: "Número do imóvel",
   },
   {
@@ -487,7 +487,7 @@ export const VALIDATION_SAMPLES: ValidationSample[] = [
   },
   {
     signals: "house_number number_endereco num_casa",
-    expectedType: "number",
+    expectedType: "house-number",
     note: "Numero de endereco",
   },
   {

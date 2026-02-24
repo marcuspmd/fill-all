@@ -102,4 +102,90 @@ export const TRAINING_SAMPLES_STATE: TrainingSample[] = [
     language: "pt",
     domFeatures: { maxLength: 2 },
   },
+
+  // COMPOUND / CONTEXTUAL
+  {
+    signals: {
+      primary: ["UF de Nascimento"],
+      secondary: [],
+      structural: ["Dados Pessoais"],
+    },
+    category: "address",
+    type: "state",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Estado de Residência"],
+      secondary: [],
+      structural: ["Endereço"],
+    },
+    category: "address",
+    type: "state",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["state_code"],
+      secondary: [],
+      structural: [],
+    },
+    category: "address",
+    type: "state",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Sigla Estado"],
+      secondary: ["Ex: SP, RJ, MG"],
+      structural: [],
+    },
+    category: "address",
+    type: "state",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Region"],
+      secondary: [],
+      structural: ["Shipping Address"],
+    },
+    category: "address",
+    type: "state",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Estado do Emitente"],
+      secondary: [],
+      structural: ["Documento"],
+    },
+    category: "address",
+    type: "state",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["UF Expedição"],
+      secondary: ["Estado do RG"],
+      structural: [],
+    },
+    category: "address",
+    type: "state",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
 ];

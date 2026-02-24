@@ -39,8 +39,9 @@ const OUTPUT_DIR = path.resolve(process.cwd(), "public/model");
 
 /**
  * Labels available for classification.
- * Excludes element-type fields (select/checkbox/radio/unknown) since those
- * are detected from HTML structure, not text signals.
+ * Includes all field types defined in TRAINABLE_FIELD_TYPES — including
+ * structural types (select/checkbox/radio/file/unknown) which also carry
+ * relevant text signals (e.g. "upload", "choose", "agree to terms").
  */
 const LABELS = [...TRAINABLE_FIELD_TYPES] as const;
 

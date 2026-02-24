@@ -89,4 +89,102 @@ export const TRAINING_SAMPLES_MONEY: TrainingSample[] = [
     difficulty: "hard",
     language: "pt",
   },
+
+  // INVESTMENT / FINANCIAL CONTEXT
+  {
+    signals: {
+      primary: ["Valor do Investimento"],
+      secondary: [],
+      structural: ["Financeiro"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Investment Amount"],
+      secondary: [],
+      structural: ["Finance"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Salário"],
+      secondary: ["Valor em R$"],
+      structural: ["Dados Profissionais"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Renda Mensal"],
+      secondary: [],
+      structural: ["Financeiro"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Monthly Income"],
+      secondary: [],
+      structural: ["Financial"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Valor Total"],
+      secondary: ["R$"],
+      structural: ["Pagamento"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Total Amount"],
+      secondary: ["$"],
+      structural: ["Payment"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Receita"],
+      secondary: ["Valor da receita"],
+      structural: [],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
 ];

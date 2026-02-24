@@ -236,4 +236,66 @@ export const TRAINING_SAMPLES_NAME: TrainingSample[] = [
     difficulty: "medium",
     language: "en",
   },
+
+  // ── MISTO pt/en e ABREVIAÇÕES ──
+  {
+    signals: {
+      primary: ["name_input"],
+      secondary: ["nome"],
+      structural: [],
+    },
+    category: "personal",
+    type: "name",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["your-name"],
+      secondary: [],
+      structural: ["Personal"],
+    },
+    category: "personal",
+    type: "name",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["nome_field"],
+      secondary: ["name"],
+      structural: [],
+    },
+    category: "personal",
+    type: "name",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["inp_nome"],
+      secondary: [],
+      structural: ["Cadastro"],
+    },
+    category: "personal",
+    type: "name",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["nome_paciente"],
+      secondary: ["paciente"],
+      structural: ["Saúde"],
+    },
+    category: "personal",
+    type: "name",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
 ];
