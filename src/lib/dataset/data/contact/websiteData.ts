@@ -175,4 +175,56 @@ export const TRAINING_SAMPLES_WEBSITE: TrainingSample[] = [
       inputType: "url",
     },
   },
+
+  // ─────────────────────────────────────────────
+  // HARD (sinais que contêm "address"/"endereco" mas são website)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
+      primary: ["Web Address"],
+      secondary: ["Enter your website"],
+      structural: ["Contact"],
+    },
+    category: "contact",
+    type: "website",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Endereço Web"],
+      secondary: ["URL"],
+      structural: ["Contato"],
+    },
+    category: "contact",
+    type: "website",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Endereço do Site"],
+      secondary: ["https://"],
+      structural: ["Perfil"],
+    },
+    category: "contact",
+    type: "website",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Internet Address"],
+      secondary: ["Website URL"],
+      structural: ["Profile"],
+    },
+    category: "contact",
+    type: "website",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "en",
+  },
 ];

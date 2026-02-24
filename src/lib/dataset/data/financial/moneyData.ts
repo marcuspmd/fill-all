@@ -1,26 +1,13 @@
 import type { TrainingSample } from "@/types";
 
 export const TRAINING_SAMPLES_MONEY: TrainingSample[] = [
-  {
-    signals: { primary: ["Valor"], secondary: [], structural: ["Pagamento"] },
-    category: "financial",
-    type: "money",
-    source: "synthetic",
-    difficulty: "easy",
-    language: "pt",
-  },
-  {
-    signals: { primary: ["Money"], secondary: [], structural: ["Payment"] },
-    category: "financial",
-    type: "money",
-    source: "synthetic",
-    difficulty: "easy",
-    language: "en",
-  },
+  // ─────────────────────────────────────────────
+  // EASY (valor monetário genérico com símbolo de moeda)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Valor (R$)"],
-      secondary: [],
+      secondary: ["Informe o valor"],
       structural: ["Financeiro"],
     },
     category: "financial",
@@ -32,7 +19,7 @@ export const TRAINING_SAMPLES_MONEY: TrainingSample[] = [
   {
     signals: {
       primary: ["Amount ($)"],
-      secondary: [],
+      secondary: ["Enter value"],
       structural: ["Billing"],
     },
     category: "financial",
@@ -43,18 +30,6 @@ export const TRAINING_SAMPLES_MONEY: TrainingSample[] = [
   },
   {
     signals: {
-      primary: ["Valor Monetário"],
-      secondary: [],
-      structural: ["Transação"],
-    },
-    category: "financial",
-    type: "money",
-    source: "synthetic",
-    difficulty: "medium",
-    language: "pt",
-  },
-  {
-    signals: {
       primary: ["Valor em Reais"],
       secondary: ["R$ 0,00"],
       structural: ["Pagamento"],
@@ -62,7 +37,19 @@ export const TRAINING_SAMPLES_MONEY: TrainingSample[] = [
     category: "financial",
     type: "money",
     source: "synthetic",
-    difficulty: "medium",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Valor Monetário"],
+      secondary: [],
+      structural: ["Transação"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "easy",
     language: "pt",
   },
   {
@@ -74,47 +61,13 @@ export const TRAINING_SAMPLES_MONEY: TrainingSample[] = [
     category: "financial",
     type: "money",
     source: "synthetic",
-    difficulty: "medium",
+    difficulty: "easy",
     language: "en",
-  },
-  {
-    signals: {
-      primary: ["Montante"],
-      secondary: ["Informe o valor"],
-      structural: [],
-    },
-    category: "financial",
-    type: "money",
-    source: "synthetic",
-    difficulty: "hard",
-    language: "pt",
   },
 
-  // INVESTMENT / FINANCIAL CONTEXT
-  {
-    signals: {
-      primary: ["Valor do Investimento"],
-      secondary: [],
-      structural: ["Financeiro"],
-    },
-    category: "financial",
-    type: "money",
-    source: "synthetic",
-    difficulty: "medium",
-    language: "pt",
-  },
-  {
-    signals: {
-      primary: ["Investment Amount"],
-      secondary: [],
-      structural: ["Finance"],
-    },
-    category: "financial",
-    type: "money",
-    source: "synthetic",
-    difficulty: "medium",
-    language: "en",
-  },
+  // ─────────────────────────────────────────────
+  // MEDIUM (renda / salário / investimento)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Salário"],
@@ -130,7 +83,7 @@ export const TRAINING_SAMPLES_MONEY: TrainingSample[] = [
   {
     signals: {
       primary: ["Renda Mensal"],
-      secondary: [],
+      secondary: ["Valor mensal"],
       structural: ["Financeiro"],
     },
     category: "financial",
@@ -142,7 +95,7 @@ export const TRAINING_SAMPLES_MONEY: TrainingSample[] = [
   {
     signals: {
       primary: ["Monthly Income"],
-      secondary: [],
+      secondary: ["Monthly salary"],
       structural: ["Financial"],
     },
     category: "financial",
@@ -153,27 +106,91 @@ export const TRAINING_SAMPLES_MONEY: TrainingSample[] = [
   },
   {
     signals: {
-      primary: ["Valor Total"],
-      secondary: ["R$"],
+      primary: ["Valor do Investimento"],
+      secondary: ["Aplicação"],
+      structural: ["Financeiro"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Investment Amount"],
+      secondary: ["Investment value"],
+      structural: ["Finance"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Salary"],
+      secondary: ["Annual salary"],
+      structural: ["Employment"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Renda Familiar"],
+      secondary: [],
+      structural: ["Cadastro"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Faturamento"],
+      secondary: ["Faturamento mensal"],
+      structural: ["Empresa"],
+    },
+    category: "financial",
+    type: "money",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+
+  // ─────────────────────────────────────────────
+  // HARD (ambíguo)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
+      primary: ["Valor"],
+      secondary: [],
       structural: ["Pagamento"],
     },
     category: "financial",
     type: "money",
     source: "synthetic",
-    difficulty: "easy",
+    difficulty: "hard",
     language: "pt",
   },
   {
     signals: {
-      primary: ["Total Amount"],
-      secondary: ["$"],
-      structural: ["Payment"],
+      primary: ["Montante"],
+      secondary: ["Informe o valor"],
+      structural: [],
     },
     category: "financial",
     type: "money",
     source: "synthetic",
-    difficulty: "easy",
-    language: "en",
+    difficulty: "hard",
+    language: "pt",
   },
   {
     signals: {

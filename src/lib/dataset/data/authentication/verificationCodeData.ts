@@ -1,10 +1,13 @@
 import type { TrainingSample } from "@/types";
 
 export const TRAINING_SAMPLES_VERIFICATION_CODE: TrainingSample[] = [
+  // ─────────────────────────────────────────────
+  // EASY (código de verificação de conta / e-mail)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Código de Verificação"],
-      secondary: [],
+      secondary: ["Enviado para seu e-mail"],
       structural: ["Segurança"],
     },
     category: "authentication",
@@ -16,7 +19,7 @@ export const TRAINING_SAMPLES_VERIFICATION_CODE: TrainingSample[] = [
   {
     signals: {
       primary: ["Verification Code"],
-      secondary: [],
+      secondary: ["Sent to your email"],
       structural: ["Security"],
     },
     category: "authentication",
@@ -28,8 +31,8 @@ export const TRAINING_SAMPLES_VERIFICATION_CODE: TrainingSample[] = [
   {
     signals: {
       primary: ["Código de Confirmação"],
-      secondary: [],
-      structural: ["Verificação"],
+      secondary: ["Confirme sua conta"],
+      structural: ["Verificação de Conta"],
     },
     category: "authentication",
     type: "verification-code",
@@ -40,7 +43,7 @@ export const TRAINING_SAMPLES_VERIFICATION_CODE: TrainingSample[] = [
   {
     signals: {
       primary: ["Confirm Code"],
-      secondary: [],
+      secondary: ["Confirm your account"],
       structural: ["Account Verification"],
     },
     category: "authentication",
@@ -50,18 +53,26 @@ export const TRAINING_SAMPLES_VERIFICATION_CODE: TrainingSample[] = [
     language: "en",
   },
   {
-    signals: { primary: ["verification_code"], secondary: [], structural: [] },
+    signals: {
+      primary: ["verification_code"],
+      secondary: [],
+      structural: ["verify"],
+    },
     category: "authentication",
     type: "verification-code",
     source: "synthetic",
     difficulty: "easy",
     language: "en",
   },
+
+  // ─────────────────────────────────────────────
+  // MEDIUM (fluxo de verificação)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Código Enviado"],
       secondary: ["Verifique seu e-mail"],
-      structural: ["Confirmação"],
+      structural: ["Confirmação de E-mail"],
     },
     category: "authentication",
     type: "verification-code",
@@ -83,6 +94,46 @@ export const TRAINING_SAMPLES_VERIFICATION_CODE: TrainingSample[] = [
   },
   {
     signals: {
+      primary: ["Código de Ativação"],
+      secondary: ["Ative sua conta"],
+      structural: ["Cadastro"],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Activation Code"],
+      secondary: ["Enter the code to activate"],
+      structural: ["Sign Up"],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["PIN de Verificação"],
+      secondary: ["Verifique seu telefone"],
+      structural: ["Verificação"],
+    },
+    category: "authentication",
+    type: "verification-code",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+
+  // ─────────────────────────────────────────────
+  // HARD (ambíguo)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
       primary: ["Código"],
       secondary: ["Enviado via SMS ou e-mail"],
       structural: [],
@@ -94,11 +145,15 @@ export const TRAINING_SAMPLES_VERIFICATION_CODE: TrainingSample[] = [
     language: "pt",
   },
   {
-    signals: { primary: ["Verification Code"], secondary: [], structural: [] },
+    signals: {
+      primary: ["Verification Code"],
+      secondary: [],
+      structural: [],
+    },
     category: "authentication",
     type: "verification-code",
     source: "synthetic",
-    difficulty: "easy",
+    difficulty: "hard",
     language: "en",
     domFeatures: { maxLength: 8 },
   },

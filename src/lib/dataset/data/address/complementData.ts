@@ -4,7 +4,7 @@ export const TRAINING_SAMPLES_COMPLEMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Complemento"],
-      secondary: [],
+      secondary: ["Apto, Bloco, Sala"],
       structural: ["Endereço"],
     },
     category: "address",
@@ -16,7 +16,7 @@ export const TRAINING_SAMPLES_COMPLEMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Complement"],
-      secondary: [],
+      secondary: ["Apt, Suite, Floor"],
       structural: ["Address"],
     },
     category: "address",
@@ -28,7 +28,7 @@ export const TRAINING_SAMPLES_COMPLEMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Address Line 2"],
-      secondary: [],
+      secondary: ["Apartment, suite, unit"],
       structural: ["Address"],
     },
     category: "address",
@@ -38,7 +38,11 @@ export const TRAINING_SAMPLES_COMPLEMENT: TrainingSample[] = [
     language: "en",
   },
   {
-    signals: { primary: ["complement"], secondary: [], structural: [] },
+    signals: {
+      primary: ["complement"],
+      secondary: ["address_line_2"],
+      structural: ["address"],
+    },
     category: "address",
     type: "complement",
     source: "synthetic",
@@ -60,7 +64,7 @@ export const TRAINING_SAMPLES_COMPLEMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Apartamento / Bloco"],
-      secondary: [],
+      secondary: ["Número do apartamento"],
       structural: ["Dados do Endereço"],
     },
     category: "address",
@@ -72,7 +76,7 @@ export const TRAINING_SAMPLES_COMPLEMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Suite/Apt"],
-      secondary: [],
+      secondary: ["Unit number, floor"],
       structural: ["Shipping Address"],
     },
     category: "address",

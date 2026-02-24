@@ -1,11 +1,13 @@
 import { TrainingSample } from "@/types";
 
 export const TRAINING_SAMPLES_LAST_NAME: TrainingSample[] = [
-  // EASY
+  // ─────────────────────────────────────────────
+  // EASY (sobrenome explícito)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Sobrenome"],
-      secondary: [],
+      secondary: ["Nome de família"],
       structural: ["Dados Pessoais"],
     },
     category: "personal",
@@ -17,8 +19,8 @@ export const TRAINING_SAMPLES_LAST_NAME: TrainingSample[] = [
   {
     signals: {
       primary: ["Último Nome"],
-      secondary: [],
-      structural: [],
+      secondary: ["Sobrenome"],
+      structural: ["Cadastro"],
     },
     category: "personal",
     type: "last-name",
@@ -29,7 +31,7 @@ export const TRAINING_SAMPLES_LAST_NAME: TrainingSample[] = [
   {
     signals: {
       primary: ["Last Name"],
-      secondary: [],
+      secondary: ["Family Name"],
       structural: ["Personal Information"],
     },
     category: "personal",
@@ -40,9 +42,25 @@ export const TRAINING_SAMPLES_LAST_NAME: TrainingSample[] = [
   },
   {
     signals: {
+      primary: ["Surname"],
+      secondary: ["Last Name"],
+      structural: ["Account"],
+    },
+    category: "personal",
+    type: "last-name",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+  },
+
+  // ─────────────────────────────────────────────
+  // MEDIUM (variações)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
       primary: ["family_name"],
-      secondary: [],
-      structural: [],
+      secondary: ["last_name"],
+      structural: ["Registration"],
     },
     category: "personal",
     type: "last-name",
@@ -50,12 +68,10 @@ export const TRAINING_SAMPLES_LAST_NAME: TrainingSample[] = [
     difficulty: "medium",
     language: "en",
   },
-
-  // MEDIUM
   {
     signals: {
       primary: ["Sobrenome do Cliente"],
-      secondary: [],
+      secondary: ["Informe o sobrenome"],
       structural: ["Cadastro"],
     },
     category: "personal",
@@ -67,8 +83,20 @@ export const TRAINING_SAMPLES_LAST_NAME: TrainingSample[] = [
   {
     signals: {
       primary: ["Nome de Família"],
+      secondary: ["Último nome"],
+      structural: ["Perfil"],
+    },
+    category: "personal",
+    type: "last-name",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Sobrenome do Responsável"],
       secondary: [],
-      structural: [],
+      structural: ["Dados do Responsável"],
     },
     category: "personal",
     type: "last-name",
@@ -77,7 +105,9 @@ export const TRAINING_SAMPLES_LAST_NAME: TrainingSample[] = [
     language: "pt",
   },
 
-  // HARD
+  // ─────────────────────────────────────────────
+  // HARD (ambíguo)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Nome"],

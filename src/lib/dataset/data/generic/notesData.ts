@@ -1,10 +1,13 @@
 import type { TrainingSample } from "@/types";
 
 export const TRAINING_SAMPLES_NOTES: TrainingSample[] = [
+  // ─────────────────────────────────────────────
+  // EASY (observações / comentários opcionais)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Observações"],
-      secondary: [],
+      secondary: ["Opcional"],
       structural: ["Formulário"],
     },
     category: "generic",
@@ -14,7 +17,11 @@ export const TRAINING_SAMPLES_NOTES: TrainingSample[] = [
     language: "pt",
   },
   {
-    signals: { primary: ["Notes"], secondary: [], structural: ["Form"] },
+    signals: {
+      primary: ["Notes"],
+      secondary: ["Optional"],
+      structural: ["Form"],
+    },
     category: "generic",
     type: "notes",
     source: "synthetic",
@@ -22,7 +29,11 @@ export const TRAINING_SAMPLES_NOTES: TrainingSample[] = [
     language: "en",
   },
   {
-    signals: { primary: ["Notas"], secondary: [], structural: ["Pedido"] },
+    signals: {
+      primary: ["Notas"],
+      secondary: ["Observações do pedido"],
+      structural: ["Pedido"],
+    },
     category: "generic",
     type: "notes",
     source: "synthetic",
@@ -30,7 +41,11 @@ export const TRAINING_SAMPLES_NOTES: TrainingSample[] = [
     language: "pt",
   },
   {
-    signals: { primary: ["Comments"], secondary: [], structural: ["Order"] },
+    signals: {
+      primary: ["Comments"],
+      secondary: ["Order comments"],
+      structural: ["Order"],
+    },
     category: "generic",
     type: "notes",
     source: "synthetic",
@@ -38,13 +53,21 @@ export const TRAINING_SAMPLES_NOTES: TrainingSample[] = [
     language: "en",
   },
   {
-    signals: { primary: ["notes"], secondary: [], structural: [] },
+    signals: {
+      primary: ["notes"],
+      secondary: [],
+      structural: ["order"],
+    },
     category: "generic",
     type: "notes",
     source: "synthetic",
     difficulty: "easy",
     language: "en",
   },
+
+  // ─────────────────────────────────────────────
+  // MEDIUM (contexto de checkout / entrega)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Observações Adicionais"],
@@ -71,6 +94,70 @@ export const TRAINING_SAMPLES_NOTES: TrainingSample[] = [
   },
   {
     signals: {
+      primary: ["Instruções Especiais"],
+      secondary: ["Há alguma instrução para entrega?"],
+      structural: ["Entrega"],
+    },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Special Instructions"],
+      secondary: ["Delivery notes"],
+      structural: ["Shipping"],
+    },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Observação Interna"],
+      secondary: ["Nota interna"],
+      structural: ["Atendimento"],
+    },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Internal Notes"],
+      secondary: ["Staff only"],
+      structural: ["Admin"],
+    },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Anotações"],
+      secondary: ["Suas anotações"],
+      structural: ["Cadastro"],
+    },
+    category: "generic",
+    type: "notes",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+
+  // ─────────────────────────────────────────────
+  // HARD (ambíguo)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
       primary: ["Comentários"],
       secondary: ["Mensagem para o vendedor"],
       structural: [],
@@ -82,11 +169,15 @@ export const TRAINING_SAMPLES_NOTES: TrainingSample[] = [
     language: "pt",
   },
   {
-    signals: { primary: ["Observações"], secondary: [], structural: [] },
+    signals: {
+      primary: ["Observações"],
+      secondary: [],
+      structural: [],
+    },
     category: "generic",
     type: "notes",
     source: "synthetic",
-    difficulty: "easy",
+    difficulty: "hard",
     language: "pt",
     domFeatures: { inputType: "text" },
   },

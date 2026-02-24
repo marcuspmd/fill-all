@@ -94,4 +94,59 @@ export const TRAINING_SAMPLES_FILE: TrainingSample[] = [
     language: "pt",
     domFeatures: { inputType: "file" },
   },
+
+  // ─────────────────────────────────────────────
+  // HARD (sinais com "documento" no sentido upload — NÃO é CPF)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
+      primary: ["Enviar Documento"],
+      secondary: ["Upload do documento"],
+      structural: ["Formulário"],
+    },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+    domFeatures: { inputType: "file" },
+  },
+  {
+    signals: {
+      primary: ["Document Upload"],
+      secondary: ["Drag and drop your document"],
+      structural: [],
+    },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "en",
+    domFeatures: { inputType: "file" },
+  },
+  {
+    signals: {
+      primary: ["Documento"],
+      secondary: ["Enviar arquivo"],
+      structural: ["Upload"],
+    },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+    domFeatures: { inputType: "file" },
+  },
+  {
+    signals: {
+      primary: ["Anexar Comprovante"],
+      secondary: ["Selecione o arquivo"],
+      structural: ["Documentos"],
+    },
+    category: "system",
+    type: "file",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
 ];

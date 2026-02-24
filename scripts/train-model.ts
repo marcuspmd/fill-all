@@ -146,7 +146,8 @@ function fileSystemSaveHandler(outputDir: string): tf.io.IOHandler {
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  // Force CPU backend for Node.js (avoids WebGL unavailability warnings)
+  // tfjs-node requires util.isNullOrUndefined which was removed in Node ≥ 22.
+  // Fall back to pure JS CPU backend until tfjs-node publishes a fix.
   await tf.setBackend("cpu");
   await tf.ready();
   console.log(`[TF.js] Backend: ${tf.getBackend()}\n`);
@@ -327,6 +328,39 @@ async function main(): Promise<void> {
     console.log(
       `   ${LABELS[c].padEnd(12)} ${acc.padStart(3)}%  ${bar}  (${classCorrect[c]}/${classTotal[c]})`,
     );
+  }
+
+  // Confusion matrix — shows what each class gets misclassified as
+  console.log("\n🔀 Misclassifications (true → predicted):");
+  const confusion = Array.from({ length: NUM_CLASSES }, () =>
+    new Array<number>(NUM_CLASSES).fill(0),
+  );
+  for (let i = 0; i < valSamples.length; i++) {
+    const trueIdx = valSamples[i]
+      ? LABEL_TO_IDX[valSamples[i].expectedType as Label]
+      : -1;
+    if (trueIdx === -1) continue;
+    let maxProb = -1;
+    let predIdx = 0;
+    for (let c = 0; c < NUM_CLASSES; c++) {
+      if (predictions[i * NUM_CLASSES + c] > maxProb) {
+        maxProb = predictions[i * NUM_CLASSES + c];
+        predIdx = c;
+      }
+    }
+    confusion[trueIdx][predIdx]++;
+  }
+  for (let c = 0; c < NUM_CLASSES; c++) {
+    if (classTotal[c] === 0) continue;
+    const misses: string[] = [];
+    for (let p = 0; p < NUM_CLASSES; p++) {
+      if (p !== c && confusion[c][p] > 0) {
+        misses.push(`${LABELS[p]}(${confusion[c][p]})`);
+      }
+    }
+    if (misses.length > 0) {
+      console.log(`   ${LABELS[c].padEnd(12)} → ${misses.join(", ")}`);
+    }
   }
 
   // Save model artefacts via custom file system handler

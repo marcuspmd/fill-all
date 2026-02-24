@@ -4,7 +4,7 @@ export const TRAINING_SAMPLES_DEPARTMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Departamento"],
-      secondary: [],
+      secondary: ["Setor de trabalho"],
       structural: ["Dados Profissionais"],
     },
     category: "professional",
@@ -16,7 +16,7 @@ export const TRAINING_SAMPLES_DEPARTMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Department"],
-      secondary: [],
+      secondary: ["Work department"],
       structural: ["Professional Info"],
     },
     category: "professional",
@@ -28,7 +28,7 @@ export const TRAINING_SAMPLES_DEPARTMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Setor"],
-      secondary: [],
+      secondary: ["Departamento"],
       structural: ["Cadastro de Funcionário"],
     },
     category: "professional",
@@ -40,7 +40,7 @@ export const TRAINING_SAMPLES_DEPARTMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Division"],
-      secondary: [],
+      secondary: ["Department"],
       structural: ["Organization"],
     },
     category: "professional",
@@ -50,7 +50,11 @@ export const TRAINING_SAMPLES_DEPARTMENT: TrainingSample[] = [
     language: "en",
   },
   {
-    signals: { primary: ["department"], secondary: [], structural: [] },
+    signals: {
+      primary: ["department"],
+      secondary: ["division"],
+      structural: ["employee"],
+    },
     category: "professional",
     type: "department",
     source: "synthetic",
@@ -60,7 +64,7 @@ export const TRAINING_SAMPLES_DEPARTMENT: TrainingSample[] = [
   {
     signals: {
       primary: ["Setor / Departamento"],
-      secondary: [],
+      secondary: ["Área da empresa"],
       structural: ["Dados do Funcionário"],
     },
     category: "professional",
@@ -98,6 +102,46 @@ export const TRAINING_SAMPLES_DEPARTMENT: TrainingSample[] = [
       primary: ["Área"],
       secondary: ["Departamento ou setor"],
       structural: [],
+    },
+    category: "professional",
+    type: "department",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+
+  // ─────────────────────────────────────────────
+  // HARD (sinais com "unidade"/"business" — NÃO é employee-count)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
+      primary: ["Unidade de Negócio"],
+      secondary: ["Em qual unidade você trabalha?"],
+      structural: ["Dados Profissionais"],
+    },
+    category: "professional",
+    type: "department",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Business Unit"],
+      secondary: ["Select your business unit"],
+      structural: ["Employee"],
+    },
+    category: "professional",
+    type: "department",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Lotação"],
+      secondary: ["Setor de lotação"],
+      structural: ["Funcionário"],
     },
     category: "professional",
     type: "department",

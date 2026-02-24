@@ -94,4 +94,102 @@ export const TRAINING_SAMPLES_START_DATE: TrainingSample[] = [
     language: "pt",
     domFeatures: { inputType: "date" },
   },
+
+  // ── ADDITIONAL DISTINCTIVE SAMPLES ──
+  {
+    signals: {
+      primary: ["dt_inicio"],
+      secondary: ["data início"],
+      structural: [],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Data de Admissão"],
+      secondary: ["Início na empresa"],
+      structural: ["Dados Profissionais"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Hire Date"],
+      secondary: ["Start of employment"],
+      structural: ["HR"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Vigência Início"],
+      secondary: ["A partir de"],
+      structural: ["Contrato"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Data de Contratação"],
+      secondary: [],
+      structural: ["RH"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["from_date"],
+      secondary: ["start"],
+      structural: ["filter"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Data de Entrada"],
+      secondary: ["Início do período"],
+      structural: ["Período"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Effective Date"],
+      secondary: ["When it begins"],
+      structural: ["Policy"],
+    },
+    category: "generic",
+    type: "start-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
 ];

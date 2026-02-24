@@ -2,24 +2,12 @@ import type { TrainingSample } from "@/types";
 
 export const TRAINING_SAMPLES_PRODUCT: TrainingSample[] = [
   // ─────────────────────────────────────────────
-  // EASY (explícito)
+  // EASY (explícito — contexto ERP/sistema/select)
   // ─────────────────────────────────────────────
   {
     signals: {
-      primary: ["Nome do Produto"],
-      secondary: [],
-      structural: ["Cadastro de Produto"],
-    },
-    category: "ecommerce",
-    type: "product",
-    source: "synthetic",
-    difficulty: "easy",
-    language: "pt",
-  },
-  {
-    signals: {
       primary: ["Produto"],
-      secondary: [],
+      secondary: ["Selecione o produto"],
       structural: ["Estoque"],
     },
     category: "ecommerce",
@@ -30,20 +18,8 @@ export const TRAINING_SAMPLES_PRODUCT: TrainingSample[] = [
   },
   {
     signals: {
-      primary: ["Product Name"],
-      secondary: [],
-      structural: ["Product Details"],
-    },
-    category: "ecommerce",
-    type: "product",
-    source: "synthetic",
-    difficulty: "easy",
-    language: "en",
-  },
-  {
-    signals: {
       primary: ["Product"],
-      secondary: [],
+      secondary: ["Choose a product"],
       structural: ["Inventory"],
     },
     category: "ecommerce",
@@ -52,113 +28,35 @@ export const TRAINING_SAMPLES_PRODUCT: TrainingSample[] = [
     difficulty: "easy",
     language: "en",
   },
-
-  // ─────────────────────────────────────────────
-  // MEDIUM (variações reais)
-  // ─────────────────────────────────────────────
   {
     signals: {
-      primary: ["Título do Produto"],
-      secondary: [],
-      structural: [],
-    },
-    category: "ecommerce",
-    type: "product",
-    source: "synthetic",
-    difficulty: "medium",
-    language: "pt",
-  },
-  {
-    signals: {
-      primary: ["Descrição do Produto"],
-      secondary: ["Nome comercial"],
-      structural: ["Cadastro"],
-    },
-    category: "ecommerce",
-    type: "product",
-    source: "synthetic",
-    difficulty: "medium",
-    language: "pt",
-  },
-  {
-    signals: {
-      primary: ["product_name"],
-      secondary: [],
-      structural: [],
-    },
-    category: "ecommerce",
-    type: "product",
-    source: "synthetic",
-    difficulty: "medium",
-    language: "en",
-  },
-  {
-    signals: {
-      primary: ["Item Name"],
-      secondary: [],
-      structural: ["Add New Item"],
-    },
-    category: "ecommerce",
-    type: "product",
-    source: "synthetic",
-    difficulty: "medium",
-    language: "en",
-  },
-
-  // ─────────────────────────────────────────────
-  // HARD (ambíguo com name)
-  // ─────────────────────────────────────────────
-  {
-    signals: {
-      primary: ["Nome"],
-      secondary: ["Produto a ser cadastrado"],
-      structural: ["Estoque"],
-    },
-    category: "ecommerce",
-    type: "product",
-    source: "synthetic",
-    difficulty: "hard",
-    language: "pt",
-  },
-  {
-    signals: {
-      primary: ["Nome"],
+      primary: ["Produto"],
       secondary: [],
       structural: ["Cadastro de Produto"],
     },
     category: "ecommerce",
     type: "product",
     source: "synthetic",
-    difficulty: "hard",
+    difficulty: "easy",
     language: "pt",
+    domFeatures: { inputType: "select" },
   },
   {
     signals: {
-      primary: ["Título"],
+      primary: ["Product"],
       secondary: [],
-      structural: ["Produto"],
+      structural: ["Catalog"],
     },
     category: "ecommerce",
     type: "product",
     source: "synthetic",
-    difficulty: "hard",
-    language: "pt",
-  },
-  {
-    signals: {
-      primary: ["Name"],
-      secondary: [],
-      structural: ["Product Registration"],
-    },
-    category: "ecommerce",
-    type: "product",
-    source: "synthetic",
-    difficulty: "hard",
+    difficulty: "easy",
     language: "en",
+    domFeatures: { inputType: "select" },
   },
 
   // ─────────────────────────────────────────────
-  // ERP / SISTEMA INTERNO
+  // MEDIUM (ERP / sistema interno / seleção)
   // ─────────────────────────────────────────────
   {
     signals: {
@@ -174,8 +72,8 @@ export const TRAINING_SAMPLES_PRODUCT: TrainingSample[] = [
   },
   {
     signals: {
-      primary: ["Nome do Item"],
-      secondary: [],
+      primary: ["Item"],
+      secondary: ["Selecione o item"],
       structural: ["Gestão de Estoque"],
     },
     category: "ecommerce",
@@ -184,10 +82,30 @@ export const TRAINING_SAMPLES_PRODUCT: TrainingSample[] = [
     difficulty: "medium",
     language: "pt",
   },
-
-  // ─────────────────────────────────────────────
-  // CHECKOUT (evitar confusão com name)
-  // ─────────────────────────────────────────────
+  {
+    signals: {
+      primary: ["Produto"],
+      secondary: ["Buscar produto"],
+      structural: ["Pedido"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Product"],
+      secondary: ["Search product"],
+      structural: ["Order"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
   {
     signals: {
       primary: ["Produto Selecionado"],
@@ -212,32 +130,171 @@ export const TRAINING_SAMPLES_PRODUCT: TrainingSample[] = [
     difficulty: "medium",
     language: "en",
   },
-
-  // ─────────────────────────────────────────────
-  // COM RUÍDO
-  // ─────────────────────────────────────────────
   {
     signals: {
-      primary: ["Produtoo"],
-      secondary: [],
-      structural: ["Estoque"],
+      primary: ["Mercadoria"],
+      secondary: ["Escolha a mercadoria"],
+      structural: ["Nota Fiscal"],
     },
     category: "ecommerce",
     type: "product",
-    source: "augmented",
+    source: "synthetic",
     difficulty: "medium",
     language: "pt",
   },
   {
     signals: {
-      primary: ["P R O D U T O"],
-      secondary: [],
-      structural: [],
+      primary: ["Goods"],
+      secondary: ["Select goods"],
+      structural: ["Invoice"],
     },
     category: "ecommerce",
     type: "product",
-    source: "augmented",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+
+  // ─────────────────────────────────────────────
+  // HARD (ambíguo)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
+      primary: ["Serviço/Produto"],
+      secondary: [],
+      structural: ["Faturamento"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Item"],
+      secondary: [],
+      structural: ["Pedido de Compra"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Item"],
+      secondary: [],
+      structural: ["Purchase Order"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "en",
+  },
+
+  // ─────────────────────────────────────────────
+  // EXTRA — Contexto de seleção/catálogo (sem texto livre)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
+      primary: ["Produto"],
+      secondary: ["Selecione"],
+      structural: ["Pedido de Venda"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
     difficulty: "medium",
     language: "pt",
+    domFeatures: { inputType: "select" },
+  },
+  {
+    signals: {
+      primary: ["Product"],
+      secondary: ["Select from list"],
+      structural: ["Sales Order"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+    domFeatures: { inputType: "select" },
+  },
+  {
+    signals: {
+      primary: ["Produto/Serviço"],
+      secondary: ["Escolha"],
+      structural: ["NF-e"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+    domFeatures: { inputType: "select" },
+  },
+  {
+    signals: {
+      primary: ["Item do Pedido"],
+      secondary: ["Selecione o produto"],
+      structural: ["Carrinho"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Order Item"],
+      secondary: ["Choose product"],
+      structural: ["Cart"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Código do Item"],
+      secondary: ["Buscar no catálogo"],
+      structural: ["Estoque"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Produto Cadastrado"],
+      secondary: [],
+      structural: ["ERP"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Registered Product"],
+      secondary: [],
+      structural: ["ERP System"],
+    },
+    category: "ecommerce",
+    type: "product",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
   },
 ];

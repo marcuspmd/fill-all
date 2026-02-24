@@ -1,10 +1,13 @@
 import type { TrainingSample } from "@/types";
 
 export const TRAINING_SAMPLES_SELECT: TrainingSample[] = [
+  // ─────────────────────────────────────────────
+  // EASY (dropdown / seleção explícita)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Selecione"],
-      secondary: [],
+      secondary: ["Selecionar"],
       structural: ["Formulário"],
     },
     category: "system",
@@ -14,7 +17,11 @@ export const TRAINING_SAMPLES_SELECT: TrainingSample[] = [
     language: "pt",
   },
   {
-    signals: { primary: ["Select"], secondary: [], structural: ["Form"] },
+    signals: {
+      primary: ["Select"],
+      secondary: ["Choose an option"],
+      structural: ["Form"],
+    },
     category: "system",
     type: "select",
     source: "synthetic",
@@ -24,7 +31,7 @@ export const TRAINING_SAMPLES_SELECT: TrainingSample[] = [
   {
     signals: {
       primary: ["Escolha uma opção"],
-      secondary: [],
+      secondary: ["Selecione abaixo"],
       structural: ["Cadastro"],
     },
     category: "system",
@@ -34,7 +41,11 @@ export const TRAINING_SAMPLES_SELECT: TrainingSample[] = [
     language: "pt",
   },
   {
-    signals: { primary: ["Choose"], secondary: [], structural: ["Dropdown"] },
+    signals: {
+      primary: ["Choose"],
+      secondary: ["Pick from list"],
+      structural: ["Dropdown"],
+    },
     category: "system",
     type: "select",
     source: "synthetic",
@@ -42,13 +53,21 @@ export const TRAINING_SAMPLES_SELECT: TrainingSample[] = [
     language: "en",
   },
   {
-    signals: { primary: ["select"], secondary: [], structural: [] },
+    signals: {
+      primary: ["select"],
+      secondary: ["option"],
+      structural: [],
+    },
     category: "system",
     type: "select",
     source: "synthetic",
     difficulty: "easy",
     language: "en",
   },
+
+  // ─────────────────────────────────────────────
+  // MEDIUM (variações de dropdown)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Selecione uma opção"],
@@ -73,6 +92,46 @@ export const TRAINING_SAMPLES_SELECT: TrainingSample[] = [
     difficulty: "medium",
     language: "en",
   },
+  {
+    signals: {
+      primary: ["-- Selecione --"],
+      secondary: [],
+      structural: ["Formulário"],
+    },
+    category: "system",
+    type: "select",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["-- Select --"],
+      secondary: [],
+      structural: ["Form"],
+    },
+    category: "system",
+    type: "select",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Tipo"],
+      secondary: ["Selecione o tipo"],
+      structural: ["Cadastro"],
+    },
+    category: "system",
+    type: "select",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+
+  // ─────────────────────────────────────────────
+  // HARD (ambíguo)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["Opção"],

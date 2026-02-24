@@ -1,16 +1,54 @@
 import type { TrainingSample } from "@/types";
 
 export const TRAINING_SAMPLES_SEARCH: TrainingSample[] = [
+  // ─────────────────────────────────────────────
+  // EASY (busca/pesquisa explícita)
+  // ─────────────────────────────────────────────
   {
-    signals: { primary: ["Buscar"], secondary: [], structural: ["Pesquisa"] },
+    signals: {
+      primary: ["Buscar"],
+      secondary: ["Pesquisar"],
+      structural: ["Pesquisa"],
+    },
     category: "system",
     type: "search",
     source: "synthetic",
     difficulty: "easy",
     language: "pt",
+    domFeatures: { inputType: "search" },
   },
   {
-    signals: { primary: ["Search"], secondary: [], structural: ["Search"] },
+    signals: {
+      primary: ["Search"],
+      secondary: ["Search..."],
+      structural: ["Search"],
+    },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "en",
+    domFeatures: { inputType: "search" },
+  },
+  {
+    signals: {
+      primary: ["Pesquisar"],
+      secondary: ["Buscar"],
+      structural: ["Barra de Pesquisa"],
+    },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+    domFeatures: { inputType: "search" },
+  },
+  {
+    signals: {
+      primary: ["Search..."],
+      secondary: ["Type to search"],
+      structural: ["Header"],
+    },
     category: "system",
     type: "search",
     source: "synthetic",
@@ -19,32 +57,21 @@ export const TRAINING_SAMPLES_SEARCH: TrainingSample[] = [
   },
   {
     signals: {
-      primary: ["Pesquisar"],
-      secondary: [],
-      structural: ["Barra de Pesquisa"],
+      primary: ["search"],
+      secondary: ["query"],
+      structural: [],
     },
     category: "system",
     type: "search",
     source: "synthetic",
     difficulty: "easy",
-    language: "pt",
-  },
-  {
-    signals: { primary: ["Search..."], secondary: [], structural: ["Header"] },
-    category: "system",
-    type: "search",
-    source: "synthetic",
-    difficulty: "easy",
     language: "en",
+    domFeatures: { inputType: "search" },
   },
-  {
-    signals: { primary: ["search"], secondary: [], structural: [] },
-    category: "system",
-    type: "search",
-    source: "synthetic",
-    difficulty: "easy",
-    language: "en",
-  },
+
+  // ─────────────────────────────────────────────
+  // MEDIUM (variações)
+  // ─────────────────────────────────────────────
   {
     signals: {
       primary: ["O que você procura?"],
@@ -71,6 +98,34 @@ export const TRAINING_SAMPLES_SEARCH: TrainingSample[] = [
   },
   {
     signals: {
+      primary: ["Filtrar"],
+      secondary: ["Buscar por nome"],
+      structural: ["Listagem"],
+    },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Search products"],
+      secondary: ["Filter results"],
+      structural: ["Catalog"],
+    },
+    category: "system",
+    type: "search",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+
+  // ─────────────────────────────────────────────
+  // HARD (ambíguo)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
       primary: ["Localizar"],
       secondary: ["Procure por nome ou código"],
       structural: [],
@@ -80,14 +135,5 @@ export const TRAINING_SAMPLES_SEARCH: TrainingSample[] = [
     source: "synthetic",
     difficulty: "hard",
     language: "pt",
-  },
-  {
-    signals: { primary: ["Buscar"], secondary: [], structural: [] },
-    category: "system",
-    type: "search",
-    source: "synthetic",
-    difficulty: "easy",
-    language: "pt",
-    domFeatures: { inputType: "search" },
   },
 ];

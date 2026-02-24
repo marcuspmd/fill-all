@@ -128,11 +128,12 @@ export const TRAINING_SAMPLES_DATE: TrainingSample[] = [
     difficulty: "medium",
     language: "pt",
   },
+  // ── ADDITIONAL GENERIC DATES ──
   {
     signals: {
-      primary: ["dt_inicio"],
-      secondary: ["data início"],
-      structural: [],
+      primary: ["Data de Emissão"],
+      secondary: ["dd/mm/aaaa"],
+      structural: ["Documento"],
     },
     category: "generic",
     type: "date",
@@ -142,9 +143,65 @@ export const TRAINING_SAMPLES_DATE: TrainingSample[] = [
   },
   {
     signals: {
-      primary: ["dt_fim"],
-      secondary: ["data término"],
+      primary: ["Issue Date"],
+      secondary: ["MM/DD/YYYY"],
+      structural: ["Document"],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Data de Assinatura"],
+      secondary: [],
+      structural: ["Contrato"],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Signature Date"],
+      secondary: [],
+      structural: ["Contract"],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Data de Referência"],
+      secondary: ["Informe a data"],
       structural: [],
+    },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: { primary: ["dt_evento"], secondary: ["data"], structural: [] },
+    category: "generic",
+    type: "date",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["dt_registro"],
+      secondary: ["data registro"],
+      structural: ["Cadastro"],
     },
     category: "generic",
     type: "date",

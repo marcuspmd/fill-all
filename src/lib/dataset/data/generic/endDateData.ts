@@ -90,4 +90,102 @@ export const TRAINING_SAMPLES_END_DATE: TrainingSample[] = [
     language: "pt",
     domFeatures: { inputType: "date" },
   },
+
+  // ── ADDITIONAL DISTINCTIVE SAMPLES ──
+  {
+    signals: {
+      primary: ["dt_fim"],
+      secondary: ["data término"],
+      structural: [],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Data de Desligamento"],
+      secondary: ["Fim na empresa"],
+      structural: ["Dados Profissionais"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Termination Date"],
+      secondary: ["End of employment"],
+      structural: ["HR"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Vigência Fim"],
+      secondary: ["Data limite"],
+      structural: ["Contrato"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Data de Encerramento"],
+      secondary: [],
+      structural: ["Processo"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["to_date"],
+      secondary: ["end"],
+      structural: ["filter"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Data de Saída"],
+      secondary: ["Fim do período"],
+      structural: ["Período"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Closing Date"],
+      secondary: ["When it ends"],
+      structural: ["Application"],
+    },
+    category: "generic",
+    type: "end-date",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
 ];
