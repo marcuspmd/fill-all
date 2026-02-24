@@ -12,12 +12,27 @@ export interface GeneratorParams {
   readonly max?: number;
   readonly formatted?: boolean;
   readonly length?: number;
+  readonly onlyNumbers?: boolean;
+  readonly onlyLetters?: boolean;
+  readonly prefix?: string;
+  readonly suffix?: string;
+  readonly pattern?: string;
+  readonly options?: string[]; // for select/radio
+  readonly probability?: number; // for optional fields or boolean fields
+  readonly [key: string]: unknown; // allow extra params without TS errors
 }
 
 export interface FieldTypeDefinition {
   readonly type: FieldType;
   readonly category: FieldCategory;
   readonly description: string;
+  /**
+   * Key referencing a generator factory in the generator registry.
+   * Types that share a generator use the same key with different params
+   * (e.g. money, price, amount → "money" with different min/max).
+   * If omitted, `generate()` falls back to a generic text generator.
+   */
+  readonly generator?: string;
   readonly params?: GeneratorParams;
 }
 
@@ -27,237 +42,452 @@ export const FIELD_TYPE_DEFINITIONS: readonly FieldTypeDefinition[] = [
     type: "cpf",
     category: "document",
     description: "CPF — Cadastro de Pessoas Físicas",
+    generator: "cpf",
     params: { formatted: true },
   },
   {
     type: "cnpj",
     category: "document",
     description: "CNPJ — Cadastro Nacional de Pessoa Jurídica",
+    generator: "cnpj",
     params: { formatted: true },
   },
   {
     type: "cpf-cnpj",
     category: "document",
     description: "CPF ou CNPJ aleatório",
+    generator: "cpf-cnpj",
     params: { formatted: true },
   },
   {
     type: "rg",
     category: "document",
     description: "RG — Registro Geral",
+    generator: "rg",
     params: { formatted: true },
   },
   {
     type: "passport",
     category: "document",
     description: "Número de passaporte",
+    generator: "passport",
   },
   {
     type: "cnh",
     category: "document",
     description: "CNH — Carteira Nacional de Habilitação",
+    generator: "cnh",
   },
-  { type: "pis", category: "document", description: "PIS/PASEP" },
+  {
+    type: "pis",
+    category: "document",
+    description: "PIS/PASEP",
+    generator: "pis",
+  },
   {
     type: "national-id",
     category: "document",
     description: "Documento de identidade genérico",
+    generator: "national-id",
   },
   {
     type: "tax-id",
     category: "document",
     description: "Identificação fiscal genérica",
+    generator: "tax-id",
   },
 
   // ── Nome ────────────────────────────────────────────────────
-  { type: "name", category: "personal", description: "Nome completo" },
-  { type: "first-name", category: "personal", description: "Primeiro nome" },
-  { type: "last-name", category: "personal", description: "Sobrenome" },
+  {
+    type: "name",
+    category: "personal",
+    description: "Nome completo",
+    generator: "full-name",
+  },
+  {
+    type: "first-name",
+    category: "personal",
+    description: "Primeiro nome",
+    generator: "first-name",
+  },
+  {
+    type: "last-name",
+    category: "personal",
+    description: "Sobrenome",
+    generator: "last-name",
+  },
   {
     type: "full-name",
     category: "personal",
     description: "Nome completo (sinônimo)",
+    generator: "full-name",
   },
 
   // ── Contato ─────────────────────────────────────────────────
-  { type: "email", category: "contact", description: "Endereço de e-mail" },
-  { type: "phone", category: "contact", description: "Telefone fixo" },
-  { type: "mobile", category: "contact", description: "Telefone celular" },
-  { type: "whatsapp", category: "contact", description: "Número WhatsApp" },
+  {
+    type: "email",
+    category: "contact",
+    description: "Endereço de e-mail",
+    generator: "email",
+  },
+  {
+    type: "phone",
+    category: "contact",
+    description: "Telefone fixo",
+    generator: "phone",
+  },
+  {
+    type: "mobile",
+    category: "contact",
+    description: "Telefone celular",
+    generator: "mobile-phone",
+  },
+  {
+    type: "whatsapp",
+    category: "contact",
+    description: "Número WhatsApp",
+    generator: "mobile-phone",
+  },
 
   // ── Endereço ────────────────────────────────────────────────
-  { type: "address", category: "address", description: "Endereço completo" },
-  { type: "street", category: "address", description: "Logradouro" },
+  {
+    type: "address",
+    category: "address",
+    description: "Endereço completo",
+    generator: "full-address",
+  },
+  {
+    type: "street",
+    category: "address",
+    description: "Logradouro",
+    generator: "street",
+  },
   {
     type: "house-number",
     category: "address",
     description: "Número da residência",
+    generator: "number",
     params: { min: 1, max: 9999 },
   },
   {
     type: "complement",
     category: "address",
     description: "Complemento do endereço",
+    generator: "complement",
   },
-  { type: "neighborhood", category: "address", description: "Bairro" },
-  { type: "city", category: "address", description: "Cidade" },
-  { type: "state", category: "address", description: "Estado / UF" },
-  { type: "country", category: "address", description: "País" },
+  {
+    type: "neighborhood",
+    category: "address",
+    description: "Bairro",
+    generator: "neighborhood",
+  },
+  {
+    type: "city",
+    category: "address",
+    description: "Cidade",
+    generator: "city",
+  },
+  {
+    type: "state",
+    category: "address",
+    description: "Estado / UF",
+    generator: "state",
+  },
+  {
+    type: "country",
+    category: "address",
+    description: "País",
+    generator: "country",
+  },
   {
     type: "cep",
     category: "address",
     description: "CEP — Código de Endereçamento Postal",
+    generator: "cep",
     params: { formatted: true },
   },
   {
     type: "zip-code",
     category: "address",
     description: "CEP / Zip Code",
+    generator: "cep",
     params: { formatted: true },
   },
 
   // ── Datas ───────────────────────────────────────────────────
-  { type: "date", category: "generic", description: "Data genérica (ISO)" },
+  {
+    type: "date",
+    category: "generic",
+    description: "Data genérica (ISO)",
+    generator: "date-iso",
+  },
   {
     type: "birth-date",
     category: "personal",
     description: "Data de nascimento",
+    generator: "birth-date",
   },
-  { type: "start-date", category: "generic", description: "Data de início" },
-  { type: "end-date", category: "generic", description: "Data de término" },
-  { type: "due-date", category: "generic", description: "Data de vencimento" },
+  {
+    type: "start-date",
+    category: "generic",
+    description: "Data de início",
+    generator: "future-date",
+    params: { max: 90 },
+  },
+  {
+    type: "end-date",
+    category: "generic",
+    description: "Data de término",
+    generator: "future-date",
+    params: { max: 365 },
+  },
+  {
+    type: "due-date",
+    category: "generic",
+    description: "Data de vencimento",
+    generator: "future-date",
+    params: { max: 30 },
+  },
 
   // ── Financeiro ──────────────────────────────────────────────
   {
     type: "money",
     category: "financial",
     description: "Valor monetário",
+    generator: "money",
     params: { min: 1, max: 10_000 },
   },
   {
     type: "price",
     category: "financial",
     description: "Preço",
+    generator: "money",
     params: { min: 1, max: 10_000 },
   },
   {
     type: "amount",
     category: "financial",
     description: "Valor / Quantia",
+    generator: "money",
     params: { min: 1, max: 10_000 },
   },
   {
     type: "discount",
     category: "financial",
     description: "Desconto percentual",
+    generator: "money",
     params: { min: 1, max: 100 },
   },
   {
     type: "tax",
     category: "financial",
     description: "Imposto / Taxa percentual",
+    generator: "money",
     params: { min: 1, max: 100 },
   },
   {
     type: "credit-card-number",
     category: "financial",
     description: "Número do cartão de crédito",
+    generator: "credit-card-number",
   },
   {
     type: "credit-card-expiration",
     category: "financial",
     description: "Validade do cartão",
+    generator: "credit-card-expiration",
   },
   {
     type: "credit-card-cvv",
     category: "financial",
     description: "CVV do cartão",
+    generator: "credit-card-cvv",
   },
-  { type: "pix-key", category: "financial", description: "Chave PIX" },
+  {
+    type: "pix-key",
+    category: "financial",
+    description: "Chave PIX",
+    generator: "pix-key",
+  },
 
   // ── Empresa / Profissional ──────────────────────────────────
-  { type: "company", category: "ecommerce", description: "Nome da empresa" },
-  { type: "supplier", category: "ecommerce", description: "Fornecedor" },
+  {
+    type: "company",
+    category: "ecommerce",
+    description: "Nome da empresa",
+    generator: "company",
+  },
+  {
+    type: "supplier",
+    category: "ecommerce",
+    description: "Fornecedor",
+    generator: "company",
+  },
   {
     type: "employee-count",
     category: "professional",
     description: "Quantidade de funcionários",
+    generator: "number",
     params: { min: 1, max: 10_000 },
   },
   {
     type: "job-title",
     category: "professional",
     description: "Cargo / Função",
+    generator: "job-title",
   },
-  { type: "department", category: "professional", description: "Departamento" },
+  {
+    type: "department",
+    category: "professional",
+    description: "Departamento",
+    generator: "department",
+  },
 
   // ── Autenticação ────────────────────────────────────────────
   {
     type: "username",
     category: "authentication",
     description: "Nome de usuário",
+    generator: "username",
   },
   {
     type: "password",
     category: "authentication",
     description: "Senha",
+    generator: "password",
     params: { length: 12 },
   },
   {
     type: "confirm-password",
     category: "authentication",
     description: "Confirmação de senha",
+    generator: "password",
     params: { length: 12 },
   },
   {
     type: "otp",
     category: "authentication",
     description: "Código OTP",
+    generator: "otp",
     params: { length: 6 },
   },
   {
     type: "verification-code",
     category: "authentication",
     description: "Código de verificação",
+    generator: "verification-code",
     params: { length: 6 },
   },
 
   // ── E-commerce ──────────────────────────────────────────────
-  { type: "product", category: "ecommerce", description: "Produto genérico" },
+  {
+    type: "product",
+    category: "ecommerce",
+    description: "Produto genérico",
+    generator: "product-name",
+  },
   {
     type: "product-name",
     category: "ecommerce",
     description: "Nome do produto",
+    generator: "product-name",
   },
-  { type: "sku", category: "ecommerce", description: "Código SKU" },
+  {
+    type: "sku",
+    category: "ecommerce",
+    description: "Código SKU",
+    generator: "sku",
+  },
   {
     type: "quantity",
     category: "ecommerce",
     description: "Quantidade",
+    generator: "number",
     params: { min: 1, max: 100 },
   },
-  { type: "coupon", category: "ecommerce", description: "Cupom de desconto" },
+  {
+    type: "coupon",
+    category: "ecommerce",
+    description: "Cupom de desconto",
+    generator: "coupon",
+  },
 
   // ── Genéricos ───────────────────────────────────────────────
-  { type: "text", category: "generic", description: "Texto livre" },
-  { type: "description", category: "generic", description: "Descrição" },
-  { type: "notes", category: "generic", description: "Notas / Observações" },
-  { type: "search", category: "system", description: "Campo de busca" },
-  { type: "website", category: "contact", description: "Website / URL" },
-  { type: "url", category: "contact", description: "URL genérica" },
+  {
+    type: "text",
+    category: "generic",
+    description: "Texto livre",
+    generator: "text",
+  },
+  {
+    type: "description",
+    category: "generic",
+    description: "Descrição",
+    generator: "description",
+  },
+  {
+    type: "notes",
+    category: "generic",
+    description: "Notas / Observações",
+    generator: "notes",
+  },
+  {
+    type: "search",
+    category: "system",
+    description: "Campo de busca",
+    generator: "search-text",
+  },
+  {
+    type: "website",
+    category: "contact",
+    description: "Website / URL",
+    generator: "website",
+  },
+  {
+    type: "url",
+    category: "contact",
+    description: "URL genérica",
+    generator: "website",
+  },
   {
     type: "number",
     category: "financial",
     description: "Número genérico",
+    generator: "number",
     params: { min: 1, max: 99_999 },
   },
 
   // ── Componentes ─────────────────────────────────────────────
-  { type: "select", category: "system", description: "Campo select" },
-  { type: "checkbox", category: "system", description: "Checkbox" },
-  { type: "radio", category: "system", description: "Radio button" },
-  { type: "file", category: "system", description: "Upload de arquivo" },
-  { type: "unknown", category: "unknown", description: "Tipo desconhecido" },
+  {
+    type: "select",
+    category: "system",
+    description: "Campo select",
+    generator: "empty",
+  },
+  {
+    type: "checkbox",
+    category: "system",
+    description: "Checkbox",
+    generator: "boolean",
+  },
+  {
+    type: "radio",
+    category: "system",
+    description: "Radio button",
+    generator: "boolean",
+  },
+  {
+    type: "file",
+    category: "system",
+    description: "Upload de arquivo",
+    generator: "empty",
+  },
+  {
+    type: "unknown",
+    category: "unknown",
+    description: "Tipo desconhecido",
+    generator: "fallback-text",
+  },
 ];
 
 // ── Helpers ─────────────────────────────────────────────────────

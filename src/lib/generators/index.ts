@@ -1,10 +1,16 @@
 /**
  * Central generator registry — maps FieldType to a generator function.
- * Default params (min/max, length, etc.) come from FIELD_TYPE_DEFINITIONS.
+ *
+ * The generator map is built dynamically from FIELD_TYPE_DEFINITIONS at runtime.
+ * Each definition references a generator key, and the key resolves to a factory
+ * in GENERATOR_FACTORIES. Params (min/max, length, etc.) come from the definition.
+ *
+ * To add a new field type: add an entry in FIELD_TYPE_DEFINITIONS with an
+ * existing generator key (or create a new factory here if needed).
  */
 
-import type { FieldType } from "@/types";
-import { getRange, getDefaultParams } from "@/types";
+import type { FieldType, GeneratorParams } from "@/types";
+import { FIELD_TYPE_DEFINITIONS } from "@/types";
 import { generateCpf } from "./cpf";
 import { generateCnpj } from "./cnpj";
 import { generateEmail } from "./email";
@@ -59,128 +65,110 @@ import {
 
 export type GeneratorFn = () => string;
 
-const generatorMap: Partial<Record<FieldType, GeneratorFn>> = {
+// ── Generator factory type ────────────────────────────────────────────────
+type GeneratorFactory = (params?: GeneratorParams) => string;
+
+/**
+ * Registry of generator factories keyed by generator ID.
+ * Each factory receives optional GeneratorParams and returns a string.
+ * Multiple field types can share the same factory (e.g. money/price/amount → "money").
+ */
+const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
   // ── Documentos ──────────────────────────────────────────────
-  cpf: () => generateCpf(true),
-  cnpj: () => generateCnpj(true),
-  "cpf-cnpj": generateCpfCnpj,
-  rg: () => generateRg(true),
-  passport: generatePassport,
-  cnh: generateCnh,
-  pis: generatePis,
-  "national-id": generateNationalId,
-  "tax-id": generateTaxId,
+  cpf: (p) => generateCpf(p?.formatted !== false),
+  cnpj: (p) => generateCnpj(p?.formatted !== false),
+  "cpf-cnpj": () => generateCpfCnpj(),
+  rg: (p) => generateRg(p?.formatted !== false),
+  passport: () => generatePassport(),
+  cnh: () => generateCnh(),
+  pis: () => generatePis(),
+  "national-id": () => generateNationalId(),
+  "tax-id": () => generateTaxId(),
 
   // ── Nome / Pessoal ─────────────────────────────────────────
-  name: generateFullName,
-  "first-name": generateFirstName,
-  "last-name": generateLastName,
-  "full-name": generateFullName,
+  "full-name": () => generateFullName(),
+  "first-name": () => generateFirstName(),
+  "last-name": () => generateLastName(),
 
   // ── Contato ─────────────────────────────────────────────────
-  email: generateEmail,
+  email: () => generateEmail(),
   phone: () => generatePhone(true, false),
-  mobile: () => generatePhone(true, true),
-  whatsapp: () => generatePhone(true, true),
+  "mobile-phone": () => generatePhone(true, true),
 
   // ── Endereço ────────────────────────────────────────────────
-  address: generateFullAddress,
-  street: generateStreet,
-  "house-number": generateHouseNumber,
-  complement: generateComplement,
-  neighborhood: generateNeighborhood,
-  city: generateCity,
-  state: generateState,
-  country: generateCountry,
-  cep: () => generateCep(true),
-  "zip-code": () => generateCep(true),
+  "full-address": () => generateFullAddress(),
+  street: () => generateStreet(),
+  "house-number": () => generateHouseNumber(),
+  complement: () => generateComplement(),
+  neighborhood: () => generateNeighborhood(),
+  city: () => generateCity(),
+  state: () => generateState(),
+  country: () => generateCountry(),
+  cep: (p) => generateCep(p?.formatted !== false),
 
   // ── Datas ───────────────────────────────────────────────────
-  date: () => generateDate("iso"),
+  "date-iso": () => generateDate("iso"),
   "birth-date": () => generateBirthDate(),
-  "start-date": () => generateFutureDate(90),
-  "end-date": () => generateFutureDate(365),
-  "due-date": () => generateFutureDate(30),
+  "future-date": (p) => generateFutureDate(p?.max ?? 90),
 
   // ── Financeiro ──────────────────────────────────────────────
-  money: () => {
-    const r = getRange("money", 1, 10_000);
-    return generateMoney(r.min, r.max);
-  },
-  price: () => {
-    const r = getRange("price", 1, 10_000);
-    return generateMoney(r.min, r.max);
-  },
-  amount: () => {
-    const r = getRange("amount", 1, 10_000);
-    return generateMoney(r.min, r.max);
-  },
-  discount: () => {
-    const r = getRange("discount", 1, 100);
-    return generateMoney(r.min, r.max);
-  },
-  tax: () => {
-    const r = getRange("tax", 1, 100);
-    return generateMoney(r.min, r.max);
-  },
-  number: () => {
-    const r = getRange("number", 1, 99_999);
-    return generateNumber(r.min, r.max);
-  },
-  "credit-card-number": generateCreditCardNumber,
-  "credit-card-expiration": generateCreditCardExpiration,
-  "credit-card-cvv": generateCreditCardCvv,
-  "pix-key": generatePixKey,
+  money: (p) => generateMoney(p?.min ?? 1, p?.max ?? 10_000),
+  number: (p) => generateNumber(p?.min ?? 1, p?.max ?? 99_999),
+  "credit-card-number": () => generateCreditCardNumber(),
+  "credit-card-expiration": () => generateCreditCardExpiration(),
+  "credit-card-cvv": () => generateCreditCardCvv(),
+  "pix-key": () => generatePixKey(),
 
   // ── Empresa / Profissional ──────────────────────────────────
-  company: generateCompanyName,
-  supplier: generateCompanyName,
-  "employee-count": () => {
-    const r = getRange("employee-count", 1, 10_000);
-    return generateNumber(r.min, r.max);
-  },
-  "job-title": generateJobTitle,
-  department: generateDepartment,
+  company: () => generateCompanyName(),
+  "job-title": () => generateJobTitle(),
+  department: () => generateDepartment(),
 
   // ── Autenticação ────────────────────────────────────────────
-  username: generateUsername,
-  password: () => generatePassword(getDefaultParams("password")?.length ?? 12),
-  "confirm-password": () =>
-    generatePassword(getDefaultParams("confirm-password")?.length ?? 12),
-  otp: () => generateOtp(getDefaultParams("otp")?.length ?? 6),
-  "verification-code": () =>
-    generateVerificationCode(
-      getDefaultParams("verification-code")?.length ?? 6,
-    ),
+  username: () => generateUsername(),
+  password: (p) => generatePassword(p?.length ?? 12),
+  otp: (p) => generateOtp(p?.length ?? 6),
+  "verification-code": (p) => generateVerificationCode(p?.length ?? 6),
 
   // ── E-commerce ──────────────────────────────────────────────
-  product: generateProductName,
-  "product-name": generateProductName,
-  sku: generateSku,
-  quantity: () => {
-    const r = getRange("quantity", 1, 100);
-    return generateNumber(r.min, r.max);
-  },
-  coupon: generateCoupon,
+  "product-name": () => generateProductName(),
+  sku: () => generateSku(),
+  coupon: () => generateCoupon(),
 
   // ── Genéricos ───────────────────────────────────────────────
   text: () => generateText(),
-  description: generateDescription,
-  notes: generateNotes,
-  search: () => generateText(2),
-  website: generateWebsite,
-  url: generateWebsite,
+  "search-text": () => generateText(2),
+  "fallback-text": () => generateText(3),
+  description: () => generateDescription(),
+  notes: () => generateNotes(),
+  website: () => generateWebsite(),
 
   // ── Componentes ─────────────────────────────────────────────
-  select: () => "",
-  checkbox: () => "true",
-  radio: () => "true",
-  file: () => "",
-  unknown: () => generateText(3),
+  empty: () => "",
+  boolean: () => "true",
 };
 
+// ── Dynamic map (built once from FIELD_TYPE_DEFINITIONS) ──────────────────
+
+function buildGeneratorMap(): Map<FieldType, GeneratorFn> {
+  const map = new Map<FieldType, GeneratorFn>();
+
+  for (const def of FIELD_TYPE_DEFINITIONS) {
+    if (!def.generator) continue;
+    const factory = GENERATOR_FACTORIES[def.generator];
+    if (!factory) continue;
+
+    const params = def.params;
+    map.set(def.type, () => factory(params));
+  }
+
+  return map;
+}
+
+const generatorMap = buildGeneratorMap();
+
 export function generate(fieldType: FieldType): string {
-  const fn = generatorMap[fieldType];
+  const fn = generatorMap.get(fieldType);
   return fn ? fn() : generateText(3);
 }
 
