@@ -116,7 +116,9 @@ function getPipelineFromDOM(): DetectionStrategyEntry[] {
 
 function renderStrategyList(pipeline: DetectionStrategyEntry[]): void {
   const list = document.getElementById("strategy-list");
-  if (!list) return;
+  if (!list) {
+    return;
+  }
 
   list.innerHTML = "";
 
@@ -179,7 +181,11 @@ function renderStrategyList(pipeline: DetectionStrategyEntry[]): void {
     });
 
     list.appendChild(item);
+    console.log(`[renderStrategyList] Item ${idx} adicionado ao DOM`);
   });
+  console.log(
+    `[renderStrategyList] Renderização completa! Total de itens: ${pipeline.length}`,
+  );
 }
 
 // ── Chrome AI Status ──────────────────────────────────────────────────────────
@@ -233,18 +239,10 @@ async function loadSettings(): Promise<void> {
   const settings = (await chrome.runtime.sendMessage({
     type: "GET_SETTINGS",
   })) as Settings;
-
   (document.getElementById("setting-auto-fill") as HTMLInputElement).checked =
     settings.autoFillOnLoad;
   (document.getElementById("setting-highlight") as HTMLInputElement).checked =
     settings.highlightFilled;
-  (
-    document.getElementById("setting-cache-enabled") as HTMLInputElement
-  ).checked = settings.cacheEnabled ?? true;
-  (document.getElementById("setting-strategy") as HTMLSelectElement).value =
-    settings.defaultStrategy;
-  (document.getElementById("setting-locale") as HTMLSelectElement).value =
-    settings.locale;
 
   // Panel setting
   (document.getElementById("setting-show-panel") as HTMLInputElement).checked =
@@ -266,6 +264,7 @@ async function loadSettings(): Promise<void> {
 
   // Detection pipeline
   renderStrategyList(settings.detectionPipeline ?? DEFAULT_DETECTION_PIPELINE);
+  console.log("[loadSettings] Estratégias renderizadas");
   void checkChromeAiStatus();
 }
 

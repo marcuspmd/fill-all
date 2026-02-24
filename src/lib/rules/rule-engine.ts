@@ -298,7 +298,10 @@ function findMatchingRule(
   rules: FieldRule[],
   field: FormField,
 ): FieldRule | undefined {
-  return rules.find((rule) => {
+  // Sort by priority (descending) so higher priority rules take precedence
+  const sorted = [...rules].sort((a, b) => b.priority - a.priority);
+
+  return sorted.find((rule) => {
     // Match by CSS selector
     if (rule.fieldSelector && field.element.matches(rule.fieldSelector)) {
       return true;
