@@ -9,7 +9,7 @@ import type {
   FieldType,
 } from "@/types";
 import { getRulesForUrl, getSavedFormsForUrl } from "@/lib/storage/storage";
-import { generate, generateMoney, generateNumber } from "@/lib/generators";
+import { generate } from "@/lib/generators";
 import {
   adaptGeneratedValue,
   generateWithConstraints,
@@ -238,23 +238,10 @@ export async function resolveFieldValue(
       matchingRule.generator !== "tensorflow"
     ) {
       const ruleGenerator = matchingRule.generator as FieldType;
-      let value: string;
-      if (ruleGenerator === "money") {
-        value = generateWithConstraints(
-          () => generateMoney(matchingRule.moneyMin, matchingRule.moneyMax),
-          { element: field.element, requireValidity: false },
-        );
-      } else if (ruleGenerator === "number") {
-        value = generateWithConstraints(
-          () => generateNumber(matchingRule.numberMin, matchingRule.numberMax),
-          { element: field.element, requireValidity: false },
-        );
-      } else {
-        value = generateWithConstraints(() => generate(ruleGenerator), {
-          element: field.element,
-          requireValidity: false,
-        });
-      }
+      const value = generateWithConstraints(() => generate(ruleGenerator), {
+        element: field.element,
+        requireValidity: false,
+      });
       return { fieldSelector: selector, value, source: "generator" };
     }
 

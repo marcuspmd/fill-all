@@ -1,4 +1,17 @@
 import { StructuredSignals } from "@/lib/dataset";
+import { FIELD_TYPES_BY_CATEGORY_DERIVED } from "./field-type-definitions";
+
+export type {
+  GeneratorParams,
+  FieldTypeDefinition,
+} from "./field-type-definitions";
+
+export {
+  FIELD_TYPE_DEFINITIONS,
+  getDefinition,
+  getDefaultParams,
+  getRange,
+} from "./field-type-definitions";
 
 export type {
   MessageHandler,
@@ -147,73 +160,8 @@ export const TRAINABLE_FIELD_TYPES = [
   ...FIELD_TYPES,
 ] as const satisfies readonly FieldType[];
 
-export const FIELD_TYPES_BY_CATEGORY: Record<FieldCategory, FieldType[]> = {
-  personal: ["name", "first-name", "last-name", "full-name", "birth-date"],
-  contact: ["email", "phone", "mobile", "whatsapp", "website", "url"],
-  address: [
-    "address",
-    "street",
-    "house-number",
-    "complement",
-    "neighborhood",
-    "city",
-    "state",
-    "country",
-    "cep",
-    "zip-code",
-  ],
-  document: [
-    "cpf",
-    "cnpj",
-    "cpf-cnpj",
-    "rg",
-    "passport",
-    "cnh",
-    "pis",
-    "national-id",
-    "tax-id",
-  ],
-  financial: [
-    "money",
-    "price",
-    "amount",
-    "discount",
-    "tax",
-    "credit-card-number",
-    "credit-card-expiration",
-    "credit-card-cvv",
-    "pix-key",
-    "number",
-  ],
-  authentication: [
-    "username",
-    "password",
-    "confirm-password",
-    "otp",
-    "verification-code",
-  ],
-  professional: ["job-title", "department", "employee-count"],
-  ecommerce: [
-    "product",
-    "product-name",
-    "sku",
-    "quantity",
-    "coupon",
-    "supplier",
-    "company",
-  ],
-  system: ["search", "select", "checkbox", "radio", "file", "unknown"],
-  generic: [
-    "text",
-    "description",
-    "notes",
-    "date",
-    "start-date",
-    "end-date",
-    "due-date",
-  ],
-  unknown: [],
-};
+export const FIELD_TYPES_BY_CATEGORY: Record<FieldCategory, FieldType[]> =
+  FIELD_TYPES_BY_CATEGORY_DERIVED;
 
 export type signalType =
   | "name"
@@ -370,12 +318,7 @@ export interface FieldRule {
   generator: "auto" | "ai" | "tensorflow" | FieldType;
   /** Custom prompt for AI generation */
   aiPrompt?: string;
-  /** Money range (used when fieldType is "money") */
-  moneyMin?: number;
-  moneyMax?: number;
-  /** Number range (used when fieldType is "number") */
-  numberMin?: number;
-  numberMax?: number;
+
   /** Select option index: 0 = auto (random), 1 = first option, 2 = second, etc. */
   selectOptionIndex?: number;
   /** Priority (higher = takes precedence) */
@@ -473,12 +416,7 @@ export interface Settings {
   fieldIconPosition: "above" | "inside" | "below";
   /** Ordered list of classification strategies */
   detectionPipeline: DetectionStrategyEntry[];
-  /** Money generator range */
-  moneyMin: number;
-  moneyMax: number;
-  /** Number generator range */
-  numberMin: number;
-  numberMax: number;
+
   /** Whether to always show the DevTools-style panel on every page */
   showPanel: boolean;
   /** Whether debug logging is enabled (all console output is suppressed when false) */
@@ -568,10 +506,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showFieldIcon: true,
   fieldIconPosition: "inside",
   detectionPipeline: DEFAULT_DETECTION_PIPELINE,
-  moneyMin: 1,
-  moneyMax: 10000,
-  numberMin: 1,
-  numberMax: 99999,
+
   showPanel: false,
   debugLog: false,
   logLevel: "warn",

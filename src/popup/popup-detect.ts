@@ -227,20 +227,20 @@ function buildFieldItem(
       }">
         <span class="rule-range-label">R$</span>
         <input type="number" class="rule-money-min" placeholder="Mín" min="0" step="0.01"
-          value="${existingRule?.moneyMin ?? ""}">
+          value="">
         <span class="rule-range-sep">–</span>
         <input type="number" class="rule-money-max" placeholder="Máx" min="0" step="0.01"
-          value="${existingRule?.moneyMax ?? ""}">
+          value="">
       </div>
       <div class="rule-range-row rule-number-range" style="display:${
         isNumber ? "flex" : "none"
       }">
         <span class="rule-range-label">#</span>
         <input type="number" class="rule-number-min" placeholder="Mín" min="0" step="1"
-          value="${existingRule?.numberMin ?? ""}">
+          value="">
         <span class="rule-range-sep">–</span>
         <input type="number" class="rule-number-max" placeholder="Máx" min="0" step="1"
-          value="${existingRule?.numberMax ?? ""}">
+          value="">
       </div>
       ${
         hasSelectOptions
@@ -288,14 +288,6 @@ function bindFieldItemEvents(
     const fixedValue =
       item.querySelector<HTMLInputElement>(".rule-fixed-value")?.value.trim() ||
       undefined;
-    const moneyMinVal =
-      item.querySelector<HTMLInputElement>(".rule-money-min")?.value;
-    const moneyMaxVal =
-      item.querySelector<HTMLInputElement>(".rule-money-max")?.value;
-    const numberMinVal =
-      item.querySelector<HTMLInputElement>(".rule-number-min")?.value;
-    const numberMaxVal =
-      item.querySelector<HTMLInputElement>(".rule-number-max")?.value;
     const selectOptIdxVal = item.querySelector<HTMLSelectElement>(
       ".rule-select-option-idx",
     )?.value;
@@ -318,18 +310,6 @@ function bindFieldItemEvents(
       updatedAt: Date.now(),
     };
 
-    if (selectedType === "money") {
-      const mn = parseFloat(moneyMinVal ?? "");
-      const mx = parseFloat(moneyMaxVal ?? "");
-      if (!isNaN(mn)) rule.moneyMin = mn;
-      if (!isNaN(mx)) rule.moneyMax = mx;
-    }
-    if (selectedType === "number") {
-      const mn = parseInt(numberMinVal ?? "", 10);
-      const mx = parseInt(numberMaxVal ?? "", 10);
-      if (!isNaN(mn)) rule.numberMin = mn;
-      if (!isNaN(mx)) rule.numberMax = mx;
-    }
     if (selectedType === "select" && selectOptIdxVal !== undefined) {
       rule.selectOptionIndex = parseInt(selectOptIdxVal, 10);
     }

@@ -14,7 +14,7 @@ import type {
   IgnoredField,
   SavedForm,
 } from "@/types";
-import { FIELD_TYPES } from "@/types";
+import { FIELD_TYPES, getRange } from "@/types";
 import { matchUrlPattern } from "@/lib/url/match-url-pattern";
 import { generate, generateMoney, generateNumber } from "@/lib/generators";
 import { generateWithConstraints } from "@/lib/generators/adaptive";
@@ -482,71 +482,29 @@ function renderGeneratorsTab(): void {
     </div>
   `;
 
-  initGeneratorConfigs(content);
-  bindGeneratorEvents(content);
+  initGeneratorConfigsInContainer(content);
+  bindGeneratorEventsInContainer(content);
 }
 
-async function initGeneratorConfigs(container: HTMLElement): Promise<void> {
-  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as Record<
-    string,
-    number
-  > | null;
+function initGeneratorConfigsInContainer(container: HTMLElement): void {
+  const moneyRange = getRange("money", 1, 10_000);
+  const numberRange = getRange("number", 1, 99_999);
+
   const moneyMin = container.querySelector<HTMLInputElement>("#money-min");
   const moneyMax = container.querySelector<HTMLInputElement>("#money-max");
   const numMin = container.querySelector<HTMLInputElement>("#number-min");
   const numMax = container.querySelector<HTMLInputElement>("#number-max");
-  if (moneyMin) moneyMin.value = String(settings?.moneyMin ?? 1);
-  if (moneyMax) moneyMax.value = String(settings?.moneyMax ?? 10000);
-  if (numMin) numMin.value = String(settings?.numberMin ?? 1);
-  if (numMax) numMax.value = String(settings?.numberMax ?? 99999);
+  if (moneyMin) moneyMin.value = String(moneyRange.min);
+  if (moneyMax) moneyMax.value = String(moneyRange.max);
+  if (numMin) numMin.value = String(numberRange.min);
+  if (numMax) numMax.value = String(numberRange.max);
 }
 
-function bindGeneratorEvents(container: HTMLElement): void {
-  const saveCfg = (
-    key: string,
-    minId: string,
-    maxId: string,
-    parser: (v: string) => number,
-  ): void => {
-    const min = parser(
-      container.querySelector<HTMLInputElement>(`#${minId}`)?.value ?? "",
-    );
-    const max = parser(
-      container.querySelector<HTMLInputElement>(`#${maxId}`)?.value ?? "",
-    );
-    if (!isNaN(min) && !isNaN(max)) {
-      sendToBackground({
-        type: "SAVE_SETTINGS",
-        payload: { [`${key}Min`]: min, [`${key}Max`]: max },
-      });
-    }
-  };
-
-  container
-    .querySelector("#money-min")
-    ?.addEventListener("change", () =>
-      saveCfg("money", "money-min", "money-max", parseFloat),
-    );
-  container
-    .querySelector("#money-max")
-    ?.addEventListener("change", () =>
-      saveCfg("money", "money-min", "money-max", parseFloat),
-    );
-  container
-    .querySelector("#number-min")
-    ?.addEventListener("change", () =>
-      saveCfg("number", "number-min", "number-max", parseInt),
-    );
-  container
-    .querySelector("#number-max")
-    ?.addEventListener("change", () =>
-      saveCfg("number", "number-min", "number-max", parseInt),
-    );
-
+function bindGeneratorEventsInContainer(container: HTMLElement): void {
   container
     .querySelectorAll<HTMLButtonElement>("[data-generator]")
     .forEach((btn) => {
-      btn.addEventListener("click", async () => {
+      btn.addEventListener("click", () => {
         const type = btn.dataset.generator as FieldType;
 
         const moneyConfig =
@@ -560,32 +518,41 @@ function bindGeneratorEvents(container: HTMLElement): void {
 
         let value: string;
         if (type === "money") {
+          const defaults = getRange("money", 1, 10_000);
           const min = parseFloat(
             container.querySelector<HTMLInputElement>("#money-min")?.value ??
-              "1",
+              "",
           );
           const max = parseFloat(
             container.querySelector<HTMLInputElement>("#money-max")?.value ??
-              "10000",
+              "",
           );
           value = generateWithConstraints(
-            () => generateMoney(isNaN(min) ? 1 : min, isNaN(max) ? 10000 : max),
+            () =>
+              generateMoney(
+                isNaN(min) ? defaults.min : min,
+                isNaN(max) ? defaults.max : max,
+              ),
             { requireValidity: true },
           );
         } else if (type === "number") {
+          const defaults = getRange("number", 1, 99_999);
           const min = parseInt(
             container.querySelector<HTMLInputElement>("#number-min")?.value ??
-              "1",
+              "",
             10,
           );
           const max = parseInt(
             container.querySelector<HTMLInputElement>("#number-max")?.value ??
-              "99999",
+              "",
             10,
           );
           value = generateWithConstraints(
             () =>
-              generateNumber(isNaN(min) ? 1 : min, isNaN(max) ? 99999 : max),
+              generateNumber(
+                isNaN(min) ? defaults.min : min,
+                isNaN(max) ? defaults.max : max,
+              ),
             { requireValidity: true },
           );
         } else {

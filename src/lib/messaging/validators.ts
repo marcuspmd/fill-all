@@ -23,10 +23,6 @@ const settingsSchema = z
     detectionPipeline: z
       .array(z.object({ name: z.string().min(1), enabled: z.boolean() }))
       .optional(),
-    moneyMin: z.number(),
-    moneyMax: z.number(),
-    numberMin: z.number(),
-    numberMax: z.number(),
     debugLog: z.boolean(),
     logLevel: z.enum(["debug", "info", "warn", "error"]),
   })
@@ -43,10 +39,6 @@ const fieldRuleSchema = z
     fixedValue: z.string().optional(),
     generator: z.string().min(1),
     aiPrompt: z.string().optional(),
-    moneyMin: z.number().optional(),
-    moneyMax: z.number().optional(),
-    numberMin: z.number().optional(),
-    numberMax: z.number().optional(),
     selectOptionIndex: z.number().optional(),
     priority: z.number(),
     createdAt: z.number(),

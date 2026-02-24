@@ -3,95 +3,51 @@
  */
 
 import type { FieldType } from "@/types";
+import { getRange } from "@/types";
 import { generate, generateMoney, generateNumber } from "@/lib/generators";
 import { generateWithConstraints } from "@/lib/generators/adaptive";
-import { sendToBackground } from "./popup-messaging";
 
-async function getMoneyCfg(): Promise<{ min: number; max: number }> {
-  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as {
-    moneyMin?: number;
-    moneyMax?: number;
-  } | null;
+function getMoneyCfg(): { min: number; max: number } {
+  const minEl = document.getElementById("money-min") as HTMLInputElement | null;
+  const maxEl = document.getElementById("money-max") as HTMLInputElement | null;
+  const defaults = getRange("money", 1, 10_000);
   return {
-    min: settings?.moneyMin ?? 1,
-    max: settings?.moneyMax ?? 10000,
+    min: minEl ? parseFloat(minEl.value) || defaults.min : defaults.min,
+    max: maxEl ? parseFloat(maxEl.value) || defaults.max : defaults.max,
   };
 }
 
-async function getNumberCfg(): Promise<{ min: number; max: number }> {
-  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as {
-    numberMin?: number;
-    numberMax?: number;
-  } | null;
+function getNumberCfg(): { min: number; max: number } {
+  const minEl = document.getElementById(
+    "number-min",
+  ) as HTMLInputElement | null;
+  const maxEl = document.getElementById(
+    "number-max",
+  ) as HTMLInputElement | null;
+  const defaults = getRange("number", 1, 99_999);
   return {
-    min: settings?.numberMin ?? 1,
-    max: settings?.numberMax ?? 99999,
+    min: minEl ? parseInt(minEl.value, 10) || defaults.min : defaults.min,
+    max: maxEl ? parseInt(maxEl.value, 10) || defaults.max : defaults.max,
   };
 }
 
-export async function initGeneratorConfigs(): Promise<void> {
-  const settings = (await sendToBackground({ type: "GET_SETTINGS" })) as Record<
-    string,
-    number
-  > | null;
+export function initGeneratorConfigs(): void {
+  const moneyRange = getRange("money", 1, 10_000);
+  const numberRange = getRange("number", 1, 99_999);
+
   const moneyMin = document.getElementById("money-min") as HTMLInputElement;
   const moneyMax = document.getElementById("money-max") as HTMLInputElement;
   const numMin = document.getElementById("number-min") as HTMLInputElement;
   const numMax = document.getElementById("number-max") as HTMLInputElement;
-  if (moneyMin) moneyMin.value = String(settings?.moneyMin ?? 1);
-  if (moneyMax) moneyMax.value = String(settings?.moneyMax ?? 10000);
-  if (numMin) numMin.value = String(settings?.numberMin ?? 1);
-  if (numMax) numMax.value = String(settings?.numberMax ?? 99999);
-}
-
-function saveMoneyCfg(): void {
-  const min = parseFloat(
-    (document.getElementById("money-min") as HTMLInputElement)?.value,
-  );
-  const max = parseFloat(
-    (document.getElementById("money-max") as HTMLInputElement)?.value,
-  );
-  if (!isNaN(min) && !isNaN(max)) {
-    sendToBackground({
-      type: "SAVE_SETTINGS",
-      payload: { moneyMin: min, moneyMax: max },
-    });
-  }
-}
-
-function saveNumberCfg(): void {
-  const min = parseInt(
-    (document.getElementById("number-min") as HTMLInputElement)?.value,
-    10,
-  );
-  const max = parseInt(
-    (document.getElementById("number-max") as HTMLInputElement)?.value,
-    10,
-  );
-  if (!isNaN(min) && !isNaN(max)) {
-    sendToBackground({
-      type: "SAVE_SETTINGS",
-      payload: { numberMin: min, numberMax: max },
-    });
-  }
+  if (moneyMin) moneyMin.value = String(moneyRange.min);
+  if (moneyMax) moneyMax.value = String(moneyRange.max);
+  if (numMin) numMin.value = String(numberRange.min);
+  if (numMax) numMax.value = String(numberRange.max);
 }
 
 export function bindGeneratorEvents(): void {
-  document
-    .getElementById("money-min")
-    ?.addEventListener("change", saveMoneyCfg);
-  document
-    .getElementById("money-max")
-    ?.addEventListener("change", saveMoneyCfg);
-  document
-    .getElementById("number-min")
-    ?.addEventListener("change", saveNumberCfg);
-  document
-    .getElementById("number-max")
-    ?.addEventListener("change", saveNumberCfg);
-
   document.querySelectorAll("[data-generator]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       const type = (btn as HTMLElement).dataset.generator as FieldType;
 
       const moneyConfig = document.getElementById("money-config")!;
@@ -101,37 +57,14 @@ export function bindGeneratorEvents(): void {
 
       let value: string;
       if (type === "money") {
-        const cfg = await getMoneyCfg();
-        const min = parseFloat(
-          (document.getElementById("money-min") as HTMLInputElement)?.value,
-        );
-        const max = parseFloat(
-          (document.getElementById("money-max") as HTMLInputElement)?.value,
-        );
-        value = generateWithConstraints(
-          () =>
-            generateMoney(
-              isNaN(min) ? cfg.min : min,
-              isNaN(max) ? cfg.max : max,
-            ),
-          { requireValidity: true },
-        );
+        const cfg = getMoneyCfg();
+        value = generateWithConstraints(() => generateMoney(cfg.min, cfg.max), {
+          requireValidity: true,
+        });
       } else if (type === "number") {
-        const cfg = await getNumberCfg();
-        const min = parseInt(
-          (document.getElementById("number-min") as HTMLInputElement)?.value,
-          10,
-        );
-        const max = parseInt(
-          (document.getElementById("number-max") as HTMLInputElement)?.value,
-          10,
-        );
+        const cfg = getNumberCfg();
         value = generateWithConstraints(
-          () =>
-            generateNumber(
-              isNaN(min) ? cfg.min : min,
-              isNaN(max) ? cfg.max : max,
-            ),
+          () => generateNumber(cfg.min, cfg.max),
           { requireValidity: true },
         );
       } else {
