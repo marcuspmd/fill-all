@@ -4,7 +4,11 @@
 
 import type { MessageHandler } from "@/types/interfaces";
 import type { ExtensionMessage, MessageType } from "@/types";
-import { getSavedForms, deleteForm } from "@/lib/storage/forms-storage";
+import {
+  getSavedForms,
+  saveForm,
+  deleteForm,
+} from "@/lib/storage/forms-storage";
 import { getSettings, saveSettings } from "@/lib/storage/settings-storage";
 import {
   getIgnoredFields,
@@ -13,6 +17,7 @@ import {
 } from "@/lib/storage/ignored-storage";
 import {
   parseIgnoredFieldPayload,
+  parseSavedFormPayload,
   parseSettingsPayload,
   parseStringPayload,
 } from "@/lib/messaging/validators";
@@ -20,6 +25,7 @@ import {
 const SUPPORTED: ReadonlyArray<MessageType> = [
   "GET_SAVED_FORMS",
   "DELETE_FORM",
+  "UPDATE_FORM",
   "GET_SETTINGS",
   "SAVE_SETTINGS",
   "GET_IGNORED_FIELDS",
@@ -36,6 +42,13 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
       const formId = parseStringPayload(message.payload);
       if (!formId) return { error: "Invalid payload for DELETE_FORM" };
       await deleteForm(formId);
+      return { success: true };
+    }
+
+    case "UPDATE_FORM": {
+      const form = parseSavedFormPayload(message.payload);
+      if (!form) return { error: "Invalid payload for UPDATE_FORM" };
+      await saveForm(form);
       return { success: true };
     }
 

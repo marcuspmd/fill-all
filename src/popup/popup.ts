@@ -36,13 +36,19 @@ import { initChromeAIStatus } from "./popup-chrome-ai";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-const TAB_IDS = ["actions", "fields", "forms", "generators"] as const;
+// const TAB_IDS = ["actions", "fields", "forms", "generators"] as const;
+const TAB_IDS = ["actions", "generators"] as const;
 type TabId = (typeof TAB_IDS)[number];
+
+// const TAB_LABELS: Record<TabId, string> = {
+//   actions: "⚡ Ações",
+//   fields: "🔍 Campos",
+//   forms: "📄 Forms",
+//   generators: "🎲 Gerar",
+// };
 
 const TAB_LABELS: Record<TabId, string> = {
   actions: "⚡ Ações",
-  fields: "🔍 Campos",
-  forms: "📄 Forms",
   generators: "🎲 Gerar",
 };
 
@@ -94,12 +100,6 @@ function renderActiveTab(): void {
   switch (activeTab) {
     case "actions":
       renderActionsTab();
-      break;
-    case "fields":
-      renderFieldsTab();
-      break;
-    case "forms":
-      renderFormsTab();
       break;
     case "generators":
       renderGeneratorsTab();

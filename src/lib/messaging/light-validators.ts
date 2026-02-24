@@ -54,7 +54,14 @@ export function parseSavedFormPayload(input: unknown): SavedForm | null {
     name: value.name,
     urlPattern: value.urlPattern,
     fields: value.fields as Record<string, string>,
+    templateFields: Array.isArray(value.templateFields)
+      ? value.templateFields
+      : undefined,
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,
   };
+}
+
+export function parseApplyTemplatePayload(input: unknown): SavedForm | null {
+  return parseSavedFormPayload(input);
 }

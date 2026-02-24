@@ -12,6 +12,7 @@ import {
   fillAllFields,
   fillSingleField,
   captureFormValues,
+  applyTemplate,
 } from "@/lib/form/form-filler";
 import {
   detectAllFieldsAsync,
@@ -156,6 +157,14 @@ async function handleContentMessage(
       }
 
       showNotification(`✓ ${filled} campos carregados do template`);
+      return { success: true, filled };
+    }
+
+    case "APPLY_TEMPLATE": {
+      const form = parseSavedFormPayload(message.payload);
+      if (!form) return { error: "Invalid payload for APPLY_TEMPLATE" };
+      const { filled } = await applyTemplate(form);
+      showNotification(`✓ Template "${form.name}" aplicado: ${filled} campos`);
       return { success: true, filled };
     }
 

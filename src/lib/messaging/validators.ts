@@ -86,12 +86,23 @@ const saveFieldCachePayloadSchema = z
   })
   .strict();
 
+const templateFieldSchema = z
+  .object({
+    key: z.string().min(1),
+    label: z.string(),
+    mode: z.enum(["fixed", "generator"]),
+    fixedValue: z.string().optional(),
+    generatorType: z.enum(FIELD_TYPES).optional(),
+  })
+  .strict();
+
 const savedFormSchema = z
   .object({
     id: z.string().min(1),
     name: z.string().min(1),
     urlPattern: z.string().min(1),
     fields: z.record(z.string(), z.string()),
+    templateFields: z.array(templateFieldSchema).optional(),
     createdAt: z.number(),
     updatedAt: z.number(),
   })
@@ -139,6 +150,10 @@ export function parseSaveFieldCachePayload(
 export function parseSavedFormPayload(input: unknown): SavedForm | null {
   const result = savedFormSchema.safeParse(input);
   return result.success ? (result.data as SavedForm) : null;
+}
+
+export function parseApplyTemplatePayload(input: unknown): SavedForm | null {
+  return parseSavedFormPayload(input);
 }
 
 export function parseStartWatchingPayload(

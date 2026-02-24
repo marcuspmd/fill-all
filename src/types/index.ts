@@ -330,14 +330,33 @@ export interface FieldRule {
   updatedAt: number;
 }
 
+/** How a template field should be filled */
+export type FormFieldMode = "fixed" | "generator";
+
+/** Structured field config for form templates */
+export interface FormTemplateField {
+  /** Field identifier (selector, name, or id) */
+  key: string;
+  /** Human-readable label */
+  label: string;
+  /** Fill mode: fixed uses fixedValue, generator uses generatorType */
+  mode: FormFieldMode;
+  /** Value to use when mode === 'fixed' */
+  fixedValue?: string;
+  /** Generator type to use when mode === 'generator' */
+  generatorType?: FieldType;
+}
+
 /** A saved form template with fixed data */
 export interface SavedForm {
   id: string;
   name: string;
-  /** URL pattern this form applies to */
+  /** URL pattern this form applies to (use '*' for global) */
   urlPattern: string;
-  /** Map of field selector → fixed value */
+  /** Map of field selector → fixed value (legacy format) */
   fields: Record<string, string>;
+  /** Structured template fields with mode support */
+  templateFields?: FormTemplateField[];
   /** When this template was created */
   createdAt: number;
   /** When this template was last updated */
@@ -470,6 +489,8 @@ export type MessageType =
   | "EXPORT_DATASET"
   | "GET_RUNTIME_MODEL_META"
   | "DELETE_RUNTIME_MODEL"
+  | "APPLY_TEMPLATE"
+  | "UPDATE_FORM"
   | "DEVTOOLS_RELAY";
 
 export interface ExtensionMessage {

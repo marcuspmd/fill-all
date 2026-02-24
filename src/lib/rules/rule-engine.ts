@@ -9,7 +9,7 @@ import type {
   FieldType,
 } from "@/types";
 import { FIELD_TYPE_DEFINITIONS } from "@/types";
-import { getRulesForUrl, getSavedFormsForUrl } from "@/lib/storage/storage";
+import { getRulesForUrl } from "@/lib/storage/storage";
 import { generate } from "@/lib/generators";
 import {
   adaptGeneratedValue,
@@ -119,34 +119,7 @@ export async function resolveFieldValue(
     }
   }
 
-  // 2. Check saved forms
-  const savedForms = await getSavedFormsForUrl(url);
-  for (const form of savedForms) {
-    if (form.fields[selector]) {
-      return {
-        fieldSelector: selector,
-        value: form.fields[selector],
-        source: "fixed",
-      };
-    }
-    // Also try matching by field name or id
-    if (field.name && form.fields[field.name]) {
-      return {
-        fieldSelector: selector,
-        value: form.fields[field.name],
-        source: "fixed",
-      };
-    }
-    if (field.id && form.fields[field.id]) {
-      return {
-        fieldSelector: selector,
-        value: form.fields[field.id],
-        source: "fixed",
-      };
-    }
-  }
-
-  // 2 & 3. Check field rules
+  // 2. Check field rules (saved forms are only applied manually via APPLY_TEMPLATE)
   const rules = await getRulesForUrl(url);
   const matchingRule = findMatchingRule(rules, field);
 

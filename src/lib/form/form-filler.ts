@@ -2,7 +2,7 @@
  * Form filler — fills detected fields with generated or saved values
  */
 
-import type { FormField, GenerationResult, Settings } from "@/types";
+import type { FormField, GenerationResult, SavedForm, Settings } from "@/types";
 import { detectAllFields } from "./form-detector";
 import { resolveFieldValue } from "@/lib/rules/rule-engine";
 import {
@@ -13,6 +13,7 @@ import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
 import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
 import { fillCustomComponent } from "./adapters/adapter-registry";
+import { generate } from "@/lib/generators";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("FormFiller");
@@ -349,4 +350,72 @@ export function captureFormValues(): Record<string, string> {
   }
 
   return values;
+}
+
+/**
+ * Applies a saved form template to the current page.
+ * Uses templateFields (new format) if available, otherwise falls back to legacy fields.
+ * For generator-mode fields, calls the appropriate generator to produce a fresh value.
+ */
+export async function applyTemplate(
+  form: SavedForm,
+): Promise<{ filled: number }> {
+  const { fields: detectedFields } = detectAllFields();
+  const settings = await getSettings();
+  let filled = 0;
+
+  if (form.templateFields && form.templateFields.length > 0) {
+    for (const tField of form.templateFields) {
+      const matchedField = detectedFields.find(
+        (f) =>
+          f.selector === tField.key ||
+          f.id === tField.key ||
+          f.name === tField.key,
+      );
+      if (!matchedField) continue;
+
+      let value: string;
+      if (tField.mode === "generator" && tField.generatorType) {
+        value = generate(tField.generatorType);
+      } else {
+        value = tField.fixedValue ?? "";
+      }
+
+      if (!value && tField.mode === "fixed") continue;
+
+      await applyValueToField(matchedField, value);
+      if (settings.highlightFilled) {
+        highlightField(
+          matchedField.element,
+          matchedField.label ?? matchedField.fieldType ?? undefined,
+        );
+      }
+      filled++;
+    }
+  } else {
+    // Legacy format: fields Record<string, string>
+    for (const detectedField of detectedFields) {
+      const key =
+        detectedField.id || detectedField.name || detectedField.selector;
+      const value =
+        form.fields[detectedField.selector] ??
+        form.fields[key] ??
+        (detectedField.name ? form.fields[detectedField.name] : undefined) ??
+        (detectedField.id ? form.fields[detectedField.id] : undefined);
+
+      if (value === undefined) continue;
+
+      await applyValueToField(detectedField, value);
+      if (settings.highlightFilled) {
+        highlightField(
+          detectedField.element,
+          detectedField.label ?? detectedField.fieldType ?? undefined,
+        );
+      }
+      filled++;
+    }
+  }
+
+  log.info(`Template "${form.name}" aplicado: ${filled} campos`);
+  return { filled };
 }

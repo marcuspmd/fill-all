@@ -7,6 +7,7 @@ import {
   fillAllFields,
   fillSingleField,
   captureFormValues,
+  applyTemplate,
 } from "./form-filler";
 import { streamAllFields } from "./form-detector";
 import { startWatching, stopWatching, isWatcherActive } from "./dom-watcher";
@@ -18,12 +19,15 @@ import {
   addIgnoredField,
   removeIgnoredField,
 } from "@/lib/storage/storage";
+import { FIELD_TYPES } from "@/types";
 import type {
   SavedForm,
   IgnoredField,
   FieldType,
   FieldCategory,
   DetectionMethod,
+  FormTemplateField,
+  FormFieldMode,
 } from "@/types";
 import { showDetectionBadge, clearAllBadges } from "./field-overlay";
 import {
@@ -735,6 +739,144 @@ function getPanelCSS(): string {
       background: #dc2626;
       color: #fff;
     }
+    #${PANEL_ID} .fa-form-edit-btn {
+      background: rgba(245,158,11,0.15);
+      border-color: #d97706 !important;
+      color: #fbbf24;
+    }
+    #${PANEL_ID} .fa-form-edit-btn:hover {
+      background: #d97706;
+      color: #fff;
+    }
+    #${PANEL_ID} .fa-form-edit-drawer {
+      background: rgba(30,41,59,0.98);
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #${PANEL_ID} .fa-edit-meta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    #${PANEL_ID} .fa-edit-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    #${PANEL_ID} .fa-edit-label {
+      font-size: 10px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    #${PANEL_ID} .fa-edit-input {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 5px;
+      color: #e2e8f0;
+      font-size: 12px;
+      padding: 4px 8px;
+      font-family: inherit;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #${PANEL_ID} .fa-edit-input:focus {
+      outline: none;
+      border-color: #4f46e5;
+    }
+    #${PANEL_ID} .fa-edit-fields-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+    #${PANEL_ID} .fa-edit-field-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
+      align-items: start;
+      padding: 6px 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid #1e293b;
+      border-radius: 5px;
+    }
+    #${PANEL_ID} .fa-edit-field-key {
+      font-size: 11px;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      grid-column: 1 / -1;
+    }
+    #${PANEL_ID} .fa-edit-field-controls {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 6px;
+      align-items: center;
+      grid-column: 1 / -1;
+    }
+    #${PANEL_ID} .fa-edit-select {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 5px;
+      color: #e2e8f0;
+      font-size: 11px;
+      padding: 3px 6px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    #${PANEL_ID} .fa-edit-field-value {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 5px;
+      color: #e2e8f0;
+      font-size: 11px;
+      padding: 3px 6px;
+      font-family: inherit;
+      min-width: 0;
+    }
+    #${PANEL_ID} .fa-edit-footer {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+    #${PANEL_ID} .fa-edit-save-btn {
+      background: rgba(34,197,94,0.15);
+      border: 1px solid #16a34a !important;
+      color: #4ade80;
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    #${PANEL_ID} .fa-edit-save-btn:hover {
+      background: #16a34a;
+      color: #fff;
+    }
+    #${PANEL_ID} .fa-edit-cancel-btn {
+      background: rgba(100,116,139,0.15);
+      border: 1px solid #475569 !important;
+      color: #94a3b8;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    #${PANEL_ID} .fa-edit-cancel-btn:hover {
+      background: #475569;
+      color: #fff;
+    }
 
     #${PANEL_ID} .fa-log-empty {
       color: #475569;
@@ -1204,34 +1346,60 @@ async function renderFormsList(panel: HTMLElement): Promise<void> {
 }
 
 function createFormCard(panel: HTMLElement, form: SavedForm): HTMLElement {
-  const fieldCount = Object.keys(form.fields).length;
+  const templateCount =
+    form.templateFields?.length ?? Object.keys(form.fields).length;
   const date = new Date(form.updatedAt).toLocaleString("pt-BR");
+
+  // Outer wrapper holds both the card row and the collapsible edit drawer
+  const wrapper = document.createElement("div");
 
   const card = document.createElement("div");
   card.className = "fa-form-card";
   card.innerHTML = `
     <div class="fa-form-info">
       <div class="fa-form-name">${escapeHtml(form.name)}</div>
-      <div class="fa-form-meta">${fieldCount} campos · ${escapeHtml(date)} · ${escapeHtml(form.urlPattern)}</div>
+      <div class="fa-form-meta">${templateCount} campos · ${escapeHtml(date)} · ${escapeHtml(form.urlPattern)}</div>
     </div>
     <div class="fa-form-actions"></div>
   `;
 
   const actionsEl = card.querySelector(".fa-form-actions") as HTMLElement;
 
-  // Load button
-  const loadBtn = document.createElement("button");
-  loadBtn.className = "fa-form-load-btn";
-  loadBtn.textContent = "📥 Carregar";
-  loadBtn.addEventListener("click", () => {
-    chrome.runtime.sendMessage({
-      type: "LOAD_SAVED_FORM",
-      payload: { formId: form.id },
-    });
-    setStatus(panel, `📥 Formulário "${form.name}" carregado`, "success");
-    addLog(`Formulário "${form.name}" carregado`, "success");
+  // Apply button
+  const applyBtn = document.createElement("button");
+  applyBtn.className = "fa-form-load-btn";
+  applyBtn.textContent = "📥 Aplicar";
+  applyBtn.addEventListener("click", async () => {
+    const filled = await applyTemplate(form);
+    setStatus(
+      panel,
+      `📥 Template "${form.name}" aplicado (${filled} campos)`,
+      "success",
+    );
+    addLog(`Template "${form.name}" aplicado — ${filled} campos`, "success");
   });
-  actionsEl.appendChild(loadBtn);
+  actionsEl.appendChild(applyBtn);
+
+  // Edit button
+  const editBtn = document.createElement("button");
+  editBtn.className = "fa-form-edit-btn";
+  editBtn.textContent = "✏️ Editar";
+  let editDrawer: HTMLElement | null = null;
+  editBtn.addEventListener("click", () => {
+    if (editDrawer) {
+      editDrawer.remove();
+      editDrawer = null;
+      editBtn.textContent = "✏️ Editar";
+      return;
+    }
+    editDrawer = buildFormEditDrawer(form, wrapper, panel, () => {
+      editDrawer = null;
+      editBtn.textContent = "✏️ Editar";
+    });
+    wrapper.appendChild(editDrawer);
+    editBtn.textContent = "✕ Fechar";
+  });
+  actionsEl.appendChild(editBtn);
 
   // Delete button
   const deleteBtn = document.createElement("button");
@@ -1239,7 +1407,7 @@ function createFormCard(panel: HTMLElement, form: SavedForm): HTMLElement {
   deleteBtn.textContent = "🗑️ Excluir";
   deleteBtn.addEventListener("click", async () => {
     await deleteForm(form.id);
-    card.remove();
+    wrapper.remove();
     addLog(`Formulário "${form.name}" excluído`, "info");
 
     // Refresh count
@@ -1255,7 +1423,174 @@ function createFormCard(panel: HTMLElement, form: SavedForm): HTMLElement {
   });
   actionsEl.appendChild(deleteBtn);
 
-  return card;
+  wrapper.appendChild(card);
+  return wrapper;
+}
+
+/** Build the inline edit drawer for a form template */
+function buildFormEditDrawer(
+  form: SavedForm,
+  wrapper: HTMLElement,
+  panel: HTMLElement,
+  onClose: () => void,
+): HTMLElement {
+  // Normalise to templateFields
+  const templateFields: FormTemplateField[] =
+    form.templateFields && form.templateFields.length > 0
+      ? form.templateFields.map((f) => ({ ...f }))
+      : Object.entries(form.fields).map(([key, value]) => ({
+          key,
+          label: key,
+          mode: "fixed" as FormFieldMode,
+          fixedValue: value,
+        }));
+
+  const drawer = document.createElement("div");
+  drawer.className = "fa-form-edit-drawer";
+
+  // Meta row: name + urlPattern
+  const metaRow = document.createElement("div");
+  metaRow.className = "fa-edit-meta-row";
+
+  metaRow.innerHTML = `
+    <div class="fa-edit-input-group">
+      <span class="fa-edit-label">Nome</span>
+      <input class="fa-edit-input" id="fa-edit-name" type="text" value="${escapeHtml(form.name)}" />
+    </div>
+    <div class="fa-edit-input-group">
+      <span class="fa-edit-label">URL / Padrão</span>
+      <input class="fa-edit-input" id="fa-edit-url" type="text" value="${escapeHtml(form.urlPattern)}" />
+    </div>
+  `;
+  drawer.appendChild(metaRow);
+
+  if (templateFields.length > 0) {
+    const fieldsHeader = document.createElement("div");
+    fieldsHeader.className = "fa-edit-fields-header";
+    fieldsHeader.textContent = "Campos";
+    drawer.appendChild(fieldsHeader);
+  }
+
+  const fieldStates: {
+    field: FormTemplateField;
+    modeSelect: HTMLSelectElement;
+    valueInput: HTMLInputElement;
+    genSelect: HTMLSelectElement;
+  }[] = [];
+
+  for (const field of templateFields) {
+    const row = document.createElement("div");
+    row.className = "fa-edit-field-row";
+
+    const keyEl = document.createElement("div");
+    keyEl.className = "fa-edit-field-key";
+    keyEl.textContent = field.label || field.key;
+    row.appendChild(keyEl);
+
+    const controls = document.createElement("div");
+    controls.className = "fa-edit-field-controls";
+
+    const modeSelect = document.createElement("select");
+    modeSelect.className = "fa-edit-select";
+    modeSelect.innerHTML = `
+      <option value="fixed"${field.mode === "fixed" ? " selected" : ""}>Valor fixo</option>
+      <option value="generator"${field.mode === "generator" ? " selected" : ""}>Gerador</option>
+    `;
+
+    const valueInput = document.createElement("input");
+    valueInput.type = "text";
+    valueInput.className = "fa-edit-field-value";
+    valueInput.placeholder = "Valor fixo";
+    valueInput.value = field.fixedValue ?? "";
+    valueInput.style.display = field.mode === "fixed" ? "" : "none";
+
+    const genSelect = document.createElement("select");
+    genSelect.className = "fa-edit-select fa-edit-field-value";
+    genSelect.style.display = field.mode === "generator" ? "" : "none";
+    genSelect.innerHTML = FIELD_TYPES.map(
+      (t) =>
+        `<option value="${t}"${field.generatorType === t ? " selected" : ""}>${t}</option>`,
+    ).join("");
+
+    modeSelect.addEventListener("change", () => {
+      const isFixed = modeSelect.value === "fixed";
+      valueInput.style.display = isFixed ? "" : "none";
+      genSelect.style.display = isFixed ? "none" : "";
+    });
+
+    controls.appendChild(modeSelect);
+    controls.appendChild(valueInput);
+    controls.appendChild(genSelect);
+    row.appendChild(controls);
+    drawer.appendChild(row);
+    fieldStates.push({ field, modeSelect, valueInput, genSelect });
+  }
+
+  // Footer
+  const footer = document.createElement("div");
+  footer.className = "fa-edit-footer";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "fa-edit-cancel-btn";
+  cancelBtn.textContent = "✕ Cancelar";
+  cancelBtn.addEventListener("click", () => {
+    drawer.remove();
+    onClose();
+  });
+
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "fa-edit-save-btn";
+  saveBtn.textContent = "💾 Salvar";
+  saveBtn.addEventListener("click", async () => {
+    const nameInput = drawer.querySelector<HTMLInputElement>("#fa-edit-name");
+    const urlInput = drawer.querySelector<HTMLInputElement>("#fa-edit-url");
+
+    const updatedFields: FormTemplateField[] = fieldStates.map(
+      ({ field, modeSelect, valueInput, genSelect }) => {
+        const mode = modeSelect.value as FormFieldMode;
+        return {
+          key: field.key,
+          label: field.label,
+          mode,
+          fixedValue: mode === "fixed" ? valueInput.value : undefined,
+          generatorType:
+            mode === "generator" ? (genSelect.value as FieldType) : undefined,
+        };
+      },
+    );
+
+    const updated: SavedForm = {
+      ...form,
+      name: nameInput?.value.trim() || form.name,
+      urlPattern: urlInput?.value.trim() || form.urlPattern,
+      templateFields: updatedFields,
+    };
+
+    await saveForm(updated);
+
+    // Refresh info row in card
+    const nameEl = wrapper.querySelector(".fa-form-name");
+    const metaEl = wrapper.querySelector(".fa-form-meta");
+    const date = new Date(
+      updated.updatedAt === form.updatedAt ? Date.now() : updated.updatedAt,
+    ).toLocaleString("pt-BR");
+    if (nameEl) nameEl.textContent = updated.name;
+    if (metaEl)
+      metaEl.textContent = `${updatedFields.length} campos · ${date} · ${updated.urlPattern}`;
+
+    // Update form reference in memory
+    Object.assign(form, updated);
+
+    drawer.remove();
+    onClose();
+    addLog(`Template "${updated.name}" atualizado`, "success");
+  });
+
+  footer.appendChild(cancelBtn);
+  footer.appendChild(saveBtn);
+  drawer.appendChild(footer);
+
+  return drawer;
 }
 
 /* ─── Log ─── */

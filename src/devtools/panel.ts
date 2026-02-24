@@ -10,7 +10,11 @@ import type {
   ExtensionMessage,
   IgnoredField,
   SavedForm,
+  FormTemplateField,
+  FormFieldMode,
+  FieldType,
 } from "@/types";
+import { FIELD_TYPES } from "@/types";
 import {
   renderTypeBadge,
   renderMethodBadge,
@@ -252,13 +256,13 @@ async function loadForms(): Promise<void> {
 }
 
 async function applySavedForm(form: SavedForm): Promise<void> {
-  addLog(`Aplicando: ${form.name}`);
+  addLog(`Aplicando template: ${form.name}`);
   try {
     const result = (await sendToPage({
-      type: "LOAD_SAVED_FORM",
+      type: "APPLY_TEMPLATE",
       payload: form,
     })) as { filled?: number };
-    addLog(`${result?.filled ?? 0} campos carregados`, "success");
+    addLog(`${result?.filled ?? 0} campos preenchidos`, "success");
   } catch (err) {
     addLog(`Erro: ${err}`, "error");
   }
@@ -525,11 +529,12 @@ function renderFormsTab(): void {
           <div class="form-card">
             <div class="form-info">
               <span class="form-name">${escapeHtml(form.name)}</span>
-              <span class="form-meta">${Object.keys(form.fields).length} campos · ${new Date(form.updatedAt).toLocaleDateString("pt-BR")}</span>
+              <span class="form-meta">${form.templateFields?.length ?? Object.keys(form.fields).length} campos · ${new Date(form.updatedAt).toLocaleDateString("pt-BR")}</span>
               <span class="form-url">${escapeHtml(form.urlPattern)}</span>
             </div>
             <div class="form-actions">
               <button class="btn btn-sm" data-form-id="${escapeAttr(form.id)}" data-action="apply">▶️ Aplicar</button>
+              <button class="btn btn-sm btn-warning" data-form-id="${escapeAttr(form.id)}" data-action="edit">✏️ Editar</button>
               <button class="btn btn-sm btn-danger" data-form-id="${escapeAttr(form.id)}" data-action="delete">🗑️</button>
             </div>
           </div>
@@ -554,8 +559,155 @@ function renderFormsTab(): void {
         if (!form) return;
 
         if (action === "apply") void applySavedForm(form);
+        else if (action === "edit") showEditFormScreen(form);
         else if (action === "delete") void deleteFormById(form.id);
       });
+    });
+}
+
+function showEditFormScreen(form: SavedForm): void {
+  const content = document.getElementById("content");
+  if (!content) return;
+
+  // Normalise to templateFields
+  const templateFields: FormTemplateField[] =
+    form.templateFields && form.templateFields.length > 0
+      ? form.templateFields.map((f) => ({ ...f }))
+      : Object.entries(form.fields).map(([key, value]) => ({
+          key,
+          label: key,
+          mode: "fixed" as FormFieldMode,
+          fixedValue: value,
+        }));
+
+  const fieldOptionsHtml = FIELD_TYPES.map(
+    (t) => `<option value="${t}">${t}</option>`,
+  ).join("");
+
+  const fieldsHtml = templateFields
+    .map(
+      (f, i) => `
+      <div class="edit-field-row" data-field-index="${i}">
+        <div class="edit-field-key" title="${escapeAttr(f.key)}">${escapeHtml(f.label || f.key)}</div>
+        <div class="edit-field-controls">
+          <select class="edit-select" data-field-mode="${i}">
+            <option value="fixed"${f.mode === "fixed" ? " selected" : ""}>Valor fixo</option>
+            <option value="generator"${f.mode === "generator" ? " selected" : ""}>Gerador</option>
+          </select>
+          <input type="text" class="edit-field-value" data-field-fixed="${i}"
+            placeholder="Valor fixo"
+            value="${escapeAttr(f.fixedValue ?? "")}"
+            style="display:${f.mode === "fixed" ? "block" : "none"}" />
+          <select class="edit-select edit-field-value" data-field-gen="${i}"
+            style="display:${f.mode === "generator" ? "block" : "none"}">
+            ${FIELD_TYPES.map(
+              (t) =>
+                `<option value="${t}"${f.generatorType === t ? " selected" : ""}>${t}</option>`,
+            ).join("")}
+          </select>
+        </div>
+      </div>
+    `,
+    )
+    .join("");
+
+  content.innerHTML = `
+    <div class="edit-form-screen">
+      <div class="edit-form-title">✏️ Editar Template</div>
+      <div class="edit-meta-grid">
+        <div class="edit-input-group">
+          <label class="edit-label">Nome</label>
+          <input class="edit-input" id="edit-form-name" type="text" value="${escapeAttr(form.name)}" />
+        </div>
+        <div class="edit-input-group">
+          <label class="edit-label">URL / Padrão</label>
+          <input class="edit-input" id="edit-form-url" type="text" value="${escapeAttr(form.urlPattern)}" />
+        </div>
+      </div>
+      ${
+        templateFields.length > 0
+          ? `<div class="edit-section-header">Campos</div>
+             <div class="edit-fields-list">${fieldsHtml}</div>`
+          : ""
+      }
+      <div class="edit-form-footer">
+        <button class="btn" id="edit-form-cancel">✕ Cancelar</button>
+        <button class="btn btn-success" id="edit-form-save">💾 Salvar</button>
+      </div>
+    </div>
+  `;
+
+  // Wire up mode toggles
+  content
+    .querySelectorAll<HTMLSelectElement>("[data-field-mode]")
+    .forEach((sel) => {
+      sel.addEventListener("change", () => {
+        const idx = sel.dataset.fieldMode;
+        const fixedInput = content.querySelector<HTMLElement>(
+          `[data-field-fixed="${idx}"]`,
+        );
+        const genSelect = content.querySelector<HTMLElement>(
+          `[data-field-gen="${idx}"]`,
+        );
+        const isFixed = sel.value === "fixed";
+        if (fixedInput) fixedInput.style.display = isFixed ? "block" : "none";
+        if (genSelect) genSelect.style.display = isFixed ? "none" : "block";
+      });
+    });
+
+  document.getElementById("edit-form-cancel")?.addEventListener("click", () => {
+    renderFormsTab();
+  });
+
+  document
+    .getElementById("edit-form-save")
+    ?.addEventListener("click", async () => {
+      const nameVal = (
+        document.getElementById("edit-form-name") as HTMLInputElement
+      )?.value.trim();
+      const urlVal = (
+        document.getElementById("edit-form-url") as HTMLInputElement
+      )?.value.trim();
+
+      const updatedFields: FormTemplateField[] = templateFields.map((f, i) => {
+        const modeEl = content.querySelector<HTMLSelectElement>(
+          `[data-field-mode="${i}"]`,
+        );
+        const fixedEl = content.querySelector<HTMLInputElement>(
+          `[data-field-fixed="${i}"]`,
+        );
+        const genEl = content.querySelector<HTMLSelectElement>(
+          `[data-field-gen="${i}"]`,
+        );
+        const mode = (modeEl?.value ?? f.mode) as FormFieldMode;
+        return {
+          key: f.key,
+          label: f.label,
+          mode,
+          fixedValue:
+            mode === "fixed" ? (fixedEl?.value ?? f.fixedValue) : undefined,
+          generatorType:
+            mode === "generator"
+              ? ((genEl?.value ?? f.generatorType) as FieldType)
+              : undefined,
+        };
+      });
+
+      const updated: SavedForm = {
+        ...form,
+        name: nameVal || form.name,
+        urlPattern: urlVal || form.urlPattern,
+        templateFields: updatedFields,
+      };
+
+      await sendToBackground({ type: "UPDATE_FORM", payload: updated });
+
+      // Update local state
+      const idx = savedForms.findIndex((f) => f.id === form.id);
+      if (idx >= 0) savedForms[idx] = updated;
+
+      addLog(`Template "${updated.name}" atualizado`, "success");
+      renderFormsTab();
     });
 }
 

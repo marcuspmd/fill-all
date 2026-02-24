@@ -250,6 +250,147 @@ body {
   background: rgba(243, 139, 168, 0.15);
 }
 
+.btn-warning {
+  border-color: rgba(249, 226, 175, 0.3);
+  color: var(--warning);
+}
+
+.btn-warning:hover {
+  border-color: var(--warning);
+  background: rgba(249, 226, 175, 0.15);
+}
+
+.btn-success {
+  border-color: rgba(166, 227, 161, 0.3);
+  color: var(--success);
+}
+
+.btn-success:hover {
+  border-color: var(--success);
+  background: rgba(166, 227, 161, 0.15);
+}
+
+/* ── Edit Form Screen ── */
+
+.edit-form-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edit-form-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.edit-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.edit-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edit-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.edit-input {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 5px 8px;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.edit-section-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.edit-fields-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.edit-field-key {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-field-controls {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.edit-select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 4px 6px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.edit-field-value {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 4px 6px;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.edit-form-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
 .fields-count {
   color: var(--text-muted);
   font-size: 11px;
