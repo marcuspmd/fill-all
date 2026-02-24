@@ -27,11 +27,12 @@ export {
 // ── Training Data ──────────────────────────────────────────────────────────
 export {
   TRAINING_SAMPLES,
+  toTrainingSignalText,
   getTrainingSamplesByDifficulty,
   getTrainingSamplesByType,
   getTrainingDistribution,
   type TrainingSample,
-} from "./training-data";
+} from "./training-data-v2";
 
 export {
   flattenStructuredSignals,

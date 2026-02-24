@@ -126,61 +126,6 @@ export function fromFlatSignals(signals: string): StructuredSignals {
   };
 }
 
-const STRUCTURAL_HINTS = new Set([
-  "input",
-  "field",
-  "campo",
-  "placeholder",
-  "autocomplete",
-  "id",
-  "name",
-  "label",
-  "select",
-  "option",
-  "checkbox",
-  "radio",
-  "required",
-]);
-
-export function fromLegacySignalText(signals: string): StructuredSignals {
-  const rawTokens = signals
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .split(/\s+/)
-    .map((token) => token.trim())
-    .filter(Boolean);
-
-  const primary: string[] = [];
-  const secondary: string[] = [];
-  const structural: string[] = [];
-
-  for (const raw of rawTokens) {
-    const token = raw.replace(/[^a-z0-9_-]+/g, "");
-    if (!token) continue;
-
-    const flat = token.replace(/[_-]+/g, " ").trim();
-    if (!flat) continue;
-
-    if (STRUCTURAL_HINTS.has(flat)) {
-      structural.push(flat);
-      continue;
-    }
-
-    if (token.includes("_") || token.includes("-")) {
-      secondary.push(flat);
-      continue;
-    }
-
-    primary.push(flat);
-  }
-
-  // Mantém o contexto original completo para não perder semântica histórica
-  primary.unshift(signals);
-
-  return normalizeStructuredSignals({ primary, secondary, structural });
-}
-
 export function inferLanguageFromSignals(signals: string): TrainingLanguage {
   const normalized = normalizeToken(signals);
   if (/\b(el|la|correo|telefono|direccion|apellido)\b/.test(normalized)) {

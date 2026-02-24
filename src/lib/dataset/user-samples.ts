@@ -11,8 +11,20 @@
  *   npm run build
  */
 
-import type { TrainingSample } from "./training-data";
+import type {
+  FieldType,
+  TrainingDifficulty,
+  TrainingSampleSource,
+} from "@/types";
 
-export const USER_SAMPLES: TrainingSample[] = [
+interface UserTrainingSample {
+  signals: string;
+  type: FieldType;
+  source: TrainingSampleSource;
+  difficulty: TrainingDifficulty;
+  domain?: string;
+}
+
+export const USER_SAMPLES: UserTrainingSample[] = [
   // populated by: npm run import:rules [path/to/fill-all-rules.json]
 ];

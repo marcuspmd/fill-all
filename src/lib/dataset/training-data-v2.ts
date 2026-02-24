@@ -8,7 +8,6 @@ import type {
 } from "@/types";
 import {
   buildFeatureText,
-  fromLegacySignalText,
   inferCategoryFromType,
   inferLanguageFromSignals,
   normalizeStructuredSignals as normalizeSignalsShared,
@@ -56,6 +55,39 @@ const DEFAULT_FLATTEN_OPTIONS: Required<FlattenSignalsOptions> = {
   structuralWeight: 1,
 };
 
+const CATEGORY_BY_TYPE: Partial<Record<FieldType, FieldCategory>> = {
+  cpf: "document",
+  cnpj: "document",
+  "cpf-cnpj": "document",
+  rg: "document",
+  email: "contact",
+  phone: "contact",
+  name: "personal",
+  "first-name": "personal",
+  "last-name": "personal",
+  "full-name": "personal",
+  address: "address",
+  street: "address",
+  city: "address",
+  state: "address",
+  cep: "address",
+  "zip-code": "address",
+  date: "generic",
+  "birth-date": "personal",
+  password: "authentication",
+  username: "authentication",
+  company: "ecommerce",
+  supplier: "ecommerce",
+  product: "ecommerce",
+  "employee-count": "professional",
+  "job-title": "professional",
+  website: "contact",
+  money: "financial",
+  number: "financial",
+  text: "generic",
+  unknown: "unknown",
+};
+
 export function normalizeStructuredSignals(
   signals: StructuredSignals,
 ): StructuredSignals {
@@ -71,12 +103,13 @@ export function flattenStructuredSignals(
 
 export function createTrainingSampleV2FromLegacy(
   sample: LegacyTrainingSample,
-  category: FieldCategory = inferCategoryFromType(sample.type),
+  category: FieldCategory = CATEGORY_BY_TYPE[sample.type] ??
+    inferCategoryFromType(sample.type),
 ): TrainingSampleV2 {
   const language = inferLanguageFromSignals(sample.signals);
 
   return {
-    signals: normalizeStructuredSignals(fromLegacySignalText(sample.signals)),
+    signals: normalizeStructuredSignals(sample.signals),
     category,
     type: sample.type,
     source: sample.source,
@@ -91,6 +124,34 @@ export const TRAINING_SAMPLES_V2: TrainingSampleV2[] =
   LEGACY_TRAINING_SAMPLES.map((sample) =>
     createTrainingSampleV2FromLegacy(sample),
   );
+
+export const TRAINING_SAMPLES: TrainingSampleV2[] = TRAINING_SAMPLES_V2;
+
+export function toTrainingSignalText(sample: TrainingSampleV2): string {
+  return buildFeatureText(sample.signals, {
+    category: sample.category,
+    language: sample.language,
+    domFeatures: sample.domFeatures,
+  });
+}
+
+export function getTrainingSamplesByDifficulty(
+  difficulty: TrainingDifficulty,
+): TrainingSampleV2[] {
+  return TRAINING_SAMPLES.filter((sample) => sample.difficulty === difficulty);
+}
+
+export function getTrainingSamplesByType(type: FieldType): TrainingSampleV2[] {
+  return TRAINING_SAMPLES.filter((sample) => sample.type === type);
+}
+
+export function getTrainingDistribution(): Record<string, number> {
+  const distribution: Record<string, number> = {};
+  for (const sample of TRAINING_SAMPLES) {
+    distribution[sample.type] = (distribution[sample.type] || 0) + 1;
+  }
+  return distribution;
+}
 
 export function getTrainingV2ByDifficulty(
   difficulty: TrainingDifficulty,

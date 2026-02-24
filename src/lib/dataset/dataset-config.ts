@@ -6,7 +6,11 @@
  */
 
 import { FIELD_TYPES, type FieldType } from "@/types";
-import { TRAINING_SAMPLES, getTrainingDistribution } from "./training-data";
+import {
+  TRAINING_SAMPLES,
+  getTrainingDistribution,
+  toTrainingSignalText,
+} from "./training-data-v2";
 import { VALIDATION_SAMPLES } from "./validation-data";
 import { TEST_SAMPLES } from "./test-data";
 
@@ -132,7 +136,9 @@ export function checkDatasetHealth(minSamplesPerType = 3): DatasetHealthReport {
   const missingTypes = KNOWN_TYPES.filter((t) => !coveredTypes.has(t));
 
   // Check for data leakage (exact signal match between splits)
-  const trainSignals = new Set(TRAINING_SAMPLES.map((s) => s.signals));
+  const trainSignals = new Set(
+    TRAINING_SAMPLES.map((s) => toTrainingSignalText(s)),
+  );
   const leakedSignals: string[] = [];
 
   for (const vs of VALIDATION_SAMPLES) {

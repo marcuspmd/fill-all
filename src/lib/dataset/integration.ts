@@ -22,9 +22,10 @@ import {
 } from "./field-dictionary";
 import {
   TRAINING_SAMPLES,
+  flattenStructuredSignals,
   type TrainingSample,
   getTrainingDistribution,
-} from "./training-data";
+} from "./training-data-v2";
 import { evaluateClassifier } from "./validation-data";
 import { runTestEvaluation } from "./test-data";
 import {
@@ -38,6 +39,7 @@ import {
 } from "./dataset-config";
 import { classifyField } from "@/lib/form/detectors/strategies";
 import type { FormField } from "@/types";
+import { fromLegacySignalText } from "@/lib/shared/structured-signals";
 
 // ── Build keywords from dictionary ──────────────────────────────────────────
 
@@ -106,11 +108,16 @@ export function augmentTrainingSamples(
         config.strategies[Math.floor(Math.random() * config.strategies.length)];
       const fn = strategyFns[strategy];
       if (fn) {
+        const signalText = flattenStructuredSignals(sample.signals);
         augmented.push({
-          signals: fn(sample.signals),
+          signals: fromLegacySignalText(fn(signalText)),
+          category: sample.category,
           type: sample.type,
           source: "augmented",
+          domain: sample.domain,
           difficulty: sample.difficulty,
+          language: sample.language,
+          domFeatures: sample.domFeatures,
         });
       }
     }
