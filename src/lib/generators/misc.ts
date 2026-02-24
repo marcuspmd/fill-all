@@ -85,3 +85,47 @@ export function generateNationalId(): string {
 export function generateTaxId(): string {
   return faker.string.numeric(11);
 }
+
+const DOCUMENT_ISSUERS = [
+  "SSP",
+  "SDS",
+  "DETRAN",
+  "IFP",
+  "PC",
+  "PM",
+  "CBM",
+  "SESP",
+  "SEJUSP",
+  "POLITEC",
+  "IGP",
+  "SSP/SP",
+  "SSP/RJ",
+  "SSP/MG",
+  "SSP/BA",
+  "SSP/PR",
+  "SSP/RS",
+  "SSP/SC",
+  "SSP/PE",
+  "SSP/CE",
+  "SSP/GO",
+  "SSP/DF",
+  "SSP/PA",
+  "SSP/AM",
+  "SSP/MT",
+  "SSP/MS",
+  "SSP/MA",
+  "SSP/PB",
+  "SSP/ES",
+  "SSP/RN",
+  "SDS/PE",
+  "SDS/AL",
+  "SESP/MT",
+  "DGPC/GO",
+  "IGP/RS",
+  "IGP/SC",
+  "POLITEC/MT",
+];
+
+export function generateDocumentIssuer(): string {
+  return faker.helpers.arrayElement(DOCUMENT_ISSUERS);
+}

@@ -308,35 +308,9 @@
       </div>
 
       <div class="card">
-        <h2>Aprendizado e Retreino</h2>
-        <p class="description" style="margin-bottom: 8px; color: var(--text-muted); font-size: 13px;">
-          <strong>O que o "Retreinar pelo Browser" faz:</strong> salva as regras como <em>vetores de aprendizado</em>
-          (camada de similaridade de cosseno). É rápido e funciona sem npm.<br>
-          <strong>O que não faz:</strong> <u>não altera os pesos da rede neural TF.js</u>.
-          Para retreinar o modelo neural, use <code>npm run train:model</code> no terminal.
-        </p>
+        <h2>Aprendizado</h2>
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-          <button id="btn-retrain-learning" class="btn btn-primary">&#x1F9E0; Retreinar Vetores (Browser)</button>
-          <button id="btn-export-rules-dataset" class="btn btn-secondary">&#x1F4E5; Exportar Regras (npm)</button>
           <button id="btn-clear-learning" class="btn btn-delete">Limpar Aprendizado</button>
-        </div>
-        <div id="retrain-log-box" style="display:none; margin-bottom:12px;">
-          <div style="font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Log do Retreino</div>
-          <pre id="retrain-log" style="
-            background:var(--bg-secondary,#1e1e1e);
-            color:var(--text-primary,#d4d4d4);
-            font-size:11px;
-            line-height:1.6;
-            padding:10px 12px;
-            border-radius:6px;
-            border:1px solid var(--border-color,#333);
-            overflow-x:auto;
-            white-space:pre-wrap;
-            word-break:break-word;
-            max-height:260px;
-            overflow-y:auto;
-            margin:0;
-          "></pre>
         </div>
         <div id="learning-summary" class="empty" style="padding: 10px 0; text-align:left;"></div>
         <div id="learned-list"></div>

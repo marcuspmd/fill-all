@@ -8,6 +8,7 @@ import type {
   GenerationResult,
   FieldType,
 } from "@/types";
+import { FIELD_TYPE_DEFINITIONS } from "@/types";
 import { getRulesForUrl, getSavedFormsForUrl } from "@/lib/storage/storage";
 import { generate } from "@/lib/generators";
 import {
@@ -21,75 +22,27 @@ const log = createLogger("RuleEngine");
 const AI_TIMEOUT_MS = 5000;
 
 /**
- * Field types that have deterministic, high-quality generators.
- * AI adds no value for these — calling it only wastes time.
- * AI is only useful for `text`, `description`, `notes`, `search`, `unknown`.
+ * Generator keys where AI genuinely adds value (free-text / open-ended).
+ * Every other type has a deterministic generator — calling AI wastes time.
  */
-const GENERATOR_ONLY_TYPES = new Set<FieldType>([
-  "cpf",
-  "cnpj",
-  "cpf-cnpj",
-  "rg",
-  "passport",
-  "cnh",
-  "pis",
-  "national-id",
-  "tax-id",
-  "name",
-  "first-name",
-  "last-name",
-  "full-name",
-  "email",
-  "phone",
-  "mobile",
-  "whatsapp",
-  "address",
-  "street",
-  "house-number",
-  "complement",
-  "neighborhood",
-  "city",
-  "state",
-  "country",
-  "cep",
-  "zip-code",
-  "date",
-  "birth-date",
-  "start-date",
-  "end-date",
-  "due-date",
-  "money",
-  "price",
-  "amount",
-  "discount",
-  "tax",
-  "credit-card-number",
-  "credit-card-expiration",
-  "credit-card-cvv",
-  "pix-key",
-  "company",
-  "supplier",
-  "employee-count",
-  "job-title",
-  "department",
-  "username",
-  "password",
-  "confirm-password",
-  "otp",
-  "verification-code",
-  "product",
-  "product-name",
-  "sku",
-  "quantity",
-  "coupon",
-  "number",
-  "website",
-  "url",
-  "select",
-  "checkbox",
-  "radio",
-  "file",
+const AI_USEFUL_GENERATORS = new Set([
+  "text",
+  "description",
+  "notes",
+  "search-text",
+  "fallback-text",
 ]);
+
+/**
+ * Field types that have deterministic, high-quality generators.
+ * Derived from FIELD_TYPE_DEFINITIONS: any type whose generator is NOT
+ * in the AI_USEFUL_GENERATORS set is considered generator-only.
+ */
+const GENERATOR_ONLY_TYPES = new Set<FieldType>(
+  FIELD_TYPE_DEFINITIONS.filter(
+    (d) => d.generator && !AI_USEFUL_GENERATORS.has(d.generator),
+  ).map((d) => d.type),
+);
 
 /** Wraps an AI call with a hard timeout so it never blocks indefinitely. */
 async function callAiWithTimeout(

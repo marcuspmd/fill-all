@@ -228,4 +228,128 @@ export const TRAINING_SAMPLES_RG: TrainingSample[] = [
     difficulty: "hard",
     language: "pt",
   },
+
+  // ─────────────────────────────────────────────
+  // document_number (input genérico)
+  // ─────────────────────────────────────────────
+  {
+    signals: {
+      primary: ["document_number"],
+      secondary: [],
+      structural: [],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["document_number"],
+      secondary: ["Número do documento"],
+      structural: ["Dados Pessoais"],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["document_number"],
+      secondary: ["Informe o número do RG"],
+      structural: [],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "easy",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Document Number"],
+      secondary: [],
+      structural: ["Personal Information"],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["Número do Documento"],
+      secondary: [],
+      structural: ["Documentos"],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["document_number"],
+      secondary: ["Ex: 12.345.678-9"],
+      structural: ["Cadastro"],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Nº do Documento"],
+      secondary: [],
+      structural: ["Identificação"],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["numero_documento"],
+      secondary: [],
+      structural: [],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "medium",
+    language: "pt",
+  },
+  {
+    signals: {
+      primary: ["Doc Number"],
+      secondary: [],
+      structural: [],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "en",
+  },
+  {
+    signals: {
+      primary: ["ID Number"],
+      secondary: [],
+      structural: ["Personal"],
+    },
+    category: "document",
+    type: "rg",
+    source: "synthetic",
+    difficulty: "hard",
+    language: "en",
+  },
 ];

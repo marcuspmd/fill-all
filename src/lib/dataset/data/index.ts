@@ -15,6 +15,7 @@ export { TRAINING_SAMPLES_CNH } from "./personal/cnhData";
 export { TRAINING_SAMPLES_PIS } from "./personal/pisData";
 export { TRAINING_SAMPLES_NATIONAL_ID } from "./personal/nationalIdData";
 export { TRAINING_SAMPLES_TAX_ID } from "./personal/taxIdData";
+export { TRAINING_SAMPLES_DOCUMENT_ISSUER } from "./personal/documentIssuerData";
 
 // ── Contact ──
 export { TRAINING_SAMPLES_EMAIL } from "./contact/emailData";
@@ -101,6 +102,7 @@ import { TRAINING_SAMPLES_CNH } from "./personal/cnhData";
 import { TRAINING_SAMPLES_PIS } from "./personal/pisData";
 import { TRAINING_SAMPLES_NATIONAL_ID } from "./personal/nationalIdData";
 import { TRAINING_SAMPLES_TAX_ID } from "./personal/taxIdData";
+import { TRAINING_SAMPLES_DOCUMENT_ISSUER } from "./personal/documentIssuerData";
 import { TRAINING_SAMPLES_EMAIL } from "./contact/emailData";
 import { TRAINING_SAMPLES_PHONE } from "./contact/phoneData";
 import { TRAINING_SAMPLES_MOBILE } from "./contact/mobileData";
@@ -173,6 +175,7 @@ export const ALL_TRAINING_SAMPLES: TrainingSample[] = [
   ...TRAINING_SAMPLES_PIS,
   ...TRAINING_SAMPLES_NATIONAL_ID,
   ...TRAINING_SAMPLES_TAX_ID,
+  ...TRAINING_SAMPLES_DOCUMENT_ISSUER,
   // Contact
   ...TRAINING_SAMPLES_EMAIL,
   ...TRAINING_SAMPLES_PHONE,

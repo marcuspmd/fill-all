@@ -28,8 +28,6 @@ import type {
 import { showDetectionBadge, clearAllBadges } from "./field-overlay";
 import {
   escapeHtml,
-  TYPE_COLORS,
-  METHOD_COLORS,
   renderTypeBadge,
   renderMethodBadge,
   renderConfidenceBadge,

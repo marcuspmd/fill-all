@@ -12,11 +12,7 @@ import {
   importDatasetEntries,
   exportDatasetEntries,
 } from "@/lib/dataset/runtime-dataset";
-import {
-  storeLearnedEntry,
-  clearLearnedEntries,
-  removeLearnedEntryBySignals,
-} from "@/lib/ai/learning-store";
+
 import {
   hasRuntimeModel,
   getRuntimeModelMeta,
@@ -51,7 +47,6 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
       }
       const added = await addDatasetEntry(entry);
       if (!added) return { error: "Failed to add dataset entry" };
-      await storeLearnedEntry(added.signals, added.type, undefined, "auto");
       void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
       return added;
     }
@@ -63,7 +58,6 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
       const entry = allEntries.find((e) => e.id === id);
       await removeDatasetEntry(id);
       if (entry) {
-        await removeLearnedEntryBySignals(entry.signals);
         void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
       }
       return { success: true };
@@ -71,7 +65,6 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
 
     case "CLEAR_DATASET":
       await clearDataset();
-      await clearLearnedEntries();
       void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
       return { success: true };
 
@@ -83,11 +76,6 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
         return { error: "Invalid payload for IMPORT_DATASET" };
       const addedCount = await importDatasetEntries(entries);
       if (addedCount > 0) {
-        for (const e of entries) {
-          if (e.signals && e.type) {
-            await storeLearnedEntry(e.signals, e.type, undefined, "auto");
-          }
-        }
         void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
       }
       return { success: true, added: addedCount };

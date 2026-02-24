@@ -71,6 +71,7 @@ export const FIELD_TYPES = [
   "pis",
   "national-id",
   "tax-id",
+  "document-issuer",
 
   // Nome
   "name",

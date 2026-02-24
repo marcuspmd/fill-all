@@ -4,20 +4,32 @@
 
 import { fakerPT_BR as faker } from "@faker-js/faker";
 
-export function generateStreet(): string {
-  return faker.location.streetAddress();
+export function generateStreet(onlyLetters = false): string {
+  const street = faker.location.street();
+  if (onlyLetters) {
+    return street.replace(/[0-9]/g, "").trim();
+  }
+  return street;
 }
 
 export function generateHouseNumber(): string {
   return String(faker.number.int({ min: 1, max: 9999 }));
 }
 
-export function generateComplement(): string {
-  return faker.location.secondaryAddress();
+export function generateComplement(onlyLetters = false): string {
+  const value = faker.location.secondaryAddress();
+  if (onlyLetters) {
+    return value.replace(/[0-9]/g, "").trim();
+  }
+  return value;
 }
 
-export function generateNeighborhood(): string {
-  return faker.location.county();
+export function generateNeighborhood(onlyLetters = false): string {
+  const value = faker.location.county();
+  if (onlyLetters) {
+    return value.replace(/[0-9]/g, "").trim();
+  }
+  return value;
 }
 
 export function generateCity(): string {

@@ -10,10 +10,12 @@ import {
   buildSignalsFromRule,
   storeLearnedEntry,
 } from "@/lib/ai/learning-store";
+import { addDatasetEntry } from "@/lib/dataset/runtime-dataset";
 import {
   parseRulePayload,
   parseStringPayload,
 } from "@/lib/messaging/validators";
+import { broadcastToAllTabs } from "@/background/broadcast";
 
 const SUPPORTED: ReadonlyArray<MessageType> = [
   "GET_RULES",
@@ -32,8 +34,15 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
       await saveRule(rule);
       const signals = buildSignalsFromRule(rule);
       if (signals) {
-        await storeLearnedEntry(signals, rule.fieldType);
+        await storeLearnedEntry(signals, rule.fieldType, undefined, "rule");
+        await addDatasetEntry({
+          signals,
+          type: rule.fieldType,
+          source: "manual",
+          difficulty: "easy",
+        });
       }
+      void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
       return { success: true };
     }
 

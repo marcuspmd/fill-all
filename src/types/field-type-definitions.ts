@@ -96,6 +96,12 @@ export const FIELD_TYPE_DEFINITIONS: readonly FieldTypeDefinition[] = [
     description: "Identificação fiscal genérica",
     generator: "tax-id",
   },
+  {
+    type: "document-issuer",
+    category: "document",
+    description: "Órgão expedidor / emissor do documento",
+    generator: "document-issuer",
+  },
 
   // ── Nome ────────────────────────────────────────────────────
   {
@@ -161,6 +167,9 @@ export const FIELD_TYPE_DEFINITIONS: readonly FieldTypeDefinition[] = [
     category: "address",
     description: "Logradouro",
     generator: "street",
+    params: {
+      onlyLetters: true,
+    },
   },
   {
     type: "house-number",
@@ -174,30 +183,35 @@ export const FIELD_TYPE_DEFINITIONS: readonly FieldTypeDefinition[] = [
     category: "address",
     description: "Complemento do endereço",
     generator: "complement",
+    params: { onlyLetters: true },
   },
   {
     type: "neighborhood",
     category: "address",
     description: "Bairro",
     generator: "neighborhood",
+    params: { onlyLetters: true },
   },
   {
     type: "city",
     category: "address",
     description: "Cidade",
     generator: "city",
+    params: { onlyLetters: true },
   },
   {
     type: "state",
     category: "address",
     description: "Estado / UF",
     generator: "state",
+    params: { onlyLetters: true },
   },
   {
     type: "country",
     category: "address",
     description: "País",
     generator: "country",
+    params: { onlyLetters: true },
   },
   {
     type: "cep",
@@ -226,6 +240,7 @@ export const FIELD_TYPE_DEFINITIONS: readonly FieldTypeDefinition[] = [
     category: "personal",
     description: "Data de nascimento",
     generator: "birth-date",
+    params: { min: 18, max: 65 },
   },
   {
     type: "start-date",

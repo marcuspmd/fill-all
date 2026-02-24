@@ -61,6 +61,7 @@ import {
   generatePassport,
   generateNationalId,
   generateTaxId,
+  generateDocumentIssuer,
 } from "./misc";
 
 export type GeneratorFn = () => string;
@@ -84,6 +85,7 @@ const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
   pis: () => generatePis(),
   "national-id": () => generateNationalId(),
   "tax-id": () => generateTaxId(),
+  "document-issuer": () => generateDocumentIssuer(),
 
   // ── Nome / Pessoal ─────────────────────────────────────────
   "full-name": () => generateFullName(),
@@ -92,15 +94,15 @@ const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
 
   // ── Contato ─────────────────────────────────────────────────
   email: () => generateEmail(),
-  phone: () => generatePhone(true, false),
+  phone: () => generatePhone(true, true),
   "mobile-phone": () => generatePhone(true, true),
 
   // ── Endereço ────────────────────────────────────────────────
   "full-address": () => generateFullAddress(),
-  street: () => generateStreet(),
+  street: (p) => generateStreet(p?.onlyLetters === true),
   "house-number": () => generateHouseNumber(),
-  complement: () => generateComplement(),
-  neighborhood: () => generateNeighborhood(),
+  complement: (p) => generateComplement(p?.onlyLetters === true),
+  neighborhood: (p) => generateNeighborhood(p?.onlyLetters === true),
   city: () => generateCity(),
   state: () => generateState(),
   country: () => generateCountry(),
@@ -108,7 +110,7 @@ const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
 
   // ── Datas ───────────────────────────────────────────────────
   "date-iso": () => generateDate("iso"),
-  "birth-date": () => generateBirthDate(),
+  "birth-date": (p) => generateBirthDate(p?.min ?? 18, p?.max ?? 65),
   "future-date": (p) => generateFutureDate(p?.max ?? 90),
 
   // ── Financeiro ──────────────────────────────────────────────
@@ -220,4 +222,5 @@ export {
   generatePassport,
   generateNationalId,
   generateTaxId,
+  generateDocumentIssuer,
 };

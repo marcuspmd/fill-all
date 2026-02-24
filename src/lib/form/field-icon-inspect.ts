@@ -2,9 +2,7 @@
  * Field Icon — inspection modal for field detection metadata and user overrides
  */
 
-import type { FormField, FieldType } from "@/types";
-import { invalidateClassifier } from "@/lib/form/detectors/strategies";
-import { storeLearnedEntry } from "@/lib/ai/learning-store";
+import type { FormField, FieldType, FieldRule } from "@/types";
 import { createLogger } from "@/lib/logger";
 import { getFieldTypeLabel } from "@/lib/shared/field-type-catalog";
 import { MODAL_ID } from "./field-icon-styles";
@@ -86,11 +84,11 @@ function showInspectModal(field: FormField): void {
             <span id="fa-modal-type-badge">${badge(field.detectionMethod ?? "—")}</span>
           </label>
           <select id="fa-modal-type-select">${typeOptions}</select>
-          <p id="fa-modal-override-hint">Alterar o tipo salva um override no aprendizado contínuo e melhora detecções futuras.</p>
+          <p id="fa-modal-override-hint">Alterar o tipo salva uma regra para este campo, alimentando o aprendizado e o dataset de treino.</p>
         </div>
       </div>
       <div id="fa-modal-footer">
-        <button id="fa-modal-save" type="button">💾 Salvar override</button>
+        <button id="fa-modal-save" type="button">💾 Salvar como regra</button>
         <button id="fa-modal-cancel" type="button">Cancelar</button>
       </div>
     </div>
@@ -141,7 +139,6 @@ async function saveInspectOverride(): Promise<void> {
     "#fa-modal-type-select",
   );
   const newType = (select?.value ?? "unknown") as FieldType;
-  const signals = currentInspectField.contextSignals ?? "";
 
   const saveBtn =
     inspectModalElement?.querySelector<HTMLButtonElement>("#fa-modal-save");
@@ -151,12 +148,22 @@ async function saveInspectOverride(): Promise<void> {
     saveBtn.textContent = "⏳ Salvando…";
   }
 
-  if (signals) {
-    await storeLearnedEntry(signals, newType);
-    invalidateClassifier();
+  const rule: FieldRule = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    urlPattern: `${window.location.origin}${window.location.pathname}*`,
+    fieldSelector: currentInspectField.selector,
+    fieldName: currentInspectField.name || currentInspectField.id || undefined,
+    fieldType: newType,
+    generator: "auto",
+    priority: 10,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
 
-    log.info(`🎓 Override do usuário: "${signals}" → "${newType}"`);
-  }
+  await chrome.runtime.sendMessage({ type: "SAVE_RULE", payload: rule });
+  log.info(
+    `📏 Regra criada via inspeção: "${rule.fieldSelector}" → "${newType}"`,
+  );
 
   if (saveBtn) {
     saveBtn.textContent = "✓ Salvo!";

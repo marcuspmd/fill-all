@@ -9,6 +9,7 @@
 
 import type { FieldRule, FieldType } from "@/types";
 import { createLogger } from "@/lib/logger";
+import { addDatasetEntry } from "@/lib/dataset/runtime-dataset";
 
 const log = createLogger("LearningStore");
 
@@ -196,6 +197,12 @@ export async function retrainLearnedFromRules(
     }
 
     await storeLearnedEntry(signals, rule.fieldType, undefined, "rule");
+    await addDatasetEntry({
+      signals,
+      type: rule.fieldType,
+      source: "manual",
+      difficulty: "easy",
+    });
     details.push({
       ruleId: rule.id,
       selector: rule.fieldSelector,
