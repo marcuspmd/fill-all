@@ -23,9 +23,9 @@ import {
 import {
   TRAINING_SAMPLES,
   flattenStructuredSignals,
-  type TrainingSample,
   getTrainingDistribution,
-} from "./training-data-v2";
+} from "./training-data";
+import type { TrainingSample } from "@/types";
 import { evaluateClassifier } from "./validation-data";
 import { runTestEvaluation } from "./test-data";
 import {
@@ -39,7 +39,7 @@ import {
 } from "./dataset-config";
 import { classifyField } from "@/lib/form/detectors/strategies";
 import type { FormField } from "@/types";
-import { fromLegacySignalText } from "@/lib/shared/structured-signals";
+import { fromFlatSignals } from "@/lib/shared/structured-signals";
 
 // ── Build keywords from dictionary ──────────────────────────────────────────
 
@@ -110,7 +110,7 @@ export function augmentTrainingSamples(
       if (fn) {
         const signalText = flattenStructuredSignals(sample.signals);
         augmented.push({
-          signals: fromLegacySignalText(fn(signalText)),
+          signals: fromFlatSignals(fn(signalText)),
           category: sample.category,
           type: sample.type,
           source: "augmented",

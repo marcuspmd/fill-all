@@ -136,10 +136,9 @@ async function seedBuiltinDataset(): Promise<{
   success: boolean;
   added: number;
 }> {
-  const { TRAINING_SAMPLES_V2 } =
-    await import("@/lib/dataset/training-data-v2");
+  const { TRAINING_SAMPLES } = await import("@/lib/dataset/training-data");
   const { buildFeatureText } = await import("@/lib/shared/structured-signals");
-  const seeds = TRAINING_SAMPLES_V2.map((sample) => ({
+  const seeds = TRAINING_SAMPLES.map((sample) => ({
     signals: buildFeatureText(sample.signals, {
       category: sample.category,
       language: sample.language,

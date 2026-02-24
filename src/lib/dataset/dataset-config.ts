@@ -10,7 +10,7 @@ import {
   TRAINING_SAMPLES,
   getTrainingDistribution,
   toTrainingSignalText,
-} from "./training-data-v2";
+} from "./training-data";
 import { VALIDATION_SAMPLES } from "./validation-data";
 import { TEST_SAMPLES } from "./test-data";
 

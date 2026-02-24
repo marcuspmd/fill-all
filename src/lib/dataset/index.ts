@@ -31,20 +31,17 @@ export {
   getTrainingSamplesByDifficulty,
   getTrainingSamplesByType,
   getTrainingDistribution,
-  type TrainingSample,
-} from "./training-data-v2";
+} from "./training-data";
 
 export {
   flattenStructuredSignals,
   normalizeStructuredSignals,
-  createTrainingSampleV2FromLegacy,
   TRAINING_SAMPLES_V2,
   getTrainingV2ByDifficulty,
   getTrainingV2ByType,
   getTrainingV2Distribution,
   type StructuredSignals,
-  type TrainingSampleV2,
-} from "./training-data-v2";
+} from "./training-data";
 
 // ── Validation Data ────────────────────────────────────────────────────────
 export {

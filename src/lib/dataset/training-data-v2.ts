@@ -1,41 +1,18 @@
 import type {
-  DomFeatureHints,
   FieldCategory,
   FieldType,
   TrainingDifficulty,
-  TrainingLanguage,
-  TrainingSampleSource,
+  TrainingSample,
 } from "@/types";
 import {
   buildFeatureText,
-  inferCategoryFromType,
-  inferLanguageFromSignals,
   normalizeStructuredSignals as normalizeSignalsShared,
   type StructuredSignals,
 } from "@/lib/shared/structured-signals";
-import {
-  TRAINING_SAMPLES as LEGACY_TRAINING_SAMPLES,
-  type TrainingSample as LegacyTrainingSample,
-} from "./training-data";
+import { TRAINING_SAMPLES_CPF } from "./data/personal/cpfData";
+import { TRAINING_SAMPLES_CNPJ } from "./data/personal/cnpjData";
 
 export type { StructuredSignals } from "@/lib/shared/structured-signals";
-
-export interface TrainingSampleV2 {
-  signals: StructuredSignals;
-  category: FieldCategory;
-  type: FieldType;
-  source: TrainingSampleSource;
-  /** Optional: original URL domain (real-world samples) */
-  domain?: string;
-  /** Curriculum difficulty */
-  difficulty: TrainingDifficulty;
-  /** Optional language tag (helps multilingual training) */
-  language?: TrainingLanguage;
-  /** Optional DOM hints for advanced training */
-  domFeatures?: DomFeatureHints;
-}
-
-export type TrainingSample = TrainingSampleV2;
 
 export interface FlattenSignalsOptions {
   includeSecondary?: boolean;
@@ -88,6 +65,19 @@ const CATEGORY_BY_TYPE: Partial<Record<FieldType, FieldCategory>> = {
   unknown: "unknown",
 };
 
+function normalizeTrainingSample(sample: TrainingSample): TrainingSample {
+  return {
+    ...sample,
+    signals: normalizeStructuredSignals(sample.signals),
+    category: sample.category ?? CATEGORY_BY_TYPE[sample.type] ?? "unknown",
+  };
+}
+
+const BUILTIN_TRAINING_SAMPLES: TrainingSample[] = [
+  ...TRAINING_SAMPLES_CPF,
+  ...TRAINING_SAMPLES_CNPJ,
+].map(normalizeTrainingSample);
+
 export function normalizeStructuredSignals(
   signals: StructuredSignals,
 ): StructuredSignals {
@@ -101,33 +91,11 @@ export function flattenStructuredSignals(
   return buildFeatureText(signals, undefined, options);
 }
 
-export function createTrainingSampleV2FromLegacy(
-  sample: LegacyTrainingSample,
-  category: FieldCategory = CATEGORY_BY_TYPE[sample.type] ??
-    inferCategoryFromType(sample.type),
-): TrainingSampleV2 {
-  const language = inferLanguageFromSignals(sample.signals);
+export const TRAINING_SAMPLES_V2: TrainingSample[] = BUILTIN_TRAINING_SAMPLES;
 
-  return {
-    signals: normalizeStructuredSignals(sample.signals),
-    category,
-    type: sample.type,
-    source: sample.source,
-    domain: sample.domain,
-    difficulty: sample.difficulty,
-    language,
-    domFeatures: undefined,
-  };
-}
+export const TRAINING_SAMPLES: TrainingSample[] = TRAINING_SAMPLES_V2;
 
-export const TRAINING_SAMPLES_V2: TrainingSampleV2[] =
-  LEGACY_TRAINING_SAMPLES.map((sample) =>
-    createTrainingSampleV2FromLegacy(sample),
-  );
-
-export const TRAINING_SAMPLES: TrainingSampleV2[] = TRAINING_SAMPLES_V2;
-
-export function toTrainingSignalText(sample: TrainingSampleV2): string {
+export function toTrainingSignalText(sample: TrainingSample): string {
   return buildFeatureText(sample.signals, {
     category: sample.category,
     language: sample.language,
@@ -137,11 +105,11 @@ export function toTrainingSignalText(sample: TrainingSampleV2): string {
 
 export function getTrainingSamplesByDifficulty(
   difficulty: TrainingDifficulty,
-): TrainingSampleV2[] {
+): TrainingSample[] {
   return TRAINING_SAMPLES.filter((sample) => sample.difficulty === difficulty);
 }
 
-export function getTrainingSamplesByType(type: FieldType): TrainingSampleV2[] {
+export function getTrainingSamplesByType(type: FieldType): TrainingSample[] {
   return TRAINING_SAMPLES.filter((sample) => sample.type === type);
 }
 
@@ -155,13 +123,13 @@ export function getTrainingDistribution(): Record<string, number> {
 
 export function getTrainingV2ByDifficulty(
   difficulty: TrainingDifficulty,
-): TrainingSampleV2[] {
+): TrainingSample[] {
   return TRAINING_SAMPLES_V2.filter(
     (sample) => sample.difficulty === difficulty,
   );
 }
 
-export function getTrainingV2ByType(type: FieldType): TrainingSampleV2[] {
+export function getTrainingV2ByType(type: FieldType): TrainingSample[] {
   return TRAINING_SAMPLES_V2.filter((sample) => sample.type === type);
 }
 

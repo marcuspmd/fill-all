@@ -22,7 +22,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 // Dataset imports — tsx resolves "@/*" aliases via tsconfig.json paths
-import { TRAINING_SAMPLES_V2 } from "../src/lib/dataset/training-data-v2";
+import { TRAINING_SAMPLES } from "../src/lib/dataset/training-data";
 import { VALIDATION_SAMPLES } from "../src/lib/dataset/validation-data";
 import { TRAINABLE_FIELD_TYPES } from "../src/types";
 import {
@@ -150,9 +150,9 @@ async function main(): Promise<void> {
   await tf.ready();
   console.log(`[TF.js] Backend: ${tf.getBackend()}\n`);
   // Filter to trainable types only
-  const trainSamples = TRAINING_SAMPLES_V2.filter((s) =>
+  const trainSamples = TRAINING_SAMPLES.filter((s) =>
     LABEL_SET.has(s.type),
-  ) as Array<(typeof TRAINING_SAMPLES_V2)[number] & { type: Label }>;
+  ) as Array<(typeof TRAINING_SAMPLES)[number] & { type: Label }>;
 
   const valSamples = VALIDATION_SAMPLES.filter((s) =>
     LABEL_SET.has(s.expectedType),

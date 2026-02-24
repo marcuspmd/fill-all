@@ -1,3 +1,5 @@
+import { StructuredSignals } from "@/lib/dataset";
+
 export type {
   MessageHandler,
   StorageRepository,
@@ -286,6 +288,21 @@ export type DatasetExtractionStrategy =
   | "secondary"
   | "structural"
   | "dom-features";
+
+export interface TrainingSample {
+  signals: StructuredSignals;
+  category: FieldCategory;
+  type: FieldType;
+  source: TrainingSampleSource;
+  /** Optional: original URL domain (real-world samples) */
+  domain?: string;
+  /** Curriculum difficulty */
+  difficulty: TrainingDifficulty;
+  /** Optional language tag (helps multilingual training) */
+  language?: TrainingLanguage;
+  /** Optional DOM hints for advanced training */
+  domFeatures?: DomFeatureHints;
+}
 
 /** Represents a detected form field on the page */
 export interface FormField {
