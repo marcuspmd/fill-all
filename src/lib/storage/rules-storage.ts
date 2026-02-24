@@ -10,10 +10,16 @@ import type {
 import { STORAGE_KEYS, getFromStorage, updateStorageAtomically } from "./core";
 import { matchUrlPattern } from "@/lib/url/match-url-pattern";
 
+/** Retrieves all stored field rules. */
 export async function getRules(): Promise<FieldRule[]> {
   return getFromStorage<FieldRule[]>(STORAGE_KEYS.RULES, []);
 }
 
+/**
+ * Saves a field rule (upsert). Updates `updatedAt` on existing rules;
+ * sets both `createdAt` and `updatedAt` on new ones.
+ * @param rule - The rule to save
+ */
 export async function saveRule(rule: FieldRule): Promise<void> {
   await updateStorageAtomically(
     STORAGE_KEYS.RULES,
@@ -33,6 +39,10 @@ export async function saveRule(rule: FieldRule): Promise<void> {
   );
 }
 
+/**
+ * Deletes a field rule by ID.
+ * @param ruleId - The unique rule identifier
+ */
 export async function deleteRule(ruleId: string): Promise<void> {
   await updateStorageAtomically(
     STORAGE_KEYS.RULES,
@@ -41,6 +51,11 @@ export async function deleteRule(ruleId: string): Promise<void> {
   );
 }
 
+/**
+ * Retrieves all rules whose `urlPattern` matches the given URL,
+ * sorted by priority (highest first).
+ * @param url - The page URL to match against
+ */
 export async function getRulesForUrl(url: string): Promise<FieldRule[]> {
   const rules = await getRules();
   return rules

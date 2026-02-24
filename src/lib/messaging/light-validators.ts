@@ -1,5 +1,17 @@
+/**
+ * Lightweight message validators using only `typeof` checks.
+ *
+ * Designed for the content script hot path where Zod overhead
+ * is unacceptable. For strict validation, use `validators.ts`.
+ */
+
 import type { SavedForm } from "@/types";
 
+/**
+ * Lightweight message envelope parser — `typeof` checks only.
+ * @param input - Raw message from `chrome.runtime.onMessage`
+ * @returns Parsed `{ type, payload }` or `null` if invalid
+ */
 export function parseIncomingMessage(
   input: unknown,
 ): { type: string; payload?: unknown } | null {
@@ -9,10 +21,20 @@ export function parseIncomingMessage(
   return { type: value.type, payload: value.payload };
 }
 
+/**
+ * Lightweight non-empty string parser.
+ * @param input - Raw payload value
+ * @returns The string, or `null` if not a valid non-empty string
+ */
 export function parseStringPayload(input: unknown): string | null {
   return typeof input === "string" && input.length > 0 ? input : null;
 }
 
+/**
+ * Lightweight start-watching payload parser.
+ * @param input - Raw payload (may be `undefined`)
+ * @returns Object with optional `autoRefill` flag, or `null` if invalid
+ */
 export function parseStartWatchingPayload(
   input: unknown,
 ): { autoRefill?: boolean } | null {
@@ -28,6 +50,11 @@ export function parseStartWatchingPayload(
   return { autoRefill: payload.autoRefill };
 }
 
+/**
+ * Lightweight saved-form payload parser — `typeof` checks only.
+ * @param input - Raw payload from a `SAVE_FORM` or `APPLY_TEMPLATE` message
+ * @returns Reconstructed `SavedForm` or `null` if invalid
+ */
 export function parseSavedFormPayload(input: unknown): SavedForm | null {
   if (!input || typeof input !== "object") return null;
   const value = input as Partial<SavedForm>;
@@ -62,6 +89,11 @@ export function parseSavedFormPayload(input: unknown): SavedForm | null {
   };
 }
 
+/**
+ * Lightweight template-apply payload parser (delegates to `parseSavedFormPayload`).
+ * @param input - Raw payload from an `APPLY_TEMPLATE` message
+ * @returns Validated `SavedForm` or `null`
+ */
 export function parseApplyTemplatePayload(input: unknown): SavedForm | null {
   return parseSavedFormPayload(input);
 }

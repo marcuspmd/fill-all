@@ -25,6 +25,7 @@ interface UserTrainingSample {
   domain?: string;
 }
 
+/** User-generated training samples populated by `npm run import:rules`. */
 export const USER_SAMPLES: UserTrainingSample[] = [
   // populated by: npm run import:rules [path/to/fill-all-rules.json]
 ];

@@ -37,6 +37,7 @@ export type {
   FieldCollectionPipeline,
 } from "./detectors/pipeline";
 
+/** Convenience wrapper — returns only the detected fields array. */
 export function detectFormFields(): FormField[] {
   return detectAllFields().fields;
 }

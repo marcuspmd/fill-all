@@ -12,6 +12,11 @@ function calculateCnpjCheckDigit(digits: number[], weights: number[]): number {
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
+/**
+ * Generates a valid Brazilian CNPJ (Cadastro Nacional de Pessoa Jurídica) with correct check digits.
+ * @param formatted - Whether to format as `XX.XXX.XXX/XXXX-XX` (default: `true`)
+ * @returns A valid CNPJ string
+ */
 export function generateCnpj(formatted = true): string {
   // First 8 digits are random, then 0001 (branch), then 2 check digits
   const base = [...randomDigits(8), 0, 0, 0, 1];
@@ -35,6 +40,11 @@ export function generateCnpj(formatted = true): string {
   return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12)}`;
 }
 
+/**
+ * Validates a Brazilian CNPJ string.
+ * @param cnpj - CNPJ string (formatted or raw digits)
+ * @returns `true` if the CNPJ has valid check digits
+ */
 export function validateCnpj(cnpj: string): boolean {
   const cleaned = cnpj.replace(/\D/g, "");
 

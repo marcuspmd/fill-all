@@ -10,6 +10,7 @@ import {
   updateStorageAtomically,
 } from "./core";
 
+/** Retrieves all field detection cache entries. */
 export async function getFieldDetectionCache(): Promise<
   FieldDetectionCacheEntry[]
 > {
@@ -19,6 +20,12 @@ export async function getFieldDetectionCache(): Promise<
   );
 }
 
+/**
+ * Retrieves the cached detection result for a specific URL.
+ * Falls back to origin + path matching when an exact URL match isn't found.
+ * @param url - Full page URL
+ * @returns The matching cache entry, or `null`
+ */
 export async function getFieldDetectionCacheForUrl(
   url: string,
 ): Promise<FieldDetectionCacheEntry | null> {
@@ -38,6 +45,13 @@ export async function getFieldDetectionCacheForUrl(
   }
 }
 
+/**
+ * Saves detected fields for a URL in the cache.
+ * Deduplicates by URL and origin+path. Evicts oldest entries beyond the limit.
+ * @param url - Full page URL
+ * @param fields - Array of detected field summaries
+ * @returns The saved cache entry
+ */
 export async function saveFieldDetectionCacheForUrl(
   url: string,
   fields: DetectedFieldSummary[],
@@ -84,6 +98,10 @@ export async function saveFieldDetectionCacheForUrl(
   return entry;
 }
 
+/**
+ * Deletes the cached detection result for a specific URL.
+ * @param url - Full page URL to remove from cache
+ */
 export async function deleteFieldDetectionCacheForUrl(
   url: string,
 ): Promise<void> {
@@ -94,6 +112,7 @@ export async function deleteFieldDetectionCacheForUrl(
   );
 }
 
+/** Clears all field detection cache entries. */
 export async function clearFieldDetectionCache(): Promise<void> {
   await updateStorageAtomically(
     STORAGE_KEYS.FIELD_CACHE,

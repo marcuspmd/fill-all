@@ -7,6 +7,10 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("Storage");
 
+/**
+ * Canonical storage key constants used across all storage modules.
+ * Maps logical names to the actual `chrome.storage.local` keys.
+ */
 export const STORAGE_KEYS = {
   RULES: "fill_all_rules",
   SAVED_FORMS: "fill_all_saved_forms",
@@ -15,6 +19,7 @@ export const STORAGE_KEYS = {
   FIELD_CACHE: "fill_all_field_cache",
 } as const;
 
+/** Union type of all valid storage key values. */
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
 
 const MAX_FIELD_CACHE_ENTRIES = 100;
@@ -23,6 +28,12 @@ const writeQueues = new Map<StorageKey, Promise<void>>();
 
 export { MAX_FIELD_CACHE_ENTRIES };
 
+/**
+ * Reads a value from `chrome.storage.local`.
+ * @param key - Storage key to retrieve
+ * @param defaultValue - Value returned when the key does not exist
+ * @returns The stored value or `defaultValue`
+ */
 export async function getFromStorage<T>(
   key: string,
   defaultValue: T,
@@ -31,6 +42,11 @@ export async function getFromStorage<T>(
   return (result[key] as T) ?? defaultValue;
 }
 
+/**
+ * Writes a value to `chrome.storage.local`.
+ * @param key - Storage key to write
+ * @param value - Value to persist
+ */
 export async function setToStorage<T>(key: string, value: T): Promise<void> {
   await chrome.storage.local.set({ [key]: value });
 }
@@ -46,6 +62,17 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
+/**
+ * Atomically reads, transforms, and writes a storage key.
+ *
+ * Uses a per-key write queue to prevent race conditions when multiple
+ * async operations modify the same key concurrently.
+ *
+ * @param key - Storage key to update
+ * @param defaultValue - Default value if key does not exist yet
+ * @param updater - Pure function that receives current value and returns the next
+ * @returns The new value after the update
+ */
 export async function updateStorageAtomically<T>(
   key: StorageKey,
   defaultValue: T,

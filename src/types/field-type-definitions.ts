@@ -7,6 +7,7 @@
 
 import type { FieldType, FieldCategory } from "./index";
 
+/** Extra parameters passed to a generator function (min/max, format, etc.). */
 export interface GeneratorParams {
   readonly min?: number;
   readonly max?: number;
@@ -22,6 +23,7 @@ export interface GeneratorParams {
   readonly [key: string]: unknown; // allow extra params without TS errors
 }
 
+/** Metadata entry describing a single field type with its category, generator, and params. */
 export interface FieldTypeDefinition {
   readonly type: FieldType;
   readonly category: FieldCategory;
@@ -36,6 +38,7 @@ export interface FieldTypeDefinition {
   readonly params?: GeneratorParams;
 }
 
+/** Complete registry of all field type definitions with their metadata and generator config. */
 export const FIELD_TYPE_DEFINITIONS: readonly FieldTypeDefinition[] = [
   // ── Documentos ──────────────────────────────────────────────
   {

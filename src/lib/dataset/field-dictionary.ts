@@ -25,6 +25,7 @@ export interface SelectOption {
 
 // ── Generator descriptor ────────────────────────────────────────────────────
 
+/** Strategy used to generate values for a given field type. */
 export type GeneratorStrategy =
   | "random" // pick from the built-in generator
   | "select-options" // pick from known options
@@ -47,6 +48,7 @@ export interface GeneratorDescriptor {
 
 // ── Input characteristics ───────────────────────────────────────────────────
 
+/** Kind of HTML element typically associated with a field type. */
 export type ElementKind =
   | "input-text"
   | "input-email"
@@ -213,6 +215,10 @@ const NATIONALITY_OPTIONS: SelectOption[] = [
 
 // ── The Dictionary ──────────────────────────────────────────────────────────
 
+/**
+ * Canonical dictionary of all known field types with metadata,
+ * generator descriptors, and input characteristics.
+ */
 export const FIELD_DICTIONARY: FieldDictionaryEntry[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   //  DOCUMENTS
@@ -990,6 +996,7 @@ export interface SelectContextPattern {
   pickStrategy: "random" | "first" | "match-label";
 }
 
+/** Predefined patterns for selecting appropriate options in `<select>` elements. */
 export const SELECT_CONTEXT_PATTERNS: SelectContextPattern[] = [
   {
     semanticType: "gender",

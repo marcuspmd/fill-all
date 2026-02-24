@@ -64,6 +64,7 @@ import {
   generateDocumentIssuer,
 } from "./misc";
 
+/** Function signature for synchronous data generators. */
 export type GeneratorFn = () => string;
 
 // ── Generator factory type ────────────────────────────────────────────────
@@ -169,6 +170,12 @@ function buildGeneratorMap(): Map<FieldType, GeneratorFn> {
 
 const generatorMap = buildGeneratorMap();
 
+/**
+ * Generates a value for the given field type using the appropriate generator.
+ * Falls back to random text (3 words) when no specific generator is registered.
+ * @param fieldType - The classified field type to generate data for
+ * @returns Generated string value
+ */
 export function generate(fieldType: FieldType): string {
   const fn = generatorMap.get(fieldType);
   return fn ? fn() : generateText(3);

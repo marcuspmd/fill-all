@@ -18,6 +18,7 @@
 
 import type { FieldType } from "@/types";
 
+/** A single validation sample with expected type and annotation. */
 export interface ValidationSample {
   signals: string;
   expectedType: FieldType;
@@ -25,6 +26,7 @@ export interface ValidationSample {
   note: string;
 }
 
+/** Validation samples for measuring classifier generalisation (never used in training). */
 export const VALIDATION_SAMPLES: ValidationSample[] = [
   // ═══════════════════════════════════════════════════════════════════════
   // ── CPF (8 samples) ──

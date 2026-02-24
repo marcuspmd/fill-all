@@ -12,6 +12,11 @@ function calculateCpfCheckDigit(digits: number[], weights: number[]): number {
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
+/**
+ * Generates a valid Brazilian CPF (Cadastro de Pessoas Físicas) with correct check digits.
+ * @param formatted - Whether to format as `XXX.XXX.XXX-XX` (default: `true`)
+ * @returns A valid CPF string
+ */
 export function generateCpf(formatted = true): string {
   const digits = randomDigits(9);
 
@@ -39,6 +44,11 @@ export function generateCpf(formatted = true): string {
   return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
 }
 
+/**
+ * Validates a Brazilian CPF string.
+ * @param cpf - CPF string (formatted or raw digits)
+ * @returns `true` if the CPF has valid check digits
+ */
 export function validateCpf(cpf: string): boolean {
   const cleaned = cpf.replace(/\D/g, "");
 

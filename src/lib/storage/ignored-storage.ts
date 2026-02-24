@@ -13,10 +13,17 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("Storage");
 
+/** Retrieves all ignored field entries. */
 export async function getIgnoredFields(): Promise<IgnoredField[]> {
   return getFromStorage<IgnoredField[]>(STORAGE_KEYS.IGNORED_FIELDS, []);
 }
 
+/**
+ * Adds a field to the ignored list. If a matching entry already exists
+ * (same URL pattern + selector), returns the existing entry instead.
+ * @param field - The field to ignore (without ID and createdAt)
+ * @returns The created or existing `IgnoredField`, or `null` on failure
+ */
 export async function addIgnoredField(
   field: Omit<IgnoredField, "id" | "createdAt">,
 ): Promise<IgnoredField | null> {
@@ -52,6 +59,10 @@ export async function addIgnoredField(
   return resolvedField;
 }
 
+/**
+ * Removes an ignored field entry by ID.
+ * @param id - The unique ignored-field identifier
+ */
 export async function removeIgnoredField(id: string): Promise<void> {
   await updateStorageAtomically(
     STORAGE_KEYS.IGNORED_FIELDS,
@@ -60,6 +71,10 @@ export async function removeIgnoredField(id: string): Promise<void> {
   );
 }
 
+/**
+ * Retrieves ignored fields whose `urlPattern` matches the given URL.
+ * @param url - The page URL to match against
+ */
 export async function getIgnoredFieldsForUrl(
   url: string,
 ): Promise<IgnoredField[]> {

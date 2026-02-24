@@ -16,8 +16,10 @@ import { TEST_SAMPLES } from "./test-data";
 
 // ── Version & metadata ──────────────────────────────────────────────────────
 
+/** Semantic version of the dataset schema. */
 export const DATASET_VERSION = "1.1.0";
 
+/** Static metadata describing the dataset (version, locale, split counts). */
 export const DATASET_META = {
   version: DATASET_VERSION,
   locale: "pt-BR + en-US",
@@ -45,6 +47,7 @@ export interface AccuracyThresholds {
   maxUnknownRate: number;
 }
 
+/** Default accuracy thresholds for validation and test passes. */
 export const DEFAULT_THRESHOLDS: AccuracyThresholds = {
   globalMin: 0.85,
   perTypeMin: 0.7,
@@ -170,6 +173,7 @@ export interface CurriculumConfig {
   levels: Array<"easy" | "medium" | "hard">;
 }
 
+/** Default curriculum learning configuration. */
 export const DEFAULT_CURRICULUM: CurriculumConfig = {
   enabled: true,
   epochsPerLevel: 3,
@@ -191,6 +195,7 @@ export interface ContinuousLearningConfig {
   revalidateOnUpdate: boolean;
 }
 
+/** Default continuous learning configuration. */
 export const DEFAULT_CONTINUOUS_LEARNING: ContinuousLearningConfig = {
   captureFromAI: true,
   captureUserCorrections: true,

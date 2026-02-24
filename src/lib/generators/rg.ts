@@ -8,6 +8,11 @@ function randomDigits(count: number): string {
   ).join("");
 }
 
+/**
+ * Generates a random Brazilian RG (Registro Geral) number.
+ * @param formatted - Whether to format as `XX.XXX.XXX-X` (default: `true`)
+ * @returns A 9-digit RG string
+ */
 export function generateRg(formatted = true): string {
   const digits = randomDigits(9);
 

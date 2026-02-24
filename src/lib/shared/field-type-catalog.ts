@@ -1,5 +1,9 @@
 import { FIELD_TYPES, type FieldType } from "@/types";
 
+/**
+ * Human-readable label overrides for field types.
+ * Falls back to title-cased hyphen-split names when not listed here.
+ */
 const FIELD_TYPE_LABEL_OVERRIDES: Partial<Record<FieldType, string>> = {
   cpf: "CPF",
   cnpj: "CNPJ",
@@ -25,11 +29,13 @@ const FIELD_TYPE_LABEL_OVERRIDES: Partial<Record<FieldType, string>> = {
   unknown: "Desconhecido",
 };
 
+/** A field type with its display label. */
 export interface FieldTypeOption {
   value: FieldType;
   label: string;
 }
 
+/** Returns a human-readable label for the given field type. */
 export function getFieldTypeLabel(type: FieldType): string {
   const override = FIELD_TYPE_LABEL_OVERRIDES[type];
   if (override) return override;
@@ -40,6 +46,10 @@ export function getFieldTypeLabel(type: FieldType): string {
     .join(" ");
 }
 
+/**
+ * Builds a sorted list of `{ value, label }` options from the given field types.
+ * Defaults to all known `FIELD_TYPES` when none are provided.
+ */
 export function getFieldTypeOptions(
   types: readonly FieldType[] = FIELD_TYPES,
 ): FieldTypeOption[] {

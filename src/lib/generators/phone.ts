@@ -2,6 +2,7 @@
  * Brazilian phone number generator
  */
 
+/** Valid Brazilian DDD area codes organized by state */
 const DDD_CODES = [
   "11",
   "12",
@@ -82,6 +83,12 @@ function randomDigits(count: number): string {
   ).join("");
 }
 
+/**
+ * Generates a random Brazilian phone number with valid DDD area code.
+ * @param formatted - Whether to format as `(XX) XXXXX-XXXX` (default: `true`)
+ * @param mobile - Whether to generate a mobile number with 9-digit prefix (default: `true`)
+ * @returns A Brazilian phone number string
+ */
 export function generatePhone(formatted = true, mobile = true): string {
   const ddd = randomItem(DDD_CODES);
   const prefix = mobile ? "9" : String(Math.floor(Math.random() * 5) + 2);

@@ -7,18 +7,27 @@ import type {
 } from "@/types";
 import { FIELD_TYPES_BY_CATEGORY } from "@/types";
 
+/**
+ * Structured signal layers extracted from a form field.
+ * Used as input for feature text building and classifier training.
+ */
 export interface StructuredSignals {
+  /** High-relevance tokens: label, name, id, placeholder */
   primary: string[];
+  /** Medium-relevance tokens: autocomplete attribute */
   secondary: string[];
+  /** Low-relevance tokens: input type, required, pattern, maxlength */
   structural: string[];
 }
 
+/** Optional context about the field’s category, language, and DOM features. */
 export interface StructuredSignalContext {
   category?: FieldCategory;
   language?: TrainingLanguage;
   domFeatures?: DomFeatureHints;
 }
 
+/** Options for controlling how feature text is built from structured signals. */
 export interface BuildFeatureTextOptions {
   includeSecondary?: boolean;
   includeStructural?: boolean;
@@ -108,6 +117,7 @@ function buildMetadataTokens(context?: StructuredSignalContext): string[] {
   return tokens;
 }
 
+/** Normalizes all signal tokens (lowercase, strip accents, deduplicate). */
 export function normalizeStructuredSignals(
   signals: StructuredSignals,
 ): StructuredSignals {
@@ -118,6 +128,7 @@ export function normalizeStructuredSignals(
   };
 }
 
+/** Wraps a flat signal string into a {@link StructuredSignals} with only primary tokens. */
 export function fromFlatSignals(signals: string): StructuredSignals {
   return {
     primary: signals ? [signals] : [],
@@ -126,6 +137,7 @@ export function fromFlatSignals(signals: string): StructuredSignals {
   };
 }
 
+/** Heuristically infers the language (`pt`, `en`, `es`) from signal text. */
 export function inferLanguageFromSignals(signals: string): TrainingLanguage {
   const normalized = normalizeToken(signals);
   if (/\b(el|la|correo|telefono|direccion|apellido)\b/.test(normalized)) {
@@ -137,6 +149,7 @@ export function inferLanguageFromSignals(signals: string): TrainingLanguage {
   return "pt";
 }
 
+/** Maps a {@link FieldType} to its canonical {@link FieldCategory}. */
 export function inferCategoryFromType(type: FieldType): FieldCategory {
   for (const [category, types] of Object.entries(
     FIELD_TYPES_BY_CATEGORY,
@@ -147,6 +160,10 @@ export function inferCategoryFromType(type: FieldType): FieldCategory {
   return "unknown";
 }
 
+/**
+ * Builds a weighted, normalized feature text from structured signals.
+ * Tokens are repeated proportionally to their layer’s weight.
+ */
 export function buildFeatureText(
   signals: StructuredSignals,
   context?: StructuredSignalContext,
@@ -172,6 +189,10 @@ export function buildFeatureText(
   return normalizeToken(tokens.join(" "));
 }
 
+/**
+ * Extracts {@link StructuredSignals} and {@link StructuredSignalContext}
+ * from a partial `FormField` object.
+ */
 export function structuredSignalsFromField(field: Partial<FormField>): {
   signals: StructuredSignals;
   context: StructuredSignalContext;

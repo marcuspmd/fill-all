@@ -11,16 +11,19 @@ import { TYPE_COLORS, METHOD_COLORS, getConfidenceColor } from "./constants";
 
 // ── Badges ───────────────────────────────────────────────────────────────────
 
+/** Renders a colored badge for a field type. */
 export function renderTypeBadge(type: string, prefix = ""): string {
   const color = TYPE_COLORS[type] ?? "#64748b";
   return `<span class="${prefix}type-badge" style="background:${color}">${escapeHtml(type)}</span>`;
 }
 
+/** Renders a colored badge for a detection method. */
 export function renderMethodBadge(method: string, prefix = ""): string {
   const color = METHOD_COLORS[method] ?? "#334155";
   return `<span class="${prefix}method-badge" style="background:${color};color:#fff">${escapeHtml(method)}</span>`;
 }
 
+/** Renders a confidence progress bar with percentage label. */
 export function renderConfidenceBadge(
   confidence: number | undefined,
   prefix = "",
@@ -48,6 +51,7 @@ export interface FieldsTableOptions {
   showActions?: boolean;
 }
 
+/** Renders the `<thead>` row for the detected-fields table. */
 export function renderFieldsTableHeader(
   options: FieldsTableOptions = {},
 ): string {
@@ -67,6 +71,7 @@ export function renderFieldsTableHeader(
   `;
 }
 
+/** Renders a single `<tr>` for a detected field. */
 export function renderFieldRow(
   field: DetectedFieldSummary,
   index: number,
@@ -96,6 +101,7 @@ export function renderFieldRow(
 
 // ── Forms Cards ──────────────────────────────────────────────────────────────
 
+/** Renders a card summarizing a saved form. */
 export function renderFormCard(form: SavedForm, prefix = ""): string {
   const fieldCount = Object.keys(form.fields).length;
   const date = new Date(form.updatedAt).toLocaleDateString("pt-BR");
@@ -114,12 +120,14 @@ export function renderFormCard(form: SavedForm, prefix = ""): string {
 
 // ── Log Entries ──────────────────────────────────────────────────────────────
 
+/** A structured log entry for display. */
 export interface LogEntry {
   time: string;
   text: string;
   type: string;
 }
 
+/** Renders a single log entry row. */
 export function renderLogEntry(entry: LogEntry, prefix = ""): string {
   return `
     <div class="${prefix}log-entry ${prefix}log-${entry.type}">
@@ -131,6 +139,7 @@ export function renderLogEntry(entry: LogEntry, prefix = ""): string {
 
 // ── Action Cards ─────────────────────────────────────────────────────────────
 
+/** Configuration for an action-card button. */
 export interface ActionCardConfig {
   id: string;
   icon: string;
@@ -140,6 +149,7 @@ export interface ActionCardConfig {
   active?: boolean;
 }
 
+/** Renders an action-card button (primary / secondary / outline). */
 export function renderActionCard(card: ActionCardConfig, prefix = ""): string {
   const variantClass =
     card.variant === "primary"
@@ -161,12 +171,14 @@ export function renderActionCard(card: ActionCardConfig, prefix = ""): string {
 
 // ── Tab Bar ──────────────────────────────────────────────────────────────────
 
+/** Configuration for a tab in the tab bar. */
 export interface TabConfig {
   id: string;
   label: string;
   active?: boolean;
 }
 
+/** Renders a horizontal tab bar from tab configs. */
 export function renderTabBar(tabs: TabConfig[], prefix = ""): string {
   return tabs
     .map(

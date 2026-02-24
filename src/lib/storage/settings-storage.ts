@@ -6,10 +6,15 @@ import type { Settings } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 import { STORAGE_KEYS, getFromStorage, updateStorageAtomically } from "./core";
 
+/** Retrieves current extension settings, merged with defaults. */
 export async function getSettings(): Promise<Settings> {
   return getFromStorage<Settings>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
 }
 
+/**
+ * Saves a partial settings update (shallow merge with current settings).
+ * @param settings - Partial settings to merge
+ */
 export async function saveSettings(settings: Partial<Settings>): Promise<void> {
   await updateStorageAtomically(
     STORAGE_KEYS.SETTINGS,

@@ -16,6 +16,12 @@ export interface BasicTypeResult {
   method: DetectionMethod;
 }
 
+/**
+ * Maps an HTML form element's native type to a `FieldType`.
+ * Returns `"unknown"` for ambiguous types like plain `text` or `textarea`.
+ * @param element - The native form control element
+ * @returns A `BasicTypeResult` with type and detection method
+ */
 export function detectBasicType(
   element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 ): BasicTypeResult {

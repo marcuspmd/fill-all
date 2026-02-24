@@ -1,3 +1,11 @@
+/**
+ * Full Zod validators for extension messages.
+ *
+ * Used in the background service worker and options page where strict
+ * schema validation is acceptable. Content script should use
+ * `light-validators.ts` instead for performance.
+ */
+
 import { z } from "zod";
 import type { FieldRule, SavedForm, Settings } from "@/types";
 import type { DetectedFieldSummary } from "@/types";
@@ -115,6 +123,11 @@ const startWatchingSchema = z
   })
   .strict();
 
+/**
+ * Parses and validates a raw extension message envelope.
+ * @param input - Raw message from `chrome.runtime.onMessage`
+ * @returns Parsed `{ type, payload }` or `null` if invalid
+ */
 export function parseIncomingMessage(
   input: unknown,
 ): { type: string; payload?: unknown } | null {
@@ -122,16 +135,31 @@ export function parseIncomingMessage(
   return result.success ? result.data : null;
 }
 
+/**
+ * Parses and validates a field rule payload against the strict Zod schema.
+ * @param input - Raw payload from a `SAVE_RULE` message
+ * @returns Validated `FieldRule` or `null` if validation fails
+ */
 export function parseRulePayload(input: unknown): FieldRule | null {
   const result = fieldRuleSchema.safeParse(input);
   return result.success ? (result.data as FieldRule) : null;
 }
 
+/**
+ * Parses and validates a partial settings payload.
+ * @param input - Raw settings object from a `SAVE_SETTINGS` message
+ * @returns Validated partial `Settings` or `null`
+ */
 export function parseSettingsPayload(input: unknown): Partial<Settings> | null {
   const result = settingsSchema.safeParse(input);
   return result.success ? (result.data as Partial<Settings>) : null;
 }
 
+/**
+ * Parses and validates an ignored-field payload.
+ * @param input - Raw payload from an `ADD_IGNORED_FIELD` message
+ * @returns Validated object or `null`
+ */
 export function parseIgnoredFieldPayload(
   input: unknown,
 ): { urlPattern: string; selector: string; label: string } | null {
@@ -139,6 +167,11 @@ export function parseIgnoredFieldPayload(
   return result.success ? result.data : null;
 }
 
+/**
+ * Parses and validates a field detection cache payload.
+ * @param input - Raw payload containing URL and detected field summaries
+ * @returns Validated cache payload or `null`
+ */
 export function parseSaveFieldCachePayload(
   input: unknown,
 ): { url: string; fields: DetectedFieldSummary[] } | null {
@@ -148,15 +181,30 @@ export function parseSaveFieldCachePayload(
     : null;
 }
 
+/**
+ * Parses and validates a saved form payload.
+ * @param input - Raw payload from a `SAVE_FORM` message
+ * @returns Validated `SavedForm` or `null`
+ */
 export function parseSavedFormPayload(input: unknown): SavedForm | null {
   const result = savedFormSchema.safeParse(input);
   return result.success ? (result.data as SavedForm) : null;
 }
 
+/**
+ * Parses a template-apply payload (same schema as saved form).
+ * @param input - Raw payload from an `APPLY_TEMPLATE` message
+ * @returns Validated `SavedForm` or `null`
+ */
 export function parseApplyTemplatePayload(input: unknown): SavedForm | null {
   return parseSavedFormPayload(input);
 }
 
+/**
+ * Parses the optional payload for `START_WATCHING` messages.
+ * @param input - Raw payload (may be `undefined`)
+ * @returns Object with optional `autoRefill` flag, or `null` if invalid
+ */
 export function parseStartWatchingPayload(
   input: unknown,
 ): { autoRefill?: boolean } | null {
@@ -164,6 +212,11 @@ export function parseStartWatchingPayload(
   return result.success ? result.data : null;
 }
 
+/**
+ * Parses a payload expected to be a non-empty string.
+ * @param input - Raw payload value
+ * @returns The string, or `null` if not a valid non-empty string
+ */
 export function parseStringPayload(input: unknown): string | null {
   const result = z.string().min(1).safeParse(input);
   return result.success ? result.data : null;

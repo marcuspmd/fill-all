@@ -9,6 +9,12 @@
 import type { FormField } from "@/types";
 import type { Extractor } from "./extractor.interface";
 
+/**
+ * Concatenates a field's label, name, id, placeholder and autocomplete
+ * attributes into a single lowercase string for ML classification.
+ * @param field - Partial form field with optional metadata
+ * @returns Normalised signals string
+ */
 export function buildSignals(field: Partial<FormField>): string {
   return [
     field.label?.toLowerCase(),

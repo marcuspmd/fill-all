@@ -16,6 +16,11 @@ const newApi = (globalThis as any).LanguageModel as
 
 let session: LanguageModelSession | null = null;
 
+/**
+ * Checks whether the Chrome Built-in AI (Gemini Nano) Prompt API
+ * is available in the current browser.
+ * @returns `true` when the API exists and readiness is "available" or "downloadable"
+ */
 export async function isAvailable(): Promise<boolean> {
   try {
     if (!newApi) {
@@ -37,6 +42,11 @@ export async function isAvailable(): Promise<boolean> {
   }
 }
 
+/**
+ * Returns an existing or freshly created `LanguageModel` session.
+ * The session carries a system prompt tailored for form-value generation.
+ * @returns A reusable AI session, or `null` when AI is unavailable
+ */
 export async function getSession(): Promise<LanguageModelSession | null> {
   if (session) {
     log.debug("Reutilizando sessão existente.");
@@ -70,6 +80,12 @@ export async function getSession(): Promise<LanguageModelSession | null> {
   return session!;
 }
 
+/**
+ * Generates a realistic test value for a form field via Chrome AI.
+ * Constructs a contextual prompt from the field's metadata (label, name, type, …).
+ * @param field - The detected form field to generate a value for
+ * @returns A trimmed AI-generated value, or `""` when the session is unavailable
+ */
 export async function generateFieldValue(field: FormField): Promise<string> {
   log.debug(
     `Gerando valor para campo: selector="${field.selector}" label="${field.label ?? ""}" name="${field.name ?? ""}" type="${field.fieldType}"`,
@@ -113,6 +129,7 @@ export async function generateFieldValue(field: FormField): Promise<string> {
   return result.trim();
 }
 
+/** Destroys the current AI session and releases resources. */
 export function destroySession(): void {
   if (session) {
     session.destroy();

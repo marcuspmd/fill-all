@@ -144,6 +144,7 @@ function classifySignals(signals: string): FieldType {
   return classifyField(mockField);
 }
 
+/** Aggregated classifier accuracy report with health check. */
 export interface ClassifierReport {
   globalAccuracy: number;
   passesGlobalThreshold: boolean;

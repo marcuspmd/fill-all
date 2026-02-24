@@ -3,6 +3,10 @@
  * Keeps generated values aligned with native input constraints when available.
  */
 
+/**
+ * Constraints extracted from the target HTML element to guide value generation.
+ * Used to ensure generated values satisfy native input validation rules.
+ */
 export interface ValueConstraints {
   element?:
     | HTMLInputElement
@@ -16,6 +20,13 @@ export interface ValueConstraints {
 
 const DEFAULT_ATTEMPTS = 12;
 
+/**
+ * Repeatedly invokes a generator function until the result satisfies the given
+ * constraints (e.g. `maxLength`, native element validity).
+ * @param generatorFn - Zero-arg function that produces a random value
+ * @param constraints - Optional element/length constraints to satisfy
+ * @returns A value that passes validation, or empty string if `requireValidity` is set and no valid value is found
+ */
 export function generateWithConstraints(
   generatorFn: () => string,
   constraints: ValueConstraints = {},
@@ -43,6 +54,13 @@ export function generateWithConstraints(
   });
 }
 
+/**
+ * Adapts a generated string value to fit within element constraints.
+ * Tries the original value, trimmed, collapsed-whitespace, and digits-only variants.
+ * @param value - Raw generated value
+ * @param constraints - Optional element/length constraints
+ * @returns The first variant that satisfies constraints, or empty string
+ */
 export function adaptGeneratedValue(
   value: string,
   constraints: ValueConstraints = {},

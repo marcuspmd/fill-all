@@ -7,6 +7,12 @@
 
 import type { Extractor } from "./extractor.interface";
 
+/**
+ * Builds a unique, stable CSS selector for a DOM element.
+ * Traverses parent chain using tag + `:nth-of-type`, shortcuts on `id`.
+ * @param element - The element to build a selector for
+ * @returns A CSS selector string that uniquely identifies the element
+ */
 export function getUniqueSelector(element: Element): string {
   if (element.id) return `#${CSS.escape(element.id)}`;
 

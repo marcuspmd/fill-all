@@ -1,3 +1,9 @@
+/**
+ * Chrome extension tab messaging utilities.
+ * Provides helpers for sending messages to content scripts,
+ * with optional auto-injection when the content script is not yet loaded.
+ */
+
 import type { ExtensionMessage } from "@/types";
 
 interface ActiveTabMessageOptions {
@@ -17,10 +23,17 @@ async function sendToTab(
   try {
     return await chrome.tabs.sendMessage(tabId, message);
   } catch (initialError) {
-    return { error: "Content script not responding", details: String(initialError) };
+    return {
+      error: "Content script not responding",
+      details: String(initialError),
+    };
   }
 }
 
+/**
+ * Sends a message to a tab, auto-injecting the content script if the first
+ * attempt fails (e.g. on a freshly opened page).
+ */
 export async function sendToTabWithInjection(
   tabId: number,
   tabUrl: string | undefined,
@@ -49,6 +62,10 @@ export async function sendToTabWithInjection(
   }
 }
 
+/**
+ * Sends a message to the currently active tab.
+ * Optionally injects the content script if it’s not yet loaded.
+ */
 export async function sendToActiveTab(
   message: ExtensionMessage,
   options: ActiveTabMessageOptions = {},
@@ -63,10 +80,17 @@ export async function sendToActiveTab(
   try {
     return await sendToTabWithInjection(tab.id, tab.url, message);
   } catch (initialError) {
-    return { error: "Content script not responding", details: String(initialError) };
+    return {
+      error: "Content script not responding",
+      details: String(initialError),
+    };
   }
 }
 
+/**
+ * Sends a message to a specific tab by ID.
+ * Optionally injects the content script if it’s not yet loaded.
+ */
 export async function sendToSpecificTab(
   tabId: number,
   tabUrl: string | undefined,

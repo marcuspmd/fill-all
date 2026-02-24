@@ -34,6 +34,7 @@ export interface TestSample {
   autocomplete?: string;
 }
 
+/** Test samples for final accuracy evaluation (used only once after training). */
 export const TEST_SAMPLES: TestSample[] = [
   // ── CPF ──
   {

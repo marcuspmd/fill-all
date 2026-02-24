@@ -46,6 +46,7 @@ export type InteractiveFieldType =
   | "color-picker"
   | "autocomplete";
 
+/** Broad category a field type belongs to (used for grouping and UI). */
 export type FieldCategory =
   | "personal"
   | "contact"
@@ -161,9 +162,11 @@ export const TRAINABLE_FIELD_TYPES = [
   ...FIELD_TYPES,
 ] as const satisfies readonly FieldType[];
 
+/** Mapping of every field category to its member field types. */
 export const FIELD_TYPES_BY_CATEGORY: Record<FieldCategory, FieldType[]> =
   FIELD_TYPES_BY_CATEGORY_DERIVED;
 
+/** Source from which a signal was extracted (e.g. label, placeholder, aria). */
 export type signalType =
   | "name"
   | "id"
@@ -176,40 +179,48 @@ export type signalType =
   | "form-title"
   | "table-header";
 
+/** A single extracted signal with its source and optional weight. */
 export interface Signal {
   source: signalType;
   value: string;
   weight?: number;
 }
 
+/** Grouped signals for a field, split by priority tier. */
 export interface FieldSignals {
   primary: Signal[];
   secondary: Signal[];
   structural: Signal[];
 }
 
+/** Origin of a training sample (synthetic, real-world, etc.). */
 export type TrainingSampleSource =
   | "synthetic"
   | "real-world"
   | "augmented"
   | "learned";
 
+/** Curriculum difficulty level for a training sample. */
 export type TrainingDifficulty = "easy" | "medium" | "hard";
 
+/** Language tag for multilingual training samples. */
 export type TrainingLanguage = "pt" | "en" | "es";
 
+/** Optional DOM-level hints attached to training samples. */
 export interface DomFeatureHints {
   inputType?: string;
   maxLength?: number;
   pattern?: string;
 }
 
+/** Which signal tiers to extract for a training sample. */
 export type DatasetExtractionStrategy =
   | "primary"
   | "secondary"
   | "structural"
   | "dom-features";
 
+/** A single labelled training sample used by the TF.js classifier. */
 export interface TrainingSample {
   signals: StructuredSignals;
   category: FieldCategory;
@@ -499,6 +510,7 @@ export type MessageType =
   | "UPDATE_FORM"
   | "DEVTOOLS_RELAY";
 
+/** Payload for any message exchanged between extension contexts. */
 export interface ExtensionMessage {
   type: MessageType;
   payload?: unknown;
@@ -511,6 +523,7 @@ export interface GenerationResult {
   source: "fixed" | "rule" | "ai" | "tensorflow" | "generator";
 }
 
+/** Default ordered detection pipeline used when the user hasn't customised it. */
 export const DEFAULT_DETECTION_PIPELINE: DetectionStrategyEntry[] = [
   { name: "html-type", enabled: true },
   { name: "keyword", enabled: true },
@@ -522,6 +535,7 @@ export const DEFAULT_DETECTION_PIPELINE: DetectionStrategyEntry[] = [
 const IS_MAC_PLATFORM =
   typeof navigator !== "undefined" && navigator.platform?.startsWith("Mac");
 
+/** Default extension settings applied on first install. */
 export const DEFAULT_SETTINGS: Settings = {
   autoFillOnLoad: false,
   defaultStrategy: "ai",

@@ -136,6 +136,11 @@ function createFieldLabelBadge(
   return badge;
 }
 
+/**
+ * Fills every detected form field on the current page.
+ * Resolves values through the priority chain (rules → saved forms → AI → generator).
+ * @returns Array of generation results for each filled field
+ */
 export async function fillAllFields(): Promise<GenerationResult[]> {
   setFillingInProgress(true);
   try {
@@ -204,6 +209,11 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
   return results;
 }
 
+/**
+ * Fills a single form field using the same priority chain as {@link fillAllFields}.
+ * @param field - The detected form field to fill
+ * @returns The generation result, or `null` on failure
+ */
 export async function fillSingleField(
   field: FormField,
 ): Promise<GenerationResult | null> {

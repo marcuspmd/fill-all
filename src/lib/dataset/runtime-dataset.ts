@@ -14,9 +14,12 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("RuntimeDataset");
 
+/** Chrome storage key for runtime dataset entries. */
 export const RUNTIME_DATASET_KEY = "fill_all_runtime_dataset";
 
+/** Where a dataset entry originated from. */
 export type DatasetEntrySource = "manual" | "auto" | "imported" | "builtin";
+/** Relative difficulty level of a training sample. */
 export type DatasetEntryDifficulty = "easy" | "medium" | "hard";
 
 export interface DatasetEntry {
