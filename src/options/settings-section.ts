@@ -43,9 +43,6 @@ function debounce(fn: () => void, ms: number): () => void {
 
 async function saveGeneralSettings(): Promise<void> {
   const settings: Partial<Settings> = {
-    autoFillOnLoad: (
-      document.getElementById("setting-auto-fill") as HTMLInputElement
-    ).checked,
     highlightFilled: (
       document.getElementById("setting-highlight") as HTMLInputElement
     ).checked,
@@ -239,8 +236,6 @@ async function loadSettings(): Promise<void> {
   const settings = (await chrome.runtime.sendMessage({
     type: "GET_SETTINGS",
   })) as Settings;
-  (document.getElementById("setting-auto-fill") as HTMLInputElement).checked =
-    settings.autoFillOnLoad;
   (document.getElementById("setting-highlight") as HTMLInputElement).checked =
     settings.highlightFilled;
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { FieldRule, SavedForm, Settings } from "@/types";
 import type { DetectedFieldSummary } from "@/types";
+import { FIELD_TYPES } from "@/types";
 
 const messageSchema = z.object({
   type: z.string().min(1),
@@ -35,12 +36,12 @@ const fieldRuleSchema = z
     urlPattern: z.string().min(1),
     fieldSelector: z.string().min(1),
     fieldName: z.string().optional(),
-    fieldType: z.string().min(1),
+    fieldType: z.enum(FIELD_TYPES),
     fixedValue: z.string().optional(),
-    generator: z.string().min(1),
+    generator: z.enum(["auto", "ai", "tensorflow", ...FIELD_TYPES]),
     aiPrompt: z.string().optional(),
     selectOptionIndex: z.number().optional(),
-    priority: z.number(),
+    priority: z.number().min(0).max(100),
     createdAt: z.number(),
     updatedAt: z.number(),
   })

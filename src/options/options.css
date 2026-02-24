@@ -235,6 +235,17 @@ header h1 {
   font-size: 12px;
 }
 
+.btn-edit {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.btn-edit:hover {
+  background: var(--primary);
+  color: white;
+}
+
 .btn-delete {
   background: transparent;
   color: var(--danger);
@@ -262,6 +273,14 @@ header h1 {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  flex: 1;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: 12px;
+  flex-shrink: 0;
 }
 
 .rule-selector {
