@@ -332,6 +332,9 @@ function renderApp(): void {
           ).join("")}
         </div>
       </div>
+      <div class="toolbar-right">
+        <button class="toolbar-btn" id="btn-options" title="Abrir Opções">⚙️</button>
+      </div>
     </div>
     <div class="content" id="content"></div>
   `;
@@ -341,6 +344,11 @@ function renderApp(): void {
       const tab = btn.dataset.tab as TabId;
       if (tab) switchTab(tab);
     });
+  });
+
+  app.querySelector("#btn-options")?.addEventListener("click", () => {
+    chrome.runtime.openOptionsPage();
+    addLog("Abrindo página de opções", "info");
   });
 
   renderActiveTab();

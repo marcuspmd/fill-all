@@ -154,6 +154,7 @@ function getPanelHTML(): string {
       </div>
       <div class="fa-toolbar-right">
         <button class="fa-toolbar-btn fa-btn-fill-minimized" id="fa-btn-fill-minimized" title="Preencher Tudo">⚡</button>
+        <button class="fa-toolbar-btn" id="fa-btn-options" title="Abrir Opções">⚙️</button>
         <button class="fa-toolbar-btn" id="fa-btn-minimize" title="Minimizar">▼</button>
         <button class="fa-toolbar-btn" id="fa-btn-close" title="Fechar">✕</button>
       </div>
@@ -926,6 +927,12 @@ function setupActionHandlers(panel: HTMLElement): void {
     clearAllBadges();
     setStatus(panel, "Badges removidos", "info");
     addLog("Badges de detecção removidos", "info");
+  });
+
+  // Open options page
+  panel.querySelector("#fa-btn-options")?.addEventListener("click", () => {
+    chrome.runtime.openOptionsPage();
+    addLog("Abrindo página de opções", "info");
   });
 }
 
