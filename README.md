@@ -22,6 +22,30 @@ Fill All é uma extensão Chrome de código aberto que preenche formulários aut
 
 **Ideal para**: desenvolvedores, QAs, testers e qualquer pessoa que preenche formulários repetidamente.
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Popup
+![Popup](docs-md/images/popup.png)
+
+### Painel Flutuante (in-page)
+![Floating Panel](docs-md/images/floating_panel.png)
+
+### DevTools Panel
+![DevTools Panel](docs-md/images/painel_devtools_form.png)
+
+### Options Page
+
+| Configurações Gerais | Formulários Salvos | Dataset de Treinamento |
+|:---:|:---:|:---:|
+| ![Config Geral](docs-md/images/config_general.png) | ![Config Forms](docs-md/images/config_form.png) | ![Config Dataset](docs-md/images/config_dataset.png) |
+
+### Adicionar Regra
+![Adicionar Regra](docs-md/images/page_add_rules.png)
+
+</div>
+
 ## ✨ Funcionalidades
 
 ### Inteligência Artificial
@@ -207,6 +231,7 @@ Usuário aciona ──▶ Background roteia ──▶ Content Script detecta cam
 | [Pipeline AI](docs/ai-pipeline.md) | Como funciona a classificação de campos e o treinamento de modelos |
 | [Geradores](docs/generators.md) | Todos os geradores de dados disponíveis e como criar novos |
 | [Contribuindo](docs/contributing.md) | Guia completo para contribuidores |
+| [Roadmap](docs-md/roadmap.md) | Funcionalidades planejadas e melhorias futuras |
 
 ## 🤝 Contribuindo
 
