@@ -2,3 +2,7 @@ dist.pem
 dist.crx
 node_modules/
 dist/
+.DS_STORE
+.ds_store
+*ds_store
+*DS_STORE
