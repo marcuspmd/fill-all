@@ -99,6 +99,26 @@ Adicionar modo onde o Gemini Nano analisa o formulário como um todo e gera valo
 
 ---
 
+## 🧪 Implementação de Testes Unitários
+
+**Status**: 🔲 Planejado
+
+Adicionar cobertura de testes unitários ao projeto, garantindo confiabilidade em refatorações e novas funcionalidades.
+
+- Configurar framework de testes: **Vitest** (integração nativa com Vite)
+- Mockar Chrome APIs (`chrome.storage`, `chrome.runtime`, `chrome.tabs`)
+- Cobertura prioritária:
+  - Geradores (`generateCpf`, `generateCnpj`, `generatePhone`, etc.) — funções puras, fáceis de testar
+  - Parsers Zod (`parseRulePayload`, `parseSaveFieldCachePayload`, etc.)
+  - Motor de regras (`rule-engine.ts`) — lógica de prioridade e matching de URL
+  - Pipeline de detecção (`DetectionPipeline`) — composição, `.with()`, `.without()`, `.withOrder()`
+  - Utilitários (`matchUrlPattern`, `buildSignals`, `getUniqueSelector`)
+  - Storage (`updateStorageAtomically`) — testar fila de escrita e updaters puros
+- Integrar `npm run test` no CI (GitHub Actions)
+- Meta inicial: >80% de cobertura nos módulos `lib/generators/`, `lib/rules/` e `lib/messaging/`
+
+---
+
 ## 💬 Melhorar Feedback ao Usar Gemini Nano
 
 **Status**: 🔲 Planejado
