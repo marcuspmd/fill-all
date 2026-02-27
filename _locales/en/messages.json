@@ -50,6 +50,12 @@
   "fillAllDesc": {
     "message": "Fills all detected fields"
   },
+  "fillOnlyEmpty": {
+    "message": "Fill Empty Only"
+  },
+  "fillOnlyEmptyDesc": {
+    "message": "Fills only fields that are still empty"
+  },
   "saveForm": {
     "message": "Save Form"
   },
@@ -272,6 +278,9 @@
   "logFilling": {
     "message": "Filling all fields..."
   },
+  "logFillingEmpty": {
+    "message": "Filling only empty fields..."
+  },
   "logErrorSavingForm": {
     "message": "Error saving form"
   },
@@ -346,6 +355,12 @@
   },
   "settingShowPanelDesc": {
     "message": "Automatically shows floating control panel on all pages"
+  },
+  "settingFillEmptyOnly": {
+    "message": "Fill only empty fields"
+  },
+  "settingFillEmptyOnlyDesc": {
+    "message": "Skips fields that already have a value when filling the form"
   },
   "settingDebugLogs": {
     "message": "Diagnostic logs"

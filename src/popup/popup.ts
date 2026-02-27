@@ -66,6 +66,7 @@ let ignoredFields: IgnoredField[] = [];
 let ignoredSelectors = new Set<string>();
 let watcherActive = false;
 let panelActive = false;
+let fillEmptyOnly = false;
 let pageUrl = "";
 
 const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> =
@@ -144,6 +145,13 @@ function renderActionsTab(): void {
     <div class="status-bar" id="status-bar">
       ${detectedFields.length > 0 ? `${detectedFields.length} ${t("fieldsDetected")}` : t("noFieldsDetected")}
     </div>
+    <div class="fill-option-row">
+      <label class="fill-option-label" for="toggle-fill-empty-only">${t("fillEmptyOnly")}</label>
+      <label class="fill-option-toggle">
+        <input type="checkbox" id="toggle-fill-empty-only" ${fillEmptyOnly ? "checked" : ""} />
+        <span class="slider"></span>
+      </label>
+    </div>
     <a href="#" id="btn-options" class="btn-settings-link">${t("btnSettings")}</a>
   `;
 
@@ -159,6 +167,9 @@ function renderActionsTab(): void {
   document
     .getElementById("btn-toggle-panel")
     ?.addEventListener("click", handleTogglePanel);
+  document
+    .getElementById("toggle-fill-empty-only")
+    ?.addEventListener("change", handleFillEmptyOnlyToggle);
   bindOptionsLink();
 }
 
@@ -196,6 +207,14 @@ async function handleToggleWatch(): Promise<void> {
     watcherActive = true;
   }
   renderActionsTab();
+}
+
+async function handleFillEmptyOnlyToggle(): Promise<void> {
+  fillEmptyOnly = !fillEmptyOnly;
+  await chrome.runtime.sendMessage({
+    type: "SAVE_SETTINGS",
+    payload: { fillEmptyOnly },
+  });
 }
 
 async function handleTogglePanel(): Promise<void> {
@@ -658,6 +677,7 @@ async function init(): Promise<void> {
     chrome.runtime.sendMessage({ type: "GET_SETTINGS" }) as Promise<{
       showPanel?: boolean;
       uiLanguage?: "auto" | "en" | "pt_BR" | "es";
+      fillEmptyOnly?: boolean;
     } | null>,
     sendToActiveTab({ type: "GET_WATCHER_STATUS" }).catch(
       () => null,
@@ -665,6 +685,7 @@ async function init(): Promise<void> {
   ]);
 
   panelActive = settings?.showPanel ?? false;
+  fillEmptyOnly = settings?.fillEmptyOnly ?? false;
   watcherActive = watcherStatus?.watching ?? false;
 
   await initI18n(settings?.uiLanguage ?? "auto");

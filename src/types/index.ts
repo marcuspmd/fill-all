@@ -462,6 +462,8 @@ export interface Settings {
   logLevel: "debug" | "info" | "warn" | "error";
   /** Preferred UI language. "auto" follows the browser/Chrome locale. */
   uiLanguage: "auto" | "en" | "pt_BR" | "es";
+  /** When true, only empty fields are filled — fields with an existing value are skipped */
+  fillEmptyOnly: boolean;
 }
 
 /** Message types for communication between extension parts */
@@ -555,4 +557,5 @@ export const DEFAULT_SETTINGS: Settings = {
   debugLog: false,
   logLevel: "warn",
   uiLanguage: "auto",
+  fillEmptyOnly: false,
 };

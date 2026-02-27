@@ -173,6 +173,11 @@ function getPanelHTML(): string {
             <span class="fa-card-label">${t("fillAll")}</span>
             <span class="fa-card-desc">${t("fillAllDesc")}</span>
           </button>
+          <button class="fa-action-card fa-card-secondary" id="fa-btn-fill-empty">
+            <span class="fa-card-icon">🟦</span>
+            <span class="fa-card-label">${t("fillOnlyEmpty")}</span>
+            <span class="fa-card-desc">${t("fillOnlyEmptyDesc")}</span>
+          </button>
           <button class="fa-action-card fa-card-secondary" id="fa-btn-save">
             <span class="fa-card-icon">💾</span>
             <span class="fa-card-label">${t("saveForm")}</span>
@@ -933,7 +938,7 @@ function setupTabHandlers(panel: HTMLElement): void {
       btn.textContent = "⏳...";
       btn.style.pointerEvents = "none";
       try {
-        const results = await fillAllFields();
+        const results = await fillAllFields({ fillEmptyOnly: false });
         addLog(`${results.length} ${t("fieldsFillCount")}`, "success");
       } catch {
         addLog(t("fpFillErrorLog"), "error");
@@ -1018,7 +1023,7 @@ function setupActionHandlers(panel: HTMLElement): void {
     card.style.pointerEvents = "none";
 
     try {
-      const results = await fillAllFields();
+      const results = await fillAllFields({ fillEmptyOnly: false });
       setStatus(
         panel,
         `✓ ${results.length} ${t("fieldsFillStatus")}`,
@@ -1035,6 +1040,37 @@ function setupActionHandlers(panel: HTMLElement): void {
     card.style.opacity = "";
     card.style.pointerEvents = "";
   });
+
+  // Fill Only Empty
+  panel
+    .querySelector("#fa-btn-fill-empty")
+    ?.addEventListener("click", async () => {
+      const card = panel.querySelector(
+        "#fa-btn-fill-empty",
+      ) as HTMLButtonElement;
+      const label = card.querySelector(".fa-card-label") as HTMLElement;
+      label.textContent = t("fpFilling");
+      card.style.opacity = "0.6";
+      card.style.pointerEvents = "none";
+
+      try {
+        const results = await fillAllFields({ fillEmptyOnly: true });
+        setStatus(
+          panel,
+          `✓ ${results.length} ${t("fieldsFillStatus")}`,
+          "success",
+        );
+        addLog(`${results.length} ${t("fieldsFillCount")}`, "success");
+        label.textContent = t("fillOnlyEmpty");
+      } catch {
+        setStatus(panel, t("fpFillError"), "error");
+        addLog(t("fpFillErrorLog"), "error");
+        label.textContent = t("fillOnlyEmpty");
+      }
+
+      card.style.opacity = "";
+      card.style.pointerEvents = "";
+    });
 
   // Save Form
   panel.querySelector("#fa-btn-save")?.addEventListener("click", async () => {

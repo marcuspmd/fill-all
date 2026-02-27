@@ -50,6 +50,12 @@
   "fillAllDesc": {
     "message": "Preenche todos os campos detectados"
   },
+  "fillOnlyEmpty": {
+    "message": "Preencher Vazios"
+  },
+  "fillOnlyEmptyDesc": {
+    "message": "Preenche apenas campos ainda vazios"
+  },
   "saveForm": {
     "message": "Salvar Form"
   },
@@ -272,6 +278,9 @@
   "logFilling": {
     "message": "Preenchendo todos os campos..."
   },
+  "logFillingEmpty": {
+    "message": "Preenchendo apenas campos vazios..."
+  },
   "logErrorSavingForm": {
     "message": "Erro ao salvar formulário"
   },
@@ -346,6 +355,12 @@
   },
   "settingShowPanelDesc": {
     "message": "Exibe automaticamente o painel flutuante de controles em todas as páginas"
+  },
+  "settingFillEmptyOnly": {
+    "message": "Preencher apenas campos vazios"
+  },
+  "settingFillEmptyOnlyDesc": {
+    "message": "Ignora campos que já possuem valor ao preencher o formulário"
   },
   "settingDebugLogs": {
     "message": "Logs de diagnóstico"

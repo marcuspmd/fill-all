@@ -50,6 +50,12 @@
   "fillAllDesc": {
     "message": "Rellena todos los campos detectados"
   },
+  "fillOnlyEmpty": {
+    "message": "Rellenar Solo Vacíos"
+  },
+  "fillOnlyEmptyDesc": {
+    "message": "Rellena solo los campos que aún están vacíos"
+  },
   "saveForm": {
     "message": "Guardar Form"
   },
@@ -272,6 +278,9 @@
   "logFilling": {
     "message": "Rellenando todos los campos..."
   },
+  "logFillingEmpty": {
+    "message": "Rellenando solo campos vacíos..."
+  },
   "logErrorSavingForm": {
     "message": "Error al guardar formulario"
   },
@@ -346,6 +355,12 @@
   },
   "settingShowPanelDesc": {
     "message": "Muestra automáticamente el panel de control flotante en todas las páginas"
+  },
+  "settingFillEmptyOnly": {
+    "message": "Rellenar solo campos vacíos"
+  },
+  "settingFillEmptyOnlyDesc": {
+    "message": "Omite los campos que ya tienen un valor al rellenar el formulario"
   },
   "settingDebugLogs": {
     "message": "Registros de diagnóstico"

@@ -183,9 +183,23 @@ async function toggleIgnore(selector: string, label: string): Promise<void> {
 async function fillAll(): Promise<void> {
   addLog(t("logFilling"));
   try {
-    const result = (await sendToPage({ type: "FILL_ALL_FIELDS" })) as {
-      filled?: number;
-    };
+    const result = (await sendToPage({
+      type: "FILL_ALL_FIELDS",
+      payload: { fillEmptyOnly: false },
+    })) as { filled?: number };
+    addLog(`${result?.filled ?? 0} ${t("filled")}`, "success");
+  } catch (err) {
+    addLog(`Erro ao preencher: ${err}`, "error");
+  }
+}
+
+async function fillOnlyEmpty(): Promise<void> {
+  addLog(t("logFillingEmpty"));
+  try {
+    const result = (await sendToPage({
+      type: "FILL_ALL_FIELDS",
+      payload: { fillEmptyOnly: true },
+    })) as { filled?: number };
     addLog(`${result?.filled ?? 0} ${t("filled")}`, "success");
   } catch (err) {
     addLog(`Erro ao preencher: ${err}`, "error");
@@ -397,6 +411,11 @@ function renderActionsTab(): void {
         <span class="card-label">${t("fillAll")}</span>
         <span class="card-desc">${t("fillAllDesc")}</span>
       </button>
+      <button class="action-card secondary" id="btn-fill-empty">
+        <span class="card-icon">🟦</span>
+        <span class="card-label">${t("fillOnlyEmpty")}</span>
+        <span class="card-desc">${t("fillOnlyEmptyDesc")}</span>
+      </button>
       <button class="action-card secondary" id="btn-save">
         <span class="card-icon">💾</span>
         <span class="card-label">${t("saveForm")}</span>
@@ -420,6 +439,9 @@ function renderActionsTab(): void {
 
   document.getElementById("btn-fill")?.addEventListener("click", fillAll);
   document
+    .getElementById("btn-fill-empty")
+    ?.addEventListener("click", fillOnlyEmpty);
+  document
     .getElementById("btn-save")
     ?.addEventListener("click", saveCurrentForm);
   document.getElementById("btn-watch")?.addEventListener("click", toggleWatch);
@@ -436,6 +458,7 @@ function renderFieldsTab(): void {
     <div class="fields-toolbar">
       <button class="btn" id="btn-detect-fields">🔍 ${t("detectFields")}</button>
       <button class="btn" id="btn-fill-all-fields">⚡ ${t("fillAll")}</button>
+      <button class="btn" id="btn-fill-empty-fields">🟦 ${t("fillOnlyEmpty")}</button>
       <span class="fields-count">${detectedFields.length} ${t("fieldCount")}</span>
     </div>
     <div class="table-wrap">
@@ -489,6 +512,9 @@ function renderFieldsTab(): void {
   document
     .getElementById("btn-fill-all-fields")
     ?.addEventListener("click", fillAll);
+  document
+    .getElementById("btn-fill-empty-fields")
+    ?.addEventListener("click", fillOnlyEmpty);
 
   content
     .querySelectorAll<HTMLButtonElement>("[data-action]")

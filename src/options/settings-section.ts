@@ -55,6 +55,9 @@ async function saveGeneralSettings(): Promise<void> {
     showPanel: (
       document.getElementById("setting-show-panel") as HTMLInputElement
     ).checked,
+    fillEmptyOnly: (
+      document.getElementById("setting-fill-empty-only") as HTMLInputElement
+    ).checked,
     debugLog: (document.getElementById("setting-debug-log") as HTMLInputElement)
       .checked,
     logLevel: (
@@ -241,6 +244,11 @@ async function loadSettings(): Promise<void> {
   (document.getElementById("setting-show-panel") as HTMLInputElement).checked =
     settings.showPanel ?? false;
 
+  // Fill empty only
+  (
+    document.getElementById("setting-fill-empty-only") as HTMLInputElement
+  ).checked = settings.fillEmptyOnly ?? false;
+
   // Debug logging settings
   (document.getElementById("setting-debug-log") as HTMLInputElement).checked =
     settings.debugLog ?? false;
@@ -286,6 +294,7 @@ function bindSettingsEvents(): void {
     "setting-highlight",
     "setting-cache-enabled",
     "setting-show-panel",
+    "setting-fill-empty-only",
     "setting-debug-log",
     "setting-log-level",
     "setting-strategy",

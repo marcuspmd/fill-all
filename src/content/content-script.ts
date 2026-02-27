@@ -101,7 +101,16 @@ async function handleContentMessage(
 ): Promise<unknown> {
   switch (message.type) {
     case "FILL_ALL_FIELDS": {
-      const results = await fillAllFields();
+      const override =
+        message.payload != null &&
+        typeof message.payload === "object" &&
+        "fillEmptyOnly" in (message.payload as object)
+          ? {
+              fillEmptyOnly: (message.payload as { fillEmptyOnly: boolean })
+                .fillEmptyOnly,
+            }
+          : undefined;
+      const results = await fillAllFields(override);
       showNotification(`✓ ${results.length} campos preenchidos`);
       return { success: true, filled: results.length };
     }

@@ -139,21 +139,38 @@ function createFieldLabelBadge(
 /**
  * Fills every detected form field on the current page.
  * Resolves values through the priority chain (rules → saved forms → AI → generator).
+ * @param options.fillEmptyOnly When set, overrides the stored setting for this call only
  * @returns Array of generation results for each filled field
  */
-export async function fillAllFields(): Promise<GenerationResult[]> {
+export async function fillAllFields(options?: {
+  fillEmptyOnly?: boolean;
+}): Promise<GenerationResult[]> {
   setFillingInProgress(true);
   try {
-    return await doFillAllFields();
+    return await doFillAllFields(options);
   } finally {
     setFillingInProgress(false);
   }
 }
 
-async function doFillAllFields(): Promise<GenerationResult[]> {
+function fieldHasValue(field: FormField): boolean {
+  const el = field.element;
+  if (el instanceof HTMLInputElement) {
+    if (el.type === "checkbox" || el.type === "radio") return el.checked;
+    return el.value.trim() !== "";
+  }
+  if (el instanceof HTMLTextAreaElement) return el.value.trim() !== "";
+  if (el instanceof HTMLSelectElement) return el.value !== "";
+  return false;
+}
+
+async function doFillAllFields(options?: {
+  fillEmptyOnly?: boolean;
+}): Promise<GenerationResult[]> {
   const { fields } = detectAllFields();
   const url = window.location.href;
   const settings = await getSettings();
+  const fillEmptyOnly = options?.fillEmptyOnly ?? settings.fillEmptyOnly;
   const results: GenerationResult[] = [];
 
   // Determine AI function based on settings
@@ -166,6 +183,9 @@ async function doFillAllFields(): Promise<GenerationResult[]> {
   for (const field of fields) {
     // Skip ignored fields
     if (ignoredSelectors.has(field.selector)) continue;
+
+    // Skip fields that already have a value when fillEmptyOnly is enabled
+    if (fillEmptyOnly && fieldHasValue(field)) continue;
 
     const fieldLabel =
       field.label ??
