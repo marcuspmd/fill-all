@@ -21,13 +21,13 @@ Suporte a múltiplos idiomas na interface da extensão (Popup, Options Page, Dev
 
 ## 🕳️ Fill Emptys — Preencher Apenas Campos Vazios
 
-**Status**: 🔲 Planejado
+**Status**: ✅ Concluído
 
 Adicionar modo de preenchimento seletivo que ignora campos que já possuem valor, evitando sobrescrever dados já inseridos pelo usuário.
 
-- Nova opção no Popup: toggle "Preencher apenas campos vazios"
-- Configuração persistente via Settings
-- Compatível com todos os adaptadores de UI (Ant Design, Select2, etc.)
+- ✅ Nova opção no Popup: toggle "Preencher apenas campos vazios"
+- ✅ Configuração persistente via Settings
+- ✅ Compatível com todos os adaptadores de UI (Ant Design, Select2, etc.)
 
 ---
 
@@ -116,6 +116,25 @@ Adicionar cobertura de testes unitários ao projeto, garantindo confiabilidade e
   - Storage (`updateStorageAtomically`) — testar fila de escrita e updaters puros
 - Integrar `npm run test` no CI (GitHub Actions)
 - Meta inicial: >80% de cobertura nos módulos `lib/generators/`, `lib/rules/` e `lib/messaging/`
+
+---
+
+## 🧾 Exportar Preenchimento como Script E2E (Playwright / Cypress / Pest)
+
+**Status**: 🔲 Planejado
+
+Transformar o Fill All em um acelerador de engenharia de testes: ao preencher um formulário, a extensão captura os campos e valores utilizados e gera automaticamente um script E2E pronto para uso nos principais frameworks — sem nenhuma chamada externa, 100% client-side, preservando a privacidade dos dados.
+
+- Capturar o melhor seletor de cada campo durante o preenchimento (prioridade: `#id` → `[data-testid]` → `[name]` → fallback genérico)
+- Armazenar as ações como array de `{ selector, value, type }` no content script
+- Gerar código para os frameworks suportados via padrão **Strategy**:
+  - **Playwright**: `page.locator(selector).fill(value)` / `.check()`
+  - **Cypress**: `cy.get(selector).type(value)` / `.check()`
+  - **Pest/Dusk (PHP)**: `$browser->type(selector, value)` / `->check()` / `->radio()`
+- Nova seção **"Export to E2E"** no Popup com `<select>` de framework e `<textarea>` com o código gerado
+- Botão "Copiar para área de transferência" com feedback visual
+- Implementação via `GeneratorFactory` + interfaces `E2EGenerator` por framework (fácil extensão futura)
+- Zero dependências externas — execução 100% local, compatível com ambientes corporativos e dados sensíveis
 
 ---
 
