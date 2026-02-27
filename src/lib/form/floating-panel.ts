@@ -36,6 +36,7 @@ import {
   renderMethodBadge,
   renderConfidenceBadge,
 } from "@/lib/ui";
+import { t } from "@/lib/i18n";
 
 const PANEL_ID = "fill-all-floating-panel";
 const STORAGE_KEY = "fill_all_panel_state";
@@ -150,17 +151,17 @@ function getPanelHTML(): string {
       <div class="fa-toolbar-left">
         <span class="fa-toolbar-title">🔧 Fill All</span>
         <div class="fa-tabs" id="fa-tabs">
-          <button class="fa-tab active" data-tab="actions">⚡ Ações</button>
-          <button class="fa-tab" data-tab="fields">🔍 Campos</button>
-          <button class="fa-tab" data-tab="forms">📄 Forms</button>
-          <button class="fa-tab" data-tab="log">📋 Log</button>
+          <button class="fa-tab active" data-tab="actions">⚡ ${t("tabActions")}</button>
+          <button class="fa-tab" data-tab="fields">🔍 ${t("tabFields")}</button>
+          <button class="fa-tab" data-tab="forms">📄 ${t("tabForms")}</button>
+          <button class="fa-tab" data-tab="log">📋 ${t("tabLog")}</button>
         </div>
       </div>
       <div class="fa-toolbar-right">
-        <button class="fa-toolbar-btn fa-btn-fill-minimized" id="fa-btn-fill-minimized" title="Preencher Tudo">⚡</button>
-        <button class="fa-toolbar-btn" id="fa-btn-options" title="Abrir Opções">⚙️</button>
-        <button class="fa-toolbar-btn" id="fa-btn-minimize" title="Minimizar">▼</button>
-        <button class="fa-toolbar-btn" id="fa-btn-close" title="Fechar">✕</button>
+        <button class="fa-toolbar-btn fa-btn-fill-minimized" id="fa-btn-fill-minimized" title="${t("fillAll")}">⚡</button>
+        <button class="fa-toolbar-btn" id="fa-btn-options" title="${t("fpOpenOptions")}">⚙️</button>
+        <button class="fa-toolbar-btn" id="fa-btn-minimize" title="${t("fpMinimize")}">▼</button>
+        <button class="fa-toolbar-btn" id="fa-btn-close" title="${t("fpClose")}">✕</button>
       </div>
     </div>
     <div class="fa-content" id="fa-content">
@@ -169,23 +170,23 @@ function getPanelHTML(): string {
         <div class="fa-actions-grid">
           <button class="fa-action-card fa-card-primary" id="fa-btn-fill">
             <span class="fa-card-icon">⚡</span>
-            <span class="fa-card-label">Preencher Tudo</span>
-            <span class="fa-card-desc">Preenche todos os campos detectados</span>
+            <span class="fa-card-label">${t("fillAll")}</span>
+            <span class="fa-card-desc">${t("fillAllDesc")}</span>
           </button>
           <button class="fa-action-card fa-card-secondary" id="fa-btn-save">
             <span class="fa-card-icon">💾</span>
-            <span class="fa-card-label">Salvar Form</span>
-            <span class="fa-card-desc">Salva os valores atuais do formulário</span>
+            <span class="fa-card-label">${t("saveForm")}</span>
+            <span class="fa-card-desc">${t("saveFormDesc")}</span>
           </button>
           <button class="fa-action-card fa-card-outline" id="fa-btn-watch">
             <span class="fa-card-icon">👁️</span>
-            <span class="fa-card-label">Watch</span>
-            <span class="fa-card-desc">Observa mudanças no DOM e preenche novos campos</span>
+            <span class="fa-card-label">${t("watch")}</span>
+            <span class="fa-card-desc">${t("watchDesc")}</span>
           </button>
           <button class="fa-action-card fa-card-outline" id="fa-btn-clear-badges">
             <span class="fa-card-icon">🧹</span>
-            <span class="fa-card-label">Limpar Badges</span>
-            <span class="fa-card-desc">Remove badges de detecção da página</span>
+            <span class="fa-card-label">${t("fpClearBadgesLabel")}</span>
+            <span class="fa-card-desc">${t("fpClearBadgesDesc")}</span>
           </button>
         </div>
         <div class="fa-status-bar" id="fa-status-bar"></div>
@@ -193,7 +194,7 @@ function getPanelHTML(): string {
       <!-- Tab: Campos -->
       <div class="fa-tab-panel" id="fa-tab-fields">
         <div class="fa-fields-toolbar">
-          <button class="fa-fields-btn" id="fa-btn-detect">🔍 Detectar Campos</button>
+          <button class="fa-fields-btn" id="fa-btn-detect">🔍 ${t("detectFields")}</button>
           <span class="fa-fields-count" id="fa-fields-count"></span>
         </div>
         <div class="fa-fields-table-wrap" id="fa-fields-table-wrap">
@@ -201,13 +202,13 @@ function getPanelHTML(): string {
             <thead>
               <tr>
                 <th>#</th>
-                <th>Tipo</th>
-                <th>Método</th>
-                <th>Confiança</th>
-                <th>ID / Name</th>
-                <th>Label</th>
-                <th>Seletor</th>
-                <th>Ações</th>
+                <th>${t("columnType")}</th>
+                <th>${t("columnMethod")}</th>
+                <th>${t("columnConf")}</th>
+                <th>${t("columnIdName")}</th>
+                <th>${t("columnLabel")}</th>
+                <th>${t("columnSelector")}</th>
+                <th>${t("columnActions")}</th>
               </tr>
             </thead>
             <tbody id="fa-fields-tbody"></tbody>
@@ -217,21 +218,21 @@ function getPanelHTML(): string {
       <!-- Tab: Forms -->
       <div class="fa-tab-panel" id="fa-tab-forms">
         <div class="fa-forms-toolbar">
-          <button class="fa-fields-btn" id="fa-btn-load-forms">🔄 Carregar Forms</button>
+          <button class="fa-fields-btn" id="fa-btn-load-forms">🔄 ${t("btnLoadForms")}</button>
           <span class="fa-fields-count" id="fa-forms-count"></span>
         </div>
         <div class="fa-forms-list" id="fa-forms-list">
-          <div class="fa-log-empty">Nenhum formulário salvo para esta página</div>
+          <div class="fa-log-empty">${t("noFormsForPage")}</div>
         </div>
       </div>
       <!-- Tab: Log -->
       <div class="fa-tab-panel" id="fa-tab-log">
         <div class="fa-log-toolbar">
-          <button class="fa-fields-btn" id="fa-btn-clear-log">🗑️ Limpar</button>
+          <button class="fa-fields-btn" id="fa-btn-clear-log">🗑️ ${t("btnClearLog")}</button>
         </div>
         <div class="fa-log-wrap" id="fa-log-wrap">
           <div class="fa-log-entries" id="fa-log-entries">
-            <div class="fa-log-empty">Nenhuma atividade registrada</div>
+            <div class="fa-log-empty">${t("fpNoActivity")}</div>
           </div>
         </div>
       </div>
@@ -899,7 +900,7 @@ function setupTabHandlers(panel: HTMLElement): void {
 
       activeTab = tabId;
 
-      tabs.forEach((t) => t.classList.remove("active"));
+      tabs.forEach((tab) => tab.classList.remove("active"));
       tab.classList.add("active");
 
       panel
@@ -933,9 +934,9 @@ function setupTabHandlers(panel: HTMLElement): void {
       btn.style.pointerEvents = "none";
       try {
         const results = await fillAllFields();
-        addLog(`${results.length} campos preenchidos com sucesso`, "success");
+        addLog(`${results.length} ${t("fieldsFillCount")}`, "success");
       } catch {
-        addLog("Erro ao preencher campos", "error");
+        addLog(t("fpFillErrorLog"), "error");
       } finally {
         btn.textContent = "⚡";
         btn.style.pointerEvents = "";
@@ -950,8 +951,8 @@ function setupTabHandlers(panel: HTMLElement): void {
 
 function renderActiveTab(panel: HTMLElement): void {
   const tabs = panel.querySelectorAll<HTMLButtonElement>(".fa-tab");
-  tabs.forEach((t) => {
-    t.classList.toggle("active", t.dataset.tab === activeTab);
+  tabs.forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.tab === activeTab);
   });
 
   panel
@@ -1012,19 +1013,23 @@ function setupActionHandlers(panel: HTMLElement): void {
   panel.querySelector("#fa-btn-fill")?.addEventListener("click", async () => {
     const card = panel.querySelector("#fa-btn-fill") as HTMLButtonElement;
     const label = card.querySelector(".fa-card-label") as HTMLElement;
-    label.textContent = "Preenchendo...";
+    label.textContent = t("fpFilling");
     card.style.opacity = "0.6";
     card.style.pointerEvents = "none";
 
     try {
       const results = await fillAllFields();
-      setStatus(panel, `✓ ${results.length} campos preenchidos`, "success");
-      addLog(`${results.length} campos preenchidos com sucesso`, "success");
-      label.textContent = "Preencher Tudo";
+      setStatus(
+        panel,
+        `✓ ${results.length} ${t("fieldsFillStatus")}`,
+        "success",
+      );
+      addLog(`${results.length} ${t("fieldsFillCount")}`, "success");
+      label.textContent = t("fillAll");
     } catch {
-      setStatus(panel, "Erro ao preencher", "error");
-      addLog("Erro ao preencher campos", "error");
-      label.textContent = "Preencher Tudo";
+      setStatus(panel, t("fpFillError"), "error");
+      addLog(t("fpFillErrorLog"), "error");
+      label.textContent = t("fillAll");
     }
 
     card.style.opacity = "";
@@ -1044,8 +1049,15 @@ function setupActionHandlers(panel: HTMLElement): void {
       updatedAt: Date.now(),
     };
     await saveForm(formData);
-    setStatus(panel, `💾 Salvo (${fieldCount} campos)`, "success");
-    addLog(`Formulário salvo com ${fieldCount} campos`, "success");
+    setStatus(
+      panel,
+      `💾 ${t("savedStatus")} (${fieldCount} ${t("fieldCount")})`,
+      "success",
+    );
+    addLog(
+      `${t("logFormSavedWith")} ${fieldCount} ${t("fieldCount")}t("fieldCount")}`,
+      "success",
+    );
   });
 
   // Watch toggle
@@ -1054,11 +1066,12 @@ function setupActionHandlers(panel: HTMLElement): void {
     if (isWatcherActive()) {
       stopWatching();
       card.classList.remove("active");
-      card.querySelector<HTMLElement>(".fa-card-label")!.textContent = "Watch";
+      card.querySelector<HTMLElement>(".fa-card-label")!.textContent =
+        t("watch");
       card.querySelector<HTMLElement>(".fa-card-desc")!.textContent =
-        "Observa mudanças no DOM e preenche novos campos";
-      setStatus(panel, "Watch desativado", "info");
-      addLog("Watch desativado", "info");
+        t("watchDesc");
+      setStatus(panel, t("logWatchDeactivated"), "info");
+      addLog(t("logWatchDeactivated"), "info");
     } else {
       startWatcherWithUI(panel);
     }
@@ -1067,14 +1080,14 @@ function setupActionHandlers(panel: HTMLElement): void {
   // Clear badges
   panel.querySelector("#fa-btn-clear-badges")?.addEventListener("click", () => {
     clearAllBadges();
-    setStatus(panel, "Badges removidos", "info");
-    addLog("Badges de detecção removidos", "info");
+    setStatus(panel, t("fpBadgesCleared"), "info");
+    addLog(t("logBadgesRemoved"), "info");
   });
 
   // Open options page
   panel.querySelector("#fa-btn-options")?.addEventListener("click", () => {
     chrome.runtime.openOptionsPage();
-    addLog("Abrindo página de opções", "info");
+    addLog(t("logOpeningOptions"), "info");
   });
 }
 
@@ -1086,7 +1099,7 @@ function setupFieldHandlers(panel: HTMLElement): void {
     const tbody = panel.querySelector("#fa-fields-tbody") as HTMLElement;
     const countEl = panel.querySelector("#fa-fields-count") as HTMLElement;
 
-    btn.textContent = "⏳ Detectando...";
+    btn.textContent = `⏳ ${t("fpDetecting")}`;
     btn.disabled = true;
     tbody.innerHTML = "";
     clearAllBadges();
@@ -1094,23 +1107,22 @@ function setupFieldHandlers(panel: HTMLElement): void {
     let count = 0;
     for await (const field of streamAllFields()) {
       count++;
-      countEl.textContent = `${count} campo(s)`;
+      countEl.textContent = `${count} ${t("fieldCount")}`;
       showDetectionBadge(field.element, field.fieldType, field.detectionMethod);
       appendFieldRow(tbody, count, field);
-      console.log(`[Fill All] Campo detectado:`, field);
     }
 
-    btn.textContent = "🔍 Detectar Campos";
+    btn.textContent = `🔍 ${t("detectFields")}`;
     btn.disabled = false;
-    countEl.textContent = `${count} campo(s) detectado(s)`;
-    addLog(`${count} campo(s) detectado(s) na página`, "success");
+    countEl.textContent = `${count} ${t("fieldCountDetected")}`;
+    addLog(`${count} ${t("fieldCountPage")}`, "success");
   });
 
   // Clear log
   panel.querySelector("#fa-btn-clear-log")?.addEventListener("click", () => {
     logEntries = [];
     const logEl = panel.querySelector("#fa-log-entries") as HTMLElement;
-    logEl.innerHTML = `<div class="fa-log-empty">Nenhuma atividade registrada</div>`;
+    logEl.innerHTML = `<div class="fa-log-empty">${t("fpNoActivity")}</div>`;
   });
 }
 
@@ -1170,9 +1182,7 @@ function appendFieldRow(
   const isIgnored = ignoredFieldsMap.has(field.selector);
   const eyeBtn = createFieldActionBtn(
     isIgnored ? "🚫" : "👁️",
-    isIgnored
-      ? "Campo ignorado — clique para ativar"
-      : "Campo ativo — clique para ignorar",
+    isIgnored ? t("fpFieldIgnoredTitle") : t("fpFieldActiveTitle"),
     async () => {
       const currentlyIgnored = ignoredFieldsMap.has(field.selector);
 
@@ -1184,11 +1194,11 @@ function appendFieldRow(
           ignoredFieldsMap.delete(field.selector);
         }
         eyeBtn.textContent = "👁️";
-        eyeBtn.title = "Campo ativo — clique para ignorar";
+        eyeBtn.title = t("fpFieldActiveTitle");
         eyeBtn.classList.remove("ignored");
         tr.style.opacity = "";
         addLog(
-          `Campo "${field.label || field.id || field.selector}" reativado`,
+          `${t("logFieldReactivated")}: "${field.label || field.id || field.selector}"`,
           "info",
         );
       } else {
@@ -1203,11 +1213,11 @@ function appendFieldRow(
           ignoredFieldsMap.set(field.selector, result);
         }
         eyeBtn.textContent = "🚫";
-        eyeBtn.title = "Campo ignorado — clique para ativar";
+        eyeBtn.title = t("fpFieldIgnoredTitle");
         eyeBtn.classList.add("ignored");
         tr.style.opacity = "0.5";
         addLog(
-          `Campo "${field.label || field.id || field.selector}" ignorado`,
+          `${t("logFieldIgnored")}: "${field.label || field.id || field.selector}"`,
           "warn",
         );
       }
@@ -1222,11 +1232,11 @@ function appendFieldRow(
 
   // Fill button
   actionsCell.appendChild(
-    createFieldActionBtn("⚡", "Preencher", async () => {
+    createFieldActionBtn("⚡", t("actionFill"), async () => {
       // Respect ignored state
       if (ignoredFieldsMap.has(field.selector)) {
         addLog(
-          `Campo "${field.label || field.id || field.selector}" está ignorado — não preenchido`,
+          `${t("logFieldIgnoredSkip")}: "${field.label || field.id || field.selector}"`,
           "warn",
         );
         return;
@@ -1247,12 +1257,12 @@ function appendFieldRow(
       const result = await fillSingleField(formField);
       if (result) {
         addLog(
-          `Campo "${field.label || field.id || field.selector}" preenchido`,
+          `${t("logFieldFilled")}: "${field.label || field.id || field.selector}"`,
           "success",
         );
       } else {
         addLog(
-          `Falha ao preencher "${field.label || field.id || field.selector}"`,
+          `${t("logFillError")}: "${field.label || field.id || field.selector}"`,
           "error",
         );
       }
@@ -1260,7 +1270,7 @@ function appendFieldRow(
   );
 
   actionsCell.appendChild(
-    createFieldActionBtn("📝", "Adicionar Regra", () => {
+    createFieldActionBtn("📝", t("fpActionAddRule"), () => {
       const urlPattern = `${window.location.origin}${window.location.pathname}*`;
       const payload = {
         id: crypto.randomUUID(),
@@ -1277,12 +1287,12 @@ function appendFieldRow(
       chrome.runtime.sendMessage({ type: "SAVE_RULE", payload }, (response) => {
         if (response?.success) {
           addLog(
-            `Regra criada para "${field.label || field.id || field.selector}"`,
+            `${t("logRuleCreated")}: "${field.label || field.id || field.selector}"`,
             "success",
           );
         } else {
           addLog(
-            `Falha ao criar regra para "${field.label || field.id || field.selector}"`,
+            `${t("logRuleError")}: "${field.label || field.id || field.selector}"`,
             "error",
           );
         }
@@ -1291,7 +1301,7 @@ function appendFieldRow(
   );
 
   actionsCell.appendChild(
-    createFieldActionBtn("🔍", "Inspecionar", () => {
+    createFieldActionBtn("🔍", t("fpActionInspect"), () => {
       field.element.scrollIntoView({ behavior: "smooth", block: "center" });
       const el = field.element as HTMLElement;
       el.style.outline = "2px solid #6366f1";
@@ -1326,18 +1336,18 @@ async function renderFormsList(panel: HTMLElement): Promise<void> {
 
   if (!listEl) return;
 
-  listEl.innerHTML = `<div class="fa-log-empty">Carregando...</div>`;
+  listEl.innerHTML = `<div class="fa-log-empty">${t("fpLoading")}</div>`;
 
   const url = window.location.href;
   const forms = await getSavedFormsForUrl(url);
 
   if (forms.length === 0) {
-    listEl.innerHTML = `<div class="fa-log-empty">Nenhum formulário salvo para esta página</div>`;
+    listEl.innerHTML = `<div class="fa-log-empty">${t("noFormsForPage")}</div>`;
     if (countEl) countEl.textContent = "";
     return;
   }
 
-  if (countEl) countEl.textContent = `${forms.length} formulário(s)`;
+  if (countEl) countEl.textContent = `${forms.length} ${t("formCount")}`;
   listEl.innerHTML = "";
 
   for (const form of forms) {
@@ -1358,7 +1368,7 @@ function createFormCard(panel: HTMLElement, form: SavedForm): HTMLElement {
   card.innerHTML = `
     <div class="fa-form-info">
       <div class="fa-form-name">${escapeHtml(form.name)}</div>
-      <div class="fa-form-meta">${templateCount} campos · ${escapeHtml(date)} · ${escapeHtml(form.urlPattern)}</div>
+      <div class="fa-form-meta">${templateCount} ${t("fieldCount")} · ${escapeHtml(date)} · ${escapeHtml(form.urlPattern)}</div>
     </div>
     <div class="fa-form-actions"></div>
   `;
@@ -1368,57 +1378,60 @@ function createFormCard(panel: HTMLElement, form: SavedForm): HTMLElement {
   // Apply button
   const applyBtn = document.createElement("button");
   applyBtn.className = "fa-form-load-btn";
-  applyBtn.textContent = "📥 Aplicar";
+  applyBtn.textContent = `📥 ${t("fpApplyTemplate")}`;
   applyBtn.addEventListener("click", async () => {
     const filled = await applyTemplate(form);
     setStatus(
       panel,
-      `📥 Template "${form.name}" aplicado (${filled} campos)`,
+      `📥 ${t("fpTemplateApplied")}: "${form.name}" (${filled} ${t("fieldCount")})`,
       "success",
     );
-    addLog(`Template "${form.name}" aplicado — ${filled} campos`, "success");
+    addLog(
+      `${t("logApplyingTemplate")}: "${form.name}" — ${filled} ${t("fieldCount")}`,
+      "success",
+    );
   });
   actionsEl.appendChild(applyBtn);
 
   // Edit button
   const editBtn = document.createElement("button");
   editBtn.className = "fa-form-edit-btn";
-  editBtn.textContent = "✏️ Editar";
+  editBtn.textContent = `✏️ ${t("btnEdit")}`;
   let editDrawer: HTMLElement | null = null;
   editBtn.addEventListener("click", () => {
     if (editDrawer) {
       editDrawer.remove();
       editDrawer = null;
-      editBtn.textContent = "✏️ Editar";
+      editBtn.textContent = `✏️ ${t("btnEdit")}`;
       return;
     }
     editDrawer = buildFormEditDrawer(form, wrapper, panel, () => {
       editDrawer = null;
-      editBtn.textContent = "✏️ Editar";
+      editBtn.textContent = `✏️ ${t("btnEdit")}`;
     });
     wrapper.appendChild(editDrawer);
-    editBtn.textContent = "✕ Fechar";
+    editBtn.textContent = `✕ ${t("fpClose")}`;
   });
   actionsEl.appendChild(editBtn);
 
   // Delete button
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "fa-form-delete-btn";
-  deleteBtn.textContent = "🗑️ Excluir";
+  deleteBtn.textContent = `🗑️ ${t("btnDelete")}`;
   deleteBtn.addEventListener("click", async () => {
     await deleteForm(form.id);
     wrapper.remove();
-    addLog(`Formulário "${form.name}" excluído`, "info");
+    addLog(`${t("logFormRemoved")}: "${form.name}"`, "info");
 
     // Refresh count
     const listEl = panel.querySelector("#fa-forms-list") as HTMLElement;
     const remaining = listEl.querySelectorAll(".fa-form-card").length;
     const countEl = panel.querySelector("#fa-forms-count") as HTMLElement;
     if (remaining === 0) {
-      listEl.innerHTML = `<div class="fa-log-empty">Nenhum formulário salvo para esta página</div>`;
+      listEl.innerHTML = `<div class="fa-log-empty">${t("noFormsForPage")}</div>`;
       if (countEl) countEl.textContent = "";
     } else {
-      if (countEl) countEl.textContent = `${remaining} formulário(s)`;
+      if (countEl) countEl.textContent = `${remaining} ${t("formCount")}`;
     }
   });
   actionsEl.appendChild(deleteBtn);
@@ -1454,11 +1467,11 @@ function buildFormEditDrawer(
 
   metaRow.innerHTML = `
     <div class="fa-edit-input-group">
-      <span class="fa-edit-label">Nome</span>
+      <span class="fa-edit-label">${t("formName")}</span>
       <input class="fa-edit-input" id="fa-edit-name" type="text" value="${escapeHtml(form.name)}" />
     </div>
     <div class="fa-edit-input-group">
-      <span class="fa-edit-label">URL / Padrão</span>
+      <span class="fa-edit-label">${t("formUrl")}</span>
       <input class="fa-edit-input" id="fa-edit-url" type="text" value="${escapeHtml(form.urlPattern)}" />
     </div>
   `;
@@ -1467,7 +1480,7 @@ function buildFormEditDrawer(
   if (templateFields.length > 0) {
     const fieldsHeader = document.createElement("div");
     fieldsHeader.className = "fa-edit-fields-header";
-    fieldsHeader.textContent = "Campos";
+    fieldsHeader.textContent = t("editFieldsHeader");
     drawer.appendChild(fieldsHeader);
   }
 
@@ -1493,14 +1506,14 @@ function buildFormEditDrawer(
     const modeSelect = document.createElement("select");
     modeSelect.className = "fa-edit-select";
     modeSelect.innerHTML = `
-      <option value="fixed"${field.mode === "fixed" ? " selected" : ""}>Valor fixo</option>
-      <option value="generator"${field.mode === "generator" ? " selected" : ""}>Gerador</option>
+      <option value="fixed"${field.mode === "fixed" ? " selected" : ""}>${t("fixedValue")}</option>
+      <option value="generator"${field.mode === "generator" ? " selected" : ""}>${t("generatorMode")}</option>
     `;
 
     const valueInput = document.createElement("input");
     valueInput.type = "text";
     valueInput.className = "fa-edit-field-value";
-    valueInput.placeholder = "Valor fixo";
+    valueInput.placeholder = t("fixedValue");
     valueInput.value = field.fixedValue ?? "";
     valueInput.style.display = field.mode === "fixed" ? "" : "none";
 
@@ -1508,8 +1521,8 @@ function buildFormEditDrawer(
     genSelect.className = "fa-edit-select fa-edit-field-value";
     genSelect.style.display = field.mode === "generator" ? "" : "none";
     genSelect.innerHTML = FIELD_TYPES.map(
-      (t) =>
-        `<option value="${t}"${field.generatorType === t ? " selected" : ""}>${t}</option>`,
+      (ft) =>
+        `<option value="${ft}"${field.generatorType === ft ? " selected" : ""}>${ft}</option>`,
     ).join("");
 
     modeSelect.addEventListener("change", () => {
@@ -1532,7 +1545,7 @@ function buildFormEditDrawer(
 
   const cancelBtn = document.createElement("button");
   cancelBtn.className = "fa-edit-cancel-btn";
-  cancelBtn.textContent = "✕ Cancelar";
+  cancelBtn.textContent = `✕ ${t("btnCancel")}`;
   cancelBtn.addEventListener("click", () => {
     drawer.remove();
     onClose();
@@ -1540,7 +1553,7 @@ function buildFormEditDrawer(
 
   const saveBtn = document.createElement("button");
   saveBtn.className = "fa-edit-save-btn";
-  saveBtn.textContent = "💾 Salvar";
+  saveBtn.textContent = `💾 ${t("btnSave")}`;
   saveBtn.addEventListener("click", async () => {
     const nameInput = drawer.querySelector<HTMLInputElement>("#fa-edit-name");
     const urlInput = drawer.querySelector<HTMLInputElement>("#fa-edit-url");
@@ -1576,14 +1589,14 @@ function buildFormEditDrawer(
     ).toLocaleString("pt-BR");
     if (nameEl) nameEl.textContent = updated.name;
     if (metaEl)
-      metaEl.textContent = `${updatedFields.length} campos · ${date} · ${updated.urlPattern}`;
+      metaEl.textContent = `${updatedFields.length} ${t("fieldCount")} · ${date} · ${updated.urlPattern}`;
 
     // Update form reference in memory
     Object.assign(form, updated);
 
     drawer.remove();
     onClose();
-    addLog(`Template "${updated.name}" atualizado`, "success");
+    addLog(`${t("logFormUpdated")}: "${updated.name}"`, "success");
   });
 
   footer.appendChild(cancelBtn);
@@ -1622,13 +1635,10 @@ function startWatcherWithUI(panel: HTMLElement): void {
     if (newFieldsCount > 0 && panelElement) {
       setStatus(
         panelElement,
-        `🔄 ${newFieldsCount} campo(s) novo(s) — re-preenchendo...`,
+        `🔄 ${newFieldsCount} ${t("fpNewFieldsRefill")}`,
         "info",
       );
-      addLog(
-        `${newFieldsCount} campo(s) novo(s) detectado(s) via Watch`,
-        "info",
-      );
+      addLog(`${newFieldsCount} ${t("fpNewFieldsViaWatch")}`, "info");
     }
   }, true);
 
@@ -1637,12 +1647,12 @@ function startWatcherWithUI(panel: HTMLElement): void {
     card.classList.add("active");
     const label = card.querySelector<HTMLElement>(".fa-card-label");
     const desc = card.querySelector<HTMLElement>(".fa-card-desc");
-    if (label) label.textContent = "Watch (Ativo)";
-    if (desc) desc.textContent = "Clique para desativar";
+    if (label) label.textContent = t("fpWatchActive");
+    if (desc) desc.textContent = t("fpWatchClickToStop");
   }
 
-  setStatus(panel, "Watch ativado — observando mudanças no DOM", "info");
-  addLog("Watch ativado", "info");
+  setStatus(panel, t("fpWatchActivatedDOM"), "info");
+  addLog(t("logWatchActivated"), "info");
 }
 
 function updateWatcherStatus(panel: HTMLElement): void {
@@ -1651,8 +1661,8 @@ function updateWatcherStatus(panel: HTMLElement): void {
     card.classList.add("active");
     const label = card.querySelector<HTMLElement>(".fa-card-label");
     const desc = card.querySelector<HTMLElement>(".fa-card-desc");
-    if (label) label.textContent = "Watch (Ativo)";
-    if (desc) desc.textContent = "Clique para desativar";
+    if (label) label.textContent = t("fpWatchActive");
+    if (desc) desc.textContent = t("fpWatchClickToStop");
   }
 }
 

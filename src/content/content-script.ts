@@ -19,6 +19,7 @@ import {
   detectFormFields,
 } from "@/lib/form/form-detector";
 import { saveForm, getSettings } from "@/lib/storage/storage";
+import { initI18n } from "@/lib/i18n";
 import {
   startWatching,
   stopWatching,
@@ -356,6 +357,7 @@ function showNotification(text: string): void {
 async function initContentScript(): Promise<void> {
   await initLogger();
   const settings = await getSettings();
+  await initI18n(settings.uiLanguage ?? "auto");
 
   // Configure the detection pipeline from user settings
   if (settings.detectionPipeline?.length) {

@@ -460,6 +460,8 @@ export interface Settings {
   debugLog: boolean;
   /** Minimum log level to output: debug < info < warn < error */
   logLevel: "debug" | "info" | "warn" | "error";
+  /** Preferred UI language. "auto" follows the browser/Chrome locale. */
+  uiLanguage: "auto" | "en" | "pt_BR" | "es";
 }
 
 /** Message types for communication between extension parts */
@@ -552,4 +554,5 @@ export const DEFAULT_SETTINGS: Settings = {
   showPanel: false,
   debugLog: false,
   logLevel: "warn",
+  uiLanguage: "auto",
 };

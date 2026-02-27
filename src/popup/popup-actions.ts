@@ -4,6 +4,7 @@
 
 import { sendToActiveTab } from "./popup-messaging";
 import { loadSavedForms } from "./popup-forms";
+import { t } from "@/lib/i18n";
 
 export function bindFillAllAction(): void {
   document
@@ -12,13 +13,13 @@ export function bindFillAllAction(): void {
       const btn = document.getElementById("btn-fill-all") as HTMLButtonElement;
       const result = await sendToActiveTab({ type: "FILL_ALL_FIELDS" });
       if (result === null) {
-        btn.textContent = "⚠️ Não disponível aqui";
+        btn.textContent = t("notAvailableHere");
       } else {
         const res = result as { filled?: number } | null;
-        btn.textContent = `✓ ${res?.filled ?? 0} campos preenchidos`;
+        btn.textContent = `✓ ${res?.filled ?? 0} ${t("filled")}`;
       }
       setTimeout(() => {
-        btn.textContent = "⚡ Preencher Todos os Campos";
+        btn.textContent = `⚡ ${t("fillAll")}`;
       }, 2000);
     });
 }
@@ -68,7 +69,9 @@ export function bindTogglePanelAction(): void {
 }
 
 function updatePanelButton(btn: HTMLButtonElement, active: boolean): void {
-  btn.textContent = active ? "📌 Painel Ativo" : "📌 Painel Flutuante";
+  btn.textContent = active
+    ? `📌 ${t("panelActive")}`
+    : `📌 ${t("panelFloating")}`;
   btn.classList.toggle("btn-active", active);
 }
 
@@ -85,14 +88,14 @@ export function bindToggleWatchAction(): void {
 
       if (status?.watching) {
         await sendToActiveTab({ type: "STOP_WATCHING" });
-        btn.textContent = "👁️ Watch";
+        btn.textContent = `👁️ ${t("watch")}`;
         btn.classList.remove("btn-active");
       } else {
         await sendToActiveTab({
           type: "START_WATCHING",
           payload: { autoRefill: true },
         });
-        btn.textContent = "👁️ Ativo";
+        btn.textContent = `👁️ ${t("panelActive")}`;
         btn.classList.add("btn-active");
       }
     });

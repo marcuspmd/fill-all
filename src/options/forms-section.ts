@@ -4,6 +4,7 @@
 
 import type { SavedForm, FormTemplateField, FieldType } from "@/types";
 import { FIELD_TYPES } from "@/types";
+import { t } from "@/lib/i18n";
 import { escapeHtml, showToast } from "./shared";
 
 /** Labels mais legíveis para os tipos de campo */
@@ -103,15 +104,15 @@ function buildTemplateFieldRow(field?: Partial<FormTemplateField>): string {
       </td>
       <td>
         <select class="field-mode-select">
-          <option value="fixed"${mode === "fixed" ? " selected" : ""}>Valor fixo</option>
-          <option value="generator"${mode === "generator" ? " selected" : ""}>Gerador</option>
+          <option value="fixed"${mode === "fixed" ? " selected" : ""}>${t("modeFixed")}</option>
+          <option value="generator"${mode === "generator" ? " selected" : ""}>${t("modeGenerator")}</option>
         </select>
       </td>
       <td>
         <input
           type="text"
           class="field-fixed-value"
-          placeholder="Valor..."
+          placeholder="${t("valuePlaceholder")}"
           value="${escapeHtml(fixedValue)}"
           style="display:${mode === "fixed" ? "inline-block" : "none"}"
         />
@@ -123,7 +124,7 @@ function buildTemplateFieldRow(field?: Partial<FormTemplateField>): string {
         </select>
       </td>
       <td>
-        <button class="btn btn-sm btn-delete btn-remove-row" title="Remover campo">✕</button>
+        <button class="btn btn-sm btn-delete btn-remove-row" title="${t("removeFieldTitle")}">✕</button>
       </td>
     </tr>
   `;
@@ -141,30 +142,30 @@ function openCreatePanel(): void {
   panel.id = "form-create-panel";
   panel.className = "edit-panel";
   panel.innerHTML = `
-    <h3>Criar Template</h3>
+    <h3>${t("createTemplateHeader")}</h3>
     <div class="form-group">
-      <label>Nome do template</label>
-      <input type="text" id="create-form-name" placeholder="Ex: Cadastro padrão" />
+      <label>${t("templateNameLabel")}</label>
+      <input type="text" id="create-form-name" placeholder="${t("createTemplateNamePlaceholder")}" />
     </div>
     <div class="form-group">
-      <label>URL / Padrão</label>
-      <input type="text" id="create-form-url" placeholder="* = qualquer site  |  Ex: *.linkedin.com/*" />
+      <label>${t("urlPatternLabel")}</label>
+      <input type="text" id="create-form-url" placeholder="${t("templateUrlPlaceholder")}" />
       <div class="description" style="margin-top:4px;font-size:11px;color:var(--text-muted);">
-        Deixe vazio ou use <code>*</code> para funcionar em qualquer site.
+        ${t("templateUrlDesc")}
       </div>
     </div>
     <div style="margin-bottom:8px;">
-      <strong style="font-size:13px;">Campos</strong>
+      <strong style="font-size:13px;">${t("fieldsTitle")}</strong>
       <div class="description" style="font-size:11px;color:var(--text-muted);margin-top:2px;">
-        Defina o tipo do campo detectado e o valor que será preenchido.
+        ${t("templateFieldsDesc")}
       </div>
     </div>
     <table class="template-fields-table" id="create-fields-table">
       <thead>
         <tr>
-          <th>Tipo do campo detectado</th>
-          <th>Modo</th>
-          <th>Valor / Gerador</th>
+          <th>${t("fieldDetectedTypeHeader")}</th>
+          <th>${t("fieldModeHeader")}</th>
+          <th>${t("fieldValueHeader")}</th>
           <th></th>
         </tr>
       </thead>
@@ -176,8 +177,8 @@ function openCreatePanel(): void {
       <button class="btn btn-secondary btn-sm" id="create-add-field-row">+ Adicionar campo</button>
     </div>
     <div class="edit-panel-actions">
-      <button class="btn btn-primary" id="create-panel-save">Salvar template</button>
-      <button class="btn btn-secondary" id="create-panel-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="create-panel-save">${t("btnSaveTemplate")}</button>
+      <button class="btn btn-secondary" id="create-panel-cancel">${t("btnCancel")}</button>
     </div>
   `;
 
@@ -242,7 +243,7 @@ function bindCreatePanelEvents(panel: HTMLElement): void {
       const name = nameInput.value.trim();
       if (!name) {
         nameInput.focus();
-        showToast("Informe o nome do template");
+        showToast(t("errorTemplateNameRequired"));
         return;
       }
 
@@ -289,7 +290,7 @@ function bindCreatePanelEvents(panel: HTMLElement): void {
       });
       panel.remove();
       await loadSavedForms();
-      showToast(`Template "${name}" criado com sucesso`);
+      showToast(t("toastTemplateCreated", [name]));
     });
 }
 
@@ -303,7 +304,7 @@ async function loadSavedForms(): Promise<void> {
   list.innerHTML = "";
 
   if (!Array.isArray(forms) || forms.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhum formulário salvo</div>';
+    list.innerHTML = `<div class="empty">${t("noSavedForms")}</div>`;
     return;
   }
 
@@ -317,8 +318,8 @@ async function loadSavedForms(): Promise<void> {
         <span class="badge">${escapeHtml(fieldSummary(form))}</span>
       </div>
       <div class="rule-actions">
-        <button class="btn btn-sm btn-edit" data-form-id="${escapeHtml(form.id)}">Editar</button>
-        <button class="btn btn-sm btn-delete" data-form-id="${escapeHtml(form.id)}">Excluir</button>
+        <button class="btn btn-sm btn-edit" data-form-id="${escapeHtml(form.id)}">${t("btnEdit")}</button>
+        <button class="btn btn-sm btn-delete" data-form-id="${escapeHtml(form.id)}">${t("btnDelete")}</button>
       </div>
     `;
 
@@ -332,7 +333,7 @@ async function loadSavedForms(): Promise<void> {
         payload: form.id,
       });
       await loadSavedForms();
-      showToast("Formulário excluído");
+      showToast(t("toastFormDeleted"));
     });
 
     list.appendChild(item);
@@ -357,27 +358,27 @@ function openEditPanel(form: SavedForm): void {
   const isTypeBased = templateFields.some((f) => f.matchByFieldType);
 
   panel.innerHTML = `
-    <h3>Editar Template: ${escapeHtml(form.name)}</h3>
+    <h3>${t("editTemplateFor")} ${escapeHtml(form.name)}</h3>
     <div class="form-group">
-      <label>Nome</label>
+      <label>${t("nameLabel")}</label>
       <input type="text" id="edit-form-name" value="${escapeHtml(form.name)}" />
     </div>
     <div class="form-group">
-      <label>URL / Padrão</label>
+      <label>${t("urlPatternLabel")}</label>
       <input type="text" id="edit-form-url" value="${escapeHtml(form.urlPattern)}" />
       <div class="description" style="margin-top:4px;font-size:11px;color:var(--text-muted);">
-        Use <code>*</code> para funcionar em qualquer site.
+        ${t("editUrlPatternDesc")}
       </div>
     </div>
     <div style="margin-bottom:8px;">
-      <strong style="font-size:13px;">Campos</strong>
+      <strong style="font-size:13px;">${t("fieldsTitle")}</strong>
     </div>
     <table class="template-fields-table">
       <thead>
         <tr>
-          <th>${isTypeBased ? "Tipo do campo detectado" : "Campo"}</th>
-          <th>Modo</th>
-          <th>Valor / Gerador</th>
+          <th>${isTypeBased ? t("fieldDetectedTypeHeader") : t("fieldColumnHeader")}</th>
+          <th>${t("fieldModeHeader")}</th>
+          <th>${t("fieldValueHeader")}</th>
           ${isTypeBased ? "<th></th>" : ""}
         </tr>
       </thead>
@@ -391,8 +392,8 @@ function openEditPanel(form: SavedForm): void {
             <td class="field-label-cell">${escapeHtml(field.label || field.key)}</td>
             <td>
               <select class="field-mode-select">
-                <option value="fixed"${field.mode === "fixed" ? " selected" : ""}>Valor fixo</option>
-                <option value="generator"${field.mode === "generator" ? " selected" : ""}>Gerador</option>
+                <option value="fixed"${field.mode === "fixed" ? " selected" : ""}>${t("modeFixed")}</option>
+                <option value="generator"${field.mode === "generator" ? " selected" : ""}>${t("modeGenerator")}</option>
               </select>
             </td>
             <td>
@@ -415,10 +416,10 @@ function openEditPanel(form: SavedForm): void {
           .join("")}
       </tbody>
     </table>
-    ${isTypeBased ? `<div style="margin-bottom:12px;"><button class="btn btn-secondary btn-sm" id="edit-add-field-row">+ Adicionar campo</button></div>` : ""}
+    ${isTypeBased ? `<div style="margin-bottom:12px;"><button class="btn btn-secondary btn-sm" id="edit-add-field-row">${t("btnAddField")}</button></div>` : ""}
     <div class="edit-panel-actions">
-      <button class="btn btn-primary" id="edit-panel-save">Salvar</button>
-      <button class="btn btn-secondary" id="edit-panel-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="edit-panel-save">${t("btnSave")}</button>
+      <button class="btn btn-secondary" id="edit-panel-cancel">${t("btnCancel")}</button>
     </div>
   `;
 
@@ -519,7 +520,7 @@ function openEditPanel(form: SavedForm): void {
       });
       panel!.remove();
       await loadSavedForms();
-      showToast("Template atualizado");
+      showToast(t("toastTemplateUpdated"));
     });
 }
 
@@ -529,7 +530,7 @@ async function exportForms(): Promise<void> {
   })) as SavedForm[];
 
   if (!Array.isArray(forms) || forms.length === 0) {
-    showToast("Nenhum formulário para exportar");
+    showToast(t("noFormsToExport"));
     return;
   }
 
@@ -542,9 +543,7 @@ async function exportForms(): Promise<void> {
   a.download = `fill-all-forms-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast(
-    `${forms.length} formulário${forms.length > 1 ? "s" : ""} exportado${forms.length > 1 ? "s" : ""}`,
-  );
+  showToast(t("toastFormsExported", [String(forms.length)]));
 }
 
 async function importForms(file: File): Promise<void> {
@@ -552,7 +551,7 @@ async function importForms(file: File): Promise<void> {
   try {
     parsed = JSON.parse(await file.text());
   } catch {
-    showToast("Arquivo inválido: não é um JSON válido");
+    showToast(t("errorInvalidJson"));
     return;
   }
 
@@ -561,7 +560,7 @@ async function importForms(file: File): Promise<void> {
     parsed === null ||
     !Array.isArray((parsed as Record<string, unknown>).forms)
   ) {
-    showToast("Arquivo inválido: formato não reconhecido");
+    showToast(t("errorInvalidFormat"));
     return;
   }
 
@@ -587,9 +586,7 @@ async function importForms(file: File): Promise<void> {
 
   await loadSavedForms();
   showToast(
-    count > 0
-      ? `${count} formulário${count > 1 ? "s" : ""} importado${count > 1 ? "s" : ""} com sucesso`
-      : "Nenhum formulário válido encontrado no arquivo",
+    count > 0 ? t("toastFormsImported", [String(count)]) : t("noFormsInFile"),
   );
 }
 

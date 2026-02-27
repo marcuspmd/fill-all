@@ -10,6 +10,7 @@ import type {
   TrainingMeta,
 } from "@/lib/ai/runtime-trainer";
 import { trainModelFromDataset } from "@/lib/ai/runtime-trainer";
+import { t } from "@/lib/i18n";
 import { escapeHtml, showToast } from "./shared";
 
 let _allDatasetEntries: DatasetEntry[] = [];
@@ -29,26 +30,25 @@ async function loadModelStatus(): Promise<void> {
 
   if (!result?.exists || !result.meta) {
     statusText.innerHTML = `
-      <strong style="color: var(--text-muted)">Nenhum modelo treinado em runtime.</strong><br>
-      Usando o modelo padrão empacotado com a extensão.
-      Adicione entradas ao dataset e clique em <strong>Treinar Modelo</strong> para gerar um modelo personalizado.
+      <strong style="color: var(--text-muted)">${t("noRuntimeModel")}</strong><br>
+      ${t("noRuntimeModelDesc")}
     `;
     if (deleteBtn) deleteBtn.style.display = "none";
     return;
   }
 
   const m = result.meta;
-  const dateStr = new Date(m.trainedAt).toLocaleString("pt-BR");
+  const dateStr = new Date(m.trainedAt).toLocaleString();
   const acc = (m.finalAccuracy * 100).toFixed(1);
   statusText.innerHTML = `
-    <span style="color:#4ade80; font-weight:600;">✅ Modelo treinado em runtime ativo</span><br>
-    Treinado em: <strong>${dateStr}</strong> &nbsp;|&nbsp;
-    Acurácia: <strong>${acc}%</strong> &nbsp;|&nbsp;
-    Épocas: <strong>${m.epochs}</strong><br>
-    Amostras usadas: <strong>${m.entriesUsed}</strong> &nbsp;|&nbsp;
-    Vocab: <strong>${m.vocabSize}</strong> n-gramas &nbsp;|&nbsp;
-    Classes: <strong>${m.numClasses}</strong> &nbsp;|&nbsp;
-    Duração: <strong>${m.durationMs}ms</strong>
+    <span style="color:#4ade80; font-weight:600;">✅ ${t("runtimeModelActiveTitle")}</span><br>
+    ${t("trainedOnLabel")}: <strong>${dateStr}</strong> &nbsp;|&nbsp;
+    ${t("accuracyLabel")}: <strong>${acc}%</strong> &nbsp;|&nbsp;
+    ${t("epochsLabel")}: <strong>${m.epochs}</strong><br>
+    ${t("samplesUsedLabel")}: <strong>${m.entriesUsed}</strong> &nbsp;|&nbsp;
+    ${t("vocabLabel")}: <strong>${m.vocabSize}</strong> ${t("ngramsLabel")} &nbsp;|&nbsp;
+    ${t("classesLabel")}: <strong>${m.numClasses}</strong> &nbsp;|&nbsp;
+    ${t("durationLabel")}: <strong>${m.durationMs}ms</strong>
   `;
   if (deleteBtn) deleteBtn.style.display = "";
 }
@@ -68,27 +68,30 @@ async function loadDatasetList(filter = ""): Promise<void> {
       )
     : _allDatasetEntries;
 
-  if (badge) badge.textContent = `${_allDatasetEntries.length} entradas`;
+  if (badge)
+    badge.textContent = t("datasetEntryCount", [
+      String(_allDatasetEntries.length),
+    ]);
 
   list.innerHTML = "";
 
   if (entries.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhuma entrada no dataset</div>';
+    list.innerHTML = `<div class="empty">${t("noDatasetEntries")}</div>`;
     return;
   }
 
   const visible = entries.slice(0, 200);
 
   const sourceLabel: Record<string, string> = {
-    manual: "Manual",
-    auto: "Auto",
-    imported: "Importado",
-    builtin: "Padrão",
+    manual: t("sourceManual"),
+    auto: t("sourceAuto"),
+    imported: t("sourceImported"),
+    builtin: t("sourceBuiltin"),
   };
   const diffLabel: Record<string, string> = {
-    easy: "Fácil",
-    medium: "Médio",
-    hard: "Difícil",
+    easy: t("diffEasy"),
+    medium: t("diffMedium"),
+    hard: t("diffHard"),
   };
 
   for (const entry of visible) {
@@ -101,7 +104,7 @@ async function loadDatasetList(filter = ""): Promise<void> {
         <span class="rule-selector" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 480px;" title="${escapeHtml(entry.signals)}">${escapeHtml(entry.signals)}</span>
         <span class="rule-priority" style="white-space: nowrap;">${sourceLabel[entry.source] ?? entry.source} · ${diffLabel[entry.difficulty] ?? entry.difficulty}</span>
       </div>
-      <button class="btn btn-sm btn-delete" data-entry-id="${escapeHtml(entry.id)}" title="Remover entrada">✕</button>
+      <button class="btn btn-sm btn-delete" data-entry-id="${escapeHtml(entry.id)}" title="${t("removeEntryTitle")}">✕</button>
     `;
 
     item.querySelector(".btn-delete")?.addEventListener("click", async () => {
@@ -114,8 +117,11 @@ async function loadDatasetList(filter = ""): Promise<void> {
         "dataset-filter",
       ) as HTMLInputElement | null;
       await loadDatasetList(filterInput?.value ?? "");
-      if (badge) badge.textContent = `${_allDatasetEntries.length} entradas`;
-      showToast("Entrada removida");
+      if (badge)
+        badge.textContent = t("datasetEntryCount", [
+          String(_allDatasetEntries.length),
+        ]);
+      showToast(t("toastDatasetEntryRemoved"));
     });
 
     list.appendChild(item);
@@ -125,7 +131,7 @@ async function loadDatasetList(filter = ""): Promise<void> {
     const note = document.createElement("div");
     note.className = "empty";
     note.style.padding = "8px 0";
-    note.textContent = `… e mais ${entries.length - 200} entradas (use o filtro para refinar)`;
+    note.textContent = t("moreEntriesNote", [String(entries.length - 200)]);
     list.appendChild(note);
   }
 }
@@ -160,7 +166,7 @@ async function seedBuiltinDataset(): Promise<{
 async function loadDatasetTab(): Promise<void> {
   const badge = document.getElementById("dataset-count-badge");
 
-  if (badge) badge.textContent = "Sincronizando dataset padrão…";
+  if (badge) badge.textContent = t("datasetSyncing");
   const seedResult = await seedBuiltinDataset();
 
   const entries = (await chrome.runtime.sendMessage({
@@ -169,9 +175,7 @@ async function loadDatasetTab(): Promise<void> {
   _allDatasetEntries = Array.isArray(entries) ? entries : [];
 
   if (seedResult.success && seedResult.added > 0) {
-    showToast(
-      `✅ ${seedResult.added} novas entradas do dataset padrão adicionadas`,
-    );
+    showToast(t("seedAdded", [String(seedResult.added)]));
   }
 
   await Promise.all([loadModelStatus(), loadDatasetList()]);
@@ -201,7 +205,7 @@ function bindDatasetEvents(): void {
       ).value as "easy" | "medium" | "hard";
 
       if (!signals) {
-        showToast("Preencha os sinais do campo", "error");
+        showToast(t("toastSignalsRequired"), "error");
         return;
       }
 
@@ -227,7 +231,7 @@ function bindDatasetEvents(): void {
       await loadDatasetList();
       (document.getElementById("dataset-signals") as HTMLInputElement).value =
         "";
-      showToast("Entrada adicionada!");
+      showToast(t("toastDatasetEntryAdded"));
     });
 
   // Seed built-in
@@ -238,7 +242,7 @@ function bindDatasetEvents(): void {
         "btn-seed-dataset",
       ) as HTMLButtonElement;
       btn.disabled = true;
-      btn.textContent = "Importando...";
+      btn.textContent = t("importingText");
       try {
         const result = await seedBuiltinDataset();
         const fresh = (await chrome.runtime.sendMessage({
@@ -247,17 +251,13 @@ function bindDatasetEvents(): void {
         _allDatasetEntries = Array.isArray(fresh) ? fresh : [];
         await loadDatasetList();
         if (result.added > 0) {
-          showToast(
-            `✅ ${result.added} novas entradas adicionadas do dataset padrão`,
-          );
+          showToast(t("seedAdded", [String(result.added)]));
         } else {
-          showToast(
-            "Dataset padrão já está totalmente importado (sem duplicatas)",
-          );
+          showToast(t("toastDatasetAlreadyFull"));
         }
       } finally {
         btn.disabled = false;
-        btn.textContent = "🌱 Importar Dataset Padrão";
+        btn.textContent = t("btnSeedDataset");
       }
     });
 
@@ -278,7 +278,7 @@ function bindDatasetEvents(): void {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast(`${entries.length} entradas exportadas`);
+      showToast(t("toastDatasetExported", [String(entries.length)]));
     });
 
   // Import JSON (file picker)
@@ -306,18 +306,19 @@ function bindDatasetEvents(): void {
           payload: parsed,
         })) as { success: boolean; added: number; error?: string };
 
-        if (!result.success)
-          throw new Error(result.error ?? "Erro desconhecido");
+        if (!result.success) throw new Error(result.error ?? "unknown error");
 
         const fresh = (await chrome.runtime.sendMessage({
           type: "GET_DATASET",
         })) as DatasetEntry[];
         _allDatasetEntries = Array.isArray(fresh) ? fresh : [];
         await loadDatasetList();
-        showToast(`✅ ${result.added} novas entradas importadas`);
+        showToast(t("toastDatasetImported", [String(result.added)]));
       } catch (err) {
         showToast(
-          `Erro ao importar: ${err instanceof Error ? err.message : String(err)}`,
+          t("errorImportDataset", [
+            err instanceof Error ? err.message : String(err),
+          ]),
           "error",
         );
       }
@@ -329,31 +330,21 @@ function bindDatasetEvents(): void {
   document
     .getElementById("btn-clear-dataset")
     ?.addEventListener("click", async () => {
-      if (
-        !confirm(
-          "Tem certeza que deseja limpar todo o dataset? Esta ação não pode ser desfeita.",
-        )
-      )
-        return;
+      if (!confirm(t("confirmClearDataset"))) return;
       await chrome.runtime.sendMessage({ type: "CLEAR_DATASET" });
       _allDatasetEntries = [];
       await loadDatasetList();
-      showToast("Dataset limpo");
+      showToast(t("toastDatasetCleared"));
     });
 
   // Delete runtime model
   document
     .getElementById("btn-delete-model")
     ?.addEventListener("click", async () => {
-      if (
-        !confirm(
-          "Remover o modelo treinado? A extensão voltará a usar o modelo padrão.",
-        )
-      )
-        return;
+      if (!confirm(t("confirmDeleteModel"))) return;
       await chrome.runtime.sendMessage({ type: "DELETE_RUNTIME_MODEL" });
       await loadModelStatus();
-      showToast("Modelo removido. Usando modelo padrão.");
+      showToast(t("toastModelRemoved"));
     });
 
   // Train model
@@ -374,23 +365,17 @@ function bindDatasetEvents(): void {
         type: "GET_DATASET",
       })) as DatasetEntry[];
       if (!Array.isArray(entries) || entries.length < 10) {
-        showToast(
-          `Dataset muito pequeno (${entries.length} entradas). Mínimo: 10. Clique em "Importar Dataset Padrão" para começar.`,
-          "error",
-        );
+        showToast(t("errorDatasetTooSmall", [String(entries.length)]), "error");
         return;
       }
       const distinctTypes = new Set(entries.map((e) => e.type)).size;
       if (distinctTypes < 2) {
-        showToast(
-          `O dataset precisa ter pelo menos 2 tipos diferentes. Atual: ${distinctTypes}. Importe o dataset padrão para ter cobertura completa.`,
-          "error",
-        );
+        showToast(t("errorDatasetFewTypes", [String(distinctTypes)]), "error");
         return;
       }
 
       trainBtn.disabled = true;
-      trainBtn.textContent = "Treinando...";
+      trainBtn.textContent = t("trainingText");
       if (progressBlock) progressBlock.style.display = "block";
       if (progressBar) progressBar.style.width = "0%";
       if (progressLabel) progressLabel.textContent = "Iniciando...";
@@ -436,20 +421,21 @@ function bindDatasetEvents(): void {
           );
           await loadModelStatus();
           showToast(
-            `✅ Modelo treinado! Acurácia: ${(result.finalAccuracy * 100).toFixed(1)}%`,
+            t("toastModelTrained", [(result.finalAccuracy * 100).toFixed(1)]),
           );
         } else {
           if (trainingLog)
-            trainingLog.textContent += `\n❌ Erro: ${result.error}\n`;
-          showToast(`Erro no treinamento: ${result.error}`, "error");
+            trainingLog.textContent += `\n\u274C Error: ${result.error}\n`;
+          showToast(t("toastTrainingError", [result.error ?? ""]), "error");
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        if (trainingLog) trainingLog.textContent += `\n❌ Exceção: ${msg}\n`;
-        showToast(`Erro: ${msg}`, "error");
+        if (trainingLog)
+          trainingLog.textContent += `\n\u274C Exception: ${msg}\n`;
+        showToast(t("toastError", [msg]), "error");
       } finally {
         trainBtn.disabled = false;
-        trainBtn.textContent = "🧠 Treinar Modelo";
+        trainBtn.textContent = t("btnTrainModel");
       }
     });
 }

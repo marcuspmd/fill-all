@@ -2,6 +2,8 @@
  * Popup — Chrome AI status banner
  */
 
+import { t } from "@/lib/i18n";
+
 export async function initChromeAIStatus(): Promise<void> {
   const banner = document.getElementById("chrome-ai-banner");
   const iconEl = document.getElementById("chrome-ai-icon");
@@ -31,8 +33,8 @@ export async function initChromeAIStatus(): Promise<void> {
   if (!newApi) {
     banner.className = "chrome-ai-banner chrome-ai-banner--unavailable";
     iconEl.textContent = "🤖";
-    textEl.textContent = "Chrome AI não disponível neste navegador.";
-    actionsEl.appendChild(makeLinkBtn("Como configurar →"));
+    textEl.textContent = t("chromeAiUnavailable");
+    actionsEl.appendChild(makeLinkBtn(t("chromeAiSetupLink")));
     banner.style.display = "flex";
     return;
   }
@@ -50,7 +52,7 @@ export async function initChromeAIStatus(): Promise<void> {
     if (availability === "available") {
       banner.className = "chrome-ai-banner chrome-ai-banner--ready";
       iconEl.textContent = "🤖";
-      textEl.textContent = "Chrome AI ativo e pronto.";
+      textEl.textContent = t("chromeAiReady");
       banner.style.display = "flex";
     } else if (
       availability === "downloadable" ||
@@ -60,39 +62,38 @@ export async function initChromeAIStatus(): Promise<void> {
       iconEl.textContent = "🤖";
       textEl.textContent =
         availability === "downloading"
-          ? "Chrome AI está sendo baixado…"
-          : "Chrome AI disponível, mas o modelo precisa ser baixado.";
+          ? t("chromeAiDownloading")
+          : t("chromeAiDownloadable");
 
       const downloadBtn = document.createElement("button");
       downloadBtn.className = "btn btn-ai-action btn-ai-download";
-      downloadBtn.textContent = "⬇️ Baixar agora";
+      downloadBtn.textContent = t("chromeAiDownloadNow");
       downloadBtn.addEventListener("click", async () => {
         downloadBtn.disabled = true;
-        downloadBtn.textContent = "⏳ Baixando…";
+        downloadBtn.textContent = t("chromeAiDownloadingBtn");
         try {
           const session = await newApi!.create({ outputLanguage: "en" });
           session.destroy();
           banner.className = "chrome-ai-banner chrome-ai-banner--ready";
           iconEl.textContent = "🤖";
-          textEl.textContent = "Chrome AI baixado com sucesso!";
+          textEl.textContent = t("chromeAiDownloaded");
           actionsEl.innerHTML = "";
         } catch {
           downloadBtn.disabled = false;
-          downloadBtn.textContent = "⬇️ Baixar agora";
-          textEl.textContent = "Falha ao iniciar download. Tente manualmente.";
-          actionsEl.appendChild(makeLinkBtn("Como configurar →"));
+          downloadBtn.textContent = t("chromeAiDownloadNow");
+          textEl.textContent = t("chromeAiDownloadFailed");
+          actionsEl.appendChild(makeLinkBtn(t("chromeAiSetupLink")));
         }
       });
 
       actionsEl.appendChild(downloadBtn);
-      actionsEl.appendChild(makeLinkBtn("Como configurar →"));
+      actionsEl.appendChild(makeLinkBtn(t("chromeAiSetupLink")));
       banner.style.display = "flex";
     } else {
       banner.className = "chrome-ai-banner chrome-ai-banner--unavailable";
       iconEl.textContent = "🤖";
-      textEl.textContent =
-        "Chrome AI não suportado neste dispositivo ou canal.";
-      actionsEl.appendChild(makeLinkBtn("Ver requisitos →"));
+      textEl.textContent = t("chromeAiNotSupported");
+      actionsEl.appendChild(makeLinkBtn(t("chromeAiRequirementsLink")));
       banner.style.display = "flex";
     }
   } catch {

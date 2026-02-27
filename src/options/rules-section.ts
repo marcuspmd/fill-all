@@ -9,6 +9,7 @@ import {
   showToast,
   syncFieldTypeOptionsInOptionsPage,
 } from "./shared";
+import { t } from "@/lib/i18n";
 
 let currentEditingRuleId: string | null = null;
 
@@ -22,7 +23,7 @@ async function loadRules(): Promise<void> {
   list.innerHTML = "";
 
   if (!Array.isArray(rules) || rules.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhuma regra cadastrada</div>';
+    list.innerHTML = `<div class="empty">${t("noRules")}</div>`;
     return;
   }
 
@@ -34,8 +35,8 @@ async function loadRules(): Promise<void> {
         <strong>${escapeHtml(rule.urlPattern)}</strong>
         <span class="rule-selector">${escapeHtml(rule.fieldSelector)}</span>
         <span class="badge">${escapeHtml(rule.fieldType)}</span>
-        ${rule.fixedValue ? `<span class="badge badge-fixed">Fixo: ${escapeHtml(rule.fixedValue)}</span>` : ""}
-        <span class="rule-priority">Prioridade: ${rule.priority}</span>
+        ${rule.fixedValue ? `<span class="badge badge-fixed">${t("fixedLabel", [escapeHtml(rule.fixedValue)])}</span>` : ""}
+        <span class="rule-priority">${t("rulePriority")} ${rule.priority}</span>
       </div>
       <div class="rule-actions">
         <button class="btn btn-sm btn-edit" data-rule-id="${escapeHtml(rule.id)}">Editar</button>
@@ -53,7 +54,7 @@ async function loadRules(): Promise<void> {
         payload: rule.id,
       });
       await loadRules();
-      showToast("Regra excluída");
+      showToast(t("toastRuleDeleted"));
     });
 
     list.appendChild(item);
@@ -93,7 +94,7 @@ function editRule(rule: FieldRule): void {
   const btn = document.getElementById("btn-save-rule");
   const cancelBtn = document.getElementById("btn-cancel-rule");
   if (btn) {
-    btn.textContent = "✏️ Atualizar Regra";
+    btn.textContent = t("btnUpdateRule");
     btn.dataset.editing = "true";
   }
   if (cancelBtn) {
@@ -117,7 +118,7 @@ function cancelEditRule(): void {
   const btn = document.getElementById("btn-save-rule");
   const cancelBtn = document.getElementById("btn-cancel-rule");
   if (btn) {
-    btn.textContent = "Salvar Regra";
+    btn.textContent = t("btnSaveRule");
     delete btn.dataset.editing;
   }
   if (cancelBtn) {
@@ -137,7 +138,7 @@ function bindRulesEvents(): void {
       ).value.trim();
 
       if (!urlPattern || !fieldSelector) {
-        showToast("Preencha o padrão de URL e o seletor do campo", "error");
+        showToast(t("errorFillUrlAndSelector"), "error");
         return;
       }
 
@@ -145,7 +146,7 @@ function bindRulesEvents(): void {
         document.getElementById("rule-type") as HTMLSelectElement
       ).value.trim();
       if (!fieldTypeValue) {
-        showToast("Selecione um tipo de campo", "error");
+        showToast(t("errorSelectFieldType"), "error");
         return;
       }
 
@@ -187,12 +188,12 @@ function bindRulesEvents(): void {
       await loadRules();
 
       cancelEditRule();
-      showToast(isUpdating ? "Regra atualizada!" : "Regra salva!");
+      showToast(isUpdating ? t("toastRuleUpdated") : t("toastRuleSaved"));
     });
 
   document.getElementById("btn-cancel-rule")?.addEventListener("click", () => {
     cancelEditRule();
-    showToast("Edição cancelada");
+    showToast(t("toastEditCancelled"));
   });
 }
 

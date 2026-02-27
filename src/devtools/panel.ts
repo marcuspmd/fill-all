@@ -20,18 +20,21 @@ import {
   renderMethodBadge,
   renderConfidenceBadge,
 } from "@/lib/ui";
+import { t, initI18n } from "@/lib/i18n";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const TAB_IDS = ["actions", "fields", "forms", "log"] as const;
 type TabId = (typeof TAB_IDS)[number];
 
-const TAB_LABELS: Record<TabId, string> = {
-  actions: "⚡ Ações",
-  fields: "🔍 Campos",
-  forms: "📄 Forms",
-  log: "📋 Log",
-};
+function getTabLabels(): Record<TabId, string> {
+  return {
+    actions: `⚡ ${t("tabActions")}`,
+    fields: `🔍 ${t("tabFields")}`,
+    forms: `📄 ${t("tabForms")}`,
+    log: `📋 ${t("tabLog")}`,
+  };
+}
 
 // ── State ────────────────────────────────────────────────────────────────────
 
@@ -75,8 +78,8 @@ function updateWatcherButton(): void {
   const btn = document.getElementById("btn-watch");
   if (!btn) return;
   btn.innerHTML = watcherActive
-    ? '<span class="card-icon">⏹️</span><span class="card-label">Stop Watch</span><span class="card-desc">Parar observação do DOM</span>'
-    : '<span class="card-icon">👁️</span><span class="card-label">Watch</span><span class="card-desc">Observa mudanças no DOM e preenche novos</span>';
+    ? `<span class="card-icon">⏹️</span><span class="card-label">${t("stopWatch")}</span><span class="card-desc">${t("stopWatchDesc")}</span>`
+    : `<span class="card-icon">👁️</span><span class="card-label">${t("watch")}</span><span class="card-desc">${t("watchDesc")}</span>`;
   btn.classList.toggle("active", watcherActive);
 }
 
@@ -84,14 +87,14 @@ async function toggleWatch(): Promise<void> {
   if (watcherActive) {
     await sendToPage({ type: "STOP_WATCHING" });
     watcherActive = false;
-    addLog("Watch desativado", "info");
+    addLog(t("logWatchDeactivated"), "info");
   } else {
     await sendToPage({
       type: "START_WATCHING",
       payload: { autoRefill: true },
     });
     watcherActive = true;
-    addLog("Watch ativado", "success");
+    addLog(t("logWatchActivated"), "success");
   }
   updateWatcherButton();
 }
@@ -99,7 +102,7 @@ async function toggleWatch(): Promise<void> {
 // ── Detect Fields ────────────────────────────────────────────────────────────
 
 async function detectFields(): Promise<void> {
-  addLog("Detectando campos...");
+  addLog(t("logDetecting"));
   try {
     const result = (await sendToPage({ type: "DETECT_FIELDS" })) as {
       count?: number;
@@ -107,10 +110,10 @@ async function detectFields(): Promise<void> {
     };
     if (result?.fields) {
       detectedFields = result.fields;
-      addLog(`${result.count} campos detectados`, "success");
+      addLog(`${result.count} ${t("fieldsDetected")}`, "success");
     } else {
       detectedFields = [];
-      addLog("Nenhum campo detectado", "warn");
+      addLog(t("logNoFieldDetected"), "warn");
     }
   } catch (err) {
     addLog(`Erro ao detectar: ${err}`, "error");
@@ -158,7 +161,7 @@ async function toggleIgnore(selector: string, label: string): Promise<void> {
           payload: entry.id,
         });
         ignoredSelectors.delete(selector);
-        addLog(`Campo reativado: ${label}`, "info");
+        addLog(`${t("logFieldReactivated")}: ${label}`, "info");
       }
     } else {
       await sendToBackground({
@@ -166,7 +169,7 @@ async function toggleIgnore(selector: string, label: string): Promise<void> {
         payload: { urlPattern, selector, label },
       });
       ignoredSelectors.add(selector);
-      addLog(`Campo ignorado: ${label}`, "warn");
+      addLog(`${t("logFieldIgnored")}: ${label}`, "warn");
     }
   } catch (err) {
     addLog(`Erro ao alternar ignore: ${err}`, "error");
@@ -178,12 +181,12 @@ async function toggleIgnore(selector: string, label: string): Promise<void> {
 // ── Fill ──────────────────────────────────────────────────────────────────────
 
 async function fillAll(): Promise<void> {
-  addLog("Preenchendo todos os campos...");
+  addLog(t("logFilling"));
   try {
     const result = (await sendToPage({ type: "FILL_ALL_FIELDS" })) as {
       filled?: number;
     };
-    addLog(`${result?.filled ?? 0} campos preenchidos`, "success");
+    addLog(`${result?.filled ?? 0} ${t("filled")}`, "success");
   } catch (err) {
     addLog(`Erro ao preencher: ${err}`, "error");
   }
@@ -219,16 +222,16 @@ function inspectElement(selector: string): void {
 // ── Forms ────────────────────────────────────────────────────────────────────
 
 async function saveCurrentForm(): Promise<void> {
-  addLog("Salvando formulário...");
+  addLog(t("logSavingForm"));
   try {
     const result = (await sendToPage({ type: "SAVE_FORM" })) as {
       success?: boolean;
       form?: SavedForm;
     };
     if (result?.success) {
-      addLog(`Formulário salvo: ${result.form?.name ?? ""}`, "success");
+      addLog(`${t("logFormSaved")}: ${result.form?.name ?? ""}`, "success");
     } else {
-      addLog("Erro ao salvar formulário", "error");
+      addLog(t("logErrorSavingForm"), "error");
     }
   } catch (err) {
     addLog(`Erro: ${err}`, "error");
@@ -236,17 +239,17 @@ async function saveCurrentForm(): Promise<void> {
 }
 
 async function loadForms(): Promise<void> {
-  addLog("Carregando formulários salvos...");
+  addLog(t("logLoadingForms"));
   try {
     const result = (await sendToBackground({ type: "GET_SAVED_FORMS" })) as
       | SavedForm[]
       | { error?: string };
     if (Array.isArray(result)) {
       savedForms = result;
-      addLog(`${result.length} formulário(s) encontrado(s)`, "success");
+      addLog(`${result.length} ${t("formCount")}`, "success");
     } else {
       savedForms = [];
-      addLog("Nenhum formulário salvo", "warn");
+      addLog(t("logNoFormsSaved"), "warn");
     }
   } catch (err) {
     addLog(`Erro: ${err}`, "error");
@@ -256,13 +259,13 @@ async function loadForms(): Promise<void> {
 }
 
 async function applySavedForm(form: SavedForm): Promise<void> {
-  addLog(`Aplicando template: ${form.name}`);
+  addLog(t("logApplyingTemplate") + ": " + form.name);
   try {
     const result = (await sendToPage({
       type: "APPLY_TEMPLATE",
       payload: form,
     })) as { filled?: number };
-    addLog(`${result?.filled ?? 0} campos preenchidos`, "success");
+    addLog(`${result?.filled ?? 0} ${t("filled")}`, "success");
   } catch (err) {
     addLog(`Erro: ${err}`, "error");
   }
@@ -272,7 +275,7 @@ async function deleteFormById(formId: string): Promise<void> {
   try {
     await sendToBackground({ type: "DELETE_FORM", payload: formId });
     savedForms = savedForms.filter((f) => f.id !== formId);
-    addLog("Formulário removido", "info");
+    addLog(t("logFormRemoved"), "info");
     renderFormsTab();
   } catch (err) {
     addLog(`Erro ao remover: ${err}`, "error");
@@ -312,8 +315,8 @@ function updateStatusBar(): void {
   if (!bar) return;
   bar.textContent =
     detectedFields.length > 0
-      ? `${detectedFields.length} campos detectados`
-      : "Nenhum campo detectado ainda";
+      ? `${detectedFields.length} ${t("fieldsDetected")}`
+      : t("noFieldsDetected");
 }
 
 // ── Rendering ────────────────────────────────────────────────────────────────
@@ -330,14 +333,14 @@ function renderApp(): void {
           ${TAB_IDS.map(
             (id) => `
             <button class="tab ${id === activeTab ? "active" : ""}" data-tab="${id}">
-              ${TAB_LABELS[id]}
+              ${getTabLabels()[id]}
             </button>
           `,
           ).join("")}
         </div>
       </div>
       <div class="toolbar-right">
-        <button class="toolbar-btn" id="btn-options" title="Abrir Opções">⚙️</button>
+        <button class="toolbar-btn" id="btn-options" title="${t("fpOpenOptions")}">⚙️</button>
       </div>
     </div>
     <div class="content" id="content"></div>
@@ -352,7 +355,7 @@ function renderApp(): void {
 
   app.querySelector("#btn-options")?.addEventListener("click", () => {
     chrome.runtime.openOptionsPage();
-    addLog("Abrindo página de opções", "info");
+    addLog(t("logOpeningOptions"), "info");
   });
 
   renderActiveTab();
@@ -391,27 +394,27 @@ function renderActionsTab(): void {
     <div class="actions-grid">
       <button class="action-card primary" id="btn-fill">
         <span class="card-icon">⚡</span>
-        <span class="card-label">Preencher Tudo</span>
-        <span class="card-desc">Preenche todos os campos detectados</span>
+        <span class="card-label">${t("fillAll")}</span>
+        <span class="card-desc">${t("fillAllDesc")}</span>
       </button>
       <button class="action-card secondary" id="btn-save">
         <span class="card-icon">💾</span>
-        <span class="card-label">Salvar Form</span>
-        <span class="card-desc">Salva os valores atuais do formulário</span>
+        <span class="card-label">${t("saveForm")}</span>
+        <span class="card-desc">${t("saveFormDesc")}</span>
       </button>
       <button class="action-card outline ${watcherActive ? "active" : ""}" id="btn-watch">
         <span class="card-icon">${watcherActive ? "⏹️" : "👁️"}</span>
-        <span class="card-label">${watcherActive ? "Stop Watch" : "Watch"}</span>
-        <span class="card-desc">${watcherActive ? "Parar observação do DOM" : "Observa mudanças no DOM e preenche novos"}</span>
+        <span class="card-label">${watcherActive ? t("stopWatch") : t("watch")}</span>
+        <span class="card-desc">${watcherActive ? t("stopWatchDesc") : t("watchDesc")}</span>
       </button>
       <button class="action-card outline" id="btn-detect">
         <span class="card-icon">🔍</span>
-        <span class="card-label">Detectar Campos</span>
-        <span class="card-desc">Escaneia a página por campos de formulário</span>
+        <span class="card-label">${t("detectFields")}</span>
+        <span class="card-desc">${t("detectFieldsDesc")}</span>
       </button>
     </div>
     <div class="status-bar" id="status-bar">
-      ${detectedFields.length > 0 ? `${detectedFields.length} campos detectados` : "Nenhum campo detectado ainda"}
+      ${detectedFields.length > 0 ? `${detectedFields.length} ${t("fieldsDetected")}` : t("noFieldsDetected")}
     </div>
   `;
 
@@ -431,24 +434,24 @@ function renderFieldsTab(): void {
 
   content.innerHTML = `
     <div class="fields-toolbar">
-      <button class="btn" id="btn-detect-fields">🔍 Detectar</button>
-      <button class="btn" id="btn-fill-all-fields">⚡ Preencher Todos</button>
-      <span class="fields-count">${detectedFields.length} campo(s)</span>
+      <button class="btn" id="btn-detect-fields">🔍 ${t("detectFields")}</button>
+      <button class="btn" id="btn-fill-all-fields">⚡ ${t("fillAll")}</button>
+      <span class="fields-count">${detectedFields.length} ${t("fieldCount")}</span>
     </div>
     <div class="table-wrap">
       ${
         detectedFields.length === 0
-          ? '<div class="empty">Clique em "Detectar" para escanear os campos da página</div>'
+          ? `<div class="empty">${t("clickToDetect")}</div>`
           : `<table class="fields-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>Tipo</th>
-              <th>Método</th>
-              <th>Conf.</th>
-              <th>ID / Name</th>
-              <th>Label</th>
-              <th>Ações</th>
+              <th>${t("columnType")}</th>
+              <th>${t("columnMethod")}</th>
+              <th>${t("columnConf")}</th>
+              <th>${t("columnIdName")}</th>
+              <th>${t("columnLabel")}</th>
+              <th>${t("columnActions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -465,9 +468,9 @@ function renderFieldsTab(): void {
                 <td class="cell-mono">${escapeHtml(f.id || f.name || "-")}</td>
                 <td>${escapeHtml(f.label || "-")}</td>
                 <td class="cell-actions">
-                  <button class="icon-btn" data-action="fill" data-selector="${escapeAttr(f.selector)}" title="Preencher">⚡</button>
-                  <button class="icon-btn" data-action="inspect" data-selector="${escapeAttr(f.selector)}" title="Inspecionar no Elements">🔎</button>
-                  <button class="icon-btn ${isIgnored ? "icon-btn-off" : ""}" data-action="toggle-ignore" data-selector="${escapeAttr(f.selector)}" data-label="${escapeAttr(f.label || f.name || f.id || f.selector)}" title="${isIgnored ? "Reativar" : "Ignorar"}">
+                  <button class="icon-btn" data-action="fill" data-selector="${escapeAttr(f.selector)}" title="${t("actionFill")}">⚡</button>
+                  <button class="icon-btn" data-action="inspect" data-selector="${escapeAttr(f.selector)}" title="${t("actionInspect")}">🔎</button>
+                  <button class="icon-btn ${isIgnored ? "icon-btn-off" : ""}" data-action="toggle-ignore" data-selector="${escapeAttr(f.selector)}" data-label="${escapeAttr(f.label || f.name || f.id || f.selector)}" title="${isIgnored ? t("actionReactivate") : t("actionIgnore")}">
                     ${isIgnored ? "🚫" : "👁️"}
                   </button>
                 </td>
@@ -516,25 +519,25 @@ function renderFormsTab(): void {
 
   content.innerHTML = `
     <div class="fields-toolbar">
-      <button class="btn" id="btn-load-forms">🔄 Carregar Forms</button>
-      <span class="fields-count">${savedForms.length} formulário(s)</span>
+      <button class="btn" id="btn-load-forms">🔄 ${t("btnLoadForms")}</button>
+      <span class="fields-count">${savedForms.length} ${t("formCount")}</span>
     </div>
     <div class="forms-list">
       ${
         savedForms.length === 0
-          ? '<div class="empty">Clique em "Carregar" para buscar formulários salvos</div>'
+          ? `<div class="empty">${t("loadFormsDesc")}</div>`
           : savedForms
               .map(
                 (form) => `
           <div class="form-card">
             <div class="form-info">
               <span class="form-name">${escapeHtml(form.name)}</span>
-              <span class="form-meta">${form.templateFields?.length ?? Object.keys(form.fields).length} campos · ${new Date(form.updatedAt).toLocaleDateString("pt-BR")}</span>
+              <span class="form-meta">${form.templateFields?.length ?? Object.keys(form.fields).length} ${t("fieldCount")} · ${new Date(form.updatedAt).toLocaleDateString()}</span>
               <span class="form-url">${escapeHtml(form.urlPattern)}</span>
             </div>
             <div class="form-actions">
-              <button class="btn btn-sm" data-form-id="${escapeAttr(form.id)}" data-action="apply">▶️ Aplicar</button>
-              <button class="btn btn-sm btn-warning" data-form-id="${escapeAttr(form.id)}" data-action="edit">✏️ Editar</button>
+              <button class="btn btn-sm" data-form-id="${escapeAttr(form.id)}" data-action="apply">▶️ ${t("btnApply")}</button>
+              <button class="btn btn-sm btn-warning" data-form-id="${escapeAttr(form.id)}" data-action="edit">✏️ ${t("btnEdit")}</button>
               <button class="btn btn-sm btn-danger" data-form-id="${escapeAttr(form.id)}" data-action="delete">🗑️</button>
             </div>
           </div>
@@ -591,11 +594,11 @@ function showEditFormScreen(form: SavedForm): void {
         <div class="edit-field-key" title="${escapeAttr(f.key)}">${escapeHtml(f.label || f.key)}</div>
         <div class="edit-field-controls">
           <select class="edit-select" data-field-mode="${i}">
-            <option value="fixed"${f.mode === "fixed" ? " selected" : ""}>Valor fixo</option>
-            <option value="generator"${f.mode === "generator" ? " selected" : ""}>Gerador</option>
+            <option value="fixed"${f.mode === "fixed" ? " selected" : ""}>${t("fixedValue")}</option>
+            <option value="generator"${f.mode === "generator" ? " selected" : ""}>${t("generatorMode")}</option>
           </select>
           <input type="text" class="edit-field-value" data-field-fixed="${i}"
-            placeholder="Valor fixo"
+            placeholder="${t("placeholderFixedValue")}"
             value="${escapeAttr(f.fixedValue ?? "")}"
             style="display:${f.mode === "fixed" ? "block" : "none"}" />
           <select class="edit-select edit-field-value" data-field-gen="${i}"
@@ -613,26 +616,26 @@ function showEditFormScreen(form: SavedForm): void {
 
   content.innerHTML = `
     <div class="edit-form-screen">
-      <div class="edit-form-title">✏️ Editar Template</div>
+      <div class="edit-form-title">✏️ ${t("editTemplate")}</div>
       <div class="edit-meta-grid">
         <div class="edit-input-group">
-          <label class="edit-label">Nome</label>
+          <label class="edit-label">${t("formName")}</label>
           <input class="edit-input" id="edit-form-name" type="text" value="${escapeAttr(form.name)}" />
         </div>
         <div class="edit-input-group">
-          <label class="edit-label">URL / Padrão</label>
+          <label class="edit-label">${t("formUrl")}</label>
           <input class="edit-input" id="edit-form-url" type="text" value="${escapeAttr(form.urlPattern)}" />
         </div>
       </div>
       ${
         templateFields.length > 0
-          ? `<div class="edit-section-header">Campos</div>
+          ? `<div class="edit-section-header">${t("editFieldsHeader")}</div>
              <div class="edit-fields-list">${fieldsHtml}</div>`
           : ""
       }
       <div class="edit-form-footer">
-        <button class="btn" id="edit-form-cancel">✕ Cancelar</button>
-        <button class="btn btn-success" id="edit-form-save">💾 Salvar</button>
+        <button class="btn" id="edit-form-cancel">✕ ${t("btnCancel")}</button>
+        <button class="btn btn-success" id="edit-form-save">💾 ${t("btnSave")}</button>
       </div>
     </div>
   `;
@@ -706,7 +709,7 @@ function showEditFormScreen(form: SavedForm): void {
       const idx = savedForms.findIndex((f) => f.id === form.id);
       if (idx >= 0) savedForms[idx] = updated;
 
-      addLog(`Template "${updated.name}" atualizado`, "success");
+      addLog(`${t("logTemplateUpdated")}: ${updated.name}`, "success");
       renderFormsTab();
     });
 }
@@ -717,13 +720,13 @@ function renderLogTab(): void {
 
   content.innerHTML = `
     <div class="fields-toolbar">
-      <button class="btn" id="btn-clear-log">🗑️ Limpar</button>
-      <span class="fields-count">${logEntries.length} entradas</span>
+      <button class="btn" id="btn-clear-log">🗑️ ${t("btnClearLog")}</button>
+      <span class="fields-count">${logEntries.length} ${t("logEntriesCount")}</span>
     </div>
     <div class="log-wrap">
       ${
         logEntries.length === 0
-          ? '<div class="empty">Nenhuma atividade registrada</div>'
+          ? `<div class="empty">${t("noActivity")}</div>`
           : logEntries
               .map(
                 (entry) => `
@@ -757,6 +760,10 @@ chrome.devtools.network.onNavigated.addListener(() => {
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
+  const settings = (await chrome.runtime.sendMessage({
+    type: "GET_SETTINGS",
+  })) as { uiLanguage?: "auto" | "en" | "pt_BR" } | null;
+  await initI18n(settings?.uiLanguage ?? "auto");
   renderApp();
   updateWatcherButton();
 }

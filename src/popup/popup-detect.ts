@@ -10,6 +10,7 @@ import type {
   IgnoredField,
 } from "@/types";
 import { matchUrlPattern } from "@/lib/url/match-url-pattern";
+import { t } from "@/lib/i18n";
 import {
   sendToActiveTab,
   sendToBackground,
@@ -59,7 +60,7 @@ export function bindDetectEvents(): void {
     const btn = document.getElementById("btn-detect") as HTMLButtonElement;
     const originalText = btn.textContent ?? "🔍 Detectar Campos";
     btn.disabled = true;
-    btn.textContent = "⏳ Detectando...";
+    btn.textContent = t("detecting");
 
     try {
       const pageUrl = await getActivePageUrl();
@@ -120,13 +121,13 @@ async function renderDetectedFields(
     const info = document.createElement("div");
     info.className = "empty";
     info.textContent = updatedAtText
-      ? `Mostrando cache (${updatedAtText})`
-      : "Mostrando cache";
+      ? t("showingCacheAt", updatedAtText)
+      : t("showingCache");
     list.appendChild(info);
   }
 
   if (!result || !Array.isArray(result.fields) || result.count === 0) {
-    list.innerHTML = '<div class="empty">Nenhum campo encontrado</div>';
+    list.innerHTML = `<div class="empty">${t("noFieldsDetected")}</div>`;
     return;
   }
 
@@ -194,52 +195,52 @@ function buildFieldItem(
   const cbLabel =
     field.label && field.label !== "unknown" ? field.label : undefined;
   const checkboxPreviewHtml = isCheckboxOrRadio
-    ? `<div class="field-options-preview"><span class="field-option-pill"><code>${escapeHtml(field.checkboxValue ?? "on")}</code>${cbLabel ? `<span class="field-option-arrow"> → </span><span class="field-option-pill-text">${escapeHtml(cbLabel)}</span>` : ""}</span><span class="field-option-pill ${field.checkboxChecked ? "field-option-checked" : "field-option-unchecked"}">${field.checkboxChecked ? "✓ marcado" : "☐ desmarcado"}</span></div>`
+    ? `<div class="field-options-preview"><span class="field-option-pill"><code>${escapeHtml(field.checkboxValue ?? "on")}</code>${cbLabel ? `<span class="field-option-arrow"> → </span><span class="field-option-pill-text">${escapeHtml(cbLabel)}</span>` : ""}</span><span class="field-option-pill ${field.checkboxChecked ? "field-option-checked" : "field-option-unchecked"}">${field.checkboxChecked ? t("checkboxChecked") : t("checkboxUnchecked")}</span></div>`
     : "";
 
   item.innerHTML = `
     <div class="field-header">
       <span class="field-label">${escapeHtml(field.label)}</span>
-      <select class="field-type-select" title="Tipo do campo">${typeOptions}</select>
+      <select class="field-type-select" title="${t("fieldTypeTitle")}">${typeOptions}</select>
       <div class="field-actions">
-        <button class="btn btn-sm btn-fill-field" title="Preencher" ${
+        <button class="btn btn-sm btn-fill-field" title="${t("actionFill")}" ${
           isIgnored ? "disabled" : ""
         }>▶</button>
         <button class="btn btn-sm ${
           isIgnored ? "btn-ignored-active" : "btn-ignore-field"
         }"
-          title="${isIgnored ? "Remover dos ignorados" : "Ignorar campo"}"
+          title="${isIgnored ? t("actionReactivate") : t("actionIgnore")}"
           data-selector="${escapeHtml(field.selector)}"
           data-label="${escapeHtml(field.label)}"
           data-ignored="${isIgnored}">
           ${isIgnored ? "✓" : "🚫"}
         </button>
-        <button class="btn btn-sm btn-rules-toggle" title="Configurar regra">⚙️</button>
+        <button class="btn btn-sm btn-rules-toggle" title="${t("configureRule")}">⚙️</button>
       </div>
     </div>
     ${optionsPreviewHtml}${checkboxPreviewHtml}
     <div class="field-rules-panel" style="display:none">
       <input type="text" class="rule-fixed-value"
-        placeholder="Valor fixo (vazio = gerar automaticamente)"
+        placeholder="${t("ruleFixedValuePlaceholder")}"
         value="${escapeHtml(existingRule?.fixedValue ?? "")}">
       <div class="rule-range-row rule-money-range" style="display:${
         isMoney ? "flex" : "none"
       }">
         <span class="rule-range-label">R$</span>
-        <input type="number" class="rule-money-min" placeholder="Mín" min="0" step="0.01"
+        <input type="number" class="rule-money-min" placeholder="${t("min")}" min="0" step="0.01"
           value="">
         <span class="rule-range-sep">–</span>
-        <input type="number" class="rule-money-max" placeholder="Máx" min="0" step="0.01"
+        <input type="number" class="rule-money-max" placeholder="${t("max")}" min="0" step="0.01"
           value="">
       </div>
       <div class="rule-range-row rule-number-range" style="display:${
         isNumber ? "flex" : "none"
       }">
         <span class="rule-range-label">#</span>
-        <input type="number" class="rule-number-min" placeholder="Mín" min="0" step="1"
+        <input type="number" class="rule-number-min" placeholder="${t("min")}" min="0" step="1"
           value="">
         <span class="rule-range-sep">–</span>
-        <input type="number" class="rule-number-max" placeholder="Máx" min="0" step="1"
+        <input type="number" class="rule-number-max" placeholder="${t("max")}" min="0" step="1"
           value="">
       </div>
       ${
@@ -248,22 +249,22 @@ function buildFieldItem(
       <div class="rule-range-row rule-select-option-row" style="display:${
         isSelect ? "flex" : "none"
       }">
-        <span class="rule-range-label">Opção:</span>
+        <span class="rule-range-label">${t("selectOption")}</span>
         <select class="rule-select-option-idx">
           <option value="0"${
             !existingRule?.selectOptionIndex ? " selected" : ""
-          }>Automático (aleatório)</option>
+          }>${t("autoRandom")}</option>
           ${selectOptPickerOptions}
         </select>
       </div>`
           : ""
       }
       <div class="rule-footer">
-        <button class="btn btn-sm btn-save-rule">💾 Salvar Regra</button>
-        <span class="rule-saved-msg hidden">✓ Salvo!</span>
+        <button class="btn btn-sm btn-save-rule">💾 ${t("btnSaveRule")}</button>
+        <span class="rule-saved-msg hidden">${t("savedOk")}</span>
         ${
           existingRule
-            ? `<button class="btn btn-sm btn-delete btn-delete-rule" title="Excluir regra">✕ Regra</button>`
+            ? `<button class="btn btn-sm btn-delete btn-delete-rule" title="${t("tooltipDeleteRule")}">${t("deleteRule")}</button>`
             : ""
         }
       </div>
@@ -329,25 +330,27 @@ function bindFieldItemEvents(
       const footer = item.querySelector<HTMLElement>(".rule-footer");
       const deleteBtn = document.createElement("button");
       deleteBtn.className = "btn btn-sm btn-delete btn-delete-rule";
-      deleteBtn.title = "Excluir regra";
-      deleteBtn.textContent = "✕ Regra";
+      deleteBtn.title = t("tooltipDeleteRule");
+      deleteBtn.textContent = t("deleteRule");
       deleteBtn.addEventListener("click", handleDeleteRule);
       footer?.appendChild(deleteBtn);
     }
   };
 
   typeSelect?.addEventListener("change", () => {
-    const t = typeSelect.value;
+    const selectedVal = typeSelect.value;
     const moneyRange = item.querySelector<HTMLElement>(".rule-money-range");
     const numberRange = item.querySelector<HTMLElement>(".rule-number-range");
     const selectOptionRow = item.querySelector<HTMLElement>(
       ".rule-select-option-row",
     );
-    if (moneyRange) moneyRange.style.display = t === "money" ? "flex" : "none";
+    if (moneyRange)
+      moneyRange.style.display = selectedVal === "money" ? "flex" : "none";
     if (numberRange)
-      numberRange.style.display = t === "number" ? "flex" : "none";
+      numberRange.style.display = selectedVal === "number" ? "flex" : "none";
     if (selectOptionRow)
-      selectOptionRow.style.display = t === "select" ? "flex" : "none";
+      selectOptionRow.style.display =
+        selectedVal === "select" ? "flex" : "none";
     saveFieldRule(true);
   });
 
@@ -380,7 +383,7 @@ function bindFieldItemEvents(
       ignoreBtn.textContent = "🚫";
       ignoreBtn.className = "btn btn-sm btn-ignore-field";
       ignoreBtn.dataset.ignored = "false";
-      ignoreBtn.title = "Ignorar campo";
+      ignoreBtn.title = t("actionIgnore");
       const fillBtn = item.querySelector<HTMLButtonElement>(".btn-fill-field");
       if (fillBtn) fillBtn.disabled = false;
     } else {
@@ -398,7 +401,7 @@ function bindFieldItemEvents(
       ignoreBtn.textContent = "✓";
       ignoreBtn.className = "btn btn-sm btn-ignored-active";
       ignoreBtn.dataset.ignored = "true";
-      ignoreBtn.title = "Remover dos ignorados";
+      ignoreBtn.title = t("actionReactivate");
       const fillBtn = item.querySelector<HTMLButtonElement>(".btn-fill-field");
       if (fillBtn) fillBtn.disabled = true;
     }

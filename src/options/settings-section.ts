@@ -4,27 +4,25 @@
 
 import type { DetectionStrategyEntry, Settings } from "@/types";
 import { DEFAULT_DETECTION_PIPELINE } from "@/types";
+import { t, initI18n, localizeHTML } from "@/lib/i18n";
 import { escapeHtml, showToast } from "./shared";
 
 // ── Detection Pipeline ────────────────────────────────────────────────────────
 
-const STRATEGY_LABELS: Record<string, string> = {
-  "html-type": "Tipo HTML",
-  keyword: "Palavras-chave",
-  tensorflow: "TensorFlow.js (ML)",
-  "chrome-ai": "Chrome AI (Gemini Nano)",
-  "html-fallback": "Fallback HTML",
+const STRATEGY_LABEL_KEYS: Record<string, string> = {
+  "html-type": "strategyHtmlType",
+  keyword: "strategyKeyword",
+  tensorflow: "strategyTensorflow",
+  "chrome-ai": "strategyChromeAi",
+  "html-fallback": "strategyHtmlFallback",
 };
 
-const STRATEGY_DESCRIPTIONS: Record<string, string> = {
-  "html-type":
-    "Detecção determinística por type/tag HTML (email, number, date…)",
-  keyword: "Detecção por palavras-chave no nome/id/label (cpf, cnpj, nome…)",
-  tensorflow: "Classificação por modelo de ML com n-gramas de caractere",
-  "chrome-ai":
-    "Geração via Gemini Nano embutido no Chrome (requer Chrome 131+)",
-  "html-fallback":
-    "Fallback final: mapeamento básico de input[type] → FieldType",
+const STRATEGY_DESC_KEYS: Record<string, string> = {
+  "html-type": "strategyHtmlTypeDesc",
+  keyword: "strategyKeywordDesc",
+  tensorflow: "strategyTensorflowDesc",
+  "chrome-ai": "strategyChromeAiDesc",
+  "html-fallback": "strategyHtmlFallbackDesc",
 };
 
 let _dragSrcIdx: number | null = null;
@@ -67,7 +65,7 @@ async function saveGeneralSettings(): Promise<void> {
     type: "SAVE_SETTINGS",
     payload: settings,
   });
-  showToast("Salvo automaticamente");
+  showToast(t("savedAuto"));
 }
 
 async function saveFieldIconSettings(): Promise<void> {
@@ -85,7 +83,7 @@ async function saveFieldIconSettings(): Promise<void> {
     type: "SAVE_SETTINGS",
     payload: settings,
   });
-  showToast("Salvo automaticamente");
+  showToast(t("savedAuto"));
 }
 
 async function saveStrategiesSettings(): Promise<void> {
@@ -94,7 +92,7 @@ async function saveStrategiesSettings(): Promise<void> {
     type: "SAVE_SETTINGS",
     payload: { detectionPipeline: pipeline } as Partial<Settings>,
   });
-  showToast("Salvo automaticamente");
+  showToast(t("savedAuto"));
 }
 
 function getPipelineFromDOM(): DetectionStrategyEntry[] {
@@ -126,10 +124,10 @@ function renderStrategyList(pipeline: DetectionStrategyEntry[]): void {
     item.dataset.idx = String(idx);
 
     item.innerHTML = `
-      <span class="strategy-drag-handle" title="Arraste para reordenar">⠿</span>
+      <span class="strategy-drag-handle" title="${escapeHtml(t("dragToReorder"))}">⠿</span>
       <div class="strategy-info">
-        <span class="strategy-name">${escapeHtml(STRATEGY_LABELS[entry.name] ?? entry.name)}</span>
-        <span class="strategy-desc">${escapeHtml(STRATEGY_DESCRIPTIONS[entry.name] ?? "")}</span>
+        <span class="strategy-name">${escapeHtml(t(STRATEGY_LABEL_KEYS[entry.name] ?? entry.name))}</span>
+        <span class="strategy-desc">${escapeHtml(t(STRATEGY_DESC_KEYS[entry.name] ?? ""))}</span>
       </div>
       <label class="toggle" style="flex-shrink: 0;">
         <input type="checkbox" class="strategy-toggle" data-name="${escapeHtml(entry.name)}" ${entry.enabled ? "checked" : ""} />
@@ -207,7 +205,7 @@ async function checkChromeAiStatus(): Promise<void> {
   block.style.display = "block";
 
   if (!LanguageModel) {
-    statusText.innerHTML = `<strong style="color: var(--danger)">Chrome AI não disponível.</strong> Requer Chrome 131+ com a flag <code>#prompt-api-for-gemini-nano</code> ativada em <code>chrome://flags</code>.`;
+    statusText.innerHTML = `<strong style="color: var(--danger)">${t("chromeAiNotAvailableHtml")}</strong>`;
     if (downloadBtn) downloadBtn.style.display = "none";
     return;
   }
@@ -215,17 +213,17 @@ async function checkChromeAiStatus(): Promise<void> {
   try {
     const result = await LanguageModel.availability?.({ outputLanguage: "en" });
     if (result === "available") {
-      statusText.innerHTML = `<strong style="color: var(--success)">✅ Chrome AI disponível e pronto para uso.</strong>`;
+      statusText.innerHTML = `<strong style="color: var(--success)">✅ ${t("chromeAiReady")}</strong>`;
       if (downloadBtn) downloadBtn.style.display = "none";
     } else if (result === "downloadable") {
-      statusText.innerHTML = `<strong style="color: #f59e0b">⚠️ Chrome AI disponível mas o modelo precisa ser baixado.</strong>`;
+      statusText.innerHTML = `<strong style="color: #f59e0b">⚠️ ${t("chromeAiDownloadable")}</strong>`;
       if (downloadBtn) downloadBtn.style.display = "";
     } else {
-      statusText.innerHTML = `<strong style="color: var(--text-muted)">Chrome AI status: <code>${String(result ?? "desconhecido")}</code>.</strong>`;
+      statusText.innerHTML = `<strong style="color: var(--text-muted)">${escapeHtml(t("chromeAiStatusHtml", [String(result ?? "desconhecido")]))}</strong>`;
       if (downloadBtn) downloadBtn.style.display = "none";
     }
   } catch {
-    statusText.innerHTML = `<strong style="color: var(--danger)">Erro ao verificar Chrome AI.</strong>`;
+    statusText.innerHTML = `<strong style="color: var(--danger)">${t("chromeAiCheckError")}</strong>`;
     if (downloadBtn) downloadBtn.style.display = "none";
   }
 }
@@ -256,6 +254,17 @@ async function loadSettings(): Promise<void> {
   (
     document.getElementById("setting-field-icon-position") as HTMLSelectElement
   ).value = settings.fieldIconPosition ?? "inside";
+
+  // Locale and UI language
+  const localeEl = document.getElementById(
+    "setting-locale",
+  ) as HTMLSelectElement | null;
+  if (localeEl) localeEl.value = settings.locale ?? "pt-BR";
+
+  const uiLangEl = document.getElementById(
+    "setting-ui-language",
+  ) as HTMLSelectElement | null;
+  if (uiLangEl) uiLangEl.value = settings.uiLanguage ?? "auto";
 
   // Detection pipeline
   renderStrategyList(settings.detectionPipeline ?? DEFAULT_DETECTION_PIPELINE);
@@ -295,6 +304,22 @@ function bindSettingsEvents(): void {
     .getElementById("setting-field-icon-position")
     ?.addEventListener("change", debouncedSaveFieldIcon);
 
+  // UI language — dedicated handler that re-localises the page
+  document
+    .getElementById("setting-ui-language")
+    ?.addEventListener("change", async (e) => {
+      const lang = (e.target as HTMLSelectElement)
+        .value as Settings["uiLanguage"];
+      await chrome.runtime.sendMessage({
+        type: "SAVE_SETTINGS",
+        payload: { uiLanguage: lang } as Partial<Settings>,
+      });
+      await initI18n(lang);
+      localizeHTML();
+      void loadSettings(); // re-render strategy list and other dynamic content
+      showToast(t("uiLanguageChanged"));
+    });
+
   document
     .getElementById("btn-download-chrome-ai")
     ?.addEventListener("click", async () => {
@@ -306,10 +331,12 @@ function bindSettingsEvents(): void {
       try {
         await LanguageModel.create();
         void checkChromeAiStatus();
-        showToast("Download do modelo Chrome AI iniciado!");
+        showToast(t("chromeAiDownloadStart"));
       } catch (err) {
         showToast(
-          `Erro ao iniciar download: ${err instanceof Error ? err.message : String(err)}`,
+          t("chromeAiDownloadError", [
+            err instanceof Error ? err.message : String(err),
+          ]),
           "error",
         );
       }

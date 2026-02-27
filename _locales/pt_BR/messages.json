@@ -1,0 +1,1338 @@
+{
+  "extensionName": {
+    "message": "Fill All",
+    "description": "Nome da extensão"
+  },
+  "extensionDescription": {
+    "message": "Preenchimento automático de formulários com IA, regras customizadas e geradores de dados brasileiros (CPF, CNPJ, etc.)",
+    "description": "Descrição da extensão"
+  },
+  "commandFillAll": {
+    "message": "Preencher todos os campos",
+    "description": "Descrição do atalho de teclado"
+  },
+  "appTitle": {
+    "message": "Fill All"
+  },
+  "tabActions": {
+    "message": "Ações"
+  },
+  "tabGenerators": {
+    "message": "Gerar"
+  },
+  "tabFields": {
+    "message": "Campos"
+  },
+  "tabForms": {
+    "message": "Forms"
+  },
+  "tabLog": {
+    "message": "Log"
+  },
+  "tabGeneral": {
+    "message": "Geral"
+  },
+  "tabRules": {
+    "message": "Regras"
+  },
+  "tabSavedForms": {
+    "message": "Formulários Salvos"
+  },
+  "tabDataset": {
+    "message": "Dataset & Treino"
+  },
+  "tabCacheAndLearning": {
+    "message": "Cache & Aprendizado"
+  },
+  "fillAll": {
+    "message": "Preencher Tudo"
+  },
+  "fillAllDesc": {
+    "message": "Preenche todos os campos detectados"
+  },
+  "saveForm": {
+    "message": "Salvar Form"
+  },
+  "saveFormDesc": {
+    "message": "Salva os valores atuais do formulário"
+  },
+  "watch": {
+    "message": "Watch"
+  },
+  "watchDesc": {
+    "message": "Observa mudanças no DOM e preenche novos campos"
+  },
+  "stopWatch": {
+    "message": "Stop Watch"
+  },
+  "stopWatchDesc": {
+    "message": "Parar observação do DOM"
+  },
+  "panelFloating": {
+    "message": "Painel Flutuante"
+  },
+  "panelActive": {
+    "message": "Painel Ativo"
+  },
+  "panelDesc": {
+    "message": "Mostra painel flutuante na página"
+  },
+  "detectFields": {
+    "message": "Detectar Campos"
+  },
+  "detectFieldsDesc": {
+    "message": "Escaneia a página por campos de formulário"
+  },
+  "clearBadges": {
+    "message": "Limpar Badges"
+  },
+  "clearBadgesDesc": {
+    "message": "Remove badges de detecção da página"
+  },
+  "fieldsDetected": {
+    "message": "campos detectados"
+  },
+  "noFieldsDetected": {
+    "message": "Nenhum campo detectado ainda"
+  },
+  "notAvailable": {
+    "message": "⚠️ Não disponível"
+  },
+  "notAvailableHere": {
+    "message": "⚠️ Não disponível aqui"
+  },
+  "detecting": {
+    "message": "⏳ Detectando..."
+  },
+  "fieldCount": {
+    "message": "campo(s)"
+  },
+  "filled": {
+    "message": "preenchidos"
+  },
+  "btnDetect": {
+    "message": "Detectar"
+  },
+  "btnFillAll": {
+    "message": "Preencher Todos"
+  },
+  "btnLoadForms": {
+    "message": "Carregar Forms"
+  },
+  "btnClearLog": {
+    "message": "Limpar"
+  },
+  "btnSave": {
+    "message": "Salvar"
+  },
+  "btnCancel": {
+    "message": "Cancelar"
+  },
+  "btnApply": {
+    "message": "▶ Aplicar"
+  },
+  "btnEdit": {
+    "message": "✎ Editar"
+  },
+  "btnDelete": {
+    "message": "Excluir"
+  },
+  "btnSaveRule": {
+    "message": "Salvar Regra"
+  },
+  "btnCancelRule": {
+    "message": "Cancelar"
+  },
+  "btnImport": {
+    "message": "⬇ Importar"
+  },
+  "btnExport": {
+    "message": "⬆ Exportar"
+  },
+  "btnCreateTemplate": {
+    "message": "+ Criar Template"
+  },
+  "btnSettings": {
+    "message": "⚙️ Configurações"
+  },
+  "btnDownloadNow": {
+    "message": "⬇️ Baixar agora"
+  },
+  "chromeAiUnavailable": {
+    "message": "Chrome AI não disponível neste navegador."
+  },
+  "chromeAiSetupLink": {
+    "message": "Como configurar →"
+  },
+  "chromeAiReady": {
+    "message": "Chrome AI ativo e pronto."
+  },
+  "chromeAiDownloading": {
+    "message": "Chrome AI está sendo baixado…"
+  },
+  "chromeAiDownloadable": {
+    "message": "Chrome AI disponível, mas o modelo precisa ser baixado."
+  },
+  "chromeAiDownloadNow": {
+    "message": "⬇️ Baixar agora"
+  },
+  "chromeAiDownloadingBtn": {
+    "message": "⏳ Baixando…"
+  },
+  "chromeAiDownloaded": {
+    "message": "Chrome AI baixado com sucesso!"
+  },
+  "chromeAiDownloadFailed": {
+    "message": "Falha ao iniciar download. Tente manualmente."
+  },
+  "chromeAiNotSupported": {
+    "message": "Chrome AI não suportado neste dispositivo ou canal."
+  },
+  "chromeAiRequirementsLink": {
+    "message": "Ver requisitos →"
+  },
+  "chromeAiDownloadModel": {
+    "message": "⬇️ Iniciar download do modelo"
+  },
+  "columnType": {
+    "message": "Tipo"
+  },
+  "columnMethod": {
+    "message": "Método"
+  },
+  "columnConf": {
+    "message": "Conf."
+  },
+  "columnIdName": {
+    "message": "ID / Name"
+  },
+  "columnLabel": {
+    "message": "Label"
+  },
+  "columnSelector": {
+    "message": "Seletor"
+  },
+  "columnActions": {
+    "message": "Ações"
+  },
+  "clickToDetect": {
+    "message": "Clique em \"Detectar\" para escanear os campos da página"
+  },
+  "clickToDetectPopup": {
+    "message": "Clique em \"Detectar\" para escanear os campos"
+  },
+  "clickToLoadForms": {
+    "message": "Clique em \"Carregar\" para buscar formulários salvos"
+  },
+  "actionFill": {
+    "message": "Preencher"
+  },
+  "actionInspect": {
+    "message": "Inspecionar no Elements"
+  },
+  "actionIgnore": {
+    "message": "Ignorar"
+  },
+  "actionReactivate": {
+    "message": "Reativar"
+  },
+  "noSavedForms": {
+    "message": "Nenhum formulário salvo"
+  },
+  "noFormsForPage": {
+    "message": "Nenhum formulário salvo para esta página"
+  },
+  "editTemplate": {
+    "message": "Editar Template"
+  },
+  "fixedValue": {
+    "message": "Valor fixo"
+  },
+  "generatorMode": {
+    "message": "Gerador"
+  },
+  "formName": {
+    "message": "Nome"
+  },
+  "formUrl": {
+    "message": "URL / Padrão"
+  },
+  "logWatchActivated": {
+    "message": "Watch ativado"
+  },
+  "logWatchDeactivated": {
+    "message": "Watch desativado"
+  },
+  "logDetecting": {
+    "message": "Detectando campos..."
+  },
+  "logNoFieldDetected": {
+    "message": "Nenhum campo detectado"
+  },
+  "logFilling": {
+    "message": "Preenchendo todos os campos..."
+  },
+  "logErrorSavingForm": {
+    "message": "Erro ao salvar formulário"
+  },
+  "logLoadingForms": {
+    "message": "Carregando formulários salvos..."
+  },
+  "logNoFormsSaved": {
+    "message": "Nenhum formulário salvo"
+  },
+  "logOpeningOptions": {
+    "message": "Abrindo página de opções"
+  },
+  "logFormRemoved": {
+    "message": "Formulário removido"
+  },
+  "logFormUpdated": {
+    "message": "Formulário atualizado"
+  },
+  "logFieldIgnoredSkip": {
+    "message": "Campo ignorado (pular)"
+  },
+  "logRuleCreated": {
+    "message": "Regra criada"
+  },
+  "logRuleError": {
+    "message": "Erro ao salvar regra"
+  },
+  "fpNoActivity": {
+    "message": "Nenhuma atividade registrada"
+  },
+  "fpApplyTemplate": {
+    "message": "Aplicar Template"
+  },
+  "fpTemplateApplied": {
+    "message": "Template aplicado"
+  },
+  "fpMinimize": {
+    "message": "Minimizar"
+  },
+  "fpClose": {
+    "message": "Fechar"
+  },
+  "fpFillNow": {
+    "message": "Preencher"
+  },
+  "fpOpenOptions": {
+    "message": "Abrir Opções"
+  },
+  "optionsPageTitle": {
+    "message": "Fill All - Configurações"
+  },
+  "optionsHeader": {
+    "message": "⚙️ Fill All — Configurações"
+  },
+  "settingsGeneralTitle": {
+    "message": "Configurações Gerais"
+  },
+  "settingHighlight": {
+    "message": "Destacar campos preenchidos"
+  },
+  "settingHighlightDesc": {
+    "message": "Adiciona borda visual e exibe o nome detectado nos campos preenchidos"
+  },
+  "settingCacheEnabled": {
+    "message": "Cache de detecção"
+  },
+  "settingCacheEnabledDesc": {
+    "message": "Guarda campos detectados por URL para carregamento rápido no popup"
+  },
+  "settingShowPanel": {
+    "message": "Painel Flutuante"
+  },
+  "settingShowPanelDesc": {
+    "message": "Exibe automaticamente o painel flutuante de controles em todas as páginas"
+  },
+  "settingDebugLogs": {
+    "message": "Logs de diagnóstico"
+  },
+  "settingDebugLogsDesc": {
+    "message": "Exibe mensagens de depuração no console do navegador"
+  },
+  "settingLogLevel": {
+    "message": "Nível mínimo de log:"
+  },
+  "logLevelDebug": {
+    "message": "Debug (tudo)"
+  },
+  "logLevelInfo": {
+    "message": "Info"
+  },
+  "logLevelWarn": {
+    "message": "Warn"
+  },
+  "logLevelError": {
+    "message": "Error (somente erros)"
+  },
+  "fieldIconTitle": {
+    "message": "Ícone de Campo"
+  },
+  "fieldIconConfigDesc": {
+    "message": "Configure a exibição do ícone de preenchimento rápido que aparece ao focar em um campo."
+  },
+  "settingShowFieldIcon": {
+    "message": "Exibir ícone de campo"
+  },
+  "settingShowFieldIconDesc": {
+    "message": "Mostra o botão de preencher e salvar regra ao focar num campo"
+  },
+  "settingFieldIconPosition": {
+    "message": "Posição do ícone:"
+  },
+  "iconAbove": {
+    "message": "Acima do campo"
+  },
+  "iconInside": {
+    "message": "Dentro do campo (à direita)"
+  },
+  "iconBelow": {
+    "message": "Abaixo do campo"
+  },
+  "iconPositionReloadNote": {
+    "message": "Recarregue a aba ativa para aplicar a mudança de posição."
+  },
+  "detectionStrategiesTitle": {
+    "message": "Estratégias de Detecção"
+  },
+  "detectionStrategiesDesc": {
+    "message": "Arraste para reordenar. A extensão tenta cada estratégia habilitada na ordem listada até encontrar um resultado."
+  },
+  "rulesSectionTitle": {
+    "message": "Regras por Site"
+  },
+  "rulesSectionDesc": {
+    "message": "Defina regras específicas para campos em sites diferentes. O campo no site A pode ter um valor fixo, enquanto no site B é gerado automaticamente."
+  },
+  "newRuleTitle": {
+    "message": "Nova Regra"
+  },
+  "ruleUrlPatternLabel": {
+    "message": "Padrão de URL (use * como coringa):"
+  },
+  "ruleSelectorLabel": {
+    "message": "Seletor CSS do campo:"
+  },
+  "ruleFieldNameLabel": {
+    "message": "Nome do campo (opcional):"
+  },
+  "ruleFieldTypeLabel": {
+    "message": "Tipo do campo:"
+  },
+  "ruleGeneratorLabel": {
+    "message": "Gerador:"
+  },
+  "ruleFixedValueLabel": {
+    "message": "Valor fixo (opcional):"
+  },
+  "rulePriorityLabel": {
+    "message": "Prioridade (maior = mais importante):"
+  },
+  "formsTabTitle": {
+    "message": "Formulários Salvos"
+  },
+  "formsTabDesc": {
+    "message": "Templates definem valores padrão por tipo de campo (CPF, nome, data…) e se aplicam em qualquer site onde esses campos forem detectados."
+  },
+  "modelStatusTitle": {
+    "message": "Estado do Modelo"
+  },
+  "checkingModel": {
+    "message": "Verificando modelo..."
+  },
+  "btnTrainModel": {
+    "message": "🧠 Treinar Modelo"
+  },
+  "btnDeleteModel": {
+    "message": "🗑️ Remover Modelo Treinado"
+  },
+  "trainingProgressTitle": {
+    "message": "Progresso do Treinamento"
+  },
+  "addDatasetEntryTitle": {
+    "message": "Adicionar Entrada ao Dataset"
+  },
+  "datasetEntryDesc": {
+    "message": "Digite os sinais do campo como você os vê no HTML (label + name + id + placeholder concatenados)."
+  },
+  "datasetSignalsLabel": {
+    "message": "Sinais do campo:"
+  },
+  "datasetTypeLabel": {
+    "message": "Tipo:"
+  },
+  "datasetDifficultyLabel": {
+    "message": "Dificuldade:"
+  },
+  "difficultyEasy": {
+    "message": "Fácil"
+  },
+  "difficultyMedium": {
+    "message": "Médio"
+  },
+  "difficultyHard": {
+    "message": "Difícil"
+  },
+  "btnAddDatasetEntry": {
+    "message": "Adicionar Entrada"
+  },
+  "datasetEntriesTitle": {
+    "message": "Entradas do Dataset"
+  },
+  "btnSeedDataset": {
+    "message": "🌱 Importar Dataset Padrão"
+  },
+  "btnImportDataset": {
+    "message": "📂 Importar JSON"
+  },
+  "btnExportDataset": {
+    "message": "📥 Exportar JSON"
+  },
+  "btnClearDataset": {
+    "message": "🗑️ Limpar Dataset"
+  },
+  "datasetFilterPlaceholder": {
+    "message": "Filtrar por sinais ou tipo..."
+  },
+  "cacheTabTitle": {
+    "message": "Cache de Detecção por Página"
+  },
+  "cacheTabDesc": {
+    "message": "Guarda os campos detectados por URL para que o popup recupere o estado rapidamente."
+  },
+  "btnRefreshCache": {
+    "message": "Atualizar"
+  },
+  "btnClearCache": {
+    "message": "Limpar Todo Cache"
+  },
+  "learningTitle": {
+    "message": "Aprendizado"
+  },
+  "btnClearLearning": {
+    "message": "Limpar Aprendizado"
+  },
+  "tooltipApply": {
+    "message": "Aplicar template"
+  },
+  "tooltipEdit": {
+    "message": "Editar campos"
+  },
+  "summaryFixed": {
+    "message": "$count$ fixo(s)",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "summaryGenerator": {
+    "message": "$count$ gerador(es)",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
+  "summaryFields": {
+    "message": "$count$ campo(s)",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "showingCache": {
+    "message": "Mostrando cache"
+  },
+  "showingCacheAt": {
+    "message": "Mostrando cache ($date$)",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "31/12/2024"
+      }
+    }
+  },
+  "fieldTypeTitle": {
+    "message": "Tipo do campo"
+  },
+  "configureRule": {
+    "message": "Configurar regra"
+  },
+  "checkboxChecked": {
+    "message": "✓ marcado"
+  },
+  "checkboxUnchecked": {
+    "message": "☐ desmarcado"
+  },
+  "ruleFixedValuePlaceholder": {
+    "message": "Valor fixo (vazio = gerar automaticamente)"
+  },
+  "min": {
+    "message": "Mín"
+  },
+  "max": {
+    "message": "Máx"
+  },
+  "selectOption": {
+    "message": "Opção:"
+  },
+  "autoRandom": {
+    "message": "Automático (aleatório)"
+  },
+  "savedOk": {
+    "message": "✓ Salvo!"
+  },
+  "deleteRule": {
+    "message": "✕ Regra"
+  },
+  "tooltipDeleteRule": {
+    "message": "Excluir regra"
+  },
+  "stopIgnoring": {
+    "message": "Parar de ignorar"
+  },
+  "fpWatchActive": {
+    "message": "Watch (Ativo)"
+  },
+  "fpWatchClickToStop": {
+    "message": "Clique para desativar"
+  },
+  "fpWatchActivatedDOM": {
+    "message": "Watch ativado — observando mudanças no DOM"
+  },
+  "fpBadgesCleared": {
+    "message": "Badges removidos"
+  },
+  "fpFillError": {
+    "message": "Erro ao preencher"
+  },
+  "fpFillErrorLog": {
+    "message": "Erro ao preencher campos"
+  },
+  "fpActionAddRule": {
+    "message": "Adicionar Regra"
+  },
+  "fpFieldIgnoredTitle": {
+    "message": "Campo ignorado — clique para ativar"
+  },
+  "fpFieldActiveTitle": {
+    "message": "Campo ativo — clique para ignorar"
+  },
+  "logBadgesRemoved": {
+    "message": "Badges de detecção removidos"
+  },
+  "logUpdated": {
+    "message": "atualizado"
+  },
+  "formCount": {
+    "message": "formulário(s)"
+  },
+  "fieldsFillCount": {
+    "message": "campos preenchidos com sucesso"
+  },
+  "fieldsFillStatus": {
+    "message": "campos preenchidos"
+  },
+  "fieldCountDetected": {
+    "message": "campo(s) detectado(s)"
+  },
+  "fieldCountPage": {
+    "message": "campo(s) detectado(s) na página"
+  },
+  "logFormSavedWith": {
+    "message": "Formulário salvo com"
+  },
+  "savedStatus": {
+    "message": "Salvo"
+  },
+  "logEntriesCount": {
+    "message": "entradas"
+  },
+  "fpLoading": {
+    "message": "Carregando..."
+  },
+  "fpFilling": {
+    "message": "Preenchendo..."
+  },
+  "editFieldsHeader": {
+    "message": "Campos"
+  },
+  "fpClearBadgesLabel": {
+    "message": "Limpar Badges"
+  },
+  "fpClearBadgesDesc": {
+    "message": "Remove badges de detecção da página"
+  },
+  "fpNewFieldsRefill": {
+    "message": "campo(s) novo(s) — re-preenchendo..."
+  },
+  "fpNewFieldsViaWatch": {
+    "message": "campo(s) novo(s) detectado(s) via Watch"
+  },
+  "fpDetecting": {
+    "message": "Detectando..."
+  },
+  "fpActionInspect": {
+    "message": "Inspecionar"
+  },
+  "logDetectError": {
+    "message": "Erro ao detectar"
+  },
+  "logFieldReactivated": {
+    "message": "Campo reativado"
+  },
+  "logFieldIgnored": {
+    "message": "Campo ignorado"
+  },
+  "logFillingAll": {
+    "message": "Preenchendo todos os campos..."
+  },
+  "logFillError": {
+    "message": "Erro ao preencher"
+  },
+  "logFillingField": {
+    "message": "Preenchendo"
+  },
+  "logFieldFilled": {
+    "message": "Campo preenchido"
+  },
+  "logError": {
+    "message": "Erro"
+  },
+  "logInspecting": {
+    "message": "Inspecionando"
+  },
+  "logSavingForm": {
+    "message": "Salvando formulário..."
+  },
+  "logFormSaved": {
+    "message": "Formulário salvo"
+  },
+  "logApplyingTemplate": {
+    "message": "Aplicando template"
+  },
+  "loadFormsDesc": {
+    "message": "Clique em 'Carregar' para buscar formulários desta página"
+  },
+  "placeholderFixedValue": {
+    "message": "Valor fixo"
+  },
+  "logTemplateUpdated": {
+    "message": "Template atualizado"
+  },
+  "noActivity": {
+    "message": "Nenhuma atividade registrada"
+  },
+  "strategyHtmlType": {
+    "message": "Tipo HTML"
+  },
+  "strategyKeyword": {
+    "message": "Palavras-chave"
+  },
+  "strategyTensorflow": {
+    "message": "TensorFlow.js (ML)"
+  },
+  "strategyChromeAi": {
+    "message": "Chrome AI (Gemini Nano)"
+  },
+  "strategyHtmlFallback": {
+    "message": "Fallback HTML"
+  },
+  "strategyHtmlTypeDesc": {
+    "message": "Detecção determinística por type/tag HTML (email, number, date…)"
+  },
+  "strategyKeywordDesc": {
+    "message": "Detecção por palavras-chave no nome/id/label do campo (cpf, cnpj, nome…)"
+  },
+  "strategyTensorflowDesc": {
+    "message": "Classificação por modelo de ML com n-gramas de caractere"
+  },
+  "strategyChromeAiDesc": {
+    "message": "Geração via Gemini Nano embutido no Chrome (requer Chrome 131+)"
+  },
+  "strategyHtmlFallbackDesc": {
+    "message": "Fallback final: mapeamento básico de input[type] → FieldType"
+  },
+  "savedAuto": {
+    "message": "Salvo automaticamente"
+  },
+  "dragToReorder": {
+    "message": "Arraste para reordenar"
+  },
+  "chromeAiNotAvailableHtml": {
+    "message": "Chrome AI não disponível. Requer Chrome 131+ com a flag <code>#prompt-api-for-gemini-nano</code> ativa."
+  },
+  "chromeAiStatusHtml": {
+    "message": "Status Chrome AI: $1."
+  },
+  "chromeAiReadyHtml": {
+    "message": "✅ Chrome AI disponível e pronto para uso."
+  },
+  "chromeAiDownloadableHtml": {
+    "message": "⚠️ Chrome AI disponível mas o modelo precisa ser baixado."
+  },
+  "chromeAiCheckError": {
+    "message": "Erro ao verificar Chrome AI."
+  },
+  "chromeAiDownloadStart": {
+    "message": "Download do modelo Chrome AI iniciado!"
+  },
+  "chromeAiDownloadError": {
+    "message": "Erro ao iniciar download: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "noRules": {
+    "message": "Nenhuma regra cadastrada"
+  },
+  "ruleFixed": {
+    "message": "Fixo:"
+  },
+  "rulePriority": {
+    "message": "Prioridade:"
+  },
+  "btnUpdateRule": {
+    "message": "✏️ Atualizar Regra"
+  },
+  "toastRuleDeleted": {
+    "message": "Regra excluída"
+  },
+  "errorFillUrlAndSelector": {
+    "message": "Preencha o padrão de URL e o seletor do campo"
+  },
+  "errorSelectFieldType": {
+    "message": "Selecione um tipo de campo"
+  },
+  "toastEditCancelled": {
+    "message": "Edição cancelada"
+  },
+  "toastRuleUpdated": {
+    "message": "Regra atualizada!"
+  },
+  "toastRuleSaved": {
+    "message": "Regra salva!"
+  },
+  "createTemplateHeader": {
+    "message": "Criar Template"
+  },
+  "templateNameLabel": {
+    "message": "Nome do template"
+  },
+  "createTemplateNamePlaceholder": {
+    "message": "Ex: Cadastro padrão"
+  },
+  "urlPatternLabel": {
+    "message": "URL / Padrão"
+  },
+  "urlAnySiteDesc": {
+    "message": "Deixe vazio ou use <code>*</code> para funcionar em qualquer site."
+  },
+  "fieldsTableHeader": {
+    "message": "Campos"
+  },
+  "fieldsTableHeaderDesc": {
+    "message": "Defina o tipo do campo detectado e o valor que será preenchido."
+  },
+  "colDetectedType": {
+    "message": "Tipo do campo detectado"
+  },
+  "colMode": {
+    "message": "Modo"
+  },
+  "colValueGenerator": {
+    "message": "Valor / Gerador"
+  },
+  "btnAddField": {
+    "message": "+ Adicionar campo"
+  },
+  "btnSaveTemplate": {
+    "message": "Salvar template"
+  },
+  "valuePlaceholder": {
+    "message": "Valor..."
+  },
+  "tooltipRemoveField": {
+    "message": "Remover campo"
+  },
+  "errorTemplateNameRequired": {
+    "message": "Informe o nome do template"
+  },
+  "toastTemplateCreated": {
+    "message": "Template “$1” criado com sucesso",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "editTemplateFor": {
+    "message": "Editar Template:"
+  },
+  "useStarForAnyDesc": {
+    "message": "Use <code>*</code> para funcionar em qualquer site."
+  },
+  "toastFormDeleted": {
+    "message": "Formulário excluído"
+  },
+  "noFormsToExport": {
+    "message": "Nenhum formulário para exportar"
+  },
+  "toastFormsExported": {
+    "message": "$1 formulário(s) exportado(s)",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorInvalidJson": {
+    "message": "Arquivo inválido: não é um JSON válido"
+  },
+  "errorInvalidFormat": {
+    "message": "Arquivo inválido: formato não reconhecido"
+  },
+  "toastFormsImported": {
+    "message": "$1 formulário(s) importado(s) com sucesso",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "noFormsInFile": {
+    "message": "Nenhum formulário válido encontrado no arquivo"
+  },
+  "noCacheEntries": {
+    "message": "Nenhum cache de campos detectados"
+  },
+  "learnedEntriesLabel": {
+    "message": "Entradas aprendidas: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "noLearnedEntries": {
+    "message": "Nenhuma entrada aprendida"
+  },
+  "lastUpdatedAt": {
+    "message": "Atualizado:"
+  },
+  "toastCacheRefreshed": {
+    "message": "Cache atualizado"
+  },
+  "toastCacheEntryRemoved": {
+    "message": "Cache removido"
+  },
+  "toastCacheCleared": {
+    "message": "Cache limpo"
+  },
+  "toastLearningCleared": {
+    "message": "Aprendizado limpo"
+  },
+  "noRulesToExport": {
+    "message": "Nenhuma regra para exportar"
+  },
+  "retraining": {
+    "message": "Retreinando..."
+  },
+  "btnRetrainVectors": {
+    "message": "🧠 Retreinar Vetores (Browser)"
+  },
+  "fieldCountBadge": {
+    "message": "$1 campos",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "noRuntimeModel": {
+    "message": "Nenhum modelo treinado em runtime."
+  },
+  "defaultModelDesc": {
+    "message": "Usando o modelo padrão empacotado com a extensão. Adicione entradas ao dataset e clique em <strong>Treinar Modelo</strong> para gerar um modelo personalizado."
+  },
+  "noDatasetEntries": {
+    "message": "Nenhuma entrada no dataset"
+  },
+  "sourceManual": {
+    "message": "Manual"
+  },
+  "sourceAuto": {
+    "message": "Auto"
+  },
+  "sourceImported": {
+    "message": "Importado"
+  },
+  "sourceBuiltin": {
+    "message": "Padrão"
+  },
+  "datasetSyncing": {
+    "message": "Sincronizando dataset padrão…"
+  },
+  "seedAdded": {
+    "message": "$1 novas entradas do dataset padrão adicionadas",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "seedComplete": {
+    "message": "Dataset padrão já está totalmente importado (sem duplicatas)"
+  },
+  "importingText": {
+    "message": "Importando..."
+  },
+  "trainingText": {
+    "message": "Treinando..."
+  },
+  "toastDatasetEntryAdded": {
+    "message": "Entrada adicionada!"
+  },
+  "toastDatasetEntryRemoved": {
+    "message": "Entrada removida"
+  },
+  "toastDatasetCleared": {
+    "message": "Dataset limpo"
+  },
+  "toastDatasetExported": {
+    "message": "$1 entradas exportadas",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastDatasetImported": {
+    "message": "$1 novas entradas importadas",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorDatasetTooSmall": {
+    "message": "Dataset muito pequeno ($1 entradas). Mínimo: 10. Clique em “Importar Dataset Padrão” para começar.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorDatasetTypes": {
+    "message": "O dataset precisa ter pelo menos 2 tipos diferentes. Atual: $1. Importe o dataset padrão para ter cobertura completa.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "trainingComplete": {
+    "message": "Treinamento concluído!"
+  },
+  "trainingStarting": {
+    "message": "Iniciando..."
+  },
+  "trainingModelSaved": {
+    "message": "Modelo salvo — ativo na próxima página preenchida."
+  },
+  "modelRemoved": {
+    "message": "Modelo removido. Usando modelo padrão."
+  },
+  "deleteModelConfirm": {
+    "message": "Remover o modelo treinado? A extensão voltará a usar o modelo padrão."
+  },
+  "clearDatasetConfirm": {
+    "message": "Tem certeza que deseja limpar todo o dataset? Esta ação não pode ser desfeita."
+  },
+  "optionAuto": {
+    "message": "Automático"
+  },
+  "btnRefreshCacheLabel": {
+    "message": "Atualizar"
+  },
+  "btnClearCacheLabel": {
+    "message": "Limpar Todo Cache"
+  },
+  "btnClearLearningLabel": {
+    "message": "Limpar Aprendizado"
+  },
+  "fixedLabel": {
+    "message": "Fixo: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "updatedAtLabel": {
+    "message": "Atualizado"
+  },
+  "cacheFieldsCount": {
+    "message": "$1 campos",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastTemplateUpdated": {
+    "message": "Template atualizado"
+  },
+  "fieldSummaryFixed": {
+    "message": "$1 fixo(s)",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "fieldSummaryGenerator": {
+    "message": "$1 gerador(es)",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "fieldSummaryFields": {
+    "message": "$1 campos",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "rulesExportedMsg": {
+    "message": "$1 regra(s) exportada(s). Execute: npm run import:rules fill-all-rules.json",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastRetrainResult": {
+    "message": "✅ $1 vetores atualizados de $2 regras ($3ms)",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      },
+      "3": {
+        "content": "$3"
+      }
+    }
+  },
+  "datasetMoreEntries": {
+    "message": "… e mais $1 entradas (use o filtro para refinar)",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "diffEasy": {
+    "message": "Fácil"
+  },
+  "diffMedium": {
+    "message": "Médio"
+  },
+  "diffHard": {
+    "message": "Difícil"
+  },
+  "toastSignalsRequired": {
+    "message": "Preencha os sinais do campo"
+  },
+  "noRuntimeModelDesc": {
+    "message": "Usando o modelo padrão empacotado com a extensão. Adicione entradas ao dataset e clique em <strong>Treinar Modelo</strong> para gerar um modelo personalizado."
+  },
+  "runtimeModelActiveTitle": {
+    "message": "Modelo treinado em runtime ativo"
+  },
+  "trainedOnLabel": {
+    "message": "Treinado em"
+  },
+  "accuracyLabel": {
+    "message": "Acurácia"
+  },
+  "epochsLabel": {
+    "message": "Épocas"
+  },
+  "samplesUsedLabel": {
+    "message": "Amostras usadas"
+  },
+  "vocabLabel": {
+    "message": "Vocab"
+  },
+  "classesLabel": {
+    "message": "Classes"
+  },
+  "durationLabel": {
+    "message": "Duração"
+  },
+  "toastModelTrained": {
+    "message": "✅ Modelo treinado! Acurácia: $1%",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastTrainingError": {
+    "message": "Erro no treinamento: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastError": {
+    "message": "Erro: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "modeFixed": {
+    "message": "Valor fixo"
+  },
+  "modeGenerator": {
+    "message": "Gerador"
+  },
+  "removeFieldTitle": {
+    "message": "Remover campo"
+  },
+  "fieldDetectedTypeHeader": {
+    "message": "Tipo do campo detectado"
+  },
+  "fieldModeHeader": {
+    "message": "Modo"
+  },
+  "fieldValueHeader": {
+    "message": "Valor / Gerador"
+  },
+  "fieldColumnHeader": {
+    "message": "Campo"
+  },
+  "fieldsTitle": {
+    "message": "Campos"
+  },
+  "templateUrlPlaceholder": {
+    "message": "* = qualquer site  |  Ex: *.linkedin.com/*"
+  },
+  "templateUrlDesc": {
+    "message": "Deixe vazio ou use * para funcionar em qualquer site."
+  },
+  "templateFieldsDesc": {
+    "message": "Defina o tipo do campo detectado e o valor que será preenchido."
+  },
+  "nameLabel": {
+    "message": "Nome"
+  },
+  "editUrlPatternDesc": {
+    "message": "Use * para funcionar em qualquer site."
+  },
+  "datasetEntryCount": {
+    "message": "$1 entradas",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "moreEntriesNote": {
+    "message": "… e mais $1 entradas (use o filtro para refinar)",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "removeEntryTitle": {
+    "message": "Remover entrada"
+  },
+  "toastDatasetAlreadyFull": {
+    "message": "Dataset padrão já está totalmente importado (sem duplicatas)"
+  },
+  "confirmClearDataset": {
+    "message": "Tem certeza que deseja limpar todo o dataset? Esta ação não pode ser desfeita."
+  },
+  "confirmDeleteModel": {
+    "message": "Remover o modelo treinado? A extensão voltará a usar o modelo padrão."
+  },
+  "errorDatasetFewTypes": {
+    "message": "O dataset precisa ter pelo menos 2 tipos diferentes. Atual: $1. Importe o dataset padrão para ter cobertura completa.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastModelRemoved": {
+    "message": "Modelo removido. Usando modelo padrão."
+  },
+  "ngramsLabel": {
+    "message": "n-gramas"
+  },
+  "errorImportDataset": {
+    "message": "Erro ao importar: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingLanguageTitle": {
+    "message": "Idioma e Localidade"
+  },
+  "settingUiLanguage": {
+    "message": "Idioma da interface:"
+  },
+  "settingUiLanguageDesc": {
+    "message": "Selecione o idioma para a interface da extensão."
+  },
+  "uiLangAuto": {
+    "message": "Automático (padrão do navegador)"
+  },
+  "uiLangEn": {
+    "message": "English"
+  },
+  "uiLangPtBr": {
+    "message": "Português (Brasil)"
+  },
+  "uiLangEs": {
+    "message": "Español"
+  },
+  "settingDataLocale": {
+    "message": "Localidade de geração de dados:"
+  },
+  "settingDataLocaleDesc": {
+    "message": "Controla o formato dos dados gerados (CPF/CNPJ para pt-BR, SSN/EIN para en-US)."
+  },
+  "localePtBr": {
+    "message": "Português (Brasil)"
+  },
+  "localeEnUs": {
+    "message": "English (US)"
+  },
+  "uiLanguageChanged": {
+    "message": "Idioma da interface atualizado."
+  }
+}

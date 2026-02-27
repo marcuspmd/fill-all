@@ -24,6 +24,7 @@ const settingsSchema = z
     forceAIFirst: z.boolean(),
     shortcut: z.string(),
     locale: z.enum(["pt-BR", "en-US"]),
+    uiLanguage: z.enum(["auto", "en", "pt_BR", "es"]),
     highlightFilled: z.boolean(),
     cacheEnabled: z.boolean(),
     showFieldIcon: z.boolean(),

@@ -8,14 +8,14 @@ Este documento lista as funcionalidades planejadas e melhorias futuras para o **
 
 ## 🌐 Internacionalização (i18n)
 
-**Status**: 🔲 Planejado
+**Status**: ✅ Concluído
 
 Suporte a múltiplos idiomas na interface da extensão (Popup, Options Page, DevTools Panel e Floating Panel).
 
-- Separar todas as strings de UI em arquivos de localização
-- Suporte inicial a: Português (BR), English, Español
-- Detectar idioma do navegador automaticamente
-- Permitir troca manual via Settings
+- ✅ Separar todas as strings de UI em arquivos de localização
+- ✅ Suporte a: Português (BR), English, Español
+- ✅ Detectar idioma do navegador automaticamente
+- ✅ Permitir troca manual via Settings
 
 ---
 
