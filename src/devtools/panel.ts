@@ -21,6 +21,9 @@ import {
   renderConfidenceBadge,
 } from "@/lib/ui";
 import { t, initI18n } from "@/lib/i18n";
+import { createLogger } from "@/lib/logger";
+import type { LogViewer } from "@/lib/logger/log-viewer";
+import { createLogViewer, getLogViewerStyles } from "@/lib/logger/log-viewer";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -43,9 +46,11 @@ const inspectedTabId = chrome.devtools.inspectedWindow.tabId;
 let activeTab: TabId = "actions";
 let detectedFields: DetectedFieldSummary[] = [];
 let savedForms: SavedForm[] = [];
-let logEntries: Array<{ time: string; text: string; type: string }> = [];
 let watcherActive = false;
 let ignoredSelectors = new Set<string>();
+let logViewerInstance: LogViewer | null = null;
+
+const log = createLogger("DevToolsPanel");
 
 // ── Messaging ────────────────────────────────────────────────────────────────
 
@@ -62,14 +67,19 @@ async function sendToBackground(message: ExtensionMessage): Promise<unknown> {
 
 // ── Logging ──────────────────────────────────────────────────────────────────
 
+const LOG_TYPE_MAP: Record<string, "info" | "warn" | "error" | "debug"> = {
+  info: "info",
+  success: "info",
+  error: "error",
+  warn: "warn",
+};
+
 function addLog(
   text: string,
   type: "info" | "success" | "error" | "warn" = "info",
 ): void {
-  const time = new Date().toLocaleTimeString("pt-BR");
-  logEntries.unshift({ time, text, type });
-  if (logEntries.length > 200) logEntries.length = 200;
-  if (activeTab === "log") renderLogTab();
+  const level = LOG_TYPE_MAP[type] ?? "info";
+  log[level](text);
 }
 
 // ── Watcher ──────────────────────────────────────────────────────────────────
@@ -744,33 +754,19 @@ function renderLogTab(): void {
   const content = document.getElementById("content");
   if (!content) return;
 
-  content.innerHTML = `
-    <div class="fields-toolbar">
-      <button class="btn" id="btn-clear-log">🗑️ ${t("btnClearLog")}</button>
-      <span class="fields-count">${logEntries.length} ${t("logEntriesCount")}</span>
-    </div>
-    <div class="log-wrap">
-      ${
-        logEntries.length === 0
-          ? `<div class="empty">${t("noActivity")}</div>`
-          : logEntries
-              .map(
-                (entry) => `
-          <div class="log-entry log-${entry.type}">
-            <span class="log-time">${entry.time}</span>
-            <span class="log-text">${escapeHtml(entry.text)}</span>
-          </div>
-        `,
-              )
-              .join("")
-      }
-    </div>
-  `;
+  content.innerHTML = `<div id="devtools-log-viewer" style="height:100%;display:flex;flex-direction:column;"></div>`;
 
-  document.getElementById("btn-clear-log")?.addEventListener("click", () => {
-    logEntries = [];
-    renderLogTab();
-  });
+  const container = document.getElementById("devtools-log-viewer");
+  if (!container) return;
+
+  // Dispose previous instance
+  if (logViewerInstance) {
+    logViewerInstance.dispose();
+    logViewerInstance = null;
+  }
+
+  logViewerInstance = createLogViewer({ container, variant: "devtools" });
+  void logViewerInstance.refresh();
 }
 
 // ── Navigation Listener ──────────────────────────────────────────────────────
@@ -790,6 +786,12 @@ async function init(): Promise<void> {
     type: "GET_SETTINGS",
   })) as { uiLanguage?: "auto" | "en" | "pt_BR" } | null;
   await initI18n(settings?.uiLanguage ?? "auto");
+
+  // Inject log viewer styles
+  const lvStyle = document.createElement("style");
+  lvStyle.textContent = getLogViewerStyles("devtools");
+  document.head.appendChild(lvStyle);
+
   renderApp();
   updateWatcherButton();
 }

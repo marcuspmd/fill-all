@@ -17,6 +17,7 @@
       <button class="tab" data-tab="forms" data-i18n="tabSavedForms">Saved Forms</button>
       <button class="tab" data-tab="dataset" data-i18n="tabDataset">Dataset &amp; Training</button>
       <button class="tab" data-tab="cache" data-i18n="tabCacheAndLearning">Cache &amp; Learning</button>
+      <button class="tab" data-tab="log" data-i18n="tabLog">Log</button>
     </div>
 
     <!-- Settings Tab -->
@@ -358,6 +359,13 @@
         </div>
         <div id="learning-summary" class="empty" style="padding: 10px 0; text-align:left;"></div>
         <div id="learned-list"></div>
+      </div>
+    </div>
+
+    <!-- Log Tab -->
+    <div class="tab-content" id="tab-log">
+      <div class="card" style="height:calc(100vh - 200px);display:flex;flex-direction:column;">
+        <div id="options-log-viewer" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
       </div>
     </div>
   </div>

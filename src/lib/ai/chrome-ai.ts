@@ -14,10 +14,14 @@ import type { FieldValueInput } from "@/lib/ai/prompts";
 
 const log = createLogger("ChromeAI");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const newApi = (globalThis as any).LanguageModel as
-  | LanguageModelStatic
-  | undefined;
+/**
+ * Lazily resolves the LanguageModel API from globalThis.
+ * Evaluated on every call so it works even when the API is injected after module load.
+ */
+function getLanguageModelApi(): LanguageModelStatic | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (globalThis as any).LanguageModel as LanguageModelStatic | undefined;
+}
 
 let session: LanguageModelSession | null = null;
 
@@ -28,13 +32,14 @@ let session: LanguageModelSession | null = null;
  */
 export async function isAvailable(): Promise<boolean> {
   try {
-    if (!newApi) {
+    const api = getLanguageModelApi();
+    if (!api) {
       log.warn(
         "LanguageModel API não encontrada no globalThis. Chrome AI indisponível.",
       );
       return false;
     }
-    const result = await newApi.availability({ outputLanguage: "en" });
+    const result = await api.availability({ outputLanguage: "en" });
     log.debug(`availability() retornou: "${result}"`);
     const available = result === "available" || result === "downloadable";
     if (!available) {
@@ -62,19 +67,20 @@ export async function getSession(): Promise<LanguageModelSession | null> {
 
   const systemPrompt = renderSystemPrompt(fieldValueGeneratorPrompt);
 
-  if (!newApi) {
+  const api = getLanguageModelApi();
+  if (!api) {
     log.warn("Chrome AI API não encontrada — sessão não criada.");
     return null;
   }
 
-  const avail = await newApi.availability({ outputLanguage: "en" });
+  const avail = await api.availability({ outputLanguage: "en" });
   if (avail === "unavailable") {
     log.warn(
       "Chrome AI indisponível (status: unavailable) — sessão não criada.",
     );
     return null;
   }
-  session = await newApi.create({ systemPrompt, outputLanguage: "en" });
+  session = await api.create({ systemPrompt, outputLanguage: "en" });
   log.debug("Sessão criada com sucesso.");
   return session!;
 }

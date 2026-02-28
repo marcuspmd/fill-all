@@ -9,6 +9,7 @@ import { initRulesTab } from "./rules-section";
 import { initFormsTab } from "./forms-section";
 import { initCacheTab } from "./cache-section";
 import { initDatasetTab } from "./dataset-section";
+import { initLogTab } from "./log-section";
 import { initI18n, localizeHTML } from "@/lib/i18n";
 import type { Settings } from "@/types";
 
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
   initFormsTab();
   initCacheTab();
   initDatasetTab();
+  initLogTab();
 }
 
 void main();

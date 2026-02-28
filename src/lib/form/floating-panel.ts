@@ -37,6 +37,14 @@ import {
   renderConfidenceBadge,
 } from "@/lib/ui";
 import { t } from "@/lib/i18n";
+import { createLogger } from "@/lib/logger";
+import {
+  createLogViewer,
+  getLogViewerStyles,
+  type LogViewer,
+} from "@/lib/logger/log-viewer";
+
+const log = createLogger("FloatingPanel");
 
 const PANEL_ID = "fill-all-floating-panel";
 const STORAGE_KEY = "fill_all_panel_state";
@@ -58,7 +66,7 @@ const MAX_HEIGHT_RATIO = 0.7;
 let panelElement: HTMLElement | null = null;
 let activeTab: TabId = "actions";
 let panelHeight = DEFAULT_HEIGHT;
-let logEntries: Array<{ time: string; text: string; type: string }> = [];
+let logViewerInstance: LogViewer | null = null;
 
 /** Map of field selector → IgnoredField for current URL (cached for quick lookups) */
 let ignoredFieldsMap = new Map<string, IgnoredField>();
@@ -112,6 +120,7 @@ export function createFloatingPanel(): void {
   setupActionHandlers(panel);
   setupFieldHandlers(panel);
   setupFormsHandlers(panel);
+  setupLogViewer(panel);
   updateWatcherStatus(panel);
   renderActiveTab(panel);
 
@@ -125,6 +134,10 @@ export function createFloatingPanel(): void {
 export function removeFloatingPanel(): void {
   const panel = document.getElementById(PANEL_ID);
   if (panel) {
+    if (logViewerInstance) {
+      logViewerInstance.dispose();
+      logViewerInstance = null;
+    }
     panel.remove();
     panelElement = null;
     removeBodyOffset();
@@ -232,14 +245,7 @@ function getPanelHTML(): string {
       </div>
       <!-- Tab: Log -->
       <div class="fa-tab-panel" id="fa-tab-log" data-panel="log">
-        <div class="fa-log-toolbar">
-          <button class="fa-fields-btn" id="fa-btn-clear-log">🗑️ ${t("btnClearLog")}</button>
-        </div>
-        <div class="fa-log-wrap" id="fa-log-wrap">
-          <div class="fa-log-entries" id="fa-log-entries">
-            <div class="fa-log-empty">${t("fpNoActivity")}</div>
-          </div>
-        </div>
+        <div class="fa-log-viewer-container" id="fa-log-viewer-container" style="display:flex;flex-direction:column;height:100%;"></div>
       </div>
     </div>
   `;
@@ -252,7 +258,7 @@ function applyPanelStyles(panel: HTMLElement): void {
   if (!document.getElementById(styleId)) {
     const style = document.createElement("style");
     style.id = styleId;
-    style.textContent = getPanelCSS();
+    style.textContent = getPanelCSS() + "\n" + getLogViewerStyles("panel");
     document.head.appendChild(style);
   }
 
@@ -590,45 +596,6 @@ function getPanelCSS(): string {
       transition: width 0.3s ease;
     }
 
-    /* ─── Tab: Log ─── */
-    #${PANEL_ID} .fa-log-toolbar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 8px;
-      flex-shrink: 0;
-    }
-    #${PANEL_ID} .fa-log-wrap {
-      flex: 1;
-      overflow: auto;
-      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
-      font-size: 11px;
-    }
-    #${PANEL_ID} .fa-log-entries {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
-    #${PANEL_ID} .fa-log-entry {
-      padding: 3px 8px;
-      border-radius: 3px;
-      display: flex;
-      gap: 8px;
-    }
-    #${PANEL_ID} .fa-log-entry:hover {
-      background: rgba(255,255,255,0.04);
-    }
-    #${PANEL_ID} .fa-log-time {
-      color: #475569;
-      flex-shrink: 0;
-    }
-    #${PANEL_ID} .fa-log-text {
-      color: #cbd5e1;
-    }
-    #${PANEL_ID} .fa-log-entry.success .fa-log-text { color: #4ade80; }
-    #${PANEL_ID} .fa-log-entry.info .fa-log-text { color: #a5b4fc; }
-    #${PANEL_ID} .fa-log-entry.error .fa-log-text { color: #f87171; }
-    #${PANEL_ID} .fa-log-entry.warn .fa-log-text { color: #fbbf24; }
     /* Field action buttons */
     #${PANEL_ID} .fa-field-actions {
       display: flex;
@@ -1153,13 +1120,6 @@ function setupFieldHandlers(panel: HTMLElement): void {
     countEl.textContent = `${count} ${t("fieldCountDetected")}`;
     addLog(`${count} ${t("fieldCountPage")}`, "success");
   });
-
-  // Clear log
-  panel.querySelector("#fa-btn-clear-log")?.addEventListener("click", () => {
-    logEntries = [];
-    const logEl = panel.querySelector("#fa-log-entries") as HTMLElement;
-    logEl.innerHTML = `<div class="fa-log-empty">${t("fpNoActivity")}</div>`;
-  });
 }
 
 interface DetectedField {
@@ -1644,24 +1604,30 @@ function buildFormEditDrawer(
 
 /* ─── Log ─── */
 
+const LOG_TYPE_TO_LEVEL: Record<string, "info" | "warn" | "error" | "debug"> = {
+  success: "info",
+  info: "info",
+  warn: "warn",
+  error: "error",
+  debug: "debug",
+};
+
 function addLog(text: string, type: string): void {
-  const time = new Date().toLocaleTimeString("pt-BR");
-  logEntries.push({ time, text, type });
+  const level = LOG_TYPE_TO_LEVEL[type] ?? "info";
+  log[level](text);
+}
 
-  if (!panelElement) return;
-  const logEl = panelElement.querySelector("#fa-log-entries") as HTMLElement;
-  if (!logEl) return;
+function setupLogViewer(panel: HTMLElement): void {
+  const container = panel.querySelector(
+    "#fa-log-viewer-container",
+  ) as HTMLElement;
+  if (!container) return;
 
-  const emptyEl = logEl.querySelector(".fa-log-empty");
-  if (emptyEl) emptyEl.remove();
-
-  const entry = document.createElement("div");
-  entry.className = `fa-log-entry ${type}`;
-  entry.innerHTML = `<span class="fa-log-time">${time}</span><span class="fa-log-text">${escapeHtml(text)}</span>`;
-  logEl.appendChild(entry);
-
-  const wrap = panelElement.querySelector("#fa-log-wrap") as HTMLElement;
-  if (wrap) wrap.scrollTop = wrap.scrollHeight;
+  logViewerInstance = createLogViewer({
+    container,
+    variant: "panel",
+  });
+  logViewerInstance.refresh();
 }
 
 /* ─── Watcher UI ─── */

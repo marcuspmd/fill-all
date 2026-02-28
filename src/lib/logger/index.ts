@@ -18,7 +18,21 @@
  *   { debugLog: false }                      → silencia tudo (padrão em prod)
  *
  * Também escuta `chrome.storage.onChanged` para atualização em tempo real.
+ *
+ * Os logs são persistidos em chrome.storage.session via log-store.ts,
+ * acessíveis de todas as abas de log (painel, devtools, options).
  */
+
+import { addLogEntry, initLogStore } from "./log-store";
+import type { LogEntry } from "./log-store";
+
+export type { LogEntry };
+export {
+  onLogUpdate,
+  getLogEntries,
+  loadLogEntries,
+  clearLogEntries,
+} from "./log-store";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -65,20 +79,33 @@ function formatPrefix(namespace: string): string {
   return `[FillAll/${namespace}]`;
 }
 
+function formatArgs(args: unknown[]): string {
+  return args
+    .map((a) => {
+      if (a instanceof Error) return `${a.message}`;
+      if (typeof a === "object" && a !== null) {
+        try {
+          return JSON.stringify(a);
+        } catch {
+          return String(a);
+        }
+      }
+      return String(a);
+    })
+    .join(" ");
+}
+
 function flushBuffer(): void {
   for (const entry of buffer) {
-    if (entry.level === "group") {
-      if (shouldLog("debug")) console.debug(entry.prefix, ...entry.args);
-    } else if (shouldLog(entry.level)) {
-      const fn =
-        entry.level === "error"
-          ? console.error
-          : entry.level === "warn"
-            ? console.warn
-            : entry.level === "info"
-              ? console.info
-              : console.debug;
-      fn(entry.prefix, ...entry.args);
+    const lvl: LogLevel = entry.level === "group" ? "debug" : entry.level;
+    if (shouldLog(lvl)) {
+      const logEntry: LogEntry = {
+        ts: new Date().toISOString(),
+        level: lvl,
+        ns: entry.prefix,
+        msg: formatArgs(entry.args),
+      };
+      addLogEntry(logEntry);
     }
   }
   buffer.length = 0;
@@ -93,20 +120,16 @@ function emit(
     buffer.push({ level, prefix, args });
     return;
   }
-  if (level === "group") {
-    if (shouldLog("debug")) console.debug(prefix, ...args);
-    return;
-  }
-  if (!shouldLog(level)) return;
-  const fn =
-    level === "error"
-      ? console.error
-      : level === "warn"
-        ? console.warn
-        : level === "info"
-          ? console.info
-          : console.debug;
-  fn(prefix, ...args);
+  const lvl: LogLevel = level === "group" ? "debug" : level;
+  if (!shouldLog(lvl)) return;
+
+  const logEntry: LogEntry = {
+    ts: new Date().toISOString(),
+    level: lvl,
+    ns: prefix,
+    msg: formatArgs(args),
+  };
+  addLogEntry(logEntry);
 }
 
 // ── API pública de configuração ────────────────────────────────────────────────
@@ -126,6 +149,9 @@ export function configureLogger(options: Partial<LoggerState>): void {
  * Se `chrome` não estiver disponível (ex.: testes unitários), usa os padrões.
  */
 export async function initLogger(): Promise<void> {
+  // Initialize the persistent log store
+  await initLogStore();
+
   if (typeof chrome === "undefined" || !chrome.storage) {
     initializing = false;
     flushBuffer();

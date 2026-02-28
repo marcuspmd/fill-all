@@ -343,9 +343,12 @@ async function getAiFunction(
     }
   }
 
-  // Fallback to TF.js-based generation
-  if (settings.defaultStrategy === "tensorflow") {
-    log.debug("Chrome AI indisponível — usando TensorFlow.js.");
+  // Fallback to TF.js when strategy is "ai" or "tensorflow"
+  if (
+    settings.defaultStrategy === "tensorflow" ||
+    settings.defaultStrategy === "ai"
+  ) {
+    log.debug("Usando TensorFlow.js como fallback de AI.");
     return async (field: FormField) => await generateWithTensorFlow(field);
   }
 

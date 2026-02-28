@@ -18,6 +18,11 @@ import { initLogger, createLogger } from "@/lib/logger";
 void initLogger();
 const log = createLogger("ServiceWorker");
 
+// Allow content scripts to access chrome.storage.session for shared log store
+chrome.storage.session.setAccessLevel({
+  accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS",
+});
+
 // ── Context Menu ──────────────────────────────────────────────────────────────
 
 chrome.runtime.onInstalled.addListener(() => {
