@@ -6,3 +6,4 @@ dist/
 .ds_store
 *ds_store
 *DS_STORE
+coverage/
