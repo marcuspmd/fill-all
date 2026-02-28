@@ -101,21 +101,17 @@ Adicionar modo onde o Gemini Nano analisa o formulário como um todo e gera valo
 
 ## 🧪 Implementação de Testes Unitários
 
-**Status**: 🔲 Planejado
+**Status**: ✅ Concluído
 
-Adicionar cobertura de testes unitários ao projeto, garantindo confiabilidade em refatorações e novas funcionalidades.
+Cobertura de testes unitários e E2E implementada com Vitest + Playwright, garantindo confiabilidade nas funcionalidades principais.
 
-- Configurar framework de testes: **Vitest** (integração nativa com Vite)
-- Mockar Chrome APIs (`chrome.storage`, `chrome.runtime`, `chrome.tabs`)
-- Cobertura prioritária:
-  - Geradores (`generateCpf`, `generateCnpj`, `generatePhone`, etc.) — funções puras, fáceis de testar
-  - Parsers Zod (`parseRulePayload`, `parseSaveFieldCachePayload`, etc.)
-  - Motor de regras (`rule-engine.ts`) — lógica de prioridade e matching de URL
-  - Pipeline de detecção (`DetectionPipeline`) — composição, `.with()`, `.without()`, `.withOrder()`
-  - Utilitários (`matchUrlPattern`, `buildSignals`, `getUniqueSelector`)
-  - Storage (`updateStorageAtomically`) — testar fila de escrita e updaters puros
-- Integrar `npm run test` no CI (GitHub Actions)
-- Meta inicial: >80% de cobertura nos módulos `lib/generators/`, `lib/rules/` e `lib/messaging/`
+- ✅ Vitest configurado com V8 coverage (`.coverage/unit/`)
+- ✅ Playwright configurado para E2E com Chrome real (`.coverage/e2e/`)
+- ✅ Chrome APIs mockadas (`chrome.storage`, `chrome.runtime`, `chrome.tabs`)
+- ✅ 70+ arquivos de teste cobrindo: geradores, parsers Zod, rule engine, pipeline de detecção, storage, adapters Ant Design/Select2, extractors, i18n, logger, UI
+- ✅ Testes E2E para: form-filler, form-detector, dom-watcher, field-icon, floating-panel
+- ✅ Coverage merge combinando unitários + E2E (`npm run coverage:all`)
+- ✅ Scripts: `npm test`, `npm run test:e2e`, `npm run test:coverage`, `npm run coverage:all`
 
 ---
 
