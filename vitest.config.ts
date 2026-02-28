@@ -11,7 +11,17 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html"],
       include: ["src/lib/**/*.ts"],
-      exclude: ["src/lib/**/__tests__/**"],
+      exclude: [
+        "src/lib/**/__tests__/**",
+        "src/**/index.ts",
+        "src/**/*.interface.ts",
+      ],
+      thresholds: {
+        lines: 80,
+        statements: 80,
+        functions: 80,
+        branches: 70,
+      },
     },
   },
   resolve: {
