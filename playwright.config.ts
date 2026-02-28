@@ -5,7 +5,7 @@ export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   testDir: "./src",
   testMatch: "**/__tests__/e2e/*.test.e2e.ts",
-  timeout: 60_000,
+  timeout: 30_000,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Chrome extension tests must run sequentially
 

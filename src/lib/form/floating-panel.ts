@@ -160,13 +160,13 @@ function getPanelHTML(): string {
       <div class="fa-toolbar-right">
         <button class="fa-toolbar-btn fa-btn-fill-minimized" id="fa-btn-fill-minimized" title="${t("fillAll")}">⚡</button>
         <button class="fa-toolbar-btn" id="fa-btn-options" title="${t("fpOpenOptions")}">⚙️</button>
-        <button class="fa-toolbar-btn" id="fa-btn-minimize" title="${t("fpMinimize")}">▼</button>
-        <button class="fa-toolbar-btn" id="fa-btn-close" title="${t("fpClose")}">✕</button>
+        <button class="fa-toolbar-btn" id="fa-btn-minimize" data-action="minimize" title="${t("fpMinimize")}">▼</button>
+        <button class="fa-toolbar-btn" id="fa-btn-close" data-action="close" title="${t("fpClose")}">✕</button>
       </div>
     </div>
     <div class="fa-content" id="fa-content">
       <!-- Tab: Ações -->
-      <div class="fa-tab-panel active" id="fa-tab-actions">
+      <div class="fa-tab-panel active" id="fa-tab-actions" data-panel="actions">
         <div class="fa-actions-grid">
           <button class="fa-action-card fa-card-primary" id="fa-btn-fill">
             <span class="fa-card-icon">⚡</span>
@@ -197,7 +197,7 @@ function getPanelHTML(): string {
         <div class="fa-status-bar" id="fa-status-bar"></div>
       </div>
       <!-- Tab: Campos -->
-      <div class="fa-tab-panel" id="fa-tab-fields">
+      <div class="fa-tab-panel" id="fa-tab-fields" data-panel="fields">
         <div class="fa-fields-toolbar">
           <button class="fa-fields-btn" id="fa-btn-detect">🔍 ${t("detectFields")}</button>
           <span class="fa-fields-count" id="fa-fields-count"></span>
@@ -221,7 +221,7 @@ function getPanelHTML(): string {
         </div>
       </div>
       <!-- Tab: Forms -->
-      <div class="fa-tab-panel" id="fa-tab-forms">
+      <div class="fa-tab-panel" id="fa-tab-forms" data-panel="forms">
         <div class="fa-forms-toolbar">
           <button class="fa-fields-btn" id="fa-btn-load-forms">🔄 ${t("btnLoadForms")}</button>
           <span class="fa-fields-count" id="fa-forms-count"></span>
@@ -231,7 +231,7 @@ function getPanelHTML(): string {
         </div>
       </div>
       <!-- Tab: Log -->
-      <div class="fa-tab-panel" id="fa-tab-log">
+      <div class="fa-tab-panel" id="fa-tab-log" data-panel="log">
         <div class="fa-log-toolbar">
           <button class="fa-fields-btn" id="fa-btn-clear-log">🗑️ ${t("btnClearLog")}</button>
         </div>
