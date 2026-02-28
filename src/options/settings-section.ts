@@ -334,11 +334,11 @@ function bindSettingsEvents(): void {
     ?.addEventListener("click", async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const LanguageModel = (globalThis as any).LanguageModel as
-        | { create?: () => Promise<unknown> }
+        | { create?: (opts?: { outputLanguage?: string }) => Promise<unknown> }
         | undefined;
       if (!LanguageModel?.create) return;
       try {
-        await LanguageModel.create();
+        await LanguageModel.create({ outputLanguage: "en" });
         void checkChromeAiStatus();
         showToast(t("chromeAiDownloadStart"));
       } catch (err) {

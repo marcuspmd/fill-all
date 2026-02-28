@@ -35,10 +35,14 @@ const CLASSIFY_TIMEOUT_MS = 60000;
 
 // ── Session management ────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const LanguageModelAPI = (globalThis as any).LanguageModel as
-  | LanguageModelStatic
-  | undefined;
+/**
+ * Lazily resolves the LanguageModel API from globalThis.
+ * Evaluated on every call so it works even when the API is injected after module load.
+ */
+function getLanguageModelApi(): LanguageModelStatic | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (globalThis as any).LanguageModel as LanguageModelStatic | undefined;
+}
 
 let classifierSession: LanguageModelSession | null = null;
 
@@ -46,12 +50,13 @@ async function getOrCreateSession(): Promise<LanguageModelSession | null> {
   if (classifierSession) return classifierSession;
 
   try {
-    if (!LanguageModelAPI) return null;
+    const api = getLanguageModelApi();
+    if (!api) return null;
 
-    const avail = await LanguageModelAPI.availability({ outputLanguage: "en" });
+    const avail = await api.availability({ outputLanguage: "en" });
     if (avail === "unavailable") return null;
 
-    classifierSession = await LanguageModelAPI.create({
+    classifierSession = await api.create({
       outputLanguage: "en",
     });
 
