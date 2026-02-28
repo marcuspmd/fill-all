@@ -45,12 +45,10 @@ test.describe("dom-watcher — detecção de novos campos dinâmicos", () => {
     await waitForContentScript(page);
 
     // Get initial field count
-    const initialResponse = await sendToContentScript(page, {
+    const initialResponse = (await sendToContentScript(page, {
       type: "GET_FORM_FIELDS",
-    });
-    const initialCount = Array.isArray(initialResponse)
-      ? initialResponse.length
-      : 0;
+    })) as { count: number; fields: unknown[] };
+    const initialCount = initialResponse?.count ?? 0;
 
     // Add a new field via the page helper button
     await page.evaluate(() => {
@@ -61,13 +59,11 @@ test.describe("dom-watcher — detecção de novos campos dinâmicos", () => {
     // Give the watcher debounce time to fire (600ms + buffer)
     await page.waitForTimeout(1000);
 
-    const updatedResponse = await sendToContentScript(page, {
+    const updatedResponse = (await sendToContentScript(page, {
       type: "GET_FORM_FIELDS",
-    });
+    })) as { count: number; fields: unknown[] };
 
-    expect(
-      Array.isArray(updatedResponse) ? updatedResponse.length : 0,
-    ).toBeGreaterThan(initialCount);
+    expect(updatedResponse?.count ?? 0).toBeGreaterThan(initialCount);
   });
 
   test("campos removidos do DOM são refletidos na detecção", async ({
@@ -83,12 +79,10 @@ test.describe("dom-watcher — detecção de novos campos dinâmicos", () => {
     });
     await page.waitForTimeout(500);
 
-    const afterAddResponse = await sendToContentScript(page, {
+    const afterAddResponse = (await sendToContentScript(page, {
       type: "GET_FORM_FIELDS",
-    });
-    const countAfterAdd = Array.isArray(afterAddResponse)
-      ? afterAddResponse.length
-      : 0;
+    })) as { count: number; fields: unknown[] };
+    const countAfterAdd = afterAddResponse?.count ?? 0;
 
     // Remove the dynamic field
     await page.evaluate(() => {
@@ -98,13 +92,11 @@ test.describe("dom-watcher — detecção de novos campos dinâmicos", () => {
     });
     await page.waitForTimeout(500);
 
-    const afterRemoveResponse = await sendToContentScript(page, {
+    const afterRemoveResponse = (await sendToContentScript(page, {
       type: "GET_FORM_FIELDS",
-    });
+    })) as { count: number; fields: unknown[] };
 
-    expect(
-      Array.isArray(afterRemoveResponse) ? afterRemoveResponse.length : 0,
-    ).toBeLessThan(countAfterAdd);
+    expect(afterRemoveResponse?.count ?? 0).toBeLessThan(countAfterAdd);
   });
 });
 

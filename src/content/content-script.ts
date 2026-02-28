@@ -195,7 +195,7 @@ async function handleContentMessage(
 
     case "GET_FORM_FIELDS": {
       const fields = detectFormFields();
-      return fields.map((f) => ({
+      const mapped = fields.map((f) => ({
         selector: f.selector,
         fieldType: f.fieldType,
         label: f.label,
@@ -204,6 +204,7 @@ async function handleContentMessage(
         placeholder: f.placeholder,
         required: f.required,
       }));
+      return { count: mapped.length, fields: mapped };
     }
 
     case "DETECT_FIELDS": {

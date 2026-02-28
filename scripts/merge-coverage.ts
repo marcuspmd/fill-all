@@ -24,10 +24,18 @@ function loadJsonFiles(dir: string): CoverageMapData[] {
     );
 }
 
-const merged = createCoverageMap({});
+const raw = createCoverageMap({});
 
 for (const data of [...loadJsonFiles(UNIT_DIR), ...loadJsonFiles(E2E_DIR)]) {
-  merged.merge(data);
+  raw.merge(data);
+}
+
+// Exclude node_modules and keep only project source files
+const merged = createCoverageMap({});
+for (const file of raw.files()) {
+  if (!file.includes("node_modules") && file.includes(`${ROOT}/src/`)) {
+    merged.addFileCoverage(raw.fileCoverageFor(file));
+  }
 }
 
 if (fs.existsSync(OUTPUT_DIR)) {
