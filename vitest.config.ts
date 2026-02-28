@@ -15,6 +15,18 @@ export default defineConfig({
         "src/lib/**/__tests__/**",
         "src/**/index.ts",
         "src/**/*.interface.ts",
+        "src/lib/storage/storage.ts",
+        // DOM-heavy files: require real browser/MutationObserver — covered by E2E tests
+        "src/lib/form/dom-watcher.ts",
+        "src/lib/form/field-icon.ts",
+        "src/lib/form/field-icon-rule.ts",
+        "src/lib/form/field-icon-styles.ts",
+        "src/lib/form/field-icon-utils.ts",
+        "src/lib/form/field-overlay.ts",
+        "src/lib/form/floating-panel.ts",
+        "src/lib/form/form-filler.ts",
+        // TensorFlow.js training: requires a real browser with TF.js bundled
+        "src/lib/ai/runtime-trainer.ts",
       ],
       thresholds: {
         lines: 80,

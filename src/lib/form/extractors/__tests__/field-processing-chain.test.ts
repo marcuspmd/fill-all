@@ -2,8 +2,8 @@
 
 import { describe, expect, it } from "vitest";
 import { FieldProcessingChain } from "@/lib/form/extractors/field-processing-chain";
-import type { FieldClassifier } from "@/lib/form/detectors/detector.interface";
 import type { FormField } from "@/types";
+import { FieldClassifier } from "@/lib/form/form-detector";
 
 function createField(name = "email"): FormField {
   const input = document.createElement("input");

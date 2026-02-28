@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { DetectionPipeline } from "@/lib/form/detectors/pipeline";
+import {
+  DetectionPipeline,
+  FieldCollectionPipeline,
+} from "@/lib/form/detectors/pipeline";
 import type {
   FieldClassifier,
   ClassifierResult,
+  PageDetector,
 } from "@/lib/form/detectors/pipeline";
 import type { FormField, DetectionMethod } from "@/types";
 
@@ -171,6 +175,35 @@ describe("DetectionPipeline.runAsync", () => {
     expect(result.type).toBe("unknown");
     expect(result.method).toBe("html-fallback");
   });
+
+  it("skips unknown result from first classifier and uses next", async () => {
+    const unknownClassifier = makeAsyncClassifier("chrome-ai", {
+      type: "unknown",
+      confidence: 0.3,
+    });
+    const goodClassifier = makeClassifier("keyword", {
+      type: "email",
+      confidence: 0.9,
+    });
+    const pipeline = new DetectionPipeline([unknownClassifier, goodClassifier]);
+    const result = await pipeline.runAsync(makeField());
+    expect(result.type).toBe("email");
+    expect(result.method).toBe("keyword");
+  });
+
+  it("includes unknown result in predictions but keeps going", async () => {
+    const unknownClassifier = makeAsyncClassifier("chrome-ai", {
+      type: "unknown",
+      confidence: 0.2,
+    });
+    const pipeline = new DetectionPipeline([unknownClassifier]);
+    const result = await pipeline.runAsync(makeField());
+    // Falls back to html-fallback since only unknown was returned
+    expect(result.type).toBe("unknown");
+    expect(result.decisionTrace).toEqual(
+      expect.arrayContaining([expect.stringContaining("chrome-ai: unknown")]),
+    );
+  });
 });
 
 // ── Pipeline mutating operators ──────────────────────────────────────────────
@@ -250,5 +283,119 @@ describe("DetectionPipeline.insertBefore", () => {
     const modified = original.insertBefore("keyword", b);
     expect(modified.classifiers).toHaveLength(2);
     expect(modified.classifiers[1].name).toBe("keyword");
+  });
+});
+
+// ── FieldCollectionPipeline ──────────────────────────────────────────────────
+
+function makePageDetector(
+  name: string,
+  fields: FormField[] = [],
+): PageDetector {
+  return {
+    name,
+    detect: vi.fn().mockReturnValue(fields),
+  };
+}
+
+describe("FieldCollectionPipeline.run", () => {
+  it("returns empty array when no detectors", () => {
+    const pipeline = new FieldCollectionPipeline([]);
+    expect(pipeline.run()).toEqual([]);
+  });
+
+  it("concatenates results from all detectors", () => {
+    const f1 = makeField({ id: "f1", selector: "#f1" });
+    const f2 = makeField({ id: "f2", selector: "#f2" });
+    const d1 = makePageDetector("detector-a", [f1]);
+    const d2 = makePageDetector("detector-b", [f2]);
+    const pipeline = new FieldCollectionPipeline([d1, d2]);
+    const result = pipeline.run();
+    expect(result).toHaveLength(2);
+    expect(result[0].selector).toBe("#f1");
+    expect(result[1].selector).toBe("#f2");
+  });
+
+  it("returns only fields from detectors that have results", () => {
+    const f1 = makeField({ id: "f1", selector: "#f1" });
+    const d1 = makePageDetector("detector-a", [f1]);
+    const d2 = makePageDetector("detector-b", []);
+    const pipeline = new FieldCollectionPipeline([d1, d2]);
+    const result = pipeline.run();
+    expect(result).toHaveLength(1);
+  });
+});
+
+describe("FieldCollectionPipeline.with", () => {
+  it("returns a new pipeline with the detector appended", () => {
+    const d1 = makePageDetector("d1");
+    const d2 = makePageDetector("d2");
+    const original = new FieldCollectionPipeline([d1]);
+    const extended = original.with(d2);
+    expect(extended.detectors).toHaveLength(2);
+    expect(extended.detectors[1].name).toBe("d2");
+  });
+
+  it("does not mutate the original pipeline", () => {
+    const d1 = makePageDetector("d1");
+    const d2 = makePageDetector("d2");
+    const original = new FieldCollectionPipeline([d1]);
+    original.with(d2);
+    expect(original.detectors).toHaveLength(1);
+  });
+});
+
+describe("FieldCollectionPipeline.without", () => {
+  it("returns a new pipeline excluding the named detector", () => {
+    const d1 = makePageDetector("native-inputs");
+    const d2 = makePageDetector("custom-selects");
+    const original = new FieldCollectionPipeline([d1, d2]);
+    const modified = original.without("custom-selects");
+    expect(modified.detectors).toHaveLength(1);
+    expect(modified.detectors[0].name).toBe("native-inputs");
+  });
+
+  it("returns same-length pipeline when name not found", () => {
+    const d1 = makePageDetector("native-inputs");
+    const original = new FieldCollectionPipeline([d1]);
+    const modified = original.without("nonexistent");
+    expect(modified.detectors).toHaveLength(1);
+  });
+
+  it("can exclude multiple names at once", () => {
+    const d1 = makePageDetector("d1");
+    const d2 = makePageDetector("d2");
+    const d3 = makePageDetector("d3");
+    const pipeline = new FieldCollectionPipeline([d1, d2, d3]);
+    const modified = pipeline.without("d1", "d3");
+    expect(modified.detectors).toHaveLength(1);
+    expect(modified.detectors[0].name).toBe("d2");
+  });
+});
+
+describe("FieldCollectionPipeline.withOrder", () => {
+  it("reorders detectors by name", () => {
+    const d1 = makePageDetector("d1");
+    const d2 = makePageDetector("d2");
+    const d3 = makePageDetector("d3");
+    const original = new FieldCollectionPipeline([d1, d2, d3]);
+    const reordered = original.withOrder(["d3", "d1", "d2"]);
+    expect(reordered.detectors.map((d) => d.name)).toEqual(["d3", "d1", "d2"]);
+  });
+
+  it("excludes detectors not in the order list", () => {
+    const d1 = makePageDetector("d1");
+    const d2 = makePageDetector("d2");
+    const original = new FieldCollectionPipeline([d1, d2]);
+    const reordered = original.withOrder(["d2"]);
+    expect(reordered.detectors).toHaveLength(1);
+    expect(reordered.detectors[0].name).toBe("d2");
+  });
+
+  it("returns empty pipeline when no names match", () => {
+    const d1 = makePageDetector("d1");
+    const original = new FieldCollectionPipeline([d1]);
+    const reordered = original.withOrder(["nonexistent"]);
+    expect(reordered.detectors).toHaveLength(0);
   });
 });

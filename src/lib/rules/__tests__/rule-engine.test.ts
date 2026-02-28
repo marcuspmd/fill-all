@@ -229,4 +229,212 @@ describe("rule-engine/resolveFieldValue", () => {
       source: "ai",
     });
   });
+  it("pula AI forceAIFirst para fieldType com gerador determinístico", async () => {
+    const field = createField({ fieldType: "cpf" });
+    const aiGenerateFn = vi.fn().mockResolvedValue("ai-value");
+    mockGenerateWithConstraints.mockReturnValue("111.111.111-11");
+
+    const result = await resolveFieldValue(
+      field,
+      "https://example.com",
+      aiGenerateFn,
+      true,
+    );
+
+    // AI should be skipped for cpf (generator-only type)
+    expect(aiGenerateFn).not.toHaveBeenCalled();
+    expect(result.source).toBe("generator");
+  });
+
+  it("forceAIFirst falha e cai no gerador padrão", async () => {
+    const field = createField({ fieldType: "text" });
+    const aiGenerateFn = vi.fn().mockRejectedValue(new Error("AI failed"));
+    mockGenerateWithConstraints.mockReturnValue("fallback-generated");
+
+    const result = await resolveFieldValue(
+      field,
+      "https://example.com",
+      aiGenerateFn,
+      true,
+    );
+
+    expect(result.value).toBe("fallback-generated");
+    expect(result.source).toBe("generator");
+  });
+
+  it("forceAIFirst AI retorna vazio após adapt e cai no gerador padrão", async () => {
+    const field = createField({ fieldType: "text" });
+    const aiGenerateFn = vi.fn().mockResolvedValue("  ");
+    mockAdaptGeneratedValue.mockReturnValue("");
+    mockGenerateWithConstraints.mockReturnValue("fallback");
+
+    const result = await resolveFieldValue(
+      field,
+      "https://example.com",
+      aiGenerateFn,
+      true,
+    );
+
+    expect(result.value).toBe("fallback");
+    expect(result.source).toBe("generator");
+  });
+
+  it("usa opção aleatória de select quando selectOptionIndex=0", async () => {
+    const select = document.createElement("select");
+    const optA = document.createElement("option");
+    optA.value = "x";
+    optA.text = "X";
+    select.append(optA);
+
+    const field = createField({
+      element: select,
+      selector: "#sel",
+      fieldType: "state",
+    });
+    mockGetRulesForUrl.mockResolvedValue([
+      createRule({ fieldSelector: "#sel", selectOptionIndex: 0 }),
+    ]);
+
+    const result = await resolveFieldValue(field, "https://example.com");
+    expect(result.source).toBe("rule");
+    expect(result.value).toBe("x");
+  });
+
+  it("ignora opção com índice inválido e cai no gerador padrão", async () => {
+    const select = document.createElement("select");
+    const opt = document.createElement("option");
+    opt.value = "z";
+    select.append(opt);
+
+    const field = createField({
+      element: select,
+      selector: "#sel",
+      fieldType: "state",
+    });
+    mockGetRulesForUrl.mockResolvedValue([
+      createRule({ fieldSelector: "#sel", selectOptionIndex: 99 }),
+    ]);
+    mockGenerateWithConstraints.mockReturnValue("gerado");
+
+    const result = await resolveFieldValue(field, "https://example.com");
+    expect(result.source).toBe("generator");
+  });
+
+  it("encontra regra pelo fieldName quando selector não bate", async () => {
+    const input = document.createElement("input");
+    input.name = "cpf_field";
+    const field = createField({
+      element: input,
+      name: "cpf_field",
+      id: "cpf_field",
+      fieldType: "cpf",
+    });
+    mockGetRulesForUrl.mockResolvedValue([
+      createRule({
+        fieldSelector: "#inexistente",
+        fieldName: "cpf_field",
+        fixedValue: "012.345.678-90",
+      }),
+    ]);
+
+    const result = await resolveFieldValue(field, "https://example.com");
+    expect(result.value).toBe("012.345.678-90");
+    expect(result.source).toBe("rule");
+  });
+
+  it("usa opção aleatória de select quando gerador retorna vazio", async () => {
+    const select = document.createElement("select");
+    const opt = document.createElement("option");
+    opt.value = "opt1";
+    opt.text = "Opt 1";
+    select.append(opt);
+
+    const field = createField({
+      element: select,
+      selector: "#sel",
+      fieldType: "state",
+    });
+    mockGenerateWithConstraints.mockReturnValue("");
+
+    const result = await resolveFieldValue(field, "https://example.com");
+    expect(result.value).toBe("opt1");
+    expect(result.source).toBe("generator");
+  });
+
+  it("retorna vazio quando select não tem opções válidas", async () => {
+    const select = document.createElement("select");
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    select.append(placeholder);
+
+    const field = createField({
+      element: select,
+      selector: "#sel",
+      fieldType: "state",
+    });
+    mockGenerateWithConstraints.mockReturnValue("");
+
+    const result = await resolveFieldValue(field, "https://example.com");
+    expect(result.value).toBe("");
+    expect(result.source).toBe("generator");
+  });
+
+  it("AI rule falha e cai no gerador padrão", async () => {
+    const field = createField({ fieldType: "text" });
+    const aiGenerateFn = vi.fn().mockRejectedValue(new Error("AI error"));
+    mockGetRulesForUrl.mockResolvedValue([
+      createRule({ fieldType: "text", generator: "ai" }),
+    ]);
+    mockGenerateWithConstraints.mockReturnValue("fallback");
+
+    const result = await resolveFieldValue(
+      field,
+      "https://example.com",
+      aiGenerateFn,
+    );
+
+    expect(result.source).toBe("generator");
+    expect(result.value).toBe("fallback");
+  });
+
+  it("usa contextualType state quando fieldType é select", async () => {
+    const field = createField({
+      fieldType: "select",
+      contextualType: "state",
+    });
+    mockGenerateWithConstraints.mockReturnValue("SP");
+
+    await resolveFieldValue(field, "https://example.com");
+    expect(mockGenerateWithConstraints).toHaveBeenCalled();
+  });
+
+  it("AI último recurso retorna vazio, retorna valor vazio", async () => {
+    const aiGenerateFn = vi.fn().mockResolvedValue("ai-resposta");
+    const field = createField({ fieldType: "text" });
+    mockGenerateWithConstraints.mockReturnValue("");
+    mockAdaptGeneratedValue.mockReturnValue(""); // adapt returns empty
+
+    const result = await resolveFieldValue(
+      field,
+      "https://example.com",
+      aiGenerateFn,
+    );
+
+    expect(result.value).toBe("");
+  });
+
+  it("AI último recurso lança exceção, retorna valor vazio do gerador", async () => {
+    const aiGenerateFn = vi.fn().mockRejectedValue(new Error("timeout"));
+    const field = createField({ fieldType: "text" });
+    mockGenerateWithConstraints.mockReturnValue("");
+
+    const result = await resolveFieldValue(
+      field,
+      "https://example.com",
+      aiGenerateFn,
+    );
+
+    expect(result.value).toBe("");
+    expect(result.source).toBe("generator");
+  });
 });
