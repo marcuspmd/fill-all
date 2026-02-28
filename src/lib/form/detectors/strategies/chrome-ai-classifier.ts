@@ -7,9 +7,10 @@
  * Pipeline position: after TensorFlow, before html-fallback.
  *
  * Sync `detect()` always returns null — this classifier is async-only.
- * Async `detectAsync()` sends field HTML context to the AI, parses the JSON
- * response back into a { fieldType, confidence, generatorType } result, and
- * persists the classification to the learning store so TF.js can retrain.
+ * Async `detectAsync()` delegates classification to the background service worker
+ * via `chrome.runtime.sendMessage` (the LanguageModel API is not available in
+ * content scripts). On success, persists the classification to the learning store
+ * so TF.js can retrain.
  *
  * On any error (AI unavailable, timeout, parse failure) it returns null so
  * the pipeline continues to the html-fallback classifier.
@@ -20,78 +21,11 @@ import type { FieldClassifier, ClassifierResult } from "../pipeline";
 import { storeLearnedEntry } from "@/lib/ai/learning-store";
 import { invalidateClassifier } from "./tensorflow-classifier";
 import { addDatasetEntry } from "@/lib/dataset/runtime-dataset";
+import { classifyFieldViaProxy } from "@/lib/ai/chrome-ai-proxy";
 import { createLogger } from "@/lib/logger";
-import {
-  fieldClassifierPrompt,
-  type FieldClassifierInput,
-  type FieldClassifierOutput,
-} from "@/lib/ai/prompts";
+import type { FieldClassifierInput } from "@/lib/ai/prompts";
 
 const log = createLogger("ChromeAIClassifier");
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const CLASSIFY_TIMEOUT_MS = 60000;
-
-// ── Session management ────────────────────────────────────────────────────────
-
-/**
- * Lazily resolves the LanguageModel API from globalThis.
- * Evaluated on every call so it works even when the API is injected after module load.
- */
-function getLanguageModelApi(): LanguageModelStatic | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (globalThis as any).LanguageModel as LanguageModelStatic | undefined;
-}
-
-let classifierSession: LanguageModelSession | null = null;
-
-async function getOrCreateSession(): Promise<LanguageModelSession | null> {
-  if (classifierSession) return classifierSession;
-
-  try {
-    const api = getLanguageModelApi();
-    if (!api) {
-      const context =
-        typeof globalThis !== "undefined"
-          ? Object.getOwnPropertyNames(globalThis).filter((k) =>
-              /ai|language|model|prompt/i.test(k),
-            )
-          : [];
-      log.warn(
-        `LanguageModel API não encontrada. ` +
-          `Contexto: ${typeof window !== "undefined" ? "content-script" : "unknown"}, ` +
-          `AI-related keys: [${context.length > 0 ? context.join(", ") : "nenhuma"}].`,
-      );
-      return null;
-    }
-
-    const avail = await api.availability({ outputLanguage: "en" });
-    log.debug(`availability() retornou: "${avail}"`);
-    if (avail === "unavailable") {
-      log.warn(`Chrome AI indisponível (status: "${avail}").`);
-      return null;
-    }
-
-    classifierSession = await api.create({
-      outputLanguage: "en",
-    });
-    log.info("Sessão Chrome AI Classifier criada com sucesso.");
-
-    return classifierSession;
-  } catch (err) {
-    log.warn("Falha ao criar sessão Chrome AI:", err);
-    return null;
-  }
-}
-
-/** Invalidates the cached session (call on extension unload or session error). */
-export function destroyClassifierSession(): void {
-  if (classifierSession) {
-    classifierSession.destroy();
-    classifierSession = null;
-  }
-}
 
 // ── Input builder ─────────────────────────────────────────────────────────────
 
@@ -147,81 +81,57 @@ export const chromeAiClassifier: FieldClassifier = {
   },
 
   /**
-   * Async path — sends field HTML context to Gemini Nano and parses the JSON
-   * reply. On success, persists the classification to the learning store so
-   * TF.js prototype vectors are updated for future page loads.
+   * Async path — sends field HTML context to the background service worker
+   * which prompts Gemini Nano and parses the JSON reply.
+   * On success, persists the classification to the learning store so TF.js
+   * prototype vectors are updated for future page loads.
    * Returns null on unavailability, timeout, or parse failure.
    */
   async detectAsync(field: FormField): Promise<ClassifierResult | null> {
+    const fieldLabel =
+      field.label ??
+      field.contextSignals ??
+      field.name ??
+      field.id ??
+      field.selector;
+    log.debug(`[detectAsync] Iniciando classificação para "${fieldLabel}"`);
+
     try {
-      const session = await getOrCreateSession();
-      if (!session) return null;
-
       const input = buildClassifierInput(field);
-      const prompt = fieldClassifierPrompt.buildPrompt(input);
+      const result = await classifyFieldViaProxy(input);
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        CLASSIFY_TIMEOUT_MS,
+      if (!result) {
+        log.debug(
+          `[detectAsync] Classificação retornou null para "${fieldLabel}"`,
+        );
+        return null;
+      }
+
+      log.debug(
+        `"${fieldLabel}" → ${result.fieldType} (generator: ${result.generatorType}, ${(result.confidence * 100).toFixed(0)}%)`,
       );
 
-      const fieldLabel = field.contextSignals ?? field.name ?? field.id;
-
-      let raw: string;
-      try {
-        log.debug(`Prompt for "${fieldLabel}":\n${prompt}`);
-        raw = await session.prompt(prompt, { signal: controller.signal });
-        log.debug(`Raw response for "${fieldLabel}":\n${raw}`);
-      } finally {
-        clearTimeout(timeoutId);
-      }
-
-      const result: FieldClassifierOutput | null =
-        fieldClassifierPrompt.parseResponse(raw);
-
-      if (result) {
-        log.debug(
-          `"${fieldLabel}" → ${result.fieldType} (generator: ${result.generatorType}, ${(result.confidence * 100).toFixed(0)}%)`,
-        );
-
-        // ── Persist to dataset + learning store ───────────────────────────
-        // The dataset is the source of truth for the learning store.
-        // Both are updated so TF.js can retrain and the cosine classifier
-        // benefits immediately on the next field classification.
-        const signals = field.contextSignals ?? "";
-        if (signals) {
-          addDatasetEntry({
-            signals,
-            type: result.fieldType,
-            source: "auto",
-            difficulty: "easy",
-          }).catch(() => {
-            /* non-critical */
+      // ── Persist to dataset + learning store ───────────────────────────
+      const signals = field.contextSignals ?? "";
+      if (signals) {
+        addDatasetEntry({
+          signals,
+          type: result.fieldType,
+          source: "auto",
+          difficulty: "easy",
+        }).catch(() => {
+          /* non-critical */
+        });
+        storeLearnedEntry(signals, result.fieldType, result.generatorType)
+          .then(() => invalidateClassifier())
+          .catch(() => {
+            /* non-critical — ignore storage errors */
           });
-          storeLearnedEntry(signals, result.fieldType, result.generatorType)
-            .then(() => invalidateClassifier())
-            .catch(() => {
-              /* non-critical — ignore storage errors */
-            });
-        }
       }
 
-      // Return only the base ClassifierResult to keep the pipeline interface clean.
-      return result
-        ? { type: result.fieldType, confidence: result.confidence }
-        : null;
+      return { type: result.fieldType, confidence: result.confidence };
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        // Timeout — log so the user can see what happened in DevTools.
-        log.warn(
-          `⏱ Timeout (${CLASSIFY_TIMEOUT_MS}ms) para "${field.contextSignals ?? field.name ?? field.id}" — passando para html-fallback`,
-        );
-      } else {
-        // Session may be broken — reset so next call creates a fresh one.
-        classifierSession = null;
-        log.warn("Erro:", (err as Error).message);
-      }
+      log.warn("Erro na classificação via proxy:", (err as Error).message);
       return null;
     }
   },

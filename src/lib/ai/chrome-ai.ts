@@ -141,6 +141,30 @@ export async function generateFieldValue(field: FormField): Promise<string> {
   return result.trim();
 }
 
+/**
+ * Generates a value from serializable field metadata — no DOM element needed.
+ * Used by the background handler when proxying AI_GENERATE from content scripts.
+ */
+export async function generateFieldValueFromInput(
+  input: FieldValueInput,
+): Promise<string> {
+  log.debug(
+    `Gerando valor via input: label="${input.label ?? ""}" name="${input.name ?? ""}" type="${input.fieldType}"`,
+  );
+
+  const aiSession = await getSession();
+  if (!aiSession) {
+    log.warn("Sessão Chrome AI indisponível — não é possível gerar valor.");
+    return "";
+  }
+
+  const prompt = fieldValueGeneratorPrompt.buildPrompt(input);
+  const result = await aiSession.prompt(prompt);
+
+  log.debug(`Resposta (input proxy): "${result.trim()}"`);
+  return result.trim();
+}
+
 /** Destroys the current AI session and releases resources. */
 export function destroySession(): void {
   if (session) {

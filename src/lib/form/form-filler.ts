@@ -6,9 +6,9 @@ import type { FormField, GenerationResult, SavedForm, Settings } from "@/types";
 import { detectAllFields, detectAllFieldsAsync } from "./form-detector";
 import { resolveFieldValue } from "@/lib/rules/rule-engine";
 import {
-  generateFieldValue as chromeAiGenerate,
-  isAvailable as isChromeAiAvailable,
-} from "@/lib/ai/chrome-ai";
+  generateFieldValueViaProxy as chromeAiGenerate,
+  isAvailableViaProxy as isChromeAiAvailable,
+} from "@/lib/ai/chrome-ai-proxy";
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
 import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
