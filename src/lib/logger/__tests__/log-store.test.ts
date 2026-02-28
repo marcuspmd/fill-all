@@ -138,6 +138,33 @@ describe("log-store", () => {
       expect(allEntries[1].msg).toBe("new");
     });
 
+    it("evicts oldest entries when storage exceeds MAX_ENTRIES on flush", async () => {
+      // Simulate existing storage already at 999 entries
+      const existing = Array.from({ length: 999 }, (_, i) =>
+        makeEntry({ msg: `old-${i}` }),
+      );
+      (
+        chrome.storage.session.get as ReturnType<typeof vi.fn>
+      ).mockResolvedValue({
+        fill_all_log_entries: existing,
+      });
+
+      await initLogStore();
+
+      // Add 5 new entries → total 1004 > 1000 → triggers eviction
+      for (let i = 0; i < 5; i++) {
+        addLogEntry(makeEntry({ msg: `new-${i}` }));
+      }
+      await vi.advanceTimersByTimeAsync(600);
+
+      const setCall = (chrome.storage.session.set as ReturnType<typeof vi.fn>)
+        .mock.calls[0]?.[0];
+      const allEntries = setCall?.fill_all_log_entries;
+      expect(allEntries).toHaveLength(1000);
+      // Newest entries should be preserved (slice keeps the tail)
+      expect(allEntries[allEntries.length - 1].msg).toBe("new-4");
+    });
+
     it("handles storage.session.set failure silently", async () => {
       await initLogStore();
 
@@ -185,6 +212,106 @@ describe("log-store", () => {
       await initLogStore();
 
       expect(chrome.storage.onChanged.addListener).toHaveBeenCalled();
+    });
+
+    it("syncs local entries when storage.onChanged fires from another context", async () => {
+      await initLogStore();
+
+      // Capture the listener registered during init
+      const listenerCb = (
+        chrome.storage.onChanged.addListener as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
+
+      const externalEntries = [
+        makeEntry({ msg: "from-popup" }),
+        makeEntry({ msg: "from-devtools" }),
+      ];
+
+      // Simulate cross-context storage change
+      listenerCb(
+        {
+          fill_all_log_entries: { newValue: externalEntries },
+        },
+        "session",
+      );
+
+      const entries = getLogEntries();
+      expect(entries).toHaveLength(2);
+      expect(entries[0].msg).toBe("from-popup");
+      expect(entries[1].msg).toBe("from-devtools");
+    });
+
+    it("notifies listeners when cross-context sync updates entries", async () => {
+      await initLogStore();
+
+      const listener = vi.fn();
+      onLogUpdate(listener);
+
+      const listenerCb = (
+        chrome.storage.onChanged.addListener as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
+
+      listenerCb(
+        {
+          fill_all_log_entries: { newValue: [makeEntry({ msg: "external" })] },
+        },
+        "session",
+      );
+
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignores storage.onChanged for non-session areas", async () => {
+      await initLogStore();
+      addLogEntry(makeEntry({ msg: "local" }));
+
+      const listenerCb = (
+        chrome.storage.onChanged.addListener as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
+
+      // Fire for "local" area — should be ignored
+      listenerCb(
+        { fill_all_log_entries: { newValue: [makeEntry({ msg: "nope" })] } },
+        "local",
+      );
+
+      const entries = getLogEntries();
+      expect(entries).toHaveLength(1);
+      expect(entries[0].msg).toBe("local");
+    });
+
+    it("ignores storage.onChanged when key is not present", async () => {
+      await initLogStore();
+      addLogEntry(makeEntry({ msg: "keep" }));
+
+      const listenerCb = (
+        chrome.storage.onChanged.addListener as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
+
+      // Fire for session area but different key
+      listenerCb({ some_other_key: { newValue: "data" } }, "session");
+
+      const entries = getLogEntries();
+      expect(entries).toHaveLength(1);
+      expect(entries[0].msg).toBe("keep");
+    });
+
+    it("ignores storage.onChanged when newValue is not an array", async () => {
+      await initLogStore();
+      addLogEntry(makeEntry({ msg: "safe" }));
+
+      const listenerCb = (
+        chrome.storage.onChanged.addListener as ReturnType<typeof vi.fn>
+      ).mock.calls[0][0];
+
+      listenerCb(
+        { fill_all_log_entries: { newValue: "not-an-array" } },
+        "session",
+      );
+
+      const entries = getLogEntries();
+      expect(entries).toHaveLength(1);
+      expect(entries[0].msg).toBe("safe");
     });
 
     it("handles missing chrome.storage.session gracefully", async () => {

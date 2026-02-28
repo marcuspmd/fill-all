@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { generateCpf, validateCpf } from "@/lib/generators/cpf";
 
 describe("generateCpf", () => {
@@ -27,6 +27,20 @@ describe("generateCpf", () => {
     for (let i = 0; i < 10; i++) {
       expect(validateCpf(generateCpf(true))).toBe(true);
     }
+  });
+
+  it("retries when all 9 random digits are the same", () => {
+    const randomSpy = vi.spyOn(Math, "random");
+    // First 9 calls return 0.5 → all digits = 5 → triggers retry
+    for (let i = 0; i < 9; i++) randomSpy.mockReturnValueOnce(0.5);
+    // Next 9 calls return valid distinct digits
+    const validDigits = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+    for (const d of validDigits) randomSpy.mockReturnValueOnce(d);
+
+    const cpf = generateCpf(false);
+    expect(cpf).toMatch(/^\d{11}$/);
+    expect(validateCpf(cpf)).toBe(true);
+    randomSpy.mockRestore();
   });
 });
 

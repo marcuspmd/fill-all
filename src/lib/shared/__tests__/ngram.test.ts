@@ -54,4 +54,14 @@ describe("ngram", () => {
     expect(vec2[1]).toBeCloseTo(1 / Math.sqrt(2), 5);
     expect(vec2[2]).toBe(0);
   });
+
+  it("vectorize returns zero vector when no n-grams match vocab", () => {
+    const vocab = new Map<string, number>([
+      ["zzz", 0],
+      ["yyy", 1],
+    ]);
+    const vec = vectorize("abc", vocab);
+    // No matching n-grams → norm is 0 → no normalization applied
+    expect(vec.every((v) => v === 0)).toBe(true);
+  });
 });

@@ -131,4 +131,104 @@ describe("renderers", () => {
     expect(html).toContain("*example.com*");
     expect(html).toContain('data-form-id="form-1"');
   });
+
+  it("renderFieldRow falls back to '-' when id and name are empty", () => {
+    const field = {
+      selector: "#f",
+      id: "",
+      name: "",
+      label: "",
+      fieldType: "text" as const,
+      contextualType: undefined,
+      detectionMethod: undefined,
+      detectionConfidence: undefined,
+    };
+    const html = renderFieldRow(field, 1);
+    // Should show "-" for both id/name and label
+    expect(html).toContain("cell-mono");
+    expect(html).toMatch(/<td class="cell-mono">-<\/td>/);
+  });
+
+  it("renderFieldRow falls back to name when id is empty", () => {
+    const field = {
+      selector: "#f",
+      id: "",
+      name: "fieldname",
+      label: "",
+      fieldType: "text" as const,
+      contextualType: undefined,
+      detectionMethod: undefined,
+      detectionConfidence: undefined,
+    };
+    const html = renderFieldRow(field, 1);
+    expect(html).toContain("fieldname");
+  });
+
+  it("renderFieldRow shows '-' for missing detection method", () => {
+    const field = {
+      selector: "#f",
+      id: "f",
+      name: "",
+      label: "",
+      fieldType: "text" as const,
+      contextualType: undefined,
+      detectionMethod: undefined,
+      detectionConfidence: undefined,
+    };
+    const html = renderFieldRow(field, 1);
+    expect(html).toContain("-");
+  });
+
+  it("renderActionCard renders secondary variant", () => {
+    const html = renderActionCard({
+      id: "btn2",
+      icon: "Y",
+      label: "Sec",
+      desc: "Secondary",
+      variant: "secondary",
+    });
+    expect(html).toContain("card-secondary");
+    expect(html).not.toContain("card-primary");
+    expect(html).not.toContain(" active");
+  });
+
+  it("renderActionCard renders outline variant", () => {
+    const html = renderActionCard({
+      id: "btn3",
+      icon: "Z",
+      label: "Out",
+      desc: "Outline",
+      variant: "outline",
+    });
+    expect(html).toContain("card-outline");
+    expect(html).not.toContain("card-primary");
+    expect(html).not.toContain("card-secondary");
+  });
+
+  it("renderTabBar renders inactive tabs without active class", () => {
+    const html = renderTabBar([
+      { id: "tab1", label: "Tab 1", active: true },
+      { id: "tab2", label: "Tab 2", active: false },
+      { id: "tab3", label: "Tab 3" },
+    ]);
+    expect(html).toContain('data-tab="tab1"');
+    expect(html).toContain('data-tab="tab2"');
+    expect(html).toContain('data-tab="tab3"');
+    // Only tab1 should have "active"
+    const buttons = html.split("</button>");
+    expect(buttons[0]).toContain("active");
+    expect(buttons[1]).not.toMatch(/\bactive\b/);
+    expect(buttons[2]).not.toMatch(/\bactive\b/);
+  });
+
+  it("renderConfidenceBadge defaults to 0 when undefined", () => {
+    const html = renderConfidenceBadge(undefined);
+    expect(html).toContain("0%");
+    expect(html).toContain("width:0%");
+  });
+
+  it("renderFieldsTableHeader defaults to showing actions", () => {
+    const html = renderFieldsTableHeader();
+    expect(html).toContain("<th>Ações</th>");
+  });
 });

@@ -85,6 +85,34 @@ describe("storage modules", () => {
     now.mockRestore();
   });
 
+  it("rules: updates existing rule by id (upsert)", async () => {
+    // Arrange
+    const now = vi.spyOn(Date, "now").mockReturnValue(1000);
+    const rule: FieldRule = {
+      id: "r-update",
+      urlPattern: "*example.com*",
+      fieldSelector: "#email",
+      fieldType: "email",
+      generator: "auto",
+      priority: 10,
+      createdAt: 0,
+      updatedAt: 0,
+    };
+
+    // Act — create, then update with same id
+    await saveRule(rule);
+    now.mockReturnValue(3000);
+    await saveRule({ ...rule, fieldType: "name", priority: 50 });
+    const all = await getRules();
+
+    // Assert — only one rule, updated
+    expect(all).toHaveLength(1);
+    expect(all[0].fieldType).toBe("name");
+    expect(all[0].priority).toBe(50);
+    expect(all[0].updatedAt).toBe(3000);
+    now.mockRestore();
+  });
+
   it("forms: upserts by id and filters by URL", async () => {
     // Arrange
     const now = vi.spyOn(Date, "now").mockReturnValue(5000);
@@ -232,5 +260,21 @@ describe("storage modules", () => {
       true,
     );
     expect(invalid).toBeNull();
+  });
+
+  it("field cache: saves with invalid URL (falls back to empty origin/hostname/path)", async () => {
+    // Act — save with an unparseable URL
+    await saveFieldDetectionCacheForUrl("not-a-valid-url", [
+      { selector: "#f", fieldType: "email", label: "E" },
+    ]);
+    const all = await getFieldDetectionCache();
+
+    // Assert — entry saved with empty origin/hostname/path
+    expect(all).toHaveLength(1);
+    expect(all[0].url).toBe("not-a-valid-url");
+    expect(all[0].origin).toBe("");
+    expect(all[0].hostname).toBe("");
+    expect(all[0].path).toBe("");
+    expect(all[0].count).toBe(1);
   });
 });

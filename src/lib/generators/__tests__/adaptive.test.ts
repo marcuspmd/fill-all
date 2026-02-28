@@ -18,6 +18,23 @@ describe("adaptive generator", () => {
     expect(val).toBe("hel"); // Since "hello   " fails validity when length 3 is enforced, it falls back to slice
   });
 
+  it("generateWithConstraints returns empty when requireValidity and all attempts fail", () => {
+    // Always generate something that won't pass email pattern
+    const generatorFn = vi.fn().mockReturnValue("not-valid");
+
+    const input = document.createElement("input");
+    input.type = "email";
+
+    const val = generateWithConstraints(generatorFn, {
+      element: input,
+      requireValidity: true,
+      attempts: 3,
+    });
+
+    expect(val).toBe("");
+    expect(generatorFn).toHaveBeenCalledTimes(3);
+  });
+
   it("generateWithConstraints falls back when no constraint works but requireValidity is false", () => {
     // Return something that can't be trimmed/digits easily
     const generatorFn = vi.fn().mockReturnValue("abcdef");
@@ -60,5 +77,44 @@ describe("adaptive generator", () => {
     expect(
       adaptGeneratedValue("abc", { element: input, requireValidity: true }),
     ).toBe("");
+  });
+
+  it("adaptGeneratedValue returns value as-is for non-form elements (div, span)", () => {
+    const div = document.createElement("div");
+    expect(adaptGeneratedValue("anything", { element: div })).toBe("anything");
+  });
+
+  it("adaptGeneratedValue returns value for HTMLSelectElement", () => {
+    const select = document.createElement("select");
+    expect(adaptGeneratedValue("opt", { element: select })).toBe("opt");
+  });
+
+  it("adaptGeneratedValue returns value for checkbox/radio/file inputs", () => {
+    for (const type of ["checkbox", "radio", "file"]) {
+      const input = document.createElement("input");
+      input.type = type;
+      expect(adaptGeneratedValue("val", { element: input })).toBe("val");
+    }
+  });
+
+  it("resolveMaxLength reads maxLength from HTMLTextAreaElement", () => {
+    const textarea = document.createElement("textarea");
+    textarea.maxLength = 50;
+    expect(
+      adaptGeneratedValue("a".repeat(100), {
+        element: textarea,
+        maxLength: 50,
+      }),
+    ).toHaveLength(50);
+  });
+
+  it("adaptGeneratedValue handles empty string input", () => {
+    expect(adaptGeneratedValue("")).toBe("");
+  });
+
+  it("adaptGeneratedValue returns value when no element given", () => {
+    expect(adaptGeneratedValue("hello world", { maxLength: 5 })).toBe(
+      "hello world",
+    );
   });
 });
