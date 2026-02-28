@@ -20,6 +20,7 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    sourcemap: true,
     rollupOptions: {
       input: {
         "devtools-panel": resolve(__dirname, "src/devtools/panel.html"),

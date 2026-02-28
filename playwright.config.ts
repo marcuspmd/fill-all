@@ -5,7 +5,9 @@ import path from "path";
 const EXTENSION_PATH = path.join(__dirname, "dist");
 
 export default defineConfig({
-  testDir: "./e2e/tests",
+  globalSetup: "./e2e/global-setup.ts",
+  testDir: "./src",
+  testMatch: "**/__tests__/e2e/*.test.e2e.ts",
   timeout: 30_000,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Chrome extension tests must run sequentially
