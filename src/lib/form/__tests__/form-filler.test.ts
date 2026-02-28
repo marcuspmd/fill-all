@@ -6,6 +6,7 @@ import type { FormField, GenerationResult, SavedForm, Settings } from "@/types";
 
 const {
   mockDetectAllFields,
+  mockDetectAllFieldsAsync,
   mockResolveFieldValue,
   mockIsChromeAiAvailable,
   mockChromeAiGenerate,
@@ -17,6 +18,7 @@ const {
   mockGenerate,
 } = vi.hoisted(() => ({
   mockDetectAllFields: vi.fn(),
+  mockDetectAllFieldsAsync: vi.fn(),
   mockResolveFieldValue: vi.fn(),
   mockIsChromeAiAvailable: vi.fn().mockResolvedValue(false),
   mockChromeAiGenerate: vi.fn(),
@@ -28,7 +30,10 @@ const {
   mockGenerate: vi.fn().mockReturnValue("generated-value"),
 }));
 
-vi.mock("../form-detector", () => ({ detectAllFields: mockDetectAllFields }));
+vi.mock("../form-detector", () => ({
+  detectAllFields: mockDetectAllFields,
+  detectAllFieldsAsync: mockDetectAllFieldsAsync,
+}));
 vi.mock("@/lib/rules/rule-engine", () => ({
   resolveFieldValue: mockResolveFieldValue,
 }));
@@ -133,7 +138,7 @@ describe("form-filler", () => {
       const el = makeInput("text", "email-field");
       const field = makeField(el, { fieldType: "email", label: "Email" });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
       mockResolveFieldValue.mockResolvedValue({
         fieldSelector: "#email-field",
         value: "test@example.com",
@@ -152,7 +157,7 @@ describe("form-filler", () => {
       const el = makeInput("text", "ignored-field");
       const field = makeField(el, { selector: "#ignored-field" });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
       mockGetIgnoredFieldsForUrl.mockResolvedValue([
         { selector: "#ignored-field", label: "Ignored" },
       ]);
@@ -168,7 +173,7 @@ describe("form-filler", () => {
       el.value = "existing value";
       const field = makeField(el, { selector: "#pre-filled" });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
       mockGetSettings.mockResolvedValue({
         ...DEFAULT_SETTINGS,
         fillEmptyOnly: true,
@@ -184,7 +189,7 @@ describe("form-filler", () => {
       el.value = "existing";
       const field = makeField(el, { selector: "#pre-filled2" });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
       mockGetSettings.mockResolvedValue({
         ...DEFAULT_SETTINGS,
         fillEmptyOnly: false,
@@ -202,7 +207,7 @@ describe("form-filler", () => {
     });
 
     it("returns empty array when no fields detected", async () => {
-      mockDetectAllFields.mockReturnValue({ fields: [] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [] });
 
       const results = await fillAllFields();
 
@@ -213,7 +218,7 @@ describe("form-filler", () => {
       const el = makeInput("text", "err-field");
       const field = makeField(el);
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
       mockResolveFieldValue.mockRejectedValue(new Error("resolver failed"));
 
       // Should not throw, just skip
@@ -238,7 +243,7 @@ describe("form-filler", () => {
         fieldType: "select",
       });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
       mockResolveFieldValue.mockResolvedValue({
         fieldSelector: "#sel-field",
         value: "BR",
@@ -258,7 +263,7 @@ describe("form-filler", () => {
         selector: "#cb-field",
       });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
       mockResolveFieldValue.mockResolvedValue({
         fieldSelector: "#cb-field",
         value: "true",

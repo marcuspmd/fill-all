@@ -54,6 +54,28 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
   let allEntries: LogEntry[] = [];
   let unsubscribe: (() => void) | null = null;
 
+  function formatEntriesAsText(entries: LogEntry[]): string {
+    return entries
+      .map((e) => `[${e.ts}] [${e.level.toUpperCase()}] [${e.ns}] ${e.msg}`)
+      .join("\n");
+  }
+
+  async function copyToClipboard(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Fallback for contexts where clipboard API is restricted
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+  }
+
   function filterEntries(): LogEntry[] {
     let filtered = allEntries;
 
@@ -88,12 +110,13 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
 
     return entries
       .map(
-        (entry) => `
+        (entry, idx) => `
       <div class="lv-entry lv-${LEVEL_CSS[entry.level] ?? "info"}">
         <span class="lv-time">${formatTime(entry.ts)}</span>
         <span class="lv-level">${entry.level.toUpperCase()}</span>
         <span class="lv-ns">${escapeHtml(entry.ns)}</span>
         <span class="lv-msg">${escapeHtml(entry.msg)}</span>
+        <button class="lv-copy-entry-btn" data-idx="${idx}" title="Copiar entrada">📋</button>
       </div>`,
       )
       .join("");
@@ -112,6 +135,7 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
       <div class="lv-toolbar">
         <div class="lv-filters">${filterBtns}</div>
         <input class="lv-search" type="text" placeholder="Buscar logs..." value="${escapeHtml(searchQuery)}" />
+        <button class="lv-copy-all-btn" title="Copiar todos os logs visíveis">📋</button>
         <button class="lv-clear-btn" title="Limpar todos os logs">🗑️</button>
         <span class="lv-count">${filtered.length}/${allEntries.length}</span>
       </div>
@@ -139,6 +163,30 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
       const len = searchInput.value.length;
       searchInput.setSelectionRange(len, len);
     }
+
+    // Bind copy-all button
+    container
+      .querySelector(".lv-copy-all-btn")
+      ?.addEventListener("click", () => {
+        const filtered = filterEntries();
+        const text = formatEntriesAsText(filtered);
+        void copyToClipboard(text);
+      });
+
+    // Bind per-entry copy buttons
+    container
+      .querySelectorAll<HTMLButtonElement>(".lv-copy-entry-btn")
+      .forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.idx);
+          const filtered = filterEntries();
+          const entry = filtered[idx];
+          if (entry) {
+            const text = formatEntriesAsText([entry]);
+            void copyToClipboard(text);
+          }
+        });
+      });
 
     // Bind clear button
     container
@@ -317,5 +365,36 @@ export function getLogViewerStyles(variant: LogViewerVariant): string {
     .lv-warn .lv-msg { color: ${isDark ? "#fbbf24" : "#d97706"}; }
     .lv-error .lv-level { color: ${isDark ? "#f87171" : "#dc2626"}; }
     .lv-error .lv-msg { color: ${isDark ? "#f87171" : "#dc2626"}; }
+    /* Copy buttons */
+    .lv-copy-all-btn {
+      padding: 3px 8px;
+      border: 1px solid ${inputBorder};
+      border-radius: 4px;
+      background: ${filterBg};
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+    .lv-copy-all-btn:hover {
+      border-color: ${filterActive};
+      color: ${filterActive};
+    }
+    .lv-copy-entry-btn {
+      flex-shrink: 0;
+      margin-left: auto;
+      padding: 0 4px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 11px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .lv-entry:hover .lv-copy-entry-btn {
+      opacity: 0.6;
+    }
+    .lv-copy-entry-btn:hover {
+      opacity: 1 !important;
+    }
   `;
 }

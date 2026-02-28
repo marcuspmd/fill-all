@@ -3,7 +3,7 @@
  */
 
 import type { FormField, GenerationResult, SavedForm, Settings } from "@/types";
-import { detectAllFields } from "./form-detector";
+import { detectAllFields, detectAllFieldsAsync } from "./form-detector";
 import { resolveFieldValue } from "@/lib/rules/rule-engine";
 import {
   generateFieldValue as chromeAiGenerate,
@@ -167,7 +167,7 @@ function fieldHasValue(field: FormField): boolean {
 async function doFillAllFields(options?: {
   fillEmptyOnly?: boolean;
 }): Promise<GenerationResult[]> {
-  const { fields } = detectAllFields();
+  const { fields } = await detectAllFieldsAsync();
   const url = window.location.href;
   const settings = await getSettings();
   const fillEmptyOnly = options?.fillEmptyOnly ?? settings.fillEmptyOnly;

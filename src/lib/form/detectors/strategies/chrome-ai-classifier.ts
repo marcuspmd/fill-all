@@ -51,14 +51,32 @@ async function getOrCreateSession(): Promise<LanguageModelSession | null> {
 
   try {
     const api = getLanguageModelApi();
-    if (!api) return null;
+    if (!api) {
+      const context =
+        typeof globalThis !== "undefined"
+          ? Object.getOwnPropertyNames(globalThis).filter((k) =>
+              /ai|language|model|prompt/i.test(k),
+            )
+          : [];
+      log.warn(
+        `LanguageModel API não encontrada. ` +
+          `Contexto: ${typeof window !== "undefined" ? "content-script" : "unknown"}, ` +
+          `AI-related keys: [${context.length > 0 ? context.join(", ") : "nenhuma"}].`,
+      );
+      return null;
+    }
 
     const avail = await api.availability({ outputLanguage: "en" });
-    if (avail === "unavailable") return null;
+    log.debug(`availability() retornou: "${avail}"`);
+    if (avail === "unavailable") {
+      log.warn(`Chrome AI indisponível (status: "${avail}").`);
+      return null;
+    }
 
     classifierSession = await api.create({
       outputLanguage: "en",
     });
+    log.info("Sessão Chrome AI Classifier criada com sucesso.");
 
     return classifierSession;
   } catch (err) {

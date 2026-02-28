@@ -34,8 +34,17 @@ export async function isAvailable(): Promise<boolean> {
   try {
     const api = getLanguageModelApi();
     if (!api) {
+      const context =
+        typeof globalThis !== "undefined"
+          ? Object.getOwnPropertyNames(globalThis).filter((k) =>
+              /ai|language|model|prompt/i.test(k),
+            )
+          : [];
       log.warn(
-        "LanguageModel API não encontrada no globalThis. Chrome AI indisponível.",
+        `LanguageModel API não encontrada no globalThis. ` +
+          `Contexto: ${typeof self !== "undefined" ? "service-worker" : "unknown"}, ` +
+          `AI-related keys: [${context.length > 0 ? context.join(", ") : "nenhuma"}]. ` +
+          `Chrome AI indisponível.`,
       );
       return false;
     }
