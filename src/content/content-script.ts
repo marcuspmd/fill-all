@@ -188,8 +188,9 @@ async function handleContentMessage(
         showNotification(
           `✓ Campo "${targetField.label || targetField.name || targetField.id || targetField.selector}" preenchido`,
         );
+        return { success: true, ...result };
       }
-      return result ?? { error: "Failed to fill field" };
+      return { error: "Failed to fill field" };
     }
 
     case "GET_FORM_FIELDS": {
