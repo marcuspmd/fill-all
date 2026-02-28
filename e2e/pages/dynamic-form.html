@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fill All — Dynamic Form</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 640px;
+        margin: 40px auto;
+        padding: 0 20px;
+        background: #f9fafb;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin-bottom: 24px;
+      }
+      .field-group {
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #374151;
+      }
+      input,
+      select {
+        display: block;
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        box-sizing: border-box;
+      }
+      button {
+        padding: 8px 16px;
+        background: #4f46e5;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        margin-right: 8px;
+      }
+      button.secondary {
+        background: #6b7280;
+      }
+      #dynamic-fields {
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Formulário Dinâmico — Fill All</h1>
+
+    <form id="main-form" novalidate>
+      <div class="field-group">
+        <label for="name">Nome</label>
+        <input type="text" id="name" name="name" placeholder="Nome completo" />
+      </div>
+
+      <div id="dynamic-fields"></div>
+
+      <div style="margin-top: 16px">
+        <button type="button" id="add-email">+ Adicionar e-mail</button>
+        <button type="button" id="add-phone" class="secondary">
+          + Adicionar telefone
+        </button>
+        <button type="button" id="add-address" class="secondary">
+          + Adicionar endereço
+        </button>
+        <button type="button" id="remove-last" class="secondary" style="background: #ef4444">
+          − Remover último
+        </button>
+      </div>
+    </form>
+
+    <script>
+      let fieldCount = 0;
+
+      function addField(type, name, label, placeholder) {
+        fieldCount++;
+        const container = document.createElement("div");
+        container.className = "field-group";
+        container.setAttribute("data-dynamic-field", String(fieldCount));
+
+        const lbl = document.createElement("label");
+        lbl.htmlFor = name + fieldCount;
+        lbl.textContent = label + " " + fieldCount;
+
+        const input = document.createElement("input");
+        input.type = type;
+        input.id = name + fieldCount;
+        input.name = name + fieldCount;
+        input.placeholder = placeholder;
+
+        container.appendChild(lbl);
+        container.appendChild(input);
+        document.getElementById("dynamic-fields").appendChild(container);
+
+        return input;
+      }
+
+      document.getElementById("add-email").addEventListener("click", () => {
+        addField("email", "email", "E-mail", "email@exemplo.com");
+      });
+
+      document.getElementById("add-phone").addEventListener("click", () => {
+        addField("tel", "phone", "Telefone", "(11) 99999-9999");
+      });
+
+      document.getElementById("add-address").addEventListener("click", () => {
+        addField("text", "address", "Endereço", "Rua, número, bairro");
+      });
+
+      document.getElementById("remove-last").addEventListener("click", () => {
+        const container = document.querySelector("[data-dynamic-field]:last-of-type");
+        if (container) {
+          container.remove();
+          fieldCount--;
+        }
+      });
+    </script>
+  </body>
+</html>

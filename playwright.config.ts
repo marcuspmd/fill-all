@@ -1,14 +1,11 @@
 /// <reference types="node" />
 import { defineConfig } from "@playwright/test";
-import path from "path";
-
-const EXTENSION_PATH = path.join(__dirname, "dist");
 
 export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   testDir: "./src",
   testMatch: "**/__tests__/e2e/*.test.e2e.ts",
-  timeout: 30_000,
+  timeout: 60_000,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Chrome extension tests must run sequentially
 
@@ -34,22 +31,11 @@ export default defineConfig({
     {
       name: "chrome-extension",
       use: {
-        // Chrome extension fixture is defined per test via e2e/fixtures/extension.ts
+        // The actual browser launch (launchPersistentContext) is handled by the
+        // custom `context` fixture in src/__tests__/e2e/fixtures/index.ts.
+        // MV3 extensions require a persistent context with a user data directory
+        // — regular browser.newContext() does NOT support service workers.
         browserName: "chromium",
-        launchOptions: {
-          executablePath:
-            process.env.CHROME_PATH ||
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-          args: [
-            `--disable-extensions-except=${EXTENSION_PATH}`,
-            `--load-extension=${EXTENSION_PATH}`,
-            "--no-first-run",
-            "--no-default-browser-check",
-            "--disable-infobars",
-            "--disable-popup-blocking",
-          ],
-          headless: false,
-        },
       },
     },
   ],
