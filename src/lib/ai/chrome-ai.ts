@@ -6,6 +6,11 @@
 
 import type { FormField } from "@/types";
 import { createLogger } from "@/lib/logger";
+import {
+  fieldValueGeneratorPrompt,
+  renderSystemPrompt,
+} from "@/lib/ai/prompts";
+import type { FieldValueInput } from "@/lib/ai/prompts";
 
 const log = createLogger("ChromeAI");
 
@@ -55,13 +60,7 @@ export async function getSession(): Promise<LanguageModelSession | null> {
 
   log.debug("Criando nova sessão...");
 
-  const systemPrompt = `You are a form field value generator. When given information about a form field (its label, name, type, placeholder), you generate a single realistic test value for it. Rules:
-- Return ONLY the value, no explanations
-- Use Brazilian Portuguese when generating names, addresses, etc.
-- Generate valid CPFs, CNPJs when asked
-- For dates, use ISO format (YYYY-MM-DD) unless the placeholder suggests otherwise
-- For emails, use realistic-looking addresses
-- Keep values concise and appropriate for the field`;
+  const systemPrompt = renderSystemPrompt(fieldValueGeneratorPrompt);
 
   if (!newApi) {
     log.warn("Chrome AI API não encontrada — sessão não criada.");
@@ -97,19 +96,17 @@ export async function generateFieldValue(field: FormField): Promise<string> {
     return "";
   }
 
-  const context = [
-    field.label && `Label: ${field.label}`,
-    field.name && `Name: ${field.name}`,
-    field.id && `ID: ${field.id}`,
-    field.placeholder && `Placeholder: ${field.placeholder}`,
-    field.autocomplete && `Autocomplete: ${field.autocomplete}`,
-    `Type: ${(field.element as HTMLInputElement).type || "text"}`,
-    `Detected as: ${field.fieldType}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const input: FieldValueInput = {
+    label: field.label,
+    name: field.name,
+    id: field.id,
+    placeholder: field.placeholder,
+    autocomplete: field.autocomplete,
+    inputType: (field.element as HTMLInputElement).type || "text",
+    fieldType: field.fieldType,
+  };
 
-  const prompt = `Generate a realistic test value for this form field:\n${context}`;
+  const prompt = fieldValueGeneratorPrompt.buildPrompt(input);
 
   log.groupCollapsed(
     `Prompt → campo: "${field.label ?? field.name ?? field.selector}"`,
