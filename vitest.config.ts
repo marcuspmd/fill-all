@@ -9,7 +9,7 @@ export default defineConfig({
     include: ["src/**/__tests__/**/*.test.ts"],
     exclude: ["**/*.test.e2e.ts"],
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reporter: ["text", "html", "json"],
       reportsDirectory: ".coverage/unit",
       include: ["src/lib/**/*.ts"],

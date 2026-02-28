@@ -2,9 +2,22 @@ import { defineConfig } from "vite";
 import { crx } from "@crxjs/vite-plugin";
 import { resolve } from "path";
 import manifest from "./manifest.json";
+import istanbul from "vite-plugin-istanbul";
 
 export default defineConfig({
-  plugins: [crx({ manifest })],
+  plugins: [
+    crx({ manifest }),
+    ...(process.env.VITE_COVERAGE === "true"
+      ? [
+          istanbul({
+            include: "src/*",
+            exclude: ["node_modules", "src/__tests__"],
+            extension: [".ts"],
+            requireEnv: false,
+          }),
+        ]
+      : []),
+  ],
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),

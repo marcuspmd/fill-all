@@ -96,4 +96,17 @@ describe("matchUrlPattern", () => {
   it("single wildcard matches any non-empty url", () => {
     expect(matchUrlPattern("https://anything.com", "*")).toBe(true);
   });
+
+  // ── Suffix overlap detection ─────────────────────────────────────────────────
+  it("returns false when suffix position overlaps with already-matched prefix", () => {
+    // prefix "https://a" consumes up to pos=9; suffix "abc" would start at pos 8 (11-3) → overlap
+    expect(matchUrlPattern("https://abc", "https://a*abc")).toBe(false);
+  });
+
+  // ── Middle segment not found ─────────────────────────────────────────────────
+  it("returns false when a middle segment does not exist in the url", () => {
+    expect(
+      matchUrlPattern("https://example.com/home", "*/notfound/*/home"),
+    ).toBe(false);
+  });
 });

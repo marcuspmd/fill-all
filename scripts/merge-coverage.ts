@@ -24,9 +24,16 @@ function loadJsonFiles(dir: string): CoverageMapData[] {
     );
 }
 
+// Both unit (Vitest Istanbul) and E2E (vite-plugin-istanbul) now use the same
+// Istanbul instrumentation, so statement maps are compatible and we can safely
+// merge all data without workarounds.
 const raw = createCoverageMap({});
 
-for (const data of [...loadJsonFiles(UNIT_DIR), ...loadJsonFiles(E2E_DIR)]) {
+for (const data of loadJsonFiles(UNIT_DIR)) {
+  raw.merge(data);
+}
+
+for (const data of loadJsonFiles(E2E_DIR)) {
   raw.merge(data);
 }
 

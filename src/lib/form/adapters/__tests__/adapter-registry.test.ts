@@ -88,10 +88,74 @@ describe("registerAdapter", () => {
 // ── detectCustomComponents ────────────────────────────────────────────────────
 
 describe("detectCustomComponents", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
   it("returns empty array when no matching elements in the DOM", () => {
     const fields = detectCustomComponents();
-    // DOM is fresh; no real ant-design/select2 elements → still returns []
     expect(Array.isArray(fields)).toBe(true);
+  });
+
+  it("detects elements matching adapter selector when matches() is true", () => {
+    const adapter = makeAdapter("detect-ok" as AdapterName, ".detect-ok");
+    registerAdapter(adapter);
+
+    document.body.innerHTML = `<div class="detect-ok"></div>`;
+    const fields = detectCustomComponents();
+
+    expect(adapter.matches).toHaveBeenCalled();
+    expect(adapter.buildField).toHaveBeenCalled();
+    expect(fields.some((f) => f.adapterName === "detect-ok")).toBe(true);
+  });
+
+  it("skips elements where matches() returns false", () => {
+    const adapter = makeAdapter("detect-skip" as AdapterName, ".detect-skip", {
+      matches: false,
+    });
+    registerAdapter(adapter);
+
+    document.body.innerHTML = `<div class="detect-skip"></div>`;
+    const fields = detectCustomComponents();
+
+    expect(adapter.matches).toHaveBeenCalled();
+    expect(adapter.buildField).not.toHaveBeenCalled();
+    expect(fields.some((f) => f.adapterName === "detect-skip")).toBe(false);
+  });
+
+  it("does not claim same element twice (WeakSet deduplication)", () => {
+    const adapter1 = makeAdapter("dup-1" as AdapterName, ".dup-target");
+    const adapter2 = makeAdapter("dup-2" as AdapterName, ".dup-target");
+    registerAdapter(adapter1);
+    registerAdapter(adapter2);
+
+    document.body.innerHTML = `<div class="dup-target"></div>`;
+    const fields = detectCustomComponents();
+
+    // Only the first adapter should claim the element
+    const dupFields = fields.filter(
+      (f) => f.adapterName === "dup-1" || f.adapterName === "dup-2",
+    );
+    expect(dupFields.length).toBe(1);
+    expect(dupFields[0].adapterName).toBe("dup-1");
+  });
+
+  it("handles buildField errors gracefully", () => {
+    const adapter = makeAdapter(
+      "build-err" as AdapterName,
+      ".build-err-target",
+    );
+    adapter.buildField = vi.fn().mockImplementation(() => {
+      throw new Error("buildField exploded");
+    });
+    registerAdapter(adapter);
+
+    document.body.innerHTML = `<div class="build-err-target"></div>`;
+    const fields = detectCustomComponents();
+
+    // Should not throw, error is caught internally
+    expect(adapter.buildField).toHaveBeenCalled();
+    expect(fields.some((f) => f.adapterName === "build-err")).toBe(false);
   });
 });
 

@@ -1,8 +1,8 @@
 /// <reference types="node" />
 import { test as base, chromium, expect } from "@playwright/test";
 import type { BrowserContext, Page, Worker, TestInfo } from "@playwright/test";
-import v8ToIstanbul from "v8-to-istanbul";
 import { createCoverageMap } from "istanbul-lib-coverage";
+import type { CoverageMapData } from "istanbul-lib-coverage";
 import fs from "fs";
 import path from "path";
 
@@ -27,30 +27,76 @@ function getChromiumExecutablePath(): string {
 }
 
 async function collectAndSaveCoverage(
-  entries: Awaited<
-    ReturnType<(typeof base)["prototype"]["coverage"]["stopJSCoverage"]>
-  >,
+  page: Page,
+  background: Worker,
+  context: BrowserContext,
   testInfo: TestInfo,
 ): Promise<void> {
   const map = createCoverageMap({});
 
-  for (const entry of entries) {
+  // 1. Service worker (background) — globalThis.__coverage__
+  try {
+    const swCov = await background.evaluate<CoverageMapData>(() =>
+      JSON.parse(
+        JSON.stringify(
+          (globalThis as unknown as Record<string, unknown>)["__coverage__"] ??
+            {},
+        ),
+      ),
+    );
+    if (Object.keys(swCov).length) map.merge(swCov);
+  } catch {
+    // SW may not have coverage data when VITE_COVERAGE is not set
+  }
+
+  // 2. Content scripts (isolated world) — collected via background scripting API
+  try {
+    const raw = await background.evaluate(async () => {
+      const tabs = await chrome.tabs.query({ url: "http://localhost/*" });
+      const results: string[] = [];
+      for (const tab of tabs) {
+        if (!tab.id) continue;
+        try {
+          const [res] = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            world: "ISOLATED",
+            func: (): string =>
+              JSON.stringify(
+                (window as unknown as Record<string, unknown>)[
+                  "__coverage__"
+                ] ?? {},
+              ),
+          });
+          if (res?.result) results.push(res.result as string);
+        } catch {
+          // Tab may have been closed or scripting not permitted
+        }
+      }
+      return results;
+    });
+    for (const serialized of raw) {
+      const cov = JSON.parse(serialized) as CoverageMapData;
+      if (Object.keys(cov).length) map.merge(cov);
+    }
+  } catch {
+    // Background scripting API unavailable
+  }
+
+  // 3. Extension pages (popup, options, devtools) — window.__coverage__
+  for (const pg of context.pages()) {
+    if (pg === page) continue;
     try {
-      const url = new URL(entry.url);
-      if (url.protocol !== "chrome-extension:") continue;
-
-      // Map chrome-extension://ID/assets/foo.js → dist/assets/foo.js
-      const localPath = path.join(DIST_PATH, url.pathname);
-      if (!fs.existsSync(localPath)) continue;
-
-      const converter = v8ToIstanbul(localPath, 0, {
-        source: entry.source ?? undefined,
-      });
-      await converter.load();
-      converter.applyCoverage(entry.functions);
-      map.merge(converter.toIstanbul());
+      const pageCov = await pg.evaluate<CoverageMapData>(() =>
+        JSON.parse(
+          JSON.stringify(
+            (window as unknown as Record<string, unknown>)["__coverage__"] ??
+              {},
+          ),
+        ),
+      );
+      if (Object.keys(pageCov).length) map.merge(pageCov);
     } catch {
-      // Skip entries that can't be converted (e.g. no source map)
+      // Page may have been closed
     }
   }
 
@@ -143,11 +189,9 @@ export const test = base.extend<ExtensionFixtures>({
   },
 
   _coverage: [
-    async ({ page }, use, testInfo) => {
-      await page.coverage.startJSCoverage();
+    async ({ page, background, context }, use, testInfo) => {
       await use();
-      const entries = await page.coverage.stopJSCoverage();
-      await collectAndSaveCoverage(entries, testInfo);
+      await collectAndSaveCoverage(page, background, context, testInfo);
     },
     { auto: true },
   ],
