@@ -48,7 +48,6 @@ export function startWatching(
         const target = m.target as HTMLElement;
         // Ignore our own highlight changes
         if (target.id === "fill-all-notification") return false;
-        if (target.id === "fill-all-floating-panel") return false;
         // Relevant if it's a form-related attribute change
         if (
           m.attributeName === "disabled" ||

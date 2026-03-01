@@ -511,10 +511,10 @@ describe("action-recorder", () => {
   // ── Extension UI filtering ─────────────────────────────────────────
 
   describe("extension UI filtering", () => {
-    it("ignores input events from elements inside #fill-all-floating-panel", () => {
+    it("ignores input events from elements inside #fill-all-notification", () => {
       startRecording();
       const panel = document.createElement("div");
-      panel.id = "fill-all-floating-panel";
+      panel.id = "fill-all-notification";
       document.body.appendChild(panel);
 
       const input = document.createElement("input");
@@ -563,7 +563,7 @@ describe("action-recorder", () => {
     it("ignores keydown events on extension UI elements", () => {
       startRecording();
       const container = document.createElement("div");
-      container.id = "fill-all-floating-panel";
+      container.id = "fill-all-record-indicator";
       document.body.appendChild(container);
 
       const input = document.createElement("input");
@@ -578,7 +578,7 @@ describe("action-recorder", () => {
     it("ignores submit events on extension UI forms", () => {
       startRecording();
       const panel = document.createElement("div");
-      panel.id = "fill-all-floating-panel";
+      panel.id = "fill-all-field-icon";
       document.body.appendChild(panel);
 
       const form = document.createElement("form");

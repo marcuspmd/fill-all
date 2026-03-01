@@ -62,7 +62,6 @@ const FORM_FIELD_SELECTOR = "input, select, textarea, [contenteditable='true']";
  * Interactions with these elements must be ignored during recording.
  */
 const EXTENSION_UI_SELECTORS = [
-  "#fill-all-floating-panel",
   "#fill-all-field-icon",
   "#fill-all-rule-popup",
   "#fill-all-notification",
@@ -687,8 +686,9 @@ export function stopRecording(): RecordingSession | null {
   session.status = "stopped";
   lastActionTimestamp = 0;
 
-  // Keep session alive for review — caller uses clearSession() to discard
-  return session;
+  const final = session;
+  session = null;
+  return final;
 }
 
 /**

@@ -3,10 +3,12 @@ import {
   E2E_GENERATORS,
   getE2EGenerator,
   generateE2EScript,
+  generateE2EFromRecording,
 } from "@/lib/e2e-export/e2e-generator-registry";
 import type {
   CapturedAction,
   E2EGenerateOptions,
+  RecordedStep,
 } from "@/lib/e2e-export/e2e-export.types";
 
 describe("E2E Generator Registry", () => {
@@ -85,6 +87,54 @@ describe("E2E Generator Registry", () => {
       );
       expect(script).toContain("Assertions");
       expect(script).toContain("Done");
+    });
+  });
+
+  describe("generateE2EFromRecording", () => {
+    const steps: RecordedStep[] = [
+      {
+        type: "navigate",
+        url: "https://example.com/form",
+        timestamp: 0,
+      },
+      {
+        type: "fill",
+        selector: "#name",
+        value: "João Silva",
+        label: "Nome",
+        timestamp: 1000,
+      },
+      {
+        type: "click",
+        selector: "button[type=submit]",
+        label: "Enviar",
+        timestamp: 2000,
+      },
+    ];
+
+    it("generates playwright recording script", () => {
+      const script = generateE2EFromRecording("playwright", steps, {
+        pageUrl: "https://example.com/form",
+      });
+      expect(script).not.toBeNull();
+      expect(typeof script).toBe("string");
+    });
+
+    it("generates cypress recording script", () => {
+      const script = generateE2EFromRecording("cypress", steps);
+      expect(script).not.toBeNull();
+      expect(typeof script).toBe("string");
+    });
+
+    it("generates pest recording script", () => {
+      const script = generateE2EFromRecording("pest", steps);
+      expect(script).not.toBeNull();
+      expect(typeof script).toBe("string");
+    });
+
+    it("returns null for unknown framework", () => {
+      const script = generateE2EFromRecording("unknown" as never, steps);
+      expect(script).toBeNull();
     });
   });
 });

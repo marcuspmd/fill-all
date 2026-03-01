@@ -173,15 +173,6 @@
   "stopWatchDesc": {
     "message": "Parar observação do DOM"
   },
-  "panelFloating": {
-    "message": "Painel Flutuante"
-  },
-  "panelActive": {
-    "message": "Painel Ativo"
-  },
-  "panelDesc": {
-    "message": "Mostra painel flutuante na página"
-  },
   "detectFields": {
     "message": "Detectar Campos"
   },
@@ -448,12 +439,6 @@
   },
   "settingCacheEnabledDesc": {
     "message": "Guarda campos detectados por URL para carregamento rápido no popup"
-  },
-  "settingShowPanel": {
-    "message": "Painel Flutuante"
-  },
-  "settingShowPanelDesc": {
-    "message": "Exibe automaticamente o painel flutuante de controles em todas as páginas"
   },
   "settingFillEmptyOnly": {
     "message": "Preencher apenas campos vazios"

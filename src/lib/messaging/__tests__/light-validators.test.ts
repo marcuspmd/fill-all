@@ -5,6 +5,8 @@ import {
   parseStartWatchingPayload,
   parseSavedFormPayload,
   parseApplyTemplatePayload,
+  parseExportE2EPayload,
+  parseExportRecordingPayload,
 } from "@/lib/messaging/light-validators";
 
 const validForm = {
@@ -153,5 +155,83 @@ describe("parseApplyTemplatePayload (light)", () => {
 
   it("delegates to parseSavedFormPayload — invalid input returns null", () => {
     expect(parseApplyTemplatePayload(null)).toBeNull();
+  });
+});
+
+describe("parseExportE2EPayload (light)", () => {
+  it("returns framework string for valid input", () => {
+    const result = parseExportE2EPayload({ framework: "playwright" });
+    expect(result).toEqual({ framework: "playwright" });
+  });
+
+  it("returns null for null input", () => {
+    expect(parseExportE2EPayload(null)).toBeNull();
+  });
+
+  it("returns null for non-object input", () => {
+    expect(parseExportE2EPayload("playwright")).toBeNull();
+    expect(parseExportE2EPayload(42)).toBeNull();
+  });
+
+  it("returns null when framework is missing", () => {
+    expect(parseExportE2EPayload({})).toBeNull();
+  });
+
+  it("returns null when framework is empty string", () => {
+    expect(parseExportE2EPayload({ framework: "" })).toBeNull();
+  });
+
+  it("returns null when framework is not a string", () => {
+    expect(parseExportE2EPayload({ framework: 42 })).toBeNull();
+    expect(parseExportE2EPayload({ framework: null })).toBeNull();
+  });
+});
+
+describe("parseExportRecordingPayload (light)", () => {
+  it("returns framework for valid input without testName", () => {
+    const result = parseExportRecordingPayload({ framework: "cypress" });
+    expect(result).toEqual({ framework: "cypress" });
+    expect(result?.testName).toBeUndefined();
+  });
+
+  it("returns framework and testName when both are present", () => {
+    const result = parseExportRecordingPayload({
+      framework: "pest",
+      testName: "Login test",
+    });
+    expect(result).toEqual({ framework: "pest", testName: "Login test" });
+  });
+
+  it("ignores testName when it is an empty string", () => {
+    const result = parseExportRecordingPayload({
+      framework: "playwright",
+      testName: "",
+    });
+    expect(result?.testName).toBeUndefined();
+  });
+
+  it("ignores testName when it is not a string", () => {
+    const result = parseExportRecordingPayload({
+      framework: "playwright",
+      testName: 99,
+    });
+    expect(result?.testName).toBeUndefined();
+  });
+
+  it("returns null for null input", () => {
+    expect(parseExportRecordingPayload(null)).toBeNull();
+  });
+
+  it("returns null for non-object input", () => {
+    expect(parseExportRecordingPayload("pest")).toBeNull();
+    expect(parseExportRecordingPayload(0)).toBeNull();
+  });
+
+  it("returns null when framework is missing", () => {
+    expect(parseExportRecordingPayload({ testName: "x" })).toBeNull();
+  });
+
+  it("returns null when framework is empty string", () => {
+    expect(parseExportRecordingPayload({ framework: "" })).toBeNull();
   });
 });

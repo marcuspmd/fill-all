@@ -104,7 +104,6 @@ const DEFAULT_SETTINGS: Settings = {
   showFieldIcon: false,
   fieldIconPosition: "inside",
   detectionPipeline: [],
-  showPanel: false,
   debugLog: false,
   logLevel: "warn",
   uiLanguage: "auto",

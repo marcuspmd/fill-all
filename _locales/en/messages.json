@@ -173,15 +173,6 @@
   "stopWatchDesc": {
     "message": "Stop watching DOM"
   },
-  "panelFloating": {
-    "message": "Floating Panel"
-  },
-  "panelActive": {
-    "message": "Panel Active"
-  },
-  "panelDesc": {
-    "message": "Shows floating panel on page"
-  },
   "detectFields": {
     "message": "Detect Fields"
   },
@@ -448,12 +439,6 @@
   },
   "settingCacheEnabledDesc": {
     "message": "Stores detected fields by URL for fast popup loading"
-  },
-  "settingShowPanel": {
-    "message": "Floating Panel"
-  },
-  "settingShowPanelDesc": {
-    "message": "Automatically shows floating control panel on all pages"
   },
   "settingFillEmptyOnly": {
     "message": "Fill only empty fields"

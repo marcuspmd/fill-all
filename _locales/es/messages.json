@@ -173,15 +173,6 @@
   "stopWatchDesc": {
     "message": "Detener observación del DOM"
   },
-  "panelFloating": {
-    "message": "Panel Flotante"
-  },
-  "panelActive": {
-    "message": "Panel Activo"
-  },
-  "panelDesc": {
-    "message": "Muestra panel flotante en la página"
-  },
   "detectFields": {
     "message": "Detectar Campos"
   },
@@ -448,12 +439,6 @@
   },
   "settingCacheEnabledDesc": {
     "message": "Almacena los campos detectados por URL para carga rápida del popup"
-  },
-  "settingShowPanel": {
-    "message": "Panel Flotante"
-  },
-  "settingShowPanelDesc": {
-    "message": "Muestra automáticamente el panel de control flotante en todas las páginas"
   },
   "settingFillEmptyOnly": {
     "message": "Rellenar solo campos vacíos"

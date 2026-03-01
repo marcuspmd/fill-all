@@ -1,6 +1,9 @@
 // @vitest-environment happy-dom
-import { describe, it, expect } from "vitest";
-import { buildCapturedActions } from "@/lib/e2e-export/action-capture";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import {
+  buildCapturedActions,
+  detectSubmitActions,
+} from "@/lib/e2e-export/action-capture";
 import type { FormField, GenerationResult } from "@/types";
 
 function makeField(
@@ -156,5 +159,90 @@ describe("buildCapturedActions", () => {
     const actions = buildCapturedActions([field], results);
 
     expect(actions[0].fieldType).toBe("cpf");
+  });
+});
+
+describe("detectSubmitActions", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("returns empty array when no submit elements exist", () => {
+    document.body.innerHTML = "<form><input type='text' /></form>";
+    expect(detectSubmitActions()).toEqual([]);
+  });
+
+  it("detects explicit button[type=submit]", () => {
+    document.body.innerHTML =
+      "<form><button id='btn-send' type='submit'>Enviar</button></form>";
+    const actions = detectSubmitActions();
+    expect(actions).toHaveLength(1);
+    expect(actions[0].actionType).toBe("click");
+    expect(actions[0].label).toBe("Enviar");
+    expect(actions[0].selector).toBe("#btn-send");
+  });
+
+  it("detects input[type=submit] with value as label", () => {
+    document.body.innerHTML =
+      "<form><input id='sub' type='submit' value='Cadastrar' /></form>";
+    const actions = detectSubmitActions();
+    expect(actions).toHaveLength(1);
+    expect(actions[0].label).toBe("Cadastrar");
+    expect(actions[0].selector).toBe("#sub");
+  });
+
+  it("detects input[type=submit] with fallback label when value is empty", () => {
+    document.body.innerHTML =
+      "<form><input type='submit' name='go' value='' /></form>";
+    const actions = detectSubmitActions();
+    expect(actions).toHaveLength(1);
+    expect(actions[0].label).toBe("Submit");
+  });
+
+  it("detects button without explicit type inside form with submit keyword", () => {
+    document.body.innerHTML = "<form><button>Login</button></form>";
+    const actions = detectSubmitActions();
+    expect(actions).toHaveLength(1);
+    expect(actions[0].label).toBe("Login");
+  });
+
+  it("captures button without type when no submit keyword (default submit behavior)", () => {
+    document.body.innerHTML = "<form><button>Click me</button></form>";
+    const actions = detectSubmitActions();
+    // Buttons with no type attribute inside forms should be captured
+    expect(actions).toHaveLength(1);
+    expect(actions[0].label).toBe("Click me");
+  });
+
+  it("does not duplicate button with both explicit type=submit and inside form", () => {
+    document.body.innerHTML =
+      "<form><button id='s' type='submit'>Salvar</button></form>";
+    const actions = detectSubmitActions();
+    expect(actions).toHaveLength(1);
+    expect(actions[0].selector).toBe("#s");
+  });
+
+  it("sets selector to tag when element has no id, testid, name, or type", () => {
+    document.body.innerHTML = "<form><button>Criar</button></form>";
+    const actions = detectSubmitActions();
+    expect(actions[0].selector).toBe("button");
+  });
+
+  it("sets selector to [data-testid] when present", () => {
+    document.body.innerHTML =
+      "<form><button data-testid='sub-btn' type='submit'>Submit</button></form>";
+    const actions = detectSubmitActions();
+    expect(actions[0].selector).toBe('[data-testid="sub-btn"]');
+  });
+
+  it("uses [name] selector when element has name but no id", () => {
+    document.body.innerHTML =
+      "<form><button name='submit-form' type='submit'>Go</button></form>";
+    const actions = detectSubmitActions();
+    expect(actions[0].selector).toBe('button[name="submit-form"]');
   });
 });

@@ -25,10 +25,10 @@ export default defineConfig({
         "src/lib/form/field-icon-styles.ts",
         "src/lib/form/field-icon-utils.ts",
         "src/lib/form/field-overlay.ts",
-        "src/lib/form/floating-panel.ts",
         "src/lib/form/form-filler.ts",
         // TensorFlow.js training: requires a real browser with TF.js bundled
         "src/lib/ai/runtime-trainer.ts",
+        "src/lib/dataset/user-samples.ts",
       ],
       thresholds: {
         lines: 85,

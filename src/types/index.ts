@@ -454,8 +454,6 @@ export interface Settings {
   /** Ordered list of classification strategies */
   detectionPipeline: DetectionStrategyEntry[];
 
-  /** Whether to always show the DevTools-style panel on every page */
-  showPanel: boolean;
   /** Whether debug logging is enabled (all console output is suppressed when false) */
   debugLog: boolean;
   /** Minimum log level to output: debug < info < warn < error */
@@ -488,9 +486,6 @@ export type MessageType =
   | "START_WATCHING"
   | "STOP_WATCHING"
   | "GET_WATCHER_STATUS"
-  | "TOGGLE_PANEL"
-  | "SHOW_PANEL"
-  | "HIDE_PANEL"
   | "FILL_FIELD_BY_SELECTOR"
   | "GET_IGNORED_FIELDS"
   | "ADD_IGNORED_FIELD"
@@ -569,7 +564,6 @@ export const DEFAULT_SETTINGS: Settings = {
   fieldIconPosition: "inside",
   detectionPipeline: DEFAULT_DETECTION_PIPELINE,
 
-  showPanel: false,
   debugLog: false,
   logLevel: "warn",
   uiLanguage: "auto",

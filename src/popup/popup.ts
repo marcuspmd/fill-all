@@ -65,7 +65,6 @@ let savedForms: SavedForm[] = [];
 let ignoredFields: IgnoredField[] = [];
 let ignoredSelectors = new Set<string>();
 let watcherActive = false;
-let panelActive = false;
 let fillEmptyOnly = false;
 let pageUrl = "";
 
@@ -136,11 +135,7 @@ function renderActionsTab(): void {
         <span class="card-label">${watcherActive ? t("stopWatch") : t("watch")}</span>
         <span class="card-desc">${watcherActive ? t("stopWatchDesc") : t("watchDesc")}</span>
       </button>
-      <button class="action-card ${panelActive ? "active" : ""}" id="btn-toggle-panel">
-        <span class="card-icon">📌</span>
-        <span class="card-label">${panelActive ? t("panelActive") : t("panelFloating")}</span>
-        <span class="card-desc">${t("panelDesc")}</span>
-      </button>
+
       <div class="action-card" id="btn-export-e2e-card">
         <span class="card-icon">🧪</span>
         <span class="card-label" id="export-e2e-label">${t("exportE2E")}</span>
@@ -174,9 +169,6 @@ function renderActionsTab(): void {
   document
     .getElementById("btn-toggle-watch")
     ?.addEventListener("click", handleToggleWatch);
-  document
-    .getElementById("btn-toggle-panel")
-    ?.addEventListener("click", handleTogglePanel);
   document
     .getElementById("btn-export-e2e-card")
     ?.addEventListener("click", handleExportE2E);
@@ -231,20 +223,6 @@ async function handleFillEmptyOnlyToggle(): Promise<void> {
     type: "SAVE_SETTINGS",
     payload: { fillEmptyOnly },
   });
-}
-
-async function handleTogglePanel(): Promise<void> {
-  panelActive = !panelActive;
-  await chrome.runtime.sendMessage({
-    type: "SAVE_SETTINGS",
-    payload: { showPanel: panelActive },
-  });
-  if (panelActive) {
-    await sendToActiveTab({ type: "SHOW_PANEL" });
-  } else {
-    await sendToActiveTab({ type: "HIDE_PANEL" });
-  }
-  renderActionsTab();
 }
 
 async function handleExportE2E(): Promise<void> {
@@ -756,7 +734,6 @@ async function init(): Promise<void> {
     ) as Promise<{ watching: boolean } | null>,
   ]);
 
-  panelActive = settings?.showPanel ?? false;
   fillEmptyOnly = settings?.fillEmptyOnly ?? false;
   watcherActive = watcherStatus?.watching ?? false;
 

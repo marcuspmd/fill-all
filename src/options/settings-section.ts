@@ -52,9 +52,6 @@ async function saveGeneralSettings(): Promise<void> {
     )?.value as Settings["defaultStrategy"],
     locale: (document.getElementById("setting-locale") as HTMLSelectElement)
       ?.value as Settings["locale"],
-    showPanel: (
-      document.getElementById("setting-show-panel") as HTMLInputElement
-    ).checked,
     fillEmptyOnly: (
       document.getElementById("setting-fill-empty-only") as HTMLInputElement
     ).checked,
@@ -239,10 +236,6 @@ async function loadSettings(): Promise<void> {
   })) as Settings;
   (document.getElementById("setting-highlight") as HTMLInputElement).checked =
     settings.highlightFilled;
-
-  // Panel setting
-  (document.getElementById("setting-show-panel") as HTMLInputElement).checked =
-    settings.showPanel ?? false;
 
   // Fill empty only
   (

@@ -24,12 +24,6 @@ export function setupContextMenu(): void {
   });
 
   chrome.contextMenus.create({
-    id: "fill-all-toggle-panel",
-    title: "Fill All - Abrir/fechar painel flutuante",
-    contexts: ["page"],
-  });
-
-  chrome.contextMenus.create({
     id: "fill-all-export-e2e",
     title: "Fill All - Exportar script E2E (Playwright)",
     contexts: ["page"],
@@ -64,14 +58,6 @@ export function handleContextMenuClick(
         tab.id,
         tab.url,
         { type: "FILL_SINGLE_FIELD" },
-        { injectIfNeeded: true },
-      );
-      break;
-    case "fill-all-toggle-panel":
-      void sendToSpecificTab(
-        tab.id,
-        tab.url,
-        { type: "TOGGLE_PANEL" },
         { injectIfNeeded: true },
       );
       break;

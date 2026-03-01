@@ -40,41 +40,6 @@ export function bindOptionsAction(): void {
   });
 }
 
-export function bindTogglePanelAction(): void {
-  document
-    .getElementById("btn-toggle-panel")
-    ?.addEventListener("click", async () => {
-      const btn = document.getElementById(
-        "btn-toggle-panel",
-      ) as HTMLButtonElement;
-      const settings = (await chrome.runtime.sendMessage({
-        type: "GET_SETTINGS",
-      })) as { showPanel?: boolean } | null;
-      const isActive = settings?.showPanel ?? false;
-      const newValue = !isActive;
-
-      await chrome.runtime.sendMessage({
-        type: "SAVE_SETTINGS",
-        payload: { showPanel: newValue },
-      });
-
-      if (newValue) {
-        await sendToActiveTab({ type: "SHOW_PANEL" });
-      } else {
-        await sendToActiveTab({ type: "HIDE_PANEL" });
-      }
-
-      updatePanelButton(btn, newValue);
-    });
-}
-
-function updatePanelButton(btn: HTMLButtonElement, active: boolean): void {
-  btn.textContent = active
-    ? `📌 ${t("panelActive")}`
-    : `📌 ${t("panelFloating")}`;
-  btn.classList.toggle("btn-active", active);
-}
-
 export function bindToggleWatchAction(): void {
   document
     .getElementById("btn-toggle-watch")
@@ -99,22 +64,6 @@ export function bindToggleWatchAction(): void {
         btn.classList.add("btn-active");
       }
     });
-}
-
-export async function initPanelStatus(): Promise<void> {
-  try {
-    const settings = (await chrome.runtime.sendMessage({
-      type: "GET_SETTINGS",
-    })) as { showPanel?: boolean } | null;
-    const btn = document.getElementById(
-      "btn-toggle-panel",
-    ) as HTMLButtonElement;
-    if (btn && settings?.showPanel) {
-      updatePanelButton(btn, true);
-    }
-  } catch {
-    // Content script may not be loaded yet
-  }
 }
 
 export async function initWatcherStatus(): Promise<void> {

@@ -66,11 +66,7 @@ function handleFocusIn(e: FocusEvent): void {
 
   if (!isFillableField(target)) return;
 
-  if (
-    target.closest(
-      `#${ICON_ID}, #${RULE_POPUP_ID}, #fill-all-floating-panel, #fill-all-notification`,
-    )
-  )
+  if (target.closest(`#${ICON_ID}, #${RULE_POPUP_ID}, #fill-all-notification`))
     return;
 
   if (hideTimeout) {

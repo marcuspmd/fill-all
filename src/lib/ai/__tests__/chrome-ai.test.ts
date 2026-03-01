@@ -104,4 +104,64 @@ describe("chrome-ai", () => {
     expect(fakeSession.prompt).toHaveBeenCalledTimes(1);
     expect(fakeSession.destroy).toHaveBeenCalledTimes(1);
   });
+
+  it("retorna string vazia em generateFieldValue quando sessão é null", async () => {
+    // Arrange — LanguageModel não está disponível (sem API)
+    const module = await import("@/lib/ai/chrome-ai");
+
+    // Act
+    const value = await module.generateFieldValue(buildField());
+
+    // Assert
+    expect(value).toBe("");
+  });
+
+  it("gera valor via generateFieldValueFromInput com sessão disponível", async () => {
+    // Arrange
+    const fakeSession = {
+      prompt: vi.fn().mockResolvedValue("  teste@exemplo.com  "),
+      destroy: vi.fn(),
+    };
+    Reflect.set(globalThis as object, "LanguageModel", {
+      availability: vi.fn().mockResolvedValue("available"),
+      create: vi.fn().mockResolvedValue(fakeSession),
+    });
+    const module = await import("@/lib/ai/chrome-ai");
+
+    // Act
+    const value = await module.generateFieldValueFromInput({
+      label: "E-mail",
+      name: "email",
+      fieldType: "email",
+      inputType: "email",
+    });
+
+    // Assert
+    expect(value).toBe("teste@exemplo.com");
+    expect(fakeSession.prompt).toHaveBeenCalledTimes(1);
+  });
+
+  it("retorna string vazia em generateFieldValueFromInput quando sessão é null", async () => {
+    // Arrange — sem LanguageModel API
+    const module = await import("@/lib/ai/chrome-ai");
+
+    // Act
+    const value = await module.generateFieldValueFromInput({
+      label: "Nome",
+      name: "name",
+      fieldType: "full-name",
+      inputType: "text",
+    });
+
+    // Assert
+    expect(value).toBe("");
+  });
+
+  it("destroySession não lança erro quando sessão é null", async () => {
+    // Arrange
+    const module = await import("@/lib/ai/chrome-ai");
+
+    // Act & Assert — não deve lançar
+    expect(() => module.destroySession()).not.toThrow();
+  });
 });
