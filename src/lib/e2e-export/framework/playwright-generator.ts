@@ -82,6 +82,18 @@ function assertionLine(assertion: E2EAssertion): string {
       return `  await expect(page.locator('${escapeString(assertion.selector ?? "")}')).toBeVisible();`;
     case "redirect":
       return `  await expect(page).toHaveURL(new RegExp('${escapeString(assertion.expected ?? "")}'));`;
+    case "response-ok": {
+      const url = escapeString(assertion.selector ?? "");
+      const status = assertion.expected ?? "200";
+      const urlFragment = url.split("/").pop() ?? url;
+      return [
+        `  // HTTP response assertion: ${assertion.description ?? `${url} → ${status}`}`,
+        `  // To assert strictly, add before the submit action:`,
+        `  //   const responsePromise = page.waitForResponse(r => r.url().includes('${urlFragment}') && r.status() === ${status});`,
+        `  //   const response = await responsePromise;`,
+        `  //   expect(response.status()).toBe(${status});`,
+      ].join("\n");
+    }
   }
 }
 

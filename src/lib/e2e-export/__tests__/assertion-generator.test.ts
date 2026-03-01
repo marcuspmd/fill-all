@@ -102,6 +102,62 @@ describe("Assertion Generator", () => {
       const assertions = detectAssertions([], "https://example.com");
       expect(assertions).toEqual([]);
     });
+
+    it("generates response-ok assertion from captured HTTP responses", () => {
+      const actions: CapturedAction[] = [
+        { selector: "#btn", value: "", actionType: "submit" },
+      ];
+      const capturedResponses = [
+        {
+          url: "/api/submit",
+          method: "POST",
+          status: 200,
+          timestamp: Date.now(),
+        },
+      ];
+
+      const assertions = detectAssertions(
+        actions,
+        "https://example.com",
+        capturedResponses,
+      );
+      const responseAssertion = assertions.find(
+        (a) => a.type === "response-ok",
+      );
+      expect(responseAssertion).toBeDefined();
+      expect(responseAssertion!.selector).toBe("/api/submit");
+      expect(responseAssertion!.expected).toBe("200");
+      expect(responseAssertion!.description).toContain("POST /api/submit");
+    });
+
+    it("generates multiple response-ok assertions for multiple captured responses", () => {
+      const actions: CapturedAction[] = [
+        { selector: "#btn", value: "", actionType: "submit" },
+      ];
+      const capturedResponses = [
+        { url: "/api/users", method: "POST", status: 201, timestamp: 1 },
+        { url: "/api/notify", method: "POST", status: 200, timestamp: 2 },
+      ];
+
+      const assertions = detectAssertions(
+        actions,
+        "https://example.com",
+        capturedResponses,
+      );
+      const responseAssertions = assertions.filter(
+        (a) => a.type === "response-ok",
+      );
+      expect(responseAssertions).toHaveLength(2);
+    });
+
+    it("returns no response-ok assertions when capturedResponses is empty", () => {
+      const actions: CapturedAction[] = [
+        { selector: "#btn", value: "", actionType: "submit" },
+      ];
+
+      const assertions = detectAssertions(actions, "https://example.com", []);
+      expect(assertions.some((a) => a.type === "response-ok")).toBe(false);
+    });
   });
 
   describe("detectNegativeAssertions", () => {

@@ -81,6 +81,17 @@ function assertionLine(assertion: E2EAssertion): string {
       return `    cy.get('${escapeString(assertion.selector ?? "")}').should('be.visible');`;
     case "redirect":
       return `    cy.url().should('include', '${escapeString(assertion.expected ?? "")}');`;
+    case "response-ok": {
+      const url = escapeString(assertion.selector ?? "");
+      const status = assertion.expected ?? "200";
+      const urlFragment = url.split("/").pop() ?? url;
+      return [
+        `    // HTTP response assertion: ${assertion.description ?? `${url} → ${status}`}`,
+        `    // To assert strictly, add before the submit action:`,
+        `    //   cy.intercept('*', '*${urlFragment}*').as('apiRequest');`,
+        `    //   cy.wait('@apiRequest').its('response.statusCode').should('eq', ${status});`,
+      ].join("\n");
+    }
   }
 }
 

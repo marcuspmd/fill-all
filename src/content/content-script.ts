@@ -38,6 +38,7 @@ import {
   removeStep,
   updateStep,
   clearSession,
+  tryRestoreRecordingSession,
 } from "@/lib/e2e-export";
 import type {
   E2EFramework,
@@ -614,6 +615,51 @@ async function initContentScript(): Promise<void> {
         debounceMs: settings.watcherDebounceMs,
         shadowDOM: settings.watcherShadowDOM,
       },
+    );
+  }
+
+  // Restore a recording session that was persisted before a traditional form submit
+  // (non-AJAX GET/POST) caused a full page navigation.
+  const restoredSession = tryRestoreRecordingSession();
+  if (restoredSession) {
+    setOnStepAdded((step, index) => {
+      chrome.runtime
+        .sendMessage({
+          type: "RECORDING_STEP_ADDED",
+          payload: {
+            step: {
+              type: step.type,
+              selector: step.selector,
+              value: step.value,
+              url: step.url,
+              label: step.label,
+            },
+            index,
+          },
+        })
+        .catch(() => {});
+    });
+
+    setOnStepUpdated((step, index) => {
+      chrome.runtime
+        .sendMessage({
+          type: "RECORDING_STEP_UPDATED",
+          payload: {
+            step: {
+              type: step.type,
+              selector: step.selector,
+              value: step.value,
+              url: step.url,
+              label: step.label,
+            },
+            index,
+          },
+        })
+        .catch(() => {});
+    });
+
+    showNotification(
+      `🔴 Gravação retomada (${restoredSession.steps.length} passos)`,
     );
   }
 }

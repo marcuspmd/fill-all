@@ -49,7 +49,16 @@ export type AssertionType =
   | "toast-message"
   | "field-value"
   | "field-error"
-  | "redirect";
+  | "redirect"
+  | "response-ok";
+
+/** An HTTP response captured during recording for assertion generation */
+export interface CapturedHttpResponse {
+  url: string;
+  method: string;
+  status: number;
+  timestamp: number;
+}
 
 /** A single assertion to include in the generated test */
 export interface E2EAssertion {

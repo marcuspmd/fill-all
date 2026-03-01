@@ -717,7 +717,7 @@ describe("action-recorder", () => {
       expect(responses[0].status).toBe(0);
     });
 
-    it("clears captured responses on stop", async () => {
+    it("preserves captured responses after stop for assertion generation", async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         status: 200,
         ok: true,
@@ -729,6 +729,12 @@ describe("action-recorder", () => {
       expect(getCapturedResponses()).toHaveLength(1);
 
       stopRecording();
+      // Responses should still be accessible after stop for assertion generation
+      expect(getCapturedResponses()).toHaveLength(1);
+      expect(getCapturedResponses()[0].url).toBe("/api/data");
+
+      // Responses are cleared only when the session is explicitly cleared
+      clearSession();
       expect(getCapturedResponses()).toHaveLength(0);
     });
 
@@ -833,6 +839,94 @@ describe("action-recorder", () => {
       const responses = getCapturedResponses();
       expect(responses[0].url).toBe("https://example.com/request");
     });
+
+    it("POST fetch adds an assert step for AJAX response visibility", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        status: 201,
+        ok: true,
+      } as Response);
+      globalThis.fetch = mockFetch;
+
+      startRecording();
+      await globalThis.fetch("/api/users", { method: "POST" });
+
+      const s = getRecordingSession()!;
+      const assertSteps = s.steps.filter((st) => st.type === "assert");
+      expect(assertSteps).toHaveLength(1);
+      expect(assertSteps[0].label).toBe("HTTP POST → 201");
+      expect(assertSteps[0].assertion?.type).toBe("response-ok");
+      expect(assertSteps[0].assertion?.selector).toBe("/api/users");
+      expect(assertSteps[0].assertion?.expected).toBe("201");
+    });
+
+    it("PUT, PATCH and DELETE fetch also add an assert step", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        status: 200,
+        ok: true,
+      } as Response);
+      globalThis.fetch = mockFetch;
+
+      startRecording();
+      await globalThis.fetch("/api/users/1", { method: "PUT" });
+      await globalThis.fetch("/api/users/1", { method: "PATCH" });
+      await globalThis.fetch("/api/users/1", { method: "DELETE" });
+
+      const s = getRecordingSession()!;
+      const assertSteps = s.steps.filter((st) => st.type === "assert");
+      expect(assertSteps).toHaveLength(3);
+      expect(assertSteps.map((st) => st.value)).toEqual([
+        "PUT",
+        "PATCH",
+        "DELETE",
+      ]);
+    });
+
+    it("GET fetch does NOT add an assert step (read-only, noisy)", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        status: 200,
+        ok: true,
+      } as Response);
+      globalThis.fetch = mockFetch;
+
+      startRecording();
+      await globalThis.fetch("/api/data");
+      await globalThis.fetch("/api/data", { method: "GET" });
+      await globalThis.fetch("/api/data", { method: "HEAD" });
+      await globalThis.fetch("/api/data", { method: "OPTIONS" });
+
+      const s = getRecordingSession()!;
+      const assertSteps = s.steps.filter((st) => st.type === "assert");
+      expect(assertSteps).toHaveLength(0);
+    });
+
+    it("stopRecording flushes wait-for-network-idle when requests were recent", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        status: 200,
+        ok: true,
+      } as Response);
+      globalThis.fetch = mockFetch;
+
+      startRecording();
+      await globalThis.fetch("/api/search");
+      // Stop immediately — timer hasn't fired yet but activity was recent
+      const stopped = stopRecording()!;
+
+      const idleSteps = stopped.steps.filter(
+        (s) => s.type === "wait-for-network-idle",
+      );
+      expect(idleSteps).toHaveLength(1);
+    });
+
+    it("stopRecording does NOT add network-idle when no network activity occurred", () => {
+      startRecording();
+      // No fetch/XHR — stop immediately
+      const stopped = stopRecording()!;
+
+      const idleSteps = stopped.steps.filter(
+        (s) => s.type === "wait-for-network-idle",
+      );
+      expect(idleSteps).toHaveLength(0);
+    });
   });
 
   // ── XHR monitoring ─────────────────────────────────────────────────
@@ -883,6 +977,44 @@ describe("action-recorder", () => {
       xhr.send();
 
       expect(getCapturedResponses()).toHaveLength(0);
+    });
+
+    it("captures late XHR loadend that fires after stopRecording", async () => {
+      startRecording();
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/submit");
+      xhr.send();
+
+      // Stop recording BEFORE the XHR loadend fires
+      stopRecording();
+
+      // Now fire loadend (simulates in-flight XHR completing after stop)
+      Object.defineProperty(xhr, "status", { value: 200 });
+      xhr.dispatchEvent(new Event("loadend"));
+
+      await vi.advanceTimersByTimeAsync(10);
+
+      // Response must still be accessible even after stopRecording
+      const responses = getCapturedResponses();
+      expect(responses.some((r) => r.url === "/api/submit")).toBe(true);
+    });
+
+    it("XHR POST adds an assert step inside the session steps", async () => {
+      startRecording();
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/form-submit");
+      xhr.send();
+
+      Object.defineProperty(xhr, "status", { value: 200 });
+      xhr.dispatchEvent(new Event("loadend"));
+
+      await vi.advanceTimersByTimeAsync(10);
+
+      const s = getRecordingSession()!;
+      const assertSteps = s.steps.filter((st) => st.type === "assert");
+      expect(assertSteps.some((st) => st.label?.includes("POST"))).toBe(true);
     });
   });
 

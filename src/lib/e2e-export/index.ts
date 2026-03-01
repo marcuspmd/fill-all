@@ -50,6 +50,7 @@ export {
   removeStep,
   updateStep,
   clearSession,
+  tryRestoreRecordingSession,
 } from "./action-recorder";
 
 export type { CapturedHttpResponse } from "./action-recorder";

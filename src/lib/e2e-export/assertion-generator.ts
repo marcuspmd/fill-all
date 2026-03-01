@@ -10,15 +10,21 @@
  * Runs in content-script context (DOM access required).
  */
 
-import type { E2EAssertion, CapturedAction } from "./e2e-export.types";
+import type {
+  E2EAssertion,
+  CapturedAction,
+  CapturedHttpResponse,
+} from "./e2e-export.types";
 
 /**
  * Detects potential success assertions for a form submit.
- * Analyzes the page for common patterns of success feedback.
+ * Analyzes the page for common patterns of success feedback and uses
+ * captured HTTP responses to generate response assertions.
  */
 export function detectAssertions(
   actions: CapturedAction[],
   pageUrl: string,
+  capturedResponses?: CapturedHttpResponse[],
 ): E2EAssertion[] {
   const assertions: E2EAssertion[] = [];
 
@@ -75,6 +81,18 @@ export function detectAssertions(
         description: `Form should redirect to ${action}`,
       });
       break;
+    }
+  }
+
+  // 4. HTTP response assertions from captured AJAX/XHR requests
+  if (capturedResponses && capturedResponses.length > 0) {
+    for (const response of capturedResponses) {
+      assertions.push({
+        type: "response-ok",
+        selector: response.url,
+        expected: String(response.status),
+        description: `${response.method} ${response.url} should return ${response.status}`,
+      });
     }
   }
 

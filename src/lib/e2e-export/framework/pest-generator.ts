@@ -81,6 +81,14 @@ function assertionLine(assertion: E2EAssertion): string {
       return `            ->assertVisible('${escapeString(assertion.selector ?? "")}')`;
     case "redirect":
       return `            ->assertPathContains('${escapeString(assertion.expected ?? "")}')`;
+    case "response-ok": {
+      const url = escapeString(assertion.selector ?? "");
+      const status = assertion.expected ?? "200";
+      return [
+        `            // HTTP response assertion: ${assertion.description ?? `${url} \u2192 ${status}`}`,
+        `            // $browser->assertStatus(${status}); // use after visiting the response URL directly`,
+      ].join("\n");
+    }
   }
 }
 

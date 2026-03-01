@@ -10,6 +10,7 @@
  */
 
 import type {
+  CapturedHttpResponse,
   RecordedStep,
   RecordedStepType,
   RecordingSession,
@@ -45,14 +46,15 @@ let origFetch: typeof globalThis.fetch | null = null;
 let origXhrOpen: XMLHttpRequest["open"] | null = null;
 let origXhrSend: XMLHttpRequest["send"] | null = null;
 
-/** Captured HTTP responses for assertion generation */
-interface CapturedHttpResponse {
-  url: string;
-  method: string;
-  status: number;
-  timestamp: number;
-}
+/** Per-instance XHR request info to avoid race conditions between concurrent requests */
+const xhrRequestInfo = new WeakMap<
+  XMLHttpRequest,
+  { method: string; url: string }
+>();
+
 let capturedResponses: CapturedHttpResponse[] = [];
+/** Preserved responses from the last stopped session — available until clearSession() */
+let stoppedResponses: CapturedHttpResponse[] = [];
 
 /** Optional callback invoked whenever a step is added or updated */
 type StepCallback = (step: RecordedStep, index: number) => void;
@@ -61,6 +63,14 @@ let onStepUpdatedCallback: StepCallback | null = null;
 
 const MUTATION_DEBOUNCE_MS = 400;
 const FORM_FIELD_SELECTOR = "input, select, textarea, [contenteditable='true']";
+
+/** sessionStorage key used to persist the recording session across page navigations. */
+const RECORDING_SESSION_KEY = "fill-all-recording";
+
+interface PersistedRecording {
+  session: RecordingSession;
+  capturedResponses: CapturedHttpResponse[];
+}
 
 /**
  * Selectors for Fill All extension UI elements.
@@ -84,6 +94,31 @@ const EXTENSION_UI_SELECTORS = [
 
 function now(): number {
   return Date.now();
+}
+
+/**
+ * Serializes the current session and captured responses to sessionStorage.
+ * Called before page navigation (beforeunload / form submit) to survive reloads.
+ */
+function persistSession(): void {
+  if (!session) return;
+  try {
+    const data: PersistedRecording = {
+      session: { ...session, steps: [...session.steps] },
+      capturedResponses: [...capturedResponses],
+    };
+    sessionStorage.setItem(RECORDING_SESSION_KEY, JSON.stringify(data));
+  } catch {
+    // sessionStorage may be unavailable in sandboxed iframes — ignore silently
+  }
+}
+
+function clearPersistedSession(): void {
+  try {
+    sessionStorage.removeItem(RECORDING_SESSION_KEY);
+  } catch {
+    // ignore
+  }
 }
 
 function buildQuickSelector(el: Element): string {
@@ -299,10 +334,66 @@ function onClick(e: Event): void {
   addStep(buildStep("click", el, { label }));
 }
 
+/**
+ * Captures values of form fields that do not yet have a recorded fill/select/check
+ * step. Needed for fields with default values, auto-filled values, or values set
+ * programmatically (e.g. by the Fill All extension).
+ */
+function captureUnrecordedFormFields(form: HTMLFormElement): void {
+  if (!session) return;
+
+  // Build a set of selectors that already have a recorded step in this session
+  const recordedSelectors = new Set(
+    session.steps
+      .filter((s) =>
+        (["fill", "select", "check", "uncheck"] as RecordedStepType[]).includes(
+          s.type,
+        ),
+      )
+      .map((s) => s.selector)
+      .filter(Boolean),
+  );
+
+  const fields = form.querySelectorAll<
+    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+  >("input, select, textarea");
+
+  for (const field of fields) {
+    if (isExtensionUI(field)) continue;
+    if (!isVisible(field)) continue;
+
+    const sel = buildQuickSelector(field);
+    if (recordedSelectors.has(sel)) continue; // already recorded
+
+    if (field instanceof HTMLSelectElement && field.value) {
+      addStep(buildStep("select", field, { value: field.value }));
+    } else if (field instanceof HTMLInputElement) {
+      if (field.type === "checkbox") {
+        if (field.checked) addStep(buildStep("check", field));
+      } else if (field.type === "radio") {
+        if (field.checked)
+          addStep(buildStep("check", field, { value: field.value }));
+      } else if (
+        !["submit", "button", "reset", "image"].includes(field.type) &&
+        field.value
+      ) {
+        addStep(buildStep("fill", field, { value: field.value }));
+      }
+    } else if (field instanceof HTMLTextAreaElement && field.value) {
+      addStep(buildStep("fill", field, { value: field.value }));
+    }
+  }
+}
+
 function onSubmit(e: Event): void {
   const form = e.target as HTMLFormElement;
   if (!session || session.status !== "recording") return;
   if (isExtensionUI(form)) return;
+
+  // Snapshot all current field values into the recording (captures values that
+  // were pre-filled, auto-filled, or set by Fill All and thus never triggered
+  // an 'input' event).
+  captureUnrecordedFormFields(form);
 
   const lastStep = session.steps[session.steps.length - 1];
   // Avoid duplicate if we already captured the submit button click
@@ -315,6 +406,10 @@ function onSubmit(e: Event): void {
       label: "Form submit",
     }),
   );
+
+  // Persist the session to sessionStorage so it survives a traditional
+  // (non-AJAX) form submit that causes a full page navigation.
+  persistSession();
 }
 
 function onKeyDown(e: KeyboardEvent): void {
@@ -338,6 +433,9 @@ function onBeforeUnload(): void {
     url: window.location.href,
     label: "Page navigation",
   });
+
+  // Persist session including the navigate step so it is available after reload
+  persistSession();
 }
 
 function onHashChange(): void {
@@ -491,6 +589,26 @@ function onNetworkRequestEnd(
   // Store response for HTTP assertion generation
   capturedResponses.push({ url, method, status, timestamp: now() });
 
+  // Add a visible assert step for state-changing requests (POST/PUT/PATCH/DELETE)
+  // so the user can see AJAX calls in the recording panel and assertions are generated.
+  // GET/HEAD/OPTIONS are read-only and typically numerous (assets, analytics), we skip them.
+  if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+    addStep({
+      type: "assert",
+      timestamp: now(),
+      url,
+      value: method,
+      label: `HTTP ${method} → ${status}`,
+      assertion: {
+        type: "response-ok",
+        // assertionLine() in generators reads url from assertion.selector
+        selector: url,
+        expected: String(status),
+        description: `${method} ${url} → ${status}`,
+      },
+    });
+  }
+
   if (pendingNetworkRequests === 0) {
     networkIdleTimer = setTimeout(() => {
       if (!session || session.status !== "recording") return;
@@ -547,17 +665,17 @@ function startNetworkMonitoring(): void {
   origXhrOpen = XMLHttpRequest.prototype.open;
   origXhrSend = XMLHttpRequest.prototype.send;
 
-  let xhrMethod = "GET";
-  let xhrUrl = "";
-
   XMLHttpRequest.prototype.open = function (
     this: XMLHttpRequest,
     method: string,
     url: string | URL,
     ...rest: unknown[]
   ) {
-    xhrMethod = method.toUpperCase();
-    xhrUrl = typeof url === "string" ? url : url.href;
+    // Store per-instance to avoid race conditions between concurrent XHRs
+    xhrRequestInfo.set(this, {
+      method: method.toUpperCase(),
+      url: typeof url === "string" ? url : url.href,
+    });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (origXhrOpen as any).apply(this, [method, url, ...rest]);
   } as typeof XMLHttpRequest.prototype.open;
@@ -566,14 +684,15 @@ function startNetworkMonitoring(): void {
     ...args: Parameters<XMLHttpRequest["send"]>
   ) {
     if (session?.status === "recording") {
-      onNetworkRequestStart();
-
-      const capturedUrl = xhrUrl;
-      const capturedMethod = xhrMethod;
-
-      this.addEventListener("loadend", () => {
-        onNetworkRequestEnd(capturedUrl, capturedMethod, this.status);
-      });
+      const info = xhrRequestInfo.get(this);
+      if (info) {
+        const { method: capturedMethod, url: capturedUrl } = info;
+        onNetworkRequestStart();
+        this.addEventListener("loadend", () => {
+          onNetworkRequestEnd(capturedUrl, capturedMethod, this.status);
+          xhrRequestInfo.delete(this);
+        });
+      }
     }
     return origXhrSend!.apply(this, args);
   };
@@ -612,8 +731,13 @@ export function startRecording(): RecordingSession {
   // Stop any existing session
   if (session) stopRecording();
 
-  // Clear any previously stopped session so the new recording starts clean
+  // Clear any previously stopped session so the new recording starts clean.
+  // Reset capturedResponses here (not in stopRecording) so that XHR loadend events
+  // that arrive after stopRecording can still append to the previous session's stoppedResponses.
   stoppedSession = null;
+  stoppedResponses = [];
+  capturedResponses = [];
+  lastNetworkActivityTimestamp = 0;
 
   session = {
     steps: [
@@ -677,6 +801,33 @@ export function resumeRecording(): RecordingSession | null {
 export function stopRecording(): RecordingSession | null {
   if (!session) return null;
 
+  // If the network-idle timer is pending or requests were recently active,
+  // flush a wait-for-network-idle step now (before the session status changes)
+  // so the generated test correctly waits for in-flight requests.
+  const recentNetworkActivity =
+    lastNetworkActivityTimestamp > 0 &&
+    now() - lastNetworkActivityTimestamp < 5_000;
+  if (
+    networkIdleTimer !== null ||
+    pendingNetworkRequests > 0 ||
+    recentNetworkActivity
+  ) {
+    if (networkIdleTimer) {
+      clearTimeout(networkIdleTimer);
+      networkIdleTimer = null;
+    }
+    const timeSinceLastAction = now() - lastActionTimestamp;
+    if (timeSinceLastAction < 10_000) {
+      // Push directly (addStep checks session.status === "recording" which is still true here)
+      addStep({
+        type: "wait-for-network-idle",
+        timestamp: now(),
+        label: "Wait for network requests to complete",
+        waitTimeout: 10_000,
+      });
+    }
+  }
+
   // Detach all event listeners
   for (const { target, event, handler } of listeners) {
     target.removeEventListener(event, handler, true);
@@ -689,7 +840,11 @@ export function stopRecording(): RecordingSession | null {
 
   // Stop network monitoring
   stopNetworkMonitoring();
-  capturedResponses = [];
+
+  // Keep a reference (not a copy) to capturedResponses so that XHR loadend events
+  // that fire after stop (in-flight at stop time) still populate stoppedResponses.
+  // capturedResponses is reset to a fresh array in startRecording().
+  stoppedResponses = capturedResponses;
 
   session.status = "stopped";
   lastActionTimestamp = 0;
@@ -697,6 +852,11 @@ export function stopRecording(): RecordingSession | null {
   const final = session;
   stoppedSession = final; // preserve for export after recording ends
   session = null;
+
+  // The user intentionally stopped recording — clear any persisted session so it
+  // is not accidentally restored on the next page load.
+  clearPersistedSession();
+
   return final;
 }
 
@@ -725,10 +885,12 @@ export function addManualStep(step: RecordedStep): void {
 
 /**
  * Returns HTTP responses captured during the recording session.
- * Useful for generating response assertions after submit.
+ * While recording: returns live captured responses.
+ * After stopRecording(): returns preserved responses for assertion generation.
+ * After clearSession() or startRecording(): returns empty array.
  */
 export function getCapturedResponses(): CapturedHttpResponse[] {
-  return [...capturedResponses];
+  return session ? [...capturedResponses] : [...stoppedResponses];
 }
 
 /**
@@ -780,6 +942,73 @@ export function clearSession(): void {
   stoppedSession = null;
   lastActionTimestamp = 0;
   capturedResponses = [];
+  stoppedResponses = [];
+  clearPersistedSession();
 }
 
-export type { CapturedHttpResponse };
+/**
+ * Checks sessionStorage for a recording session persisted across a page
+ * navigation (e.g. traditional form submit). If found, restores the session
+ * and resumes recording on the current page.
+ *
+ * Should be called once on content-script startup.
+ */
+export function tryRestoreRecordingSession(): RecordingSession | null {
+  try {
+    const raw = sessionStorage.getItem(RECORDING_SESSION_KEY);
+    if (!raw) return null;
+
+    // Remove immediately so subsequent reloads do not re-restore
+    sessionStorage.removeItem(RECORDING_SESSION_KEY);
+
+    const data = JSON.parse(raw) as PersistedRecording;
+    if (!data?.session?.steps?.length) return null;
+
+    // Stop any currently active recording before restoring
+    if (session) stopRecording();
+
+    // Restore state
+    stoppedSession = null;
+    stoppedResponses = [];
+    capturedResponses = data.capturedResponses ?? [];
+    lastNetworkActivityTimestamp = 0;
+
+    // Resume the persisted session, adding a navigate step for the new page
+    session = {
+      ...data.session,
+      status: "recording",
+      steps: [
+        ...data.session.steps,
+        {
+          type: "navigate" as RecordedStepType,
+          timestamp: now(),
+          url: window.location.href,
+          label: document.title || "New page",
+        },
+      ],
+    };
+
+    lastActionTimestamp = now();
+
+    // Re-attach event listeners on the new document
+    addListener(document, "input", onInput, { capture: true });
+    addListener(document, "change", onChange, { capture: true });
+    addListener(document, "click", onClick, { capture: true });
+    addListener(document, "submit", onSubmit, { capture: true });
+    addListener(document, "keydown", onKeyDown as EventListener, {
+      capture: true,
+    });
+    addListener(window, "beforeunload", onBeforeUnload);
+    addListener(window, "hashchange", onHashChange);
+    addListener(window, "popstate", onPopState);
+
+    startMutationObserver();
+    startNetworkMonitoring();
+
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+export type { CapturedHttpResponse } from "./e2e-export.types";
