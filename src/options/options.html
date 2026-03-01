@@ -108,7 +108,13 @@
             <option value="info" data-i18n="logLevelInfo">Info</option>
             <option value="warn" data-i18n="logLevelWarn">Warn</option>
             <option value="error" data-i18n="logLevelError">Error (errors only)</option>
+            <option value="audit" data-i18n="logLevelAudit">Audit (fills only)</option>
           </select>
+        </div>
+
+        <div class="form-group" id="log-max-entries-group" style="margin-top: 8px">
+          <label for="setting-log-max-entries" data-i18n="settingLogMaxEntries">Max log entries (buffer):</label>
+          <input id="setting-log-max-entries" type="number" min="100" max="10000" step="100" value="1000" style="width: 90px;" />
         </div>
 
       </div>

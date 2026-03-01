@@ -458,6 +458,8 @@ export interface Settings {
   debugLog: boolean;
   /** Minimum log level to output: debug < info < warn < error */
   logLevel: "debug" | "info" | "warn" | "error";
+  /** Maximum number of log entries to keep in the persistent log store (50–5000) */
+  logMaxEntries: number;
   /** Preferred UI language. "auto" follows the browser/Chrome locale. */
   uiLanguage: "auto" | "en" | "pt_BR" | "es";
   /** When true, only empty fields are filled — fields with an existing value are skipped */
@@ -575,6 +577,7 @@ export const DEFAULT_SETTINGS: Settings = {
 
   debugLog: false,
   logLevel: "warn",
+  logMaxEntries: 1000,
   uiLanguage: "auto",
   fillEmptyOnly: false,
 

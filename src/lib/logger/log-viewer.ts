@@ -31,11 +31,12 @@ export interface LogViewer {
 }
 
 // Map LogLevel to display CSS class
-const LEVEL_CSS: Record<LogLevel, string> = {
+const LEVEL_CSS: Record<string, string> = {
   debug: "debug",
   info: "info",
   warn: "warn",
   error: "error",
+  audit: "audit",
 };
 
 // Display labels for filter buttons
@@ -45,12 +46,15 @@ const LEVEL_LABELS: Record<string, string> = {
   info: "Info",
   warn: "Warn",
   error: "Error",
+  audit: "Audit",
 };
 
 export function createLogViewer(options: LogViewerOptions): LogViewer {
   const { container, variant } = options;
   let activeFilter: LogLevel | "all" = "all";
   let searchQuery = "";
+  let timeFrom = "";
+  let timeTo = "";
   let allEntries: LogEntry[] = [];
   let unsubscribe: (() => void) | null = null;
 
@@ -76,6 +80,17 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
     }
   }
 
+  function downloadAsJson(entries: LogEntry[]): void {
+    const json = JSON.stringify(entries, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fill-all-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function filterEntries(): LogEntry[] {
     let filtered = allEntries;
 
@@ -89,6 +104,17 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
         (e) =>
           e.msg.toLowerCase().includes(q) || e.ns.toLowerCase().includes(q),
       );
+    }
+
+    if (timeFrom) {
+      const fromMs = new Date(timeFrom).getTime();
+      filtered = filtered.filter((e) => new Date(e.ts).getTime() >= fromMs);
+    }
+
+    if (timeTo) {
+      // Add 59s 999ms to include the full minute selected
+      const toMs = new Date(timeTo).getTime() + 59999;
+      filtered = filtered.filter((e) => new Date(e.ts).getTime() <= toMs);
     }
 
     return filtered;
@@ -124,7 +150,9 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
 
   function render(): void {
     const filtered = filterEntries();
-    const filterBtns = (["all", "debug", "info", "warn", "error"] as const)
+    const filterBtns = (
+      ["all", "debug", "info", "warn", "error", "audit"] as const
+    )
       .map(
         (level) =>
           `<button class="lv-filter-btn${activeFilter === level ? " active" : ""}" data-level="${level}">${LEVEL_LABELS[level]}</button>`,
@@ -135,7 +163,10 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
       <div class="lv-toolbar">
         <div class="lv-filters">${filterBtns}</div>
         <input class="lv-search" type="text" placeholder="Buscar logs..." value="${escapeHtml(searchQuery)}" />
+        <input class="lv-time-from" type="datetime-local" title="De:" value="${timeFrom}" />
+        <input class="lv-time-to" type="datetime-local" title="Até:" value="${timeTo}" />
         <button class="lv-copy-all-btn" title="Copiar todos os logs visíveis">📋</button>
+        <button class="lv-download-json-btn" title="Baixar logs como JSON">⬇️</button>
         <button class="lv-clear-btn" title="Limpar todos os logs">🗑️</button>
         <span class="lv-count">${filtered.length}/${allEntries.length}</span>
       </div>
@@ -164,6 +195,24 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
       searchInput.setSelectionRange(len, len);
     }
 
+    // Bind time-range inputs
+    const timeFromInput =
+      container.querySelector<HTMLInputElement>(".lv-time-from");
+    if (timeFromInput) {
+      timeFromInput.addEventListener("change", () => {
+        timeFrom = timeFromInput.value;
+        render();
+      });
+    }
+    const timeToInput =
+      container.querySelector<HTMLInputElement>(".lv-time-to");
+    if (timeToInput) {
+      timeToInput.addEventListener("change", () => {
+        timeTo = timeToInput.value;
+        render();
+      });
+    }
+
     // Bind copy-all button
     container
       .querySelector(".lv-copy-all-btn")
@@ -171,6 +220,13 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
         const filtered = filterEntries();
         const text = formatEntriesAsText(filtered);
         void copyToClipboard(text);
+      });
+
+    // Bind download JSON button
+    container
+      .querySelector(".lv-download-json-btn")
+      ?.addEventListener("click", () => {
+        downloadAsJson(filterEntries());
       });
 
     // Bind per-entry copy buttons
@@ -365,6 +421,35 @@ export function getLogViewerStyles(variant: LogViewerVariant): string {
     .lv-warn .lv-msg { color: ${isDark ? "#fbbf24" : "#d97706"}; }
     .lv-error .lv-level { color: ${isDark ? "#f87171" : "#dc2626"}; }
     .lv-error .lv-msg { color: ${isDark ? "#f87171" : "#dc2626"}; }
+    .lv-audit .lv-level { color: ${isDark ? "#c084fc" : "#9333ea"}; }
+    .lv-audit .lv-msg { color: ${isDark ? "#c084fc" : "#9333ea"}; }
+    /* time-range inputs */
+    .lv-time-from, .lv-time-to {
+      padding: 4px 6px;
+      border: 1px solid ${inputBorder};
+      border-radius: 4px;
+      background: ${inputBg};
+      color: ${text};
+      font-size: 11px;
+      outline: none;
+    }
+    .lv-time-from:focus, .lv-time-to:focus {
+      border-color: ${filterActive};
+    }
+    /* Download JSON button */
+    .lv-download-json-btn {
+      padding: 3px 8px;
+      border: 1px solid ${inputBorder};
+      border-radius: 4px;
+      background: ${filterBg};
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+    .lv-download-json-btn:hover {
+      border-color: ${filterActive};
+      color: ${filterActive};
+    }
     /* Copy buttons */
     .lv-copy-all-btn {
       padding: 3px 8px;

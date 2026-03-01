@@ -25,7 +25,7 @@ export interface LogEntry {
 type LogStoreListener = (entries: LogEntry[]) => void;
 
 const STORAGE_KEY = "fill_all_log_entries";
-const MAX_ENTRIES = 1000;
+let maxEntries = 1000;
 const FLUSH_INTERVAL_MS = 500;
 
 /** In-memory mirror of all entries (local context) */
@@ -59,7 +59,7 @@ export async function initLogStore(): Promise<void> {
     const result = await chrome.storage.session.get(STORAGE_KEY);
     const stored = result[STORAGE_KEY] as LogEntry[] | undefined;
     if (Array.isArray(stored)) {
-      localEntries = stored.slice(-MAX_ENTRIES);
+      localEntries = stored.slice(-maxEntries);
     }
   } catch {
     // Storage unavailable — stay with empty local entries
@@ -71,7 +71,7 @@ export async function initLogStore(): Promise<void> {
       if (area !== "session" || !changes[STORAGE_KEY]) return;
       const newVal = changes[STORAGE_KEY].newValue as LogEntry[] | undefined;
       if (Array.isArray(newVal)) {
-        localEntries = newVal.slice(-MAX_ENTRIES);
+        localEntries = newVal.slice(-maxEntries);
         notifyListeners();
       }
     });
@@ -86,8 +86,8 @@ export async function initLogStore(): Promise<void> {
  */
 export function addLogEntry(entry: LogEntry): void {
   localEntries.push(entry);
-  if (localEntries.length > MAX_ENTRIES) {
-    localEntries = localEntries.slice(-MAX_ENTRIES);
+  if (localEntries.length > maxEntries) {
+    localEntries = localEntries.slice(-maxEntries);
   }
 
   pendingEntries.push(entry);
@@ -113,14 +113,22 @@ export async function loadLogEntries(): Promise<LogEntry[]> {
     const result = await chrome.storage.session.get(STORAGE_KEY);
     const stored = result[STORAGE_KEY] as LogEntry[] | undefined;
     if (Array.isArray(stored)) {
-      localEntries = stored.slice(-MAX_ENTRIES);
+      localEntries = stored.slice(-maxEntries);
     }
   } catch {
     // Ignore — use local entries
   }
   return localEntries;
 }
-
+/**
+ * Configures the log store at runtime.
+ * Must be called before entries are added for the limit to take effect.
+ */
+export function configureLogStore(options: { maxEntries?: number }): void {
+  if (options.maxEntries !== undefined) {
+    maxEntries = Math.max(50, Math.min(5000, options.maxEntries));
+  }
+}
 /**
  * Clears all log entries from memory and storage.
  */
@@ -194,8 +202,8 @@ async function flushToStorage(): Promise<void> {
     const result = await chrome.storage.session.get(STORAGE_KEY);
     let all: LogEntry[] = (result[STORAGE_KEY] as LogEntry[] | undefined) ?? [];
     all.push(...toFlush);
-    if (all.length > MAX_ENTRIES) {
-      all = all.slice(-MAX_ENTRIES);
+    if (all.length > maxEntries) {
+      all = all.slice(-maxEntries);
     }
     await chrome.storage.session.set({ [STORAGE_KEY]: all });
   } catch {

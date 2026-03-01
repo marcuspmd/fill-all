@@ -23,7 +23,7 @@
  * acessíveis de todas as abas de log (painel, devtools, options).
  */
 
-import { addLogEntry, initLogStore } from "./log-store";
+import { addLogEntry, initLogStore, configureLogStore } from "./log-store";
 import type { LogEntry } from "./log-store";
 
 export type { LogEntry };
@@ -34,13 +34,14 @@ export {
   clearLogEntries,
 } from "./log-store";
 
-export type LogLevel = "debug" | "info" | "warn" | "error";
+export type LogLevel = "debug" | "info" | "warn" | "error" | "audit";
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
   warn: 2,
   error: 3,
+  audit: 4,
 };
 
 // ── Estado interno ─────────────────────────────────────────────────────────────
@@ -70,8 +71,8 @@ const buffer: BufferedEntry[] = [];
 // ── Funções internas ───────────────────────────────────────────────────────────
 
 function shouldLog(level: LogLevel): boolean {
-  // warn and error are always visible so critical issues surface even without debugLog
-  if (level === "error" || level === "warn") return true;
+  // audit, warn and error are always visible so critical issues surface even without debugLog
+  if (level === "error" || level === "warn" || level === "audit") return true;
   return state.enabled && LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[state.level];
 }
 
@@ -163,7 +164,7 @@ export async function initLogger(): Promise<void> {
   try {
     const result = await chrome.storage.local.get(SETTINGS_KEY);
     const settings = result[SETTINGS_KEY] as
-      | { debugLog?: boolean; logLevel?: LogLevel }
+      | { debugLog?: boolean; logLevel?: LogLevel; logMaxEntries?: number }
       | undefined;
 
     if (settings) {
@@ -173,6 +174,7 @@ export async function initLogger(): Promise<void> {
         // Se debugLog ligado mas logLevel não salvo, assume "debug" — caso contrário "warn"
         level: settings.logLevel ?? (enabled ? "debug" : "warn"),
       });
+      configureLogStore({ maxEntries: settings.logMaxEntries ?? 1000 });
     }
   } catch {
     // Silently ignore — logger stays with defaults.
@@ -186,7 +188,7 @@ export async function initLogger(): Promise<void> {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local" || !changes[SETTINGS_KEY]) return;
     const newSettings = changes[SETTINGS_KEY].newValue as
-      | { debugLog?: boolean; logLevel?: LogLevel }
+      | { debugLog?: boolean; logLevel?: LogLevel; logMaxEntries?: number }
       | undefined;
     if (!newSettings) return;
     const enabled = newSettings.debugLog ?? false;
@@ -194,6 +196,7 @@ export async function initLogger(): Promise<void> {
       enabled,
       level: newSettings.logLevel ?? (enabled ? "debug" : "warn"),
     });
+    configureLogStore({ maxEntries: newSettings.logMaxEntries ?? 1000 });
   });
 }
 
@@ -244,4 +247,41 @@ export function createLogger(namespace: string): Logger {
       // no-op: sem group, não há nada para fechar
     },
   };
+}
+
+// ── Audit log ────────────────────────────────────────────────────────────────
+
+function maskValue(value: string): string {
+  if (value.length <= 4) return "****";
+  return (
+    value.slice(0, 2) +
+    "*".repeat(Math.min(value.length - 4, 6)) +
+    value.slice(-2)
+  );
+}
+
+/**
+ * Records an audit entry for a form field fill operation.
+ * Always persisted regardless of debugLog setting.
+ *
+ * @param selector - CSS selector of the filled field
+ * @param fieldType - detected type (e.g. "cpf", "email")
+ * @param source - generation source (e.g. "generator", "ai", "rule")
+ * @param value - generated value (partially masked for privacy)
+ */
+export function logAuditFill(opts: {
+  selector: string;
+  fieldType: string | null | undefined;
+  source: string;
+  value: string;
+}): void {
+  const masked = maskValue(opts.value);
+  const msg = `fill | ${opts.fieldType ?? "unknown"} | ${opts.source} | ${masked} | ${opts.selector}`;
+  const entry: LogEntry = {
+    ts: new Date().toISOString(),
+    level: "audit",
+    ns: "[FillAll/Audit]",
+    msg,
+  };
+  addLogEntry(entry);
 }

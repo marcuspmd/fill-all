@@ -112,6 +112,7 @@ const DEFAULT_SETTINGS: Settings = {
   watcherDebounceMs: 600,
   watcherAutoRefill: true,
   watcherShadowDOM: false,
+  logMaxEntries: 1000,
 };
 
 // ── Import SUT AFTER mocks ────────────────────────────────────────────────────

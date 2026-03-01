@@ -77,15 +77,20 @@ Aprimorar o comportamento do `DOMWatcher` para lidar melhor com SPAs complexas, 
 
 ## 📋 Melhorar Sistema de Log
 
-**Status**: 🔲 Planejado
+**Status**: ✅ Concluído
 
 Evoluir o sistema de logging centralizado para facilitar o diagnóstico de problemas e o acompanhamento do comportamento da extensão.
 
-- Timestamps e níveis de severidade no DevTools Panel
-- Filtros por namespace, nível e intervalo de tempo
-- Exportar logs como JSON ou texto
-- Limitar rotação de buffer com controle configurável de tamanho máximo
-- Log de auditoria de preenchimentos realizados (campo, gerador usado, valor mascarado)
+- ✅ Timestamps e níveis de severidade no DevTools Panel (`LogEntry.ts` ISO + exibição formatada)
+- ✅ Filtros por namespace e nível (toolbar com botões All/Debug/Info/Warn/Error + busca por texto)
+- ✅ Exportar logs como texto (copiar para clipboard via botão no viewer)
+- ✅ Rotação de buffer com FIFO eviction (max 1000 entradas, persistência via `chrome.storage.session`)
+- ✅ Componente `log-viewer` reutilizável nos contextos DevTools, Options e Floating Panel
+- ✅ Filtro por intervalo de tempo (date/time range picker no toolbar)
+- ✅ Exportar logs como JSON (download de arquivo `.json` com todos os campos)
+- ✅ Tamanho máximo do buffer configurável via Settings (padrão 1000, range 100–10000)
+- ✅ Log de auditoria de preenchimentos realizados (campo tipo, gerador usado, valor mascarado)
+- ✅ Nível de severidade "Audit" para rastreamento transparente de operações
 
 ---
 

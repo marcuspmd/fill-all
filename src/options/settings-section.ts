@@ -60,6 +60,19 @@ async function saveGeneralSettings(): Promise<void> {
     logLevel: (
       document.getElementById("setting-log-level") as HTMLSelectElement
     ).value as Settings["logLevel"],
+    logMaxEntries: Math.min(
+      10000,
+      Math.max(
+        100,
+        Number(
+          (
+            document.getElementById(
+              "setting-log-max-entries",
+            ) as HTMLInputElement
+          ).value,
+        ) || 1000,
+      ),
+    ),
   };
   await chrome.runtime.sendMessage({
     type: "SAVE_SETTINGS",
@@ -279,6 +292,9 @@ async function loadSettings(): Promise<void> {
     settings.debugLog ?? false;
   (document.getElementById("setting-log-level") as HTMLSelectElement).value =
     settings.logLevel ?? "warn";
+  (
+    document.getElementById("setting-log-max-entries") as HTMLInputElement
+  ).value = String(settings.logMaxEntries ?? 1000);
 
   // Field icon settings
   (
@@ -336,6 +352,7 @@ function bindSettingsEvents(): void {
     "setting-fill-empty-only",
     "setting-debug-log",
     "setting-log-level",
+    "setting-log-max-entries",
     "setting-strategy",
     "setting-locale",
   ]) {

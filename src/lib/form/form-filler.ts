@@ -14,7 +14,7 @@ import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
 import { fillCustomComponent } from "./adapters/adapter-registry";
 import { generate } from "@/lib/generators";
-import { createLogger } from "@/lib/logger";
+import { createLogger, logAuditFill } from "@/lib/logger";
 
 const log = createLogger("FormFiller");
 
@@ -206,6 +206,13 @@ async function doFillAllFields(options?: {
 
       await applyValueToField(field, result.value);
 
+      logAuditFill({
+        selector: field.selector,
+        fieldType: field.fieldType,
+        source: result.source,
+        value: String(result.value),
+      });
+
       log.info(
         `✅ Preenchido em ${Date.now() - start}ms via ${result.source}: "${String(result.value).slice(0, 40)}"`,
       );
@@ -253,6 +260,12 @@ export async function fillSingleField(
       settings.forceAIFirst,
     );
     await applyValueToField(field, result.value);
+    logAuditFill({
+      selector: field.selector,
+      fieldType: field.fieldType,
+      source: result.source,
+      value: String(result.value),
+    });
     log.info(
       `✅ Preenchido em ${Date.now() - start}ms via ${result.source}: "${String(result.value).slice(0, 40)}"`,
     );
