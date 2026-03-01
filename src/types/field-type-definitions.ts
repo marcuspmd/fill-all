@@ -484,6 +484,12 @@ export const FIELD_TYPE_DEFINITIONS: readonly FieldTypeDefinition[] = [
     generator: "empty",
   },
   {
+    type: "multiselect",
+    category: "system",
+    description: "Campo select múltiplo",
+    generator: "empty",
+  },
+  {
     type: "checkbox",
     category: "system",
     description: "Checkbox",

@@ -3,7 +3,7 @@
  *
  * Detects and fills `<Select>`, `<TreeSelect>`, `<Cascader>`, and `<AutoComplete>` components.
  *
- * DOM structure (antd v5):
+ * DOM structure — Single (antd v5):
  *   <div class="ant-select ant-select-single ...">
  *     <div class="ant-select-selector">
  *       <span class="ant-select-selection-search">
@@ -14,7 +14,20 @@
  *     </div>
  *   </div>
  *
+ * DOM structure — Multiple (antd v5):
+ *   <div class="ant-select ant-select-multiple ...">
+ *     <div class="ant-select-content">
+ *       <div class="ant-select-content-item">
+ *         <span class="ant-select-selection-item">Tag selecionada</span>
+ *       </div>
+ *       <div class="ant-select-content-item ant-select-content-item-suffix">
+ *         <input class="ant-select-input" role="combobox" type="search" />
+ *       </div>
+ *     </div>
+ *   </div>
+ *
  * Filling: Opens dropdown, searches for the value, clicks matching option.
+ * Multiple mode: selects 1–3 options randomly (or matches comma-separated values).
  */
 
 import type { FormField } from "@/types";
@@ -50,13 +63,14 @@ export const antdSelectAdapter: CustomComponentAdapter = {
       .querySelector<HTMLElement>(".ant-select-selection-placeholder")
       ?.textContent?.trim();
 
+    const isMultiple = wrapper.classList.contains("ant-select-multiple");
     const options = extractDropdownOptions(wrapper);
 
     const field: FormField = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "select",
+      fieldType: isMultiple ? "multiselect" : "select",
       adapterName: "antd-select",
       label: findAntLabel(wrapper),
       name: findAntName(wrapper),
@@ -71,18 +85,20 @@ export const antdSelectAdapter: CustomComponentAdapter = {
   },
 
   async fill(wrapper: HTMLElement, value: string): Promise<boolean> {
+    const isMultiple = wrapper.classList.contains("ant-select-multiple");
     const wrapperSelector = getUniqueSelector(wrapper);
 
-    // Open the dropdown — try multiple trigger strategies for React/antd compatibility
-    const selector = wrapper.querySelector<HTMLElement>(".ant-select-selector");
+    // Open the dropdown — try multiple trigger strategies for React/antd compatibility.
+    // Multiple mode uses `.ant-select-content`; single mode uses `.ant-select-selector`.
+    const clickTarget = wrapper.querySelector<HTMLElement>(
+      ".ant-select-selector, .ant-select-content",
+    );
     const combobox = wrapper.querySelector<HTMLInputElement>(
-      "input[role='combobox'], .ant-select-selection-search-input",
+      "input[role='combobox'], .ant-select-selection-search-input, .ant-select-input",
     );
 
-    if (!selector) {
-      log.warn(
-        `Seletor .ant-select-selector não encontrado em: ${wrapperSelector}`,
-      );
+    if (!clickTarget) {
+      log.warn(`Container do select não encontrado em: ${wrapperSelector}`);
       return false;
     }
 
@@ -91,8 +107,8 @@ export const antdSelectAdapter: CustomComponentAdapter = {
       combobox.focus();
       combobox.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
     }
-    // Strategy 2: click the selector container
-    simulateClick(selector);
+    // Strategy 2: click the selector/content container
+    simulateClick(clickTarget);
 
     // Wait for the dropdown to render
     const dropdown = await waitForElement(
@@ -105,7 +121,7 @@ export const antdSelectAdapter: CustomComponentAdapter = {
       wrapper.dispatchEvent(
         new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
       );
-      selector.dispatchEvent(
+      clickTarget.dispatchEvent(
         new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
       );
       await new Promise((r) => setTimeout(r, 300));
@@ -119,6 +135,10 @@ export const antdSelectAdapter: CustomComponentAdapter = {
         );
         return false;
       }
+    }
+
+    if (isMultiple) {
+      return selectMultipleOptions(wrapper, value);
     }
 
     return selectOption(wrapper, value);
@@ -154,9 +174,9 @@ function extractDropdownOptions(
 }
 
 function selectOption(wrapper: HTMLElement, value: string): boolean {
-  // Search input inside the select
+  // Search input inside the select — supports both single and multiple DOM variants.
   const searchInput = wrapper.querySelector<HTMLInputElement>(
-    ".ant-select-selection-search-input",
+    ".ant-select-selection-search-input, .ant-select-input",
   );
 
   // Only type into the search box when we have a real search value.
@@ -214,4 +234,88 @@ function selectOption(wrapper: HTMLElement, value: string): boolean {
   }
 
   return false;
+}
+
+/**
+ * Selects multiple options from an open ant-select-multiple dropdown.
+ *
+ * Strategy:
+ * 1. If `value` contains comma-separated strings, try to match each one.
+ * 2. Otherwise, pick 1–3 random non-selected options from the dropdown.
+ * 3. Close the dropdown by pressing Escape after all selections.
+ */
+function selectMultipleOptions(wrapper: HTMLElement, value: string): boolean {
+  const dropdowns = document.querySelectorAll<HTMLElement>(
+    ".ant-select-dropdown:not(.ant-select-dropdown-hidden)",
+  );
+
+  let selected = false;
+
+  for (const dropdown of dropdowns) {
+    const allOptions = Array.from(
+      dropdown.querySelectorAll<HTMLElement>(
+        ".ant-select-item-option:not(.ant-select-item-option-disabled)",
+      ),
+    );
+
+    if (allOptions.length === 0) continue;
+
+    // Collect desired values from comma-separated input (e.g. "Option A, Option B")
+    const desiredValues = value
+      ? value
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean)
+      : [];
+
+    const optionsToClick: HTMLElement[] = [];
+
+    if (desiredValues.length > 0) {
+      // Try to find each desired value
+      for (const desired of desiredValues) {
+        const match = allOptions.find((opt) => {
+          const title =
+            opt.getAttribute("title") ?? opt.textContent?.trim() ?? "";
+          return (
+            title.toLowerCase() === desired.toLowerCase() ||
+            title.toLowerCase().includes(desired.toLowerCase())
+          );
+        });
+        if (match) optionsToClick.push(match);
+      }
+    }
+
+    // If nothing matched (or no value provided), pick 1–3 random options
+    if (optionsToClick.length === 0) {
+      const count = Math.min(
+        Math.floor(Math.random() * 3) + 1,
+        allOptions.length,
+      );
+      const shuffled = [...allOptions].sort(() => Math.random() - 0.5);
+      optionsToClick.push(...shuffled.slice(0, count));
+    }
+
+    for (const opt of optionsToClick) {
+      simulateClick(opt);
+      selected = true;
+    }
+
+    break;
+  }
+
+  // Close the dropdown by pressing Escape on the search input
+  const searchInput = wrapper.querySelector<HTMLInputElement>(
+    ".ant-select-selection-search-input, .ant-select-input",
+  );
+  if (searchInput) {
+    searchInput.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        code: "Escape",
+        bubbles: true,
+      }),
+    );
+  }
+
+  return selected;
 }

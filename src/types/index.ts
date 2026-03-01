@@ -148,6 +148,7 @@ export const FIELD_TYPES = [
 
   // Componentes
   "select",
+  "multiselect",
   "checkbox",
   "radio",
   "file",
