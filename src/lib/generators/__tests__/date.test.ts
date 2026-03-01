@@ -3,6 +3,8 @@ import {
   generateDate,
   generateBirthDate,
   generateFutureDate,
+  detectDateFormat,
+  reformatDate,
 } from "@/lib/generators/date";
 
 describe("generateDate", () => {
@@ -83,5 +85,63 @@ describe("generateFutureDate", () => {
     maxFuture.setDate(maxFuture.getDate() + 366); // +1 day buffer
 
     expect(futureDate.getTime()).toBeLessThanOrEqual(maxFuture.getTime());
+  });
+});
+
+describe("detectDateFormat", () => {
+  it("returns 'iso' for inputType='date' regardless of placeholder", () => {
+    expect(
+      detectDateFormat({ inputType: "date", placeholder: "DD/MM/YYYY" }),
+    ).toBe("iso");
+    expect(detectDateFormat({ inputType: "date" })).toBe("iso");
+  });
+
+  it("returns 'br' when placeholder starts with DD", () => {
+    expect(detectDateFormat({ placeholder: "DD/MM/YYYY" })).toBe("br");
+    expect(detectDateFormat({ placeholder: "dd/mm/aaaa" })).toBe("br");
+    expect(detectDateFormat({ placeholder: "DD-MM-YYYY" })).toBe("br");
+  });
+
+  it("returns 'us' when placeholder has MM before DD", () => {
+    expect(detectDateFormat({ placeholder: "MM/DD/YYYY" })).toBe("us");
+  });
+
+  it("returns 'iso' when placeholder starts with YYYY or AAAA", () => {
+    expect(detectDateFormat({ placeholder: "YYYY-MM-DD" })).toBe("iso");
+    expect(detectDateFormat({ placeholder: "YYYY/MM/DD" })).toBe("iso");
+  });
+
+  it("returns 'iso' when pattern starts with 4-digit year", () => {
+    expect(detectDateFormat({ pattern: "\\d{4}-\\d{2}-\\d{2}" })).toBe("iso");
+  });
+
+  it("returns 'br' when pattern ends with 4-digit year", () => {
+    expect(detectDateFormat({ pattern: "\\d{2}/\\d{2}/\\d{4}" })).toBe("br");
+  });
+
+  it("returns 'iso' when no hints are present", () => {
+    expect(detectDateFormat({})).toBe("iso");
+    expect(detectDateFormat({ placeholder: "Enter date" })).toBe("iso");
+  });
+});
+
+describe("reformatDate", () => {
+  const isoDate = "2000-06-15";
+
+  it("returns BR format DD/MM/YYYY", () => {
+    expect(reformatDate(isoDate, "br")).toBe("15/06/2000");
+  });
+
+  it("returns US format MM/DD/YYYY", () => {
+    expect(reformatDate(isoDate, "us")).toBe("06/15/2000");
+  });
+
+  it("returns ISO format YYYY-MM-DD unchanged", () => {
+    expect(reformatDate(isoDate, "iso")).toBe("2000-06-15");
+  });
+
+  it("returns original string when input is not ISO format", () => {
+    expect(reformatDate("15/06/2000", "iso")).toBe("15/06/2000");
+    expect(reformatDate("invalid", "br")).toBe("invalid");
   });
 });

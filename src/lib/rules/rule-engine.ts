@@ -15,6 +15,7 @@ import {
   adaptGeneratedValue,
   generateWithConstraints,
 } from "@/lib/generators/adaptive";
+import { detectDateFormat, reformatDate } from "@/lib/generators/date";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("RuleEngine");
@@ -43,6 +44,33 @@ const GENERATOR_ONLY_TYPES = new Set<FieldType>(
     (d) => d.generator && !AI_USEFUL_GENERATORS.has(d.generator),
   ).map((d) => d.type),
 );
+
+/**
+ * Field types that produce date-like values (ISO strings).
+ * For these, we detect the display format expected by the field and reformat
+ * the generated ISO string accordingly before returning it.
+ */
+const DATE_FIELD_TYPES = new Set<FieldType>([
+  "date",
+  "birth-date",
+  "start-date",
+  "end-date",
+  "due-date",
+]);
+
+/**
+ * Generates a date value for a field, formatted according to the field's
+ * detected expected format (ISO, BR, or US).
+ */
+function generateDateForField(fieldType: FieldType, field: FormField): string {
+  const isoDate = generate(fieldType);
+  const format = detectDateFormat({
+    inputType: field.inputType,
+    placeholder: field.placeholder,
+    pattern: field.pattern,
+  });
+  return reformatDate(isoDate, format);
+}
 
 /** Wraps an AI call with a hard timeout so it never blocks indefinitely. */
 async function callAiWithTimeout(
@@ -164,6 +192,10 @@ export async function resolveFieldValue(
       matchingRule.generator !== "tensorflow"
     ) {
       const ruleGenerator = matchingRule.generator as FieldType;
+      if (DATE_FIELD_TYPES.has(ruleGenerator)) {
+        const value = generateDateForField(ruleGenerator, field);
+        return { fieldSelector: selector, value, source: "generator" };
+      }
       const value = generateWithConstraints(() => generate(ruleGenerator), {
         element: field.element,
         requireValidity: false,
@@ -188,6 +220,11 @@ export async function resolveFieldValue(
 
   // 5. Default generator based on detected field type
   const effectiveType = getEffectiveFieldType(field);
+  if (DATE_FIELD_TYPES.has(effectiveType)) {
+    const value = generateDateForField(effectiveType, field);
+    log.debug(`Gerador de data (${effectiveType}, detectado): "${value}"`);
+    return { fieldSelector: selector, value, source: "generator" };
+  }
   const value = generateWithConstraints(() => generate(effectiveType), {
     element: field.element,
     requireValidity: true,

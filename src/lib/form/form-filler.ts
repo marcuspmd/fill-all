@@ -2,7 +2,13 @@
  * Form filler — fills detected fields with generated or saved values
  */
 
-import type { FormField, GenerationResult, SavedForm, Settings } from "@/types";
+import type {
+  FieldType,
+  FormField,
+  GenerationResult,
+  SavedForm,
+  Settings,
+} from "@/types";
 import { detectAllFieldsAsync, streamAllFields } from "./form-detector";
 import { resolveFieldValue } from "@/lib/rules/rule-engine";
 import {
@@ -14,6 +20,7 @@ import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
 import { fillCustomComponent } from "./adapters/adapter-registry";
 import { generate } from "@/lib/generators";
+import { deriveFieldValueFromTemplate } from "@/lib/form/field-type-aliases";
 import { createLogger, logAuditFill } from "@/lib/logger";
 import { createProgressNotification } from "./progress-notification";
 
@@ -439,6 +446,22 @@ export async function applyTemplate(
   let filled = 0;
 
   if (form.templateFields && form.templateFields.length > 0) {
+    // Pre-generate ONE consistent value per field type (fixed or generator).
+    // Generator fields are produced once so that derivations remain coherent —
+    // e.g. first-name and last-name derived from the same generated full-name.
+    const templateValueMap = new Map<FieldType, string>();
+    for (const tField of form.templateFields) {
+      if (!tField.matchByFieldType) continue;
+      if (tField.mode === "generator" && tField.generatorType) {
+        templateValueMap.set(
+          tField.matchByFieldType,
+          generate(tField.generatorType),
+        );
+      } else if (tField.mode === "fixed" && tField.fixedValue) {
+        templateValueMap.set(tField.matchByFieldType, tField.fixedValue);
+      }
+    }
+
     // For type-based templates (matchByFieldType), track which fields were already handled
     const handledSelectors = new Set<string>();
 
@@ -451,13 +474,9 @@ export async function applyTemplate(
             !handledSelectors.has(f.selector),
         );
         for (const matchedField of matchedFields) {
-          let value: string;
-          if (tField.mode === "generator" && tField.generatorType) {
-            value = generate(tField.generatorType);
-          } else {
-            value = tField.fixedValue ?? "";
-          }
-          if (!value && tField.mode === "fixed") continue;
+          // Use the pre-generated value to keep derived fields coherent
+          const value = templateValueMap.get(tField.matchByFieldType) ?? "";
+          if (!value) continue;
           await applyValueToField(matchedField, value);
           if (settings.highlightFilled) {
             highlightField(
@@ -494,6 +513,28 @@ export async function applyTemplate(
         highlightField(
           matchedField.element,
           matchedField.label ?? matchedField.fieldType ?? undefined,
+        );
+      }
+      handledSelectors.add(matchedField.selector);
+      filled++;
+    }
+
+    // Fallback: fill detected fields not covered by the template.
+    // Priority: (1) direct match in map (same type, missed the loop somehow)
+    //           (2) smart derivation from a related type (e.g. first-name ← full-name)
+    for (const field of detectedFields) {
+      if (handledSelectors.has(field.selector) || !field.fieldType) continue;
+
+      const value =
+        templateValueMap.get(field.fieldType) ??
+        deriveFieldValueFromTemplate(field.fieldType, templateValueMap);
+
+      if (!value) continue;
+      await applyValueToField(field, value);
+      if (settings.highlightFilled) {
+        highlightField(
+          field.element,
+          field.label ?? field.fieldType ?? undefined,
         );
       }
       filled++;
