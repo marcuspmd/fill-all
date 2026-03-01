@@ -146,12 +146,12 @@ Transformar o Fill All em um acelerador de engenharia de testes: ao preencher um
 
 ## 💬 Melhorar Feedback ao Usar Gemini Nano
 
-**Status**: 🔲 Planejado
+**Status**: ✅ Concluído
 
-Atualmente o usuário não recebe nenhum retorno visual enquanto o Gemini Nano está processando, o que pode dar a impressão de que a extensão travou.
+Adicionar feedback visual durante e após o preenchimento com Gemini Nano, garantindo que o usuário saiba o que está acontecendo e quais campos foram processados pela IA.
 
-- Indicador de loading no Popup e no Floating Panel durante geração com AI
-- Mensagem de status: "Gerando com Gemini Nano…"
-- Toast/notificação ao concluir ou em caso de falha
-- Indicar visualmente quais campos foram preenchidos via AI (badge diferenciado)
-- Timeout configurável com fallback transparente para o pipeline padrão
+- ✅ Toast/notificação ao concluir o preenchimento (com contagem de campos + campos via AI)
+- ✅ Badge visual `✨ AI` nos campos preenchidos via Gemini Nano (removível com clique)
+- ✅ Timeout configurável em Settings (padrão 30s, ajustável de 5s a 120s)
+- ✅ Fallback transparente para o pipeline padrão caso AI timeout ou indisponível
+- ✅ Todos os controles no Options Page, card "AI Feedback" com toggles para toast/badge e slider de timeout

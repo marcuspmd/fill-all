@@ -513,4 +513,35 @@ describe("rule-engine/resolveFieldValue", () => {
 
     vi.useRealTimers();
   });
+
+  it("passes generatorParams from rule to generate()", async () => {
+    const field = createField({ fieldType: "cpf" });
+    const params = { formatted: false };
+    mockGetRulesForUrl.mockResolvedValue([
+      createRule({
+        fieldType: "cpf",
+        generator: "cpf",
+        generatorParams: params,
+      }),
+    ]);
+    mockGenerateWithConstraints.mockImplementation((fn: () => string) => fn());
+    mockGenerate.mockReturnValue("12345678901");
+
+    await resolveFieldValue(field, "https://example.com");
+
+    expect(mockGenerate).toHaveBeenCalledWith("cpf", params);
+  });
+
+  it("passes undefined generatorParams when rule has none", async () => {
+    const field = createField({ fieldType: "cpf" });
+    mockGetRulesForUrl.mockResolvedValue([
+      createRule({ fieldType: "cpf", generator: "cpf" }),
+    ]);
+    mockGenerateWithConstraints.mockImplementation((fn: () => string) => fn());
+    mockGenerate.mockReturnValue("111.111.111-11");
+
+    await resolveFieldValue(field, "https://example.com");
+
+    expect(mockGenerate).toHaveBeenCalledWith("cpf", undefined);
+  });
 });

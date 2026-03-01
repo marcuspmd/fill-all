@@ -20,6 +20,7 @@ export interface GeneratorParams {
   readonly pattern?: string;
   readonly options?: string[]; // for select/radio
   readonly probability?: number; // for optional fields or boolean fields
+  readonly dateFormat?: "iso" | "br" | "us";
   readonly [key: string]: unknown; // allow extra params without TS errors
 }
 
@@ -554,3 +555,263 @@ export const FIELD_TYPES_BY_CATEGORY_DERIVED: Record<
   },
   {} as Record<FieldCategory, FieldType[]>,
 );
+
+// ── Generator Parameter Definitions ──────────────────────────────────────
+
+/** Describes a single customizable parameter for a generator factory. */
+/** Option entry for select-type parameter controls. */
+export interface SelectOption {
+  readonly value: string;
+  readonly labelKey: string;
+}
+
+export interface GeneratorParamDef {
+  readonly key: keyof GeneratorParams;
+  readonly type: "number" | "boolean" | "select";
+  readonly labelKey: string;
+  readonly defaultValue: number | boolean | string;
+  readonly min?: number;
+  readonly max?: number;
+  readonly step?: number;
+  /** Available options when type is "select". */
+  readonly selectOptions?: readonly SelectOption[];
+}
+
+/**
+ * Registry mapping generator factory keys to their customizable parameters.
+ * Only generators that accept meaningful params are listed here.
+ * The UI uses this to render param controls when creating/editing rules.
+ */
+export const GENERATOR_PARAM_DEFS: Readonly<
+  Record<string, readonly GeneratorParamDef[]>
+> = {
+  // ── Documentos ──────────────────────────────────────────────
+  cpf: [
+    {
+      key: "formatted",
+      type: "boolean",
+      labelKey: "paramFormatted",
+      defaultValue: true,
+    },
+  ],
+  cnpj: [
+    {
+      key: "formatted",
+      type: "boolean",
+      labelKey: "paramFormatted",
+      defaultValue: true,
+    },
+  ],
+  "cpf-cnpj": [
+    {
+      key: "formatted",
+      type: "boolean",
+      labelKey: "paramFormatted",
+      defaultValue: true,
+    },
+  ],
+  rg: [
+    {
+      key: "formatted",
+      type: "boolean",
+      labelKey: "paramFormatted",
+      defaultValue: true,
+    },
+  ],
+  cep: [
+    {
+      key: "formatted",
+      type: "boolean",
+      labelKey: "paramFormatted",
+      defaultValue: true,
+    },
+  ],
+
+  // ── Endereço ────────────────────────────────────────────────
+  street: [
+    {
+      key: "onlyLetters",
+      type: "boolean",
+      labelKey: "paramOnlyLetters",
+      defaultValue: false,
+    },
+  ],
+  complement: [
+    {
+      key: "onlyLetters",
+      type: "boolean",
+      labelKey: "paramOnlyLetters",
+      defaultValue: false,
+    },
+  ],
+  neighborhood: [
+    {
+      key: "onlyLetters",
+      type: "boolean",
+      labelKey: "paramOnlyLetters",
+      defaultValue: false,
+    },
+  ],
+
+  // ── Datas ───────────────────────────────────────────────────
+  "date-iso": [
+    {
+      key: "dateFormat",
+      type: "select",
+      labelKey: "paramDateFormat",
+      defaultValue: "iso",
+      selectOptions: [
+        { value: "iso", labelKey: "dateFormatIso" },
+        { value: "br", labelKey: "dateFormatBr" },
+        { value: "us", labelKey: "dateFormatUs" },
+      ],
+    },
+  ],
+  "birth-date": [
+    {
+      key: "dateFormat",
+      type: "select",
+      labelKey: "paramDateFormat",
+      defaultValue: "iso",
+      selectOptions: [
+        { value: "iso", labelKey: "dateFormatIso" },
+        { value: "br", labelKey: "dateFormatBr" },
+        { value: "us", labelKey: "dateFormatUs" },
+      ],
+    },
+    {
+      key: "min",
+      type: "number",
+      labelKey: "paramMinAge",
+      defaultValue: 18,
+      min: 0,
+      max: 120,
+      step: 1,
+    },
+    {
+      key: "max",
+      type: "number",
+      labelKey: "paramMaxAge",
+      defaultValue: 65,
+      min: 1,
+      max: 120,
+      step: 1,
+    },
+  ],
+  "future-date": [
+    {
+      key: "dateFormat",
+      type: "select",
+      labelKey: "paramDateFormat",
+      defaultValue: "iso",
+      selectOptions: [
+        { value: "iso", labelKey: "dateFormatIso" },
+        { value: "br", labelKey: "dateFormatBr" },
+        { value: "us", labelKey: "dateFormatUs" },
+      ],
+    },
+    {
+      key: "max",
+      type: "number",
+      labelKey: "paramMaxDays",
+      defaultValue: 90,
+      min: 1,
+      max: 3650,
+      step: 1,
+    },
+  ],
+
+  // ── Financeiro ──────────────────────────────────────────────
+  money: [
+    {
+      key: "min",
+      type: "number",
+      labelKey: "paramMinValue",
+      defaultValue: 1,
+      min: 0,
+      max: 999_999,
+      step: 1,
+    },
+    {
+      key: "max",
+      type: "number",
+      labelKey: "paramMaxValue",
+      defaultValue: 10_000,
+      min: 1,
+      max: 999_999,
+      step: 1,
+    },
+  ],
+  number: [
+    {
+      key: "min",
+      type: "number",
+      labelKey: "paramMinValue",
+      defaultValue: 1,
+      min: 0,
+      max: 999_999,
+      step: 1,
+    },
+    {
+      key: "max",
+      type: "number",
+      labelKey: "paramMaxValue",
+      defaultValue: 99_999,
+      min: 1,
+      max: 999_999,
+      step: 1,
+    },
+  ],
+
+  // ── Autenticação ────────────────────────────────────────────
+  password: [
+    {
+      key: "length",
+      type: "number",
+      labelKey: "paramLength",
+      defaultValue: 12,
+      min: 4,
+      max: 64,
+      step: 1,
+    },
+  ],
+  otp: [
+    {
+      key: "length",
+      type: "number",
+      labelKey: "paramLength",
+      defaultValue: 6,
+      min: 4,
+      max: 10,
+      step: 1,
+    },
+  ],
+  "verification-code": [
+    {
+      key: "length",
+      type: "number",
+      labelKey: "paramLength",
+      defaultValue: 6,
+      min: 4,
+      max: 10,
+      step: 1,
+    },
+  ],
+};
+
+/**
+ * Returns the parameter definitions for a given generator key.
+ * Returns empty array if the generator has no customizable params.
+ */
+export function getGeneratorParamDefs(
+  generatorKey: string,
+): readonly GeneratorParamDef[] {
+  return GENERATOR_PARAM_DEFS[generatorKey] ?? [];
+}
+
+/**
+ * Returns the generator key for a given field type, or null if none.
+ */
+export function getGeneratorKey(type: FieldType): string | null {
+  return definitionIndex.get(type)?.generator ?? null;
+}

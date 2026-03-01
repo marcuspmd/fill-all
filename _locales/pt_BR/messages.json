@@ -1630,5 +1630,44 @@
         "content": "$2"
       }
     }
+  },
+  "paramSectionTitle": {
+    "message": "Parâmetros do Gerador"
+  },
+  "paramFormatted": {
+    "message": "Formatado (com pontuação)"
+  },
+  "paramOnlyLetters": {
+    "message": "Apenas letras (sem números)"
+  },
+  "paramMinAge": {
+    "message": "Idade mínima"
+  },
+  "paramMaxAge": {
+    "message": "Idade máxima"
+  },
+  "paramMaxDays": {
+    "message": "Máximo de dias à frente"
+  },
+  "paramMinValue": {
+    "message": "Valor mínimo"
+  },
+  "paramMaxValue": {
+    "message": "Valor máximo"
+  },
+  "paramLength": {
+    "message": "Comprimento"
+  },
+  "paramDateFormat": {
+    "message": "Formato da data"
+  },
+  "dateFormatIso": {
+    "message": "YYYY-MM-DD (ISO)"
+  },
+  "dateFormatBr": {
+    "message": "DD/MM/YYYY (Brasil)"
+  },
+  "dateFormatUs": {
+    "message": "MM/DD/YYYY (EUA)"
   }
 }

@@ -199,10 +199,13 @@ export async function resolveFieldValue(
         const value = generateDateForField(ruleGenerator, field);
         return { fieldSelector: selector, value, source: "generator" };
       }
-      const value = generateWithConstraints(() => generate(ruleGenerator), {
-        element: field.element,
-        requireValidity: false,
-      });
+      const value = generateWithConstraints(
+        () => generate(ruleGenerator, matchingRule.generatorParams),
+        {
+          element: field.element,
+          requireValidity: false,
+        },
+      );
       return { fieldSelector: selector, value, source: "generator" };
     }
 

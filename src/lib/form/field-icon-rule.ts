@@ -7,7 +7,7 @@
  * - Keyboard shortcuts: Enter to save, Escape to cancel
  */
 
-import type { FieldRule, FieldType, FormField } from "@/types";
+import type { FieldRule, FieldType, FormField, GeneratorParams } from "@/types";
 import { RULE_POPUP_ID } from "./field-icon-styles";
 import { getUniqueSelector, findLabel, buildSignals } from "./extractors";
 import {
@@ -17,6 +17,11 @@ import {
 import { generate } from "@/lib/generators";
 import { detectBasicType } from "./detectors/html-type-detector";
 import { keywordClassifier } from "./detectors/strategies/keyword-classifier";
+import {
+  getGeneratorKey,
+  getGeneratorParamDefs,
+  type GeneratorParamDef,
+} from "@/types/field-type-definitions";
 
 let rulePopupElement: HTMLElement | null = null;
 let currentOnDismiss: (() => void) | null = null;
@@ -144,6 +149,7 @@ function showRulePopup(anchor: HTMLElement, onDismiss: () => void): void {
     }
   }
 
+  updateParamsSection();
   updatePreview();
   positionRulePopup(anchor);
   rulePopupElement.style.display = "block";
@@ -177,6 +183,7 @@ function setupPopupListeners(): void {
   rulePopupElement
     .querySelector("#fa-rp-generator")
     ?.addEventListener("change", () => {
+      updateParamsSection();
       updatePreview();
     });
 
@@ -201,6 +208,130 @@ function handlePopupKeyDown(e: KeyboardEvent): void {
     hideRulePopup();
     currentOnDismiss?.();
   }
+}
+
+function updateParamsSection(): void {
+  if (!rulePopupElement) return;
+  const container =
+    rulePopupElement.querySelector<HTMLElement>("#fa-rp-params");
+  if (!container) return;
+
+  const genSelect =
+    rulePopupElement.querySelector<HTMLSelectElement>("#fa-rp-generator");
+  const selectedType = genSelect?.value ?? "auto";
+
+  if (
+    selectedType === "auto" ||
+    selectedType === "ai" ||
+    selectedType === "tensorflow"
+  ) {
+    container.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+
+  const generatorKey = getGeneratorKey(selectedType as FieldType);
+  const paramDefs = generatorKey ? getGeneratorParamDefs(generatorKey) : [];
+
+  if (paramDefs.length === 0) {
+    container.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = renderParamFields(paramDefs);
+  container.style.display = "block";
+
+  // Listen for param changes to update preview
+  container.querySelectorAll("input, select").forEach((el) => {
+    el.addEventListener("input", () => updatePreview());
+    el.addEventListener("change", () => updatePreview());
+  });
+}
+
+function renderParamFields(paramDefs: readonly GeneratorParamDef[]): string {
+  const fields = paramDefs
+    .map((def) => {
+      const label = chrome.i18n?.getMessage(def.labelKey) ?? def.labelKey;
+      if (def.type === "select" && def.selectOptions) {
+        const options = def.selectOptions
+          .map((opt) => {
+            const optLabel =
+              chrome.i18n?.getMessage(opt.labelKey) ?? opt.labelKey;
+            const selected = opt.value === def.defaultValue ? "selected" : "";
+            return `<option value="${opt.value}" ${selected}>${optLabel}</option>`;
+          })
+          .join("");
+        return `
+          <div class="fa-rp-param-field">
+            <label class="fa-rp-param-label">${label}</label>
+            <select data-param-key="${def.key}" class="fa-rp-input fa-rp-param-input">${options}</select>
+          </div>`;
+      }
+      if (def.type === "boolean") {
+        const checked = def.defaultValue ? "checked" : "";
+        return `
+          <label class="fa-rp-param-toggle">
+            <input type="checkbox" data-param-key="${def.key}" ${checked} />
+            <span>${label}</span>
+          </label>`;
+      }
+      const min = def.min != null ? `min="${def.min}"` : "";
+      const max = def.max != null ? `max="${def.max}"` : "";
+      const step = def.step != null ? `step="${def.step}"` : "";
+      return `
+        <div class="fa-rp-param-field">
+          <label class="fa-rp-param-label">${label}</label>
+          <input type="number" data-param-key="${def.key}" value="${def.defaultValue}" ${min} ${max} ${step} class="fa-rp-input fa-rp-param-input" />
+        </div>`;
+    })
+    .join("");
+
+  const title =
+    chrome.i18n?.getMessage("paramSectionTitle") ?? "Parâmetros do Gerador";
+  return `<div class="fa-rp-param-title">${title}</div>${fields}`;
+}
+
+function collectParamsFromUI(): GeneratorParams | undefined {
+  if (!rulePopupElement) return undefined;
+  const container =
+    rulePopupElement.querySelector<HTMLElement>("#fa-rp-params");
+  if (!container || container.style.display === "none") return undefined;
+
+  const inputs = container.querySelectorAll<HTMLInputElement>(
+    "input[data-param-key]",
+  );
+  const selects = container.querySelectorAll<HTMLSelectElement>(
+    "select[data-param-key]",
+  );
+  if (inputs.length === 0 && selects.length === 0) return undefined;
+
+  const params: Record<string, unknown> = {};
+  let hasAny = false;
+
+  inputs.forEach((input) => {
+    const key = input.dataset.paramKey!;
+    if (input.type === "checkbox") {
+      params[key] = input.checked;
+      hasAny = true;
+    } else if (input.type === "number") {
+      const val = parseFloat(input.value);
+      if (!isNaN(val)) {
+        params[key] = val;
+        hasAny = true;
+      }
+    }
+  });
+
+  selects.forEach((select) => {
+    const key = select.dataset.paramKey!;
+    if (select.value) {
+      params[key] = select.value;
+      hasAny = true;
+    }
+  });
+
+  return hasAny ? (params as GeneratorParams) : undefined;
 }
 
 function updatePreview(): void {
@@ -233,7 +364,8 @@ function updatePreview(): void {
         : (selectedType as FieldType);
 
     try {
-      previewValueEl.textContent = generate(typeToGenerate);
+      const overrideParams = collectParamsFromUI();
+      previewValueEl.textContent = generate(typeToGenerate, overrideParams);
     } catch {
       previewValueEl.textContent = "—";
     }
@@ -308,6 +440,7 @@ function getRulePopupHTML(): string {
           ${generatorTypeOptions}
         </select>
       </div>
+      <div id="fa-rp-params" class="fa-rp-params" style="display:none"></div>
       <div class="fa-rp-preview">
         <span class="fa-rp-preview-label">Preview</span>
         <span id="fa-rp-preview-value" class="fa-rp-preview-generated">—</span>
@@ -340,6 +473,7 @@ async function saveFieldRule(): Promise<void> {
     fieldType: currentSuggestedType ?? "unknown",
     fixedValue,
     generator: fixedValue ? "auto" : generator,
+    generatorParams: fixedValue ? undefined : collectParamsFromUI(),
     priority: 10,
     createdAt: Date.now(),
     updatedAt: Date.now(),

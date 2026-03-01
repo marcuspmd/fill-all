@@ -48,6 +48,24 @@ const settingsSchema = z
   .partial()
   .strict();
 
+const generatorParamsSchema = z
+  .object({
+    min: z.number().optional(),
+    max: z.number().optional(),
+    formatted: z.boolean().optional(),
+    length: z.number().int().min(1).max(128).optional(),
+    onlyNumbers: z.boolean().optional(),
+    onlyLetters: z.boolean().optional(),
+    prefix: z.string().optional(),
+    suffix: z.string().optional(),
+    pattern: z.string().optional(),
+    options: z.array(z.string()).optional(),
+    probability: z.number().min(0).max(1).optional(),
+    dateFormat: z.enum(["iso", "br", "us"]).optional(),
+  })
+  .passthrough()
+  .optional();
+
 const fieldRuleSchema = z
   .object({
     id: z.string().min(1),
@@ -58,6 +76,7 @@ const fieldRuleSchema = z
     fixedValue: z.string().optional(),
     generator: z.enum(["auto", "ai", "tensorflow", ...FIELD_TYPES]),
     aiPrompt: z.string().optional(),
+    generatorParams: generatorParamsSchema,
     selectOptionIndex: z.number().optional(),
     priority: z.number().min(0).max(100),
     createdAt: z.number(),

@@ -103,22 +103,31 @@ export function generateDate(format: "iso" | "br" | "us" = "br"): string {
 }
 
 /**
- * Generates a random birth date in ISO format (`YYYY-MM-DD`).
+ * Generates a random birth date.
  * @param minAge - Minimum age in years (default: `18`)
  * @param maxAge - Maximum age in years (default: `65`)
+ * @param format - Output format (default: `"iso"`)
  */
-export function generateBirthDate(minAge = 18, maxAge = 65): string {
+export function generateBirthDate(
+  minAge = 18,
+  maxAge = 65,
+  format: DateFormat = "iso",
+): string {
   const date = faker.date.birthdate({ min: minAge, max: maxAge, mode: "age" });
-  return formatDate(date, "iso");
+  return formatDate(date, format);
 }
 
 /**
- * Generates a random future date in ISO format (`YYYY-MM-DD`).
+ * Generates a random future date.
  * @param maxDaysAhead - Maximum number of days into the future (default: `365`)
+ * @param format - Output format (default: `"iso"`)
  */
-export function generateFutureDate(maxDaysAhead = 365): string {
+export function generateFutureDate(
+  maxDaysAhead = 365,
+  format: DateFormat = "iso",
+): string {
   const now = new Date();
   const refDate = new Date(now.getTime() + maxDaysAhead * 86_400_000);
   const date = faker.date.between({ from: now, to: refDate });
-  return formatDate(date, "iso");
+  return formatDate(date, format);
 }

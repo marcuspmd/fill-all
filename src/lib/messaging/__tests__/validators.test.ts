@@ -76,6 +76,54 @@ describe("parseRulePayload", () => {
       parseRulePayload({ ...validRule, fieldType: "not-a-valid-type" }),
     ).toBeNull();
   });
+
+  it("accepts rule with valid generatorParams", () => {
+    const result = parseRulePayload({
+      ...validRule,
+      generatorParams: { formatted: false, min: 10, max: 99 },
+    });
+    expect(result).not.toBeNull();
+    expect(result?.generatorParams).toEqual({
+      formatted: false,
+      min: 10,
+      max: 99,
+    });
+  });
+
+  it("accepts rule without generatorParams (optional)", () => {
+    const result = parseRulePayload(validRule);
+    expect(result).not.toBeNull();
+    expect(result?.generatorParams).toBeUndefined();
+  });
+
+  it("rejects generatorParams with invalid value types", () => {
+    expect(
+      parseRulePayload({
+        ...validRule,
+        generatorParams: { formatted: "not-boolean" },
+      }),
+    ).toBeNull();
+  });
+
+  it("accepts generatorParams with valid dateFormat", () => {
+    for (const fmt of ["iso", "br", "us"]) {
+      const result = parseRulePayload({
+        ...validRule,
+        generatorParams: { dateFormat: fmt },
+      });
+      expect(result).not.toBeNull();
+      expect(result?.generatorParams?.dateFormat).toBe(fmt);
+    }
+  });
+
+  it("rejects generatorParams with invalid dateFormat", () => {
+    expect(
+      parseRulePayload({
+        ...validRule,
+        generatorParams: { dateFormat: "invalid-fmt" },
+      }),
+    ).toBeNull();
+  });
 });
 
 describe("parseSettingsPayload", () => {

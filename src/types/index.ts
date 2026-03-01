@@ -331,6 +331,9 @@ export interface FieldRule {
   /** Custom prompt for AI generation */
   aiPrompt?: string;
 
+  /** Override generator params per rule (min/max, formatted, length, etc.) */
+  generatorParams?: import("./field-type-definitions").GeneratorParams;
+
   /** Select option index: 0 = auto (random), 1 = first option, 2 = second, etc. */
   selectOptionIndex?: number;
   /** Priority (higher = takes precedence) */

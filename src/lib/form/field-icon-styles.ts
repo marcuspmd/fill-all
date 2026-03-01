@@ -426,6 +426,55 @@ export function injectStyles(): void {
       color: #4f46e5;
       background: #ede9fe;
     }
+    /* ── Rule Popup — Generator Params ───────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-params {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 6px 8px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-params-title {
+      font-size: 9px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-label {
+      font-size: 10px;
+      color: #475569;
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-input {
+      padding: 3px 6px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: inherit;
+      color: #1e293b;
+      background: #fff;
+      outline: none;
+      width: 70px;
+      box-sizing: border-box;
+      transition: border-color 0.15s;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-input:focus {
+      border-color: #6366f1;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-check {
+      width: 14px;
+      height: 14px;
+      accent-color: #4f46e5;
+    }
     /* ── Rule Popup — Keyboard Hint ──────────────────────────────── */
     #${RULE_POPUP_ID} .fa-rp-hint {
       font-size: 9px;
