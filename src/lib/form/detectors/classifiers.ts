@@ -181,12 +181,30 @@ export async function* streamNativeFieldsAsync(): AsyncGenerator<FormField> {
 
 /**
  * Scans native input/select/textarea elements synchronously using the active
- * pipeline. Chrome AI is skipped in sync mode. Used by dom-watcher.
+ * classifiers. Chrome AI (async-only) is skipped. Used by dom-watcher and
+ * detectAllFields().
  */
 export const nativeInputDetector: PageDetector = {
   name: "native-inputs",
   detect(): FormField[] {
-    return buildClassificationChain().runSync(collectNativeFields());
+    const fields = collectNativeFields();
+    const classifiers = getActiveClassifiers();
+    for (const field of fields) {
+      for (const classifier of classifiers) {
+        const result = classifier.detect(field);
+        if (result !== null && result.type !== "unknown") {
+          field.fieldType = result.type;
+          field.detectionMethod = classifier.name;
+          field.detectionConfidence = result.confidence;
+          break;
+        }
+      }
+      if (field.fieldType === "unknown") {
+        field.detectionMethod = "html-fallback";
+        field.detectionConfidence = 0.1;
+      }
+    }
+    return fields;
   },
 };
 

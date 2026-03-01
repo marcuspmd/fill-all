@@ -136,14 +136,14 @@ describe("field-icon-utils", () => {
       vi.clearAllMocks();
     });
 
-    it("builds a FormField from an input element", () => {
+    it("builds a FormField from an input element", async () => {
       const input = document.createElement("input");
       input.type = "email";
       input.id = "user-email";
       input.name = "email";
       document.body.appendChild(input);
 
-      const field = buildFormField(input);
+      const field = await buildFormField(input);
 
       expect(field).toMatchObject({
         selector: expect.any(String),
@@ -155,12 +155,12 @@ describe("field-icon-utils", () => {
       document.body.removeChild(input);
     });
 
-    it("builds a FormField from a textarea element", () => {
+    it("builds a FormField from a textarea element", async () => {
       const textarea = document.createElement("textarea");
       textarea.name = "description";
       document.body.appendChild(textarea);
 
-      const field = buildFormField(textarea);
+      const field = await buildFormField(textarea);
 
       expect(field.element).toBe(textarea);
       expect(typeof field.selector).toBe("string");
@@ -168,7 +168,7 @@ describe("field-icon-utils", () => {
       document.body.removeChild(textarea);
     });
 
-    it("detects custom-select when inside an ant-select container", () => {
+    it("detects custom-select when inside an ant-select container", async () => {
       const container = document.createElement("div");
       container.className = "ant-select";
 
@@ -176,7 +176,7 @@ describe("field-icon-utils", () => {
       container.appendChild(input);
       document.body.appendChild(container);
 
-      const field = buildFormField(input);
+      const field = await buildFormField(input);
 
       expect(field.fieldType).toBe("select");
       expect(field.detectionMethod).toBe("custom-select");
@@ -185,12 +185,12 @@ describe("field-icon-utils", () => {
       document.body.removeChild(container);
     });
 
-    it("detects combobox role as custom-select", () => {
+    it("detects combobox role as custom-select", async () => {
       const input = document.createElement("input");
       input.setAttribute("role", "combobox");
       document.body.appendChild(input);
 
-      const field = buildFormField(input);
+      const field = await buildFormField(input);
 
       expect(field.fieldType).toBe("select");
       expect(field.detectionMethod).toBe("custom-select");

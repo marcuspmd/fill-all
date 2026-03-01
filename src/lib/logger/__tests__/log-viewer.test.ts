@@ -110,7 +110,7 @@ describe("log-viewer", () => {
       await viewer.refresh();
 
       const buttons = container.querySelectorAll(".lv-filter-btn");
-      expect(buttons.length).toBe(5); // all, debug, info, warn, error
+      expect(buttons.length).toBe(6); // all, debug, info, warn, error, audit
     });
 
     it("shows entry count", async () => {

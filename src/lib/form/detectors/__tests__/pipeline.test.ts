@@ -49,34 +49,34 @@ function makeAsyncClassifier(
   };
 }
 
-// ── DetectionPipeline.run ────────────────────────────────────────────────────
+// ── DetectionPipeline.runAsync ────────────────────────────────────────────────
 
-describe("DetectionPipeline.run", () => {
-  it("returns the first confident result", () => {
+describe("DetectionPipeline.runAsync", () => {
+  it("returns the first confident result", async () => {
     const emailClassifier = makeClassifier("keyword", {
       type: "email",
       confidence: 0.9,
     });
     const pipeline = new DetectionPipeline([emailClassifier]);
-    const result = pipeline.run(makeField());
+    const result = await pipeline.runAsync(makeField());
     expect(result.type).toBe("email");
     expect(result.method).toBe("keyword");
     expect(result.confidence).toBe(0.9);
   });
 
-  it("skips classifiers that return null", () => {
+  it("skips classifiers that return null", async () => {
     const nullClassifier = makeClassifier("html-type", null);
     const emailClassifier = makeClassifier("keyword", {
       type: "email",
       confidence: 0.8,
     });
     const pipeline = new DetectionPipeline([nullClassifier, emailClassifier]);
-    const result = pipeline.run(makeField());
+    const result = await pipeline.runAsync(makeField());
     expect(result.type).toBe("email");
     expect(result.method).toBe("keyword");
   });
 
-  it("skips classifiers that return type=unknown", () => {
+  it("skips classifiers that return type=unknown", async () => {
     const unknownClassifier = makeClassifier("keyword", {
       type: "unknown",
       confidence: 0.1,
@@ -86,45 +86,45 @@ describe("DetectionPipeline.run", () => {
       confidence: 1.0,
     });
     const pipeline = new DetectionPipeline([unknownClassifier, cpfClassifier]);
-    const result = pipeline.run(makeField());
+    const result = await pipeline.runAsync(makeField());
     expect(result.type).toBe("cpf");
     expect(result.method).toBe("html-type");
   });
 
-  it("falls back to html-fallback when all classifiers return null", () => {
+  it("falls back to html-fallback when all classifiers return null", async () => {
     const nullClassifier = makeClassifier("keyword", null);
     const pipeline = new DetectionPipeline([nullClassifier]);
-    const result = pipeline.run(makeField());
+    const result = await pipeline.runAsync(makeField());
     expect(result.type).toBe("unknown");
     expect(result.method).toBe("html-fallback");
     expect(result.confidence).toBe(0.1);
   });
 
-  it("includes durationMs and timings in result", () => {
+  it("includes durationMs and timings in result", async () => {
     const classifier = makeClassifier("html-type", {
       type: "email",
       confidence: 1.0,
     });
     const pipeline = new DetectionPipeline([classifier]);
-    const result = pipeline.run(makeField());
+    const result = await pipeline.runAsync(makeField());
     expect(result.durationMs).toBeGreaterThanOrEqual(0);
     expect(result.timings).toHaveLength(1);
     expect(result.timings[0].strategy).toBe("html-type");
   });
 
-  it("includes decision trace entries", () => {
+  it("includes decision trace entries", async () => {
     const nullClassifier = makeClassifier("keyword", null);
     const emailClassifier = makeClassifier("html-type", {
       type: "email",
       confidence: 0.9,
     });
     const pipeline = new DetectionPipeline([nullClassifier, emailClassifier]);
-    const result = pipeline.run(makeField());
+    const result = await pipeline.runAsync(makeField());
     expect(result.decisionTrace.some((t) => t.includes("null"))).toBe(true);
     expect(result.decisionTrace.some((t) => t.includes("selected"))).toBe(true);
   });
 
-  it("collects all non-null predictions", () => {
+  it("collects all non-null predictions", async () => {
     const unknownClassifier = makeClassifier("keyword", {
       type: "unknown",
       confidence: 0.1,
@@ -137,14 +137,10 @@ describe("DetectionPipeline.run", () => {
       unknownClassifier,
       emailClassifier,
     ]);
-    const result = pipeline.run(makeField());
+    const result = await pipeline.runAsync(makeField());
     expect(result.predictions).toHaveLength(2);
   });
-});
 
-// ── DetectionPipeline.runAsync ───────────────────────────────────────────────
-
-describe("DetectionPipeline.runAsync", () => {
   it("prefers detectAsync over detect", async () => {
     const asyncClassifier = makeAsyncClassifier("chrome-ai", {
       type: "email",

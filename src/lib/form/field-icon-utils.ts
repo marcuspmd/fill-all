@@ -38,11 +38,11 @@ export function escHtml(s: string): string {
 }
 
 /**
- * Builds a FormField from a DOM element, classifying it via the detection pipeline (sync).
+ * Builds a FormField from a DOM element, classifying it via the detection pipeline.
  */
-export function buildFormField(
+export async function buildFormField(
   el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): FormField {
+): Promise<FormField> {
   const field: FormField = {
     element: el,
     selector: getUniqueSelector(el),
@@ -71,8 +71,7 @@ export function buildFormField(
     return field;
   }
 
-  // Classify using the same pipeline as the popup (sync)
-  const pipelineResult = DEFAULT_PIPELINE.run(field);
+  const pipelineResult = await DEFAULT_PIPELINE.runAsync(field);
   field.fieldType = pipelineResult.type;
   field.detectionMethod = pipelineResult.method;
   field.detectionConfidence = pipelineResult.confidence;

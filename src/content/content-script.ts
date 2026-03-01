@@ -139,7 +139,7 @@ async function handleContentMessage(
     }
 
     case "SAVE_FORM": {
-      const values = captureFormValues();
+      const values = await captureFormValues();
       const formData: SavedForm = {
         id: generateId(),
         name: `Form - ${new URL(window.location.href).hostname} - ${new Date().toLocaleDateString("pt-BR")}`,

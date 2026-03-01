@@ -3,7 +3,7 @@
  */
 
 import type { FormField, GenerationResult, SavedForm, Settings } from "@/types";
-import { detectAllFields, detectAllFieldsAsync } from "./form-detector";
+import { detectAllFieldsAsync, streamAllFields } from "./form-detector";
 import { resolveFieldValue } from "@/lib/rules/rule-engine";
 import {
   generateFieldValueViaProxy as chromeAiGenerate,
@@ -15,6 +15,7 @@ import { setFillingInProgress } from "./dom-watcher";
 import { fillCustomComponent } from "./adapters/adapter-registry";
 import { generate } from "@/lib/generators";
 import { createLogger, logAuditFill } from "@/lib/logger";
+import { createProgressNotification } from "./progress-notification";
 
 const log = createLogger("FormFiller");
 
@@ -167,7 +168,6 @@ function fieldHasValue(field: FormField): boolean {
 async function doFillAllFields(options?: {
   fillEmptyOnly?: boolean;
 }): Promise<GenerationResult[]> {
-  const { fields } = await detectAllFieldsAsync();
   const url = window.location.href;
   const settings = await getSettings();
   const fillEmptyOnly = options?.fillEmptyOnly ?? settings.fillEmptyOnly;
@@ -180,7 +180,22 @@ async function doFillAllFields(options?: {
   const ignoredFields = await getIgnoredFieldsForUrl(url);
   const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
 
-  for (const field of fields) {
+  // Create progress notification
+  const progress = createProgressNotification();
+  progress.show();
+
+  let totalFields = 0;
+
+  // Stream detection + fill progressively (field by field)
+  for await (const field of streamAllFields()) {
+    totalFields++;
+
+    // Show detecting state
+    progress.addDetecting(field);
+
+    // Detection already done by the stream — update badge
+    progress.updateDetected(field);
+
     // Skip ignored fields
     if (ignoredSelectors.has(field.selector)) continue;
 
@@ -195,6 +210,9 @@ async function doFillAllFields(options?: {
       field.selector;
     log.info(`⏳ Preenchendo [${field.fieldType}] "${fieldLabel}"...`);
     const start = Date.now();
+
+    // Show filling state
+    progress.addFilling(field);
 
     try {
       const result = await resolveFieldValue(
@@ -224,14 +242,24 @@ async function doFillAllFields(options?: {
         );
       }
 
+      // Update progress — filled
+      progress.updateFilled(field, result);
+
       results.push(result);
     } catch (error) {
       log.warn(
         `❌ Falhou em ${Date.now() - start}ms — campo ${field.selector}:`,
         error,
       );
+      progress.updateError(
+        field,
+        error instanceof Error ? error.message : "falhou",
+      );
     }
   }
+
+  // Show summary
+  progress.done(results.length, totalFields);
 
   return results;
 }
@@ -374,8 +402,8 @@ async function getAiFunction(
 /**
  * Captures current form values and returns them as a map
  */
-export function captureFormValues(): Record<string, string> {
-  const { fields } = detectAllFields();
+export async function captureFormValues(): Promise<Record<string, string>> {
+  const { fields } = await detectAllFieldsAsync();
   const values: Record<string, string> = {};
 
   for (const field of fields) {
@@ -406,7 +434,7 @@ export function captureFormValues(): Record<string, string> {
 export async function applyTemplate(
   form: SavedForm,
 ): Promise<{ filled: number }> {
-  const { fields: detectedFields } = detectAllFields();
+  const { fields: detectedFields } = await detectAllFieldsAsync();
   const settings = await getSettings();
   let filled = 0;
 

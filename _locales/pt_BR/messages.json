@@ -1586,5 +1586,31 @@
   },
   "fpEditTimeout": {
     "message": "Editar timeout (ms)"
+  },
+  "progressHeaderProcessing": {
+    "message": "🔄 Fill All — Processando"
+  },
+  "progressHeaderDone": {
+    "message": "✅ Fill All — Concluído"
+  },
+  "progressDetecting": {
+    "message": "detectando…"
+  },
+  "progressFilling": {
+    "message": "preenchendo…"
+  },
+  "progressFailed": {
+    "message": "falhou"
+  },
+  "progressSummary": {
+    "message": "$filled$/$total$ campos preenchidos",
+    "placeholders": {
+      "filled": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
   }
 }

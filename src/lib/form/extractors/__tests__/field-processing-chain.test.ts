@@ -38,7 +38,7 @@ function createClassifier(
 }
 
 describe("FieldProcessingChain", () => {
-  it("runSync classifica campos em lote", () => {
+  it("runAsync classifica campos em lote", async () => {
     // Arrange
     const chain = new FieldProcessingChain().classify(
       createClassifier("keyword", {
@@ -50,7 +50,7 @@ describe("FieldProcessingChain", () => {
     const fields = [createField("email")];
 
     // Act
-    const result = chain.runSync(fields);
+    const result = await chain.runAsync(fields);
 
     // Assert
     expect(result[0].fieldType).toBe("email");
@@ -104,7 +104,7 @@ describe("FieldProcessingChain", () => {
     expect(emitted[1].detectionMethod).toBe("html-type");
   });
 
-  it("classify substitui a lista de classificadores em chamadas subsequentes", () => {
+  it("classify substitui a lista de classificadores em chamadas subsequentes", async () => {
     // Arrange
     const chain = new FieldProcessingChain()
       .classify(
@@ -123,7 +123,7 @@ describe("FieldProcessingChain", () => {
       );
 
     // Act
-    const [classified] = chain.runSync([createField("generic")]);
+    const [classified] = await chain.runAsync([createField("generic")]);
 
     // Assert
     expect(classified.fieldType).toBe("text");

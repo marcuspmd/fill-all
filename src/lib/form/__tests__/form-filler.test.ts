@@ -5,8 +5,8 @@ import type { FormField, GenerationResult, SavedForm, Settings } from "@/types";
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 const {
-  mockDetectAllFields,
   mockDetectAllFieldsAsync,
+  mockStreamAllFields,
   mockResolveFieldValue,
   mockIsChromeAiAvailable,
   mockChromeAiGenerate,
@@ -16,30 +16,44 @@ const {
   mockSetFillingInProgress,
   mockFillCustomComponent,
   mockGenerate,
-} = vi.hoisted(() => ({
-  mockDetectAllFields: vi.fn(),
-  mockDetectAllFieldsAsync: vi.fn(),
-  mockResolveFieldValue: vi.fn(),
-  mockIsChromeAiAvailable: vi.fn().mockResolvedValue(false),
-  mockChromeAiGenerate: vi.fn(),
-  mockTensorFlowGenerate: vi.fn(),
-  mockGetSettings: vi.fn(),
-  mockGetIgnoredFieldsForUrl: vi.fn().mockResolvedValue([]),
-  mockSetFillingInProgress: vi.fn(),
-  mockFillCustomComponent: vi.fn().mockResolvedValue(false),
-  mockGenerate: vi.fn().mockReturnValue("generated-value"),
-}));
+  mockCreateProgressNotification,
+} = vi.hoisted(() => {
+  const progressMock = {
+    show: vi.fn(),
+    addDetecting: vi.fn(),
+    updateDetected: vi.fn(),
+    addFilling: vi.fn(),
+    updateFilled: vi.fn(),
+    updateError: vi.fn(),
+    done: vi.fn(),
+    destroy: vi.fn(),
+  };
+  return {
+    mockDetectAllFieldsAsync: vi.fn(),
+    mockStreamAllFields: vi.fn(),
+    mockResolveFieldValue: vi.fn(),
+    mockIsChromeAiAvailable: vi.fn().mockResolvedValue(false),
+    mockChromeAiGenerate: vi.fn(),
+    mockTensorFlowGenerate: vi.fn(),
+    mockGetSettings: vi.fn(),
+    mockGetIgnoredFieldsForUrl: vi.fn().mockResolvedValue([]),
+    mockSetFillingInProgress: vi.fn(),
+    mockFillCustomComponent: vi.fn().mockResolvedValue(false),
+    mockGenerate: vi.fn().mockReturnValue("generated-value"),
+    mockCreateProgressNotification: vi.fn().mockReturnValue(progressMock),
+  };
+});
 
 vi.mock("../form-detector", () => ({
-  detectAllFields: mockDetectAllFields,
   detectAllFieldsAsync: mockDetectAllFieldsAsync,
+  streamAllFields: mockStreamAllFields,
 }));
 vi.mock("@/lib/rules/rule-engine", () => ({
   resolveFieldValue: mockResolveFieldValue,
 }));
-vi.mock("@/lib/ai/chrome-ai", () => ({
-  isAvailable: mockIsChromeAiAvailable,
-  generateFieldValue: mockChromeAiGenerate,
+vi.mock("@/lib/ai/chrome-ai-proxy", () => ({
+  isAvailableViaProxy: mockIsChromeAiAvailable,
+  generateFieldValueViaProxy: mockChromeAiGenerate,
 }));
 vi.mock("@/lib/ai/tensorflow-generator", () => ({
   generateWithTensorFlow: mockTensorFlowGenerate,
@@ -62,6 +76,10 @@ vi.mock("@/lib/logger", () => ({
     warn: vi.fn(),
     error: vi.fn(),
   }),
+  logAuditFill: vi.fn(),
+}));
+vi.mock("../progress-notification", () => ({
+  createProgressNotification: mockCreateProgressNotification,
 }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -115,6 +133,13 @@ const DEFAULT_SETTINGS: Settings = {
   logMaxEntries: 1000,
 };
 
+/** Helper: wraps an array of fields into an async generator for streamAllFields mock */
+function mockStreamFields(fields: FormField[]): void {
+  mockStreamAllFields.mockImplementation(async function* () {
+    for (const f of fields) yield f;
+  });
+}
+
 // ── Import SUT AFTER mocks ────────────────────────────────────────────────────
 
 import {
@@ -142,7 +167,7 @@ describe("form-filler", () => {
       const el = makeInput("text", "email-field");
       const field = makeField(el, { fieldType: "email", label: "Email" });
 
-      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockStreamFields([field]);
       mockResolveFieldValue.mockResolvedValue({
         fieldSelector: "#email-field",
         value: "test@example.com",
@@ -161,7 +186,7 @@ describe("form-filler", () => {
       const el = makeInput("text", "ignored-field");
       const field = makeField(el, { selector: "#ignored-field" });
 
-      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockStreamFields([field]);
       mockGetIgnoredFieldsForUrl.mockResolvedValue([
         { selector: "#ignored-field", label: "Ignored" },
       ]);
@@ -177,7 +202,7 @@ describe("form-filler", () => {
       el.value = "existing value";
       const field = makeField(el, { selector: "#pre-filled" });
 
-      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockStreamFields([field]);
       mockGetSettings.mockResolvedValue({
         ...DEFAULT_SETTINGS,
         fillEmptyOnly: true,
@@ -193,7 +218,7 @@ describe("form-filler", () => {
       el.value = "existing";
       const field = makeField(el, { selector: "#pre-filled2" });
 
-      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockStreamFields([field]);
       mockGetSettings.mockResolvedValue({
         ...DEFAULT_SETTINGS,
         fillEmptyOnly: false,
@@ -211,7 +236,7 @@ describe("form-filler", () => {
     });
 
     it("returns empty array when no fields detected", async () => {
-      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [] });
+      mockStreamFields([]);
 
       const results = await fillAllFields();
 
@@ -222,7 +247,7 @@ describe("form-filler", () => {
       const el = makeInput("text", "err-field");
       const field = makeField(el);
 
-      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockStreamFields([field]);
       mockResolveFieldValue.mockRejectedValue(new Error("resolver failed"));
 
       // Should not throw, just skip
@@ -247,7 +272,7 @@ describe("form-filler", () => {
         fieldType: "select",
       });
 
-      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockStreamFields([field]);
       mockResolveFieldValue.mockResolvedValue({
         fieldSelector: "#sel-field",
         value: "BR",
@@ -267,7 +292,7 @@ describe("form-filler", () => {
         selector: "#cb-field",
       });
 
-      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockStreamFields([field]);
       mockResolveFieldValue.mockResolvedValue({
         fieldSelector: "#cb-field",
         value: "true",
@@ -315,19 +340,19 @@ describe("form-filler", () => {
   // ── captureFormValues ──────────────────────────────────────────────────────
 
   describe("captureFormValues", () => {
-    it("captures values indexed by id", () => {
+    it("captures values indexed by id", async () => {
       const el = makeInput("text", "my-name");
       el.value = "Marcus";
       const field = makeField(el, { id: "my-name", selector: "#my-name" });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
 
-      const values = captureFormValues();
+      const values = await captureFormValues();
 
       expect(values["my-name"]).toBe("Marcus");
     });
 
-    it("captures values indexed by name when id missing", () => {
+    it("captures values indexed by name when id missing", async () => {
       const el = makeInput("text", "", "user_email");
       el.value = "me@test.com";
       const field = makeField(el, {
@@ -336,26 +361,26 @@ describe("form-filler", () => {
         selector: 'input[name="user_email"]',
       });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
 
-      const values = captureFormValues();
+      const values = await captureFormValues();
 
       expect(values["user_email"]).toBe("me@test.com");
     });
 
-    it("captures checkbox state as string", () => {
+    it("captures checkbox state as string", async () => {
       const el = makeInput("checkbox", "my-cb");
       el.checked = true;
       const field = makeField(el, { id: "my-cb", selector: "#my-cb" });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
 
-      const values = captureFormValues();
+      const values = await captureFormValues();
 
       expect(values["my-cb"]).toBe("true");
     });
 
-    it("captures textarea value", () => {
+    it("captures textarea value", async () => {
       const ta = document.createElement("textarea");
       ta.id = "my-ta";
       ta.value = "hello textarea";
@@ -367,17 +392,17 @@ describe("form-filler", () => {
         selector: "#my-ta",
       });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
 
-      const values = captureFormValues();
+      const values = await captureFormValues();
 
       expect(values["my-ta"]).toBe("hello textarea");
     });
 
-    it("returns empty object when no fields detected", () => {
-      mockDetectAllFields.mockReturnValue({ fields: [] });
+    it("returns empty object when no fields detected", async () => {
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [] });
 
-      const values = captureFormValues();
+      const values = await captureFormValues();
 
       expect(values).toEqual({});
     });
@@ -390,7 +415,7 @@ describe("form-filler", () => {
       const el = makeInput("text", "t-name");
       const field = makeField(el, { selector: "#t-name", fieldType: "text" });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
 
       const form: SavedForm = {
         id: "form-1",
@@ -422,7 +447,7 @@ describe("form-filler", () => {
         fieldType: "email",
       });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
       mockGenerate.mockReturnValue("gen@example.com");
 
       const form: SavedForm = {
@@ -460,7 +485,7 @@ describe("form-filler", () => {
         fieldType: "email",
       });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field1, field2] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field1, field2] });
 
       const form: SavedForm = {
         id: "form-3",
@@ -489,7 +514,7 @@ describe("form-filler", () => {
       const el = makeInput("text", "legacy-id");
       const field = makeField(el, { id: "legacy-id", selector: "#legacy-id" });
 
-      mockDetectAllFields.mockReturnValue({ fields: [field] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
 
       const form: SavedForm = {
         id: "form-4",
@@ -508,7 +533,7 @@ describe("form-filler", () => {
     });
 
     it("returns filled=0 when no fields match template", async () => {
-      mockDetectAllFields.mockReturnValue({ fields: [] });
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [] });
 
       const form: SavedForm = {
         id: "form-5",

@@ -36,6 +36,15 @@ vi.mock("@/lib/shared/field-type-catalog", () => ({
     { value: "email", label: "Email" },
     { value: "cpf", label: "CPF" },
   ],
+  getFieldTypeGroupedOptions: () => [
+    {
+      group: "Pessoal",
+      options: [
+        { value: "email", label: "Email" },
+        { value: "cpf", label: "CPF" },
+      ],
+    },
+  ],
 }));
 
 vi.mock("../detectors/html-type-detector", () => ({
