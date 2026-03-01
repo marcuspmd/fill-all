@@ -1,7 +1,7 @@
 /**
- * Cypress E2E code generator.
+ * Pest (Laravel Dusk) E2E code generator.
  *
- * Converts captured form-fill actions into a Cypress test script with:
+ * Converts captured form-fill actions into a Pest test script with:
  *   - Smart selectors (data-testid > aria-label > role > name > css)
  *   - Submit button click
  *   - Assertions (URL change, success elements, redirects)
@@ -15,8 +15,8 @@ import type {
   E2EGenerator,
   RecordedStep,
   RecordingGenerateOptions,
-} from "./e2e-export.types";
-import { pickBestSelector } from "./smart-selector";
+} from "../e2e-export.types";
+import { pickBestSelector } from "../smart-selector";
 
 function escapeString(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
@@ -38,49 +38,49 @@ function actionLine(
 ): string {
   const sel = escapeString(resolveSelector(action, useSmartSelectors));
   const val = escapeString(action.value);
-  const comment = action.label ? `  // ${action.label}` : "";
+  const comment = action.label ? ` // ${action.label}` : "";
 
   switch (action.actionType) {
     case "fill":
-      return `    cy.get('${sel}').clear().type('${val}');${comment}`;
+      return `            ->type('${sel}', '${val}')${comment}`;
     case "check":
-      return `    cy.get('${sel}').check();${comment}`;
+      return `            ->check('${sel}')${comment}`;
     case "uncheck":
-      return `    cy.get('${sel}').uncheck();${comment}`;
+      return `            ->uncheck('${sel}')${comment}`;
     case "select":
-      return `    cy.get('${sel}').select('${val}');${comment}`;
+      return `            ->select('${sel}', '${val}')${comment}`;
     case "radio":
-      return `    cy.get('${sel}').check();${comment}`;
+      return `            ->radio('${sel}', '${val}')${comment}`;
     case "clear":
-      return `    cy.get('${sel}').clear();${comment}`;
+      return `            ->clear('${sel}')${comment}`;
     case "click":
     case "submit":
-      return `    cy.get('${sel}').click();${comment}`;
+      return `            ->click('${sel}')${comment}`;
   }
 }
 
 function assertionLine(assertion: E2EAssertion): string {
   switch (assertion.type) {
     case "url-changed":
-      return `    cy.url().should('not.eq', '${escapeString(assertion.expected ?? "")}');`;
+      return `            ->assertUrlIsNot('${escapeString(assertion.expected ?? "")}')`;
     case "url-contains":
-      return `    cy.url().should('include', '${escapeString(assertion.expected ?? "")}');`;
+      return `            ->assertPathContains('${escapeString(assertion.expected ?? "")}')`;
     case "visible-text":
       return assertion.expected
-        ? `    cy.contains('${escapeString(assertion.expected)}').should('be.visible');`
-        : `    // Expect visible validation feedback`;
+        ? `            ->assertSee('${escapeString(assertion.expected)}')`
+        : `            // Expect visible validation feedback`;
     case "element-visible":
-      return `    cy.get('${escapeString(assertion.selector ?? "")}').should('be.visible');`;
+      return `            ->assertVisible('${escapeString(assertion.selector ?? "")}')`;
     case "element-hidden":
-      return `    cy.get('${escapeString(assertion.selector ?? "")}').should('not.be.visible');`;
+      return `            ->assertMissing('${escapeString(assertion.selector ?? "")}')`;
     case "toast-message":
-      return `    cy.get('${escapeString(assertion.selector ?? "[role=\\'alert\\']")}').should('be.visible');`;
+      return `            ->assertVisible('${escapeString(assertion.selector ?? "[role=\\'alert\\']")}')`;
     case "field-value":
-      return `    cy.get('${escapeString(assertion.selector ?? "")}').should('have.value', '${escapeString(assertion.expected ?? "")}');`;
+      return `            ->assertInputValue('${escapeString(assertion.selector ?? "")}', '${escapeString(assertion.expected ?? "")}')`;
     case "field-error":
-      return `    cy.get('${escapeString(assertion.selector ?? "")}').should('be.visible');`;
+      return `            ->assertVisible('${escapeString(assertion.selector ?? "")}')`;
     case "redirect":
-      return `    cy.url().should('include', '${escapeString(assertion.expected ?? "")}');`;
+      return `            ->assertPathContains('${escapeString(assertion.expected ?? "")}')`;
   }
 }
 
@@ -92,16 +92,15 @@ function generateNegativeTest(
   const requiredActions = actions.filter((a) => a.required);
   if (requiredActions.length === 0) return "";
 
-  const urlLine = options.pageUrl
-    ? `    cy.visit('${escapeString(options.pageUrl)}');\n\n`
+  const visitLine = options.pageUrl
+    ? `            ->visit('${escapeString(options.pageUrl)}')\n`
     : "";
 
   const submitAction = actions.find(
     (a) => a.actionType === "click" || a.actionType === "submit",
   );
-
   const submitLine = submitAction
-    ? `\n    cy.get('${escapeString(resolveSelector(submitAction, useSmartSelectors))}').click();`
+    ? `            ->click('${escapeString(resolveSelector(submitAction, useSmartSelectors))}')\n`
     : "";
 
   const assertionLines = (options.assertions ?? [])
@@ -110,16 +109,20 @@ function generateNegativeTest(
 
   return [
     ``,
-    `  it('should show validation errors for empty required fields', () => {`,
-    urlLine + `    // Leave required fields empty and submit` + submitLine,
-    ``,
+    `test('should show validation errors for empty required fields', function () {`,
+    `    $this->browse(function (Browser $browser) {`,
+    `        $browser`,
+    visitLine +
+      `            // Leave required fields empty and submit\n` +
+      submitLine,
     ...assertionLines,
-    `    // Required fields should show validation`,
     ...requiredActions.map((a) => {
       const sel = escapeString(resolveSelector(a, useSmartSelectors));
-      return `    cy.get('${sel}').should('have.attr', 'required');`;
+      return `            ->assertAttribute('${sel}', 'required', '')`;
     }),
-    `  });`,
+    `        ;`,
+    `    });`,
+    `});`,
   ].join("\n");
 }
 
@@ -130,8 +133,8 @@ function generate(
   const opts = options ?? {};
   const testName = opts.testName ?? "fill form";
   const useSmartSelectors = opts.useSmartSelectors !== false;
-  const urlLine = opts.pageUrl
-    ? `    cy.visit('${escapeString(opts.pageUrl)}');\n\n`
+  const visitLine = opts.pageUrl
+    ? `            ->visit('${escapeString(opts.pageUrl)}')\n`
     : "";
 
   const fillActions = actions.filter(
@@ -148,34 +151,39 @@ function generate(
 
   const assertionLines =
     opts.includeAssertions && opts.assertions?.length
-      ? ["\n    // Assertions", ...opts.assertions.map(assertionLine)]
+      ? ["\n            // Assertions", ...opts.assertions.map(assertionLine)]
       : [];
 
-  const parts = [
-    `describe('${escapeString(testName)}', () => {`,
-    `  it('should fill all fields', () => {`,
-    urlLine + fillLines.join("\n"),
-  ];
+  const chain = [visitLine + fillLines.join("\n")];
 
   if (submitLines.length > 0) {
-    parts.push("");
-    parts.push("    // Submit");
-    parts.push(submitLines.join("\n"));
+    chain.push("\n            // Submit");
+    chain.push(submitLines.join("\n"));
   }
 
   if (assertionLines.length > 0) {
-    parts.push(assertionLines.join("\n"));
+    chain.push(assertionLines.join("\n"));
   }
 
-  parts.push(`  });`);
+  const parts = [
+    `<?php`,
+    ``,
+    `use Laravel\\Dusk\\Browser;`,
+    ``,
+    `test('${escapeString(testName)}', function () {`,
+    `    $this->browse(function (Browser $browser) {`,
+    `        $browser`,
+    chain.join("\n"),
+    `        ;`,
+    `    });`,
+    `});`,
+  ];
 
-  // Negative test
   if (opts.includeNegativeTest) {
     const negativeTest = generateNegativeTest(actions, opts, useSmartSelectors);
     if (negativeTest) parts.push(negativeTest);
   }
 
-  parts.push(`});`);
   parts.push("");
   return parts.join("\n");
 }
@@ -193,45 +201,43 @@ function recordedStepLine(
       ? escapeString(pickBestSelector(step.smartSelectors, step.selector ?? ""))
       : escapeString(step.selector ?? "");
   const val = escapeString(step.value ?? "");
-  const comment = step.label ? `  // ${step.label}` : "";
+  const comment = step.label ? ` // ${step.label}` : "";
 
   switch (step.type) {
     case "navigate":
-      return `    cy.visit('${escapeString(step.url ?? "")}');${comment}`;
+      return `            ->visit('${escapeString(step.url ?? "")}')${comment}`;
     case "fill":
-      return `    cy.get('${sel}').clear().type('${val}');${comment}`;
+      return `            ->type('${sel}', '${val}')${comment}`;
     case "click":
-      return `    cy.get('${sel}').click();${comment}`;
+      return `            ->click('${sel}')${comment}`;
     case "select":
-      return `    cy.get('${sel}').select('${val}');${comment}`;
+      return `            ->select('${sel}', '${val}')${comment}`;
     case "check":
-      return `    cy.get('${sel}').check();${comment}`;
+      return `            ->check('${sel}')${comment}`;
     case "uncheck":
-      return `    cy.get('${sel}').uncheck();${comment}`;
+      return `            ->uncheck('${sel}')${comment}`;
     case "clear":
-      return `    cy.get('${sel}').clear();${comment}`;
+      return `            ->clear('${sel}')${comment}`;
     case "submit":
-      return `    cy.get('${sel}').click();${comment}`;
+      return `            ->click('${sel}')${comment}`;
     case "hover":
-      return `    cy.get('${sel}').trigger('mouseover');${comment}`;
+      return `            ->mouseover('${sel}')${comment}`;
     case "press-key":
-      return `    cy.get('body').type('{${(step.key ?? "").toLowerCase()}}');${comment}`;
+      return `            ->keys('${sel}', '{${(step.key ?? "").toLowerCase()}}')${comment}`;
     case "wait-for-element":
-      return `    cy.get('${sel}', { timeout: ${step.waitTimeout ?? 5000} }).should('be.visible');${comment}`;
+      return `            ->waitFor('${sel}', ${Math.round((step.waitTimeout ?? 5000) / 1000)})${comment}`;
     case "wait-for-hidden":
-      return `    cy.get('${sel}', { timeout: ${step.waitTimeout ?? 10000} }).should('not.exist');${comment}`;
+      return `            ->waitUntilMissing('${sel}', ${Math.round((step.waitTimeout ?? 10000) / 1000)})${comment}`;
     case "wait-for-url":
-      return `    cy.url().should('include', '${escapeString(step.url ?? step.value ?? "")}');${comment}`;
+      return `            ->waitForLocation('${escapeString(step.url ?? step.value ?? "")}')${comment}`;
     case "wait-for-network-idle":
-      return `    cy.intercept('**').as('requests');\n    cy.wait('@requests');${comment}`;
+      return `            ->pause(1000)${comment}`;
     case "scroll":
-      return step.scrollPosition
-        ? `    cy.scrollTo(${step.scrollPosition.x}, ${step.scrollPosition.y});${comment}`
-        : `    // scroll${comment}`;
+      return `            ->script('window.scrollTo(${step.scrollPosition?.x ?? 0}, ${step.scrollPosition?.y ?? 0})')${comment}`;
     case "assert":
       return step.assertion
         ? assertionLine(step.assertion)
-        : `    // assert${comment}`;
+        : `            // assert${comment}`;
   }
 }
 
@@ -256,42 +262,51 @@ function generateFromRecording(
     if (i > 0) {
       const delta = step.timestamp - steps[i - 1].timestamp;
       if (delta >= minWait) {
-        lines.push(`    // User paused for ~${Math.round(delta / 1000)}s`);
-        lines.push(`    cy.wait(${delta});`);
+        lines.push(
+          `            ->pause(${delta}) // User paused for ~${Math.round(delta / 1000)}s`,
+        );
       }
     }
 
     lines.push(recordedStepLine(step, useSmartSelectors));
   }
 
-  const urlLine = opts.pageUrl
-    ? `    cy.visit('${escapeString(opts.pageUrl)}');\n\n`
+  const visitLine = opts.pageUrl
+    ? `            ->visit('${escapeString(opts.pageUrl)}')\n`
     : "";
 
   const assertionLines =
     opts.includeAssertions && opts.assertions?.length
-      ? ["\n    // Assertions", ...opts.assertions.map(assertionLine)]
+      ? ["\n            // Assertions", ...opts.assertions.map(assertionLine)]
       : [];
 
-  const parts = [
-    `describe('${escapeString(testName)}', () => {`,
-    `  it('should complete recorded flow', () => {`,
-    urlLine + lines.join("\n"),
-  ];
+  const chain = [visitLine + lines.join("\n")];
 
   if (assertionLines.length > 0) {
-    parts.push(assertionLines.join("\n"));
+    chain.push(assertionLines.join("\n"));
   }
 
-  parts.push(`  });`);
-  parts.push(`});`);
-  parts.push("");
+  const parts = [
+    `<?php`,
+    ``,
+    `use Laravel\\Dusk\\Browser;`,
+    ``,
+    `test('${escapeString(testName)}', function () {`,
+    `    $this->browse(function (Browser $browser) {`,
+    `        $browser`,
+    chain.join("\n"),
+    `        ;`,
+    `    });`,
+    `});`,
+    ``,
+  ];
+
   return parts.join("\n");
 }
 
-export const cypressGenerator: E2EGenerator = {
-  name: "cypress",
-  displayName: "Cypress",
+export const pestGenerator: E2EGenerator = {
+  name: "pest",
+  displayName: "Pest (Laravel Dusk)",
   generate,
   generateFromRecording,
 };

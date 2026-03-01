@@ -10,9 +10,9 @@ import type {
   RecordedStep,
   RecordingGenerateOptions,
 } from "./e2e-export.types";
-import { playwrightGenerator } from "./playwright-generator";
-import { cypressGenerator } from "./cypress-generator";
-import { pestGenerator } from "./pest-generator";
+import { playwrightGenerator } from "./framework/playwright-generator";
+import { cypressGenerator } from "./framework/cypress-generator";
+import { pestGenerator } from "./framework/pest-generator";
 
 export const E2E_GENERATORS: ReadonlyArray<E2EGenerator> = [
   playwrightGenerator,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cypressGenerator } from "@/lib/e2e-export/cypress-generator";
+import { playwrightGenerator } from "@/lib/e2e-export/framework/playwright-generator";
 import type {
   CapturedAction,
   E2EGenerateOptions,
@@ -7,29 +7,40 @@ import type {
   RecordingGenerateOptions,
 } from "@/lib/e2e-export/e2e-export.types";
 
-describe("cypressGenerator", () => {
+describe("playwrightGenerator", () => {
   it("has correct name and displayName", () => {
-    expect(cypressGenerator.name).toBe("cypress");
-    expect(cypressGenerator.displayName).toBe("Cypress");
+    expect(playwrightGenerator.name).toBe("playwright");
+    expect(playwrightGenerator.displayName).toBe("Playwright");
   });
 
   describe("basic actions", () => {
-    it("generates a valid Cypress test script with actions", () => {
+    it("generates a valid Playwright test script with actions", () => {
       const actions: CapturedAction[] = [
         { selector: "#name", value: "John", actionType: "fill", label: "Nome" },
-        { selector: "#agree", value: "", actionType: "check" },
-        { selector: "#country", value: "BR", actionType: "select" },
+        {
+          selector: "#agree",
+          value: "",
+          actionType: "check",
+          label: "Aceitar termos",
+        },
+        {
+          selector: "#country",
+          value: "BR",
+          actionType: "select",
+          label: "País",
+        },
       ];
       const opts: E2EGenerateOptions = { pageUrl: "https://example.com" };
 
-      const script = cypressGenerator.generate(actions, opts);
+      const script = playwrightGenerator.generate(actions, opts);
 
-      expect(script).toContain("describe('fill form'");
-      expect(script).toContain("cy.visit('https://example.com')");
-      expect(script).toContain("cy.get('#name').clear().type('John')");
-      expect(script).toContain("cy.get('#agree').check()");
-      expect(script).toContain("cy.get('#country').select('BR')");
+      expect(script).toContain("import { test, expect }");
+      expect(script).toContain("await page.goto('https://example.com')");
+      expect(script).toContain("page.locator('#name').fill('John')");
+      expect(script).toContain("page.locator('#agree').check()");
+      expect(script).toContain("page.locator('#country').selectOption('BR')");
       expect(script).toContain("// Nome");
+      expect(script).toContain("// Aceitar termos");
     });
 
     it("generates script without URL when pageUrl is omitted", () => {
@@ -37,10 +48,10 @@ describe("cypressGenerator", () => {
         { selector: "#email", value: "a@b.com", actionType: "fill" },
       ];
 
-      const script = cypressGenerator.generate(actions);
+      const script = playwrightGenerator.generate(actions);
 
-      expect(script).not.toContain("cy.visit");
-      expect(script).toContain("cy.get('#email').clear().type('a@b.com')");
+      expect(script).not.toContain("page.goto");
+      expect(script).toContain("page.locator('#email').fill('a@b.com')");
     });
 
     it("generates uncheck action", () => {
@@ -48,9 +59,9 @@ describe("cypressGenerator", () => {
         { selector: "#opt-out", value: "", actionType: "uncheck" },
       ];
 
-      const script = cypressGenerator.generate(actions);
+      const script = playwrightGenerator.generate(actions);
 
-      expect(script).toContain("cy.get('#opt-out').uncheck()");
+      expect(script).toContain("page.locator('#opt-out').uncheck()");
     });
 
     it("generates radio action as check", () => {
@@ -58,9 +69,9 @@ describe("cypressGenerator", () => {
         { selector: "#gender-male", value: "male", actionType: "radio" },
       ];
 
-      const script = cypressGenerator.generate(actions);
+      const script = playwrightGenerator.generate(actions);
 
-      expect(script).toContain("cy.get('#gender-male').check()");
+      expect(script).toContain("page.locator('#gender-male').check()");
     });
 
     it("generates clear action", () => {
@@ -68,9 +79,9 @@ describe("cypressGenerator", () => {
         { selector: "#field", value: "", actionType: "clear" },
       ];
 
-      const script = cypressGenerator.generate(actions);
+      const script = playwrightGenerator.generate(actions);
 
-      expect(script).toContain("cy.get('#field').clear()");
+      expect(script).toContain("page.locator('#field').clear()");
     });
 
     it("escapes single quotes in selectors and values", () => {
@@ -82,23 +93,30 @@ describe("cypressGenerator", () => {
         },
       ];
 
-      const script = cypressGenerator.generate(actions);
+      const script = playwrightGenerator.generate(actions);
 
       expect(script).toContain("[name=\\'user\\']");
       expect(script).toContain("O\\'Brien");
     });
+
+    it("generates empty test body for empty actions", () => {
+      const script = playwrightGenerator.generate([]);
+
+      expect(script).toContain("test('fill form'");
+      expect(script).toContain("import { test, expect }");
+    });
   });
 
   describe("custom test name", () => {
-    it("uses custom testName in describe block", () => {
+    it("uses custom testName in test declaration", () => {
       const actions: CapturedAction[] = [
         { selector: "#name", value: "John", actionType: "fill" },
       ];
-      const opts: E2EGenerateOptions = { testName: "registration form" };
+      const opts: E2EGenerateOptions = { testName: "login flow" };
 
-      const script = cypressGenerator.generate(actions, opts);
+      const script = playwrightGenerator.generate(actions, opts);
 
-      expect(script).toContain("describe('registration form'");
+      expect(script).toContain("test('login flow'");
     });
   });
 
@@ -110,15 +128,17 @@ describe("cypressGenerator", () => {
           value: "John",
           actionType: "fill",
           smartSelectors: [
-            { value: '[data-cy="name"]', strategy: "data-testid" },
+            { value: '[data-testid="name"]', strategy: "data-testid" },
+            { value: "#name", strategy: "id" },
           ],
         },
       ];
       const opts: E2EGenerateOptions = { useSmartSelectors: true };
 
-      const script = cypressGenerator.generate(actions, opts);
+      const script = playwrightGenerator.generate(actions, opts);
 
-      expect(script).toContain('[data-cy="name"]');
+      expect(script).toContain('[data-testid="name"]');
+      expect(script).not.toContain("page.locator('#name')");
     });
 
     it("falls back to original selector when smart selectors disabled", () => {
@@ -128,15 +148,33 @@ describe("cypressGenerator", () => {
           value: "John",
           actionType: "fill",
           smartSelectors: [
-            { value: '[data-cy="name"]', strategy: "data-testid" },
+            { value: '[data-testid="name"]', strategy: "data-testid" },
           ],
         },
       ];
       const opts: E2EGenerateOptions = { useSmartSelectors: false };
 
-      const script = cypressGenerator.generate(actions, opts);
+      const script = playwrightGenerator.generate(actions, opts);
 
-      expect(script).toContain("cy.get('#name')");
+      expect(script).toContain("page.locator('#name')");
+      expect(script).not.toContain("data-testid");
+    });
+
+    it("enables smart selectors by default", () => {
+      const actions: CapturedAction[] = [
+        {
+          selector: "#name",
+          value: "John",
+          actionType: "fill",
+          smartSelectors: [
+            { value: '[data-testid="name"]', strategy: "data-testid" },
+          ],
+        },
+      ];
+
+      const script = playwrightGenerator.generate(actions);
+
+      expect(script).toContain('[data-testid="name"]');
     });
   });
 
@@ -144,13 +182,30 @@ describe("cypressGenerator", () => {
     it("includes submit button click in generated script", () => {
       const actions: CapturedAction[] = [
         { selector: "#email", value: "a@b.com", actionType: "fill" },
-        { selector: "#btn", value: "", actionType: "click", label: "Send" },
+        {
+          selector: "#submit-btn",
+          value: "",
+          actionType: "click",
+          label: "Submit",
+        },
       ];
 
-      const script = cypressGenerator.generate(actions);
+      const script = playwrightGenerator.generate(actions);
 
       expect(script).toContain("// Submit");
-      expect(script).toContain("cy.get('#btn').click()");
+      expect(script).toContain("page.locator('#submit-btn').click()");
+    });
+
+    it("includes submit-type actions separately from fill", () => {
+      const actions: CapturedAction[] = [
+        { selector: "#name", value: "John", actionType: "fill" },
+        { selector: "button.send", value: "", actionType: "submit" },
+      ];
+
+      const script = playwrightGenerator.generate(actions);
+
+      expect(script).toContain("page.locator('#name').fill('John')");
+      expect(script).toContain("page.locator('button.send').click()");
     });
   });
 
@@ -167,38 +222,57 @@ describe("cypressGenerator", () => {
         ],
       };
 
-      const script = cypressGenerator.generate(actions, opts);
+      const script = playwrightGenerator.generate(actions, opts);
 
-      expect(script).toContain("cy.url().should('not.eq'");
-      expect(script).toContain("cy.contains('Success!')");
+      expect(script).toContain("// Assertions");
+      expect(script).toContain("not.toHaveURL('https://example.com')");
+      expect(script).toContain("page.getByText('Success!')");
+      expect(script).toContain("toBeVisible()");
+    });
+
+    it("does not include assertions when disabled", () => {
+      const actions: CapturedAction[] = [
+        { selector: "#name", value: "John", actionType: "fill" },
+      ];
+      const opts: E2EGenerateOptions = {
+        includeAssertions: false,
+        assertions: [{ type: "url-changed", expected: "https://example.com" }],
+      };
+
+      const script = playwrightGenerator.generate(actions, opts);
+
+      expect(script).not.toContain("// Assertions");
+      expect(script).not.toContain("not.toHaveURL");
     });
 
     it("generates all assertion types", () => {
+      const actions: CapturedAction[] = [];
       const opts: E2EGenerateOptions = {
         includeAssertions: true,
         assertions: [
           { type: "url-changed", expected: "/old" },
           { type: "url-contains", expected: "/dashboard" },
-          { type: "visible-text", expected: "Done" },
-          { type: "element-visible", selector: ".ok" },
-          { type: "element-hidden", selector: ".spinner" },
+          { type: "visible-text", expected: "Saved" },
+          { type: "element-visible", selector: ".success" },
+          { type: "element-hidden", selector: ".loading" },
           { type: "toast-message", selector: "[role='alert']" },
           { type: "field-value", selector: "#out", expected: "42" },
-          { type: "field-error", selector: ".err" },
-          { type: "redirect", expected: "/thanks" },
+          { type: "field-error", selector: ".error" },
+          { type: "redirect", expected: "/thank-you" },
         ],
       };
 
-      const script = cypressGenerator.generate([], opts);
+      const script = playwrightGenerator.generate(actions, opts);
 
-      expect(script).toContain("should('not.eq', '/old')");
-      expect(script).toContain("should('include', '/dashboard')");
-      expect(script).toContain("cy.contains('Done')");
-      expect(script).toContain("cy.get('.ok').should('be.visible')");
-      expect(script).toContain("cy.get('.spinner').should('not.be.visible')");
-      expect(script).toContain("should('have.value', '42')");
-      expect(script).toContain("cy.get('.err').should('be.visible')");
-      expect(script).toContain("should('include', '/thanks')");
+      expect(script).toContain("not.toHaveURL('/old')");
+      expect(script).toContain("toHaveURL(new RegExp('/dashboard'))");
+      expect(script).toContain("getByText('Saved')");
+      expect(script).toContain("locator('.success')).toBeVisible()");
+      expect(script).toContain("locator('.loading')).toBeHidden()");
+      expect(script).toContain("locator('[role=\\'alert\\']')).toBeVisible()");
+      expect(script).toContain("toHaveValue('42')");
+      expect(script).toContain("locator('.error')).toBeVisible()");
+      expect(script).toContain("toHaveURL(new RegExp('/thank-you'))");
     });
   });
 
@@ -211,6 +285,12 @@ describe("cypressGenerator", () => {
           actionType: "fill",
           required: true,
         },
+        {
+          selector: "#name",
+          value: "John",
+          actionType: "fill",
+          required: true,
+        },
         { selector: "#submit", value: "", actionType: "click" },
       ];
       const opts: E2EGenerateOptions = {
@@ -218,12 +298,14 @@ describe("cypressGenerator", () => {
         includeNegativeTest: true,
       };
 
-      const script = cypressGenerator.generate(actions, opts);
+      const script = playwrightGenerator.generate(actions, opts);
 
-      expect(script).toContain("should show validation errors");
-      expect(script).toContain("cy.visit('https://example.com')");
-      expect(script).toContain("cy.get('#submit').click()");
-      expect(script).toContain("should('have.attr', 'required')");
+      expect(script).toContain(
+        "should show validation errors for empty required fields",
+      );
+      expect(script).toContain("page.goto('https://example.com')");
+      expect(script).toContain("page.locator('#submit').click()");
+      expect(script).toContain("toHaveAttribute('required'");
     });
 
     it("does not generate negative test when no required fields", () => {
@@ -237,9 +319,69 @@ describe("cypressGenerator", () => {
       ];
       const opts: E2EGenerateOptions = { includeNegativeTest: true };
 
-      const script = cypressGenerator.generate(actions, opts);
+      const script = playwrightGenerator.generate(actions, opts);
 
       expect(script).not.toContain("validation errors");
+    });
+
+    it("includes field-error assertions in negative test", () => {
+      const actions: CapturedAction[] = [
+        {
+          selector: "#email",
+          value: "a@b.com",
+          actionType: "fill",
+          required: true,
+        },
+      ];
+      const opts: E2EGenerateOptions = {
+        includeNegativeTest: true,
+        assertions: [{ type: "field-error", selector: ".error-message" }],
+      };
+
+      const script = playwrightGenerator.generate(actions, opts);
+
+      expect(script).toContain("locator('.error-message')).toBeVisible()");
+    });
+  });
+
+  describe("page object model (POM)", () => {
+    it("generates POM class when enabled", () => {
+      const actions: CapturedAction[] = [
+        { selector: "#name", value: "John", actionType: "fill", label: "Name" },
+        {
+          selector: "#email",
+          value: "j@x.com",
+          actionType: "fill",
+          label: "Email",
+        },
+        {
+          selector: "#submit",
+          value: "",
+          actionType: "click",
+          label: "Submit",
+        },
+      ];
+      const opts: E2EGenerateOptions = { includePOM: true };
+
+      const script = playwrightGenerator.generate(actions, opts);
+
+      expect(script).toContain("Page Object Model");
+      expect(script).toContain("class FormPage");
+      expect(script).toContain("get name()");
+      expect(script).toContain("get email()");
+      expect(script).toContain("get submitButton()");
+      expect(script).toContain("async fillForm(");
+      expect(script).toContain("async submit()");
+    });
+
+    it("does not generate POM when disabled", () => {
+      const actions: CapturedAction[] = [
+        { selector: "#name", value: "John", actionType: "fill" },
+      ];
+
+      const script = playwrightGenerator.generate(actions);
+
+      expect(script).not.toContain("class FormPage");
     });
   });
 
@@ -273,25 +415,25 @@ describe("cypressGenerator", () => {
         testName: "fill and click",
       };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
-      expect(script).toContain("describe('fill and click'");
-      expect(script).toContain("cy.visit('https://example.com')");
-      expect(script).toContain(".type('John')");
-      expect(script).toContain(".click()");
+      expect(script).toContain("import { test, expect }");
+      expect(script).toContain("await page.goto('https://example.com')");
+      expect(script).toContain("page.locator('#name').fill('John')");
+      expect(script).toContain("page.locator('.btn-next').click()");
     });
 
-    it("inserts wait for significant delays", () => {
+    it("inserts wait comments for significant delays", () => {
       const steps: RecordedStep[] = [
         step({ type: "fill", selector: "#name", value: "A", timestamp: 1000 }),
         step({ type: "fill", selector: "#email", value: "B", timestamp: 5000 }),
       ];
       const opts: RecordingGenerateOptions = { minWaitThreshold: 1000 };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
       expect(script).toContain("User paused");
-      expect(script).toContain("cy.wait(");
+      expect(script).toContain("waitForTimeout");
     });
 
     it("does not insert wait for short delays", () => {
@@ -300,9 +442,24 @@ describe("cypressGenerator", () => {
         step({ type: "fill", selector: "#b", value: "y", timestamp: 1100 }),
       ];
 
-      const script = cypressGenerator.generateFromRecording(steps);
+      const script = playwrightGenerator.generateFromRecording(steps);
 
-      expect(script).not.toContain("cy.wait(");
+      expect(script).not.toContain("waitForTimeout");
+    });
+
+    it("generates wait-for-element steps", () => {
+      const steps: RecordedStep[] = [
+        step({
+          type: "wait-for-element",
+          selector: "#dynamic-field",
+          waitTimeout: 5000,
+          timestamp: 2000,
+        }),
+      ];
+
+      const script = playwrightGenerator.generateFromRecording(steps);
+
+      expect(script).toContain("waitFor");
     });
 
     it("generates select, check, and submit steps", () => {
@@ -313,7 +470,11 @@ describe("cypressGenerator", () => {
           value: "BR",
           timestamp: 1000,
         }),
-        step({ type: "check", selector: "#agree", timestamp: 1100 }),
+        step({
+          type: "check",
+          selector: "#agree",
+          timestamp: 1100,
+        }),
         step({
           type: "submit",
           selector: "#form-btn",
@@ -322,9 +483,9 @@ describe("cypressGenerator", () => {
         }),
       ];
 
-      const script = cypressGenerator.generateFromRecording(steps);
+      const script = playwrightGenerator.generateFromRecording(steps);
 
-      expect(script).toContain("select('BR')");
+      expect(script).toContain("selectOption('BR')");
       expect(script).toContain(".check()");
       expect(script).toContain(".click()");
     });
@@ -339,9 +500,9 @@ describe("cypressGenerator", () => {
         }),
       ];
 
-      const script = cypressGenerator.generateFromRecording(steps);
+      const script = playwrightGenerator.generateFromRecording(steps);
 
-      expect(script).toContain("type('{enter}')");
+      expect(script).toContain("press('Enter')");
     });
 
     it("uses smart selectors when enabled", () => {
@@ -362,10 +523,9 @@ describe("cypressGenerator", () => {
       ];
       const opts: RecordingGenerateOptions = { useSmartSelectors: true };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
-      expect(script).toContain("data-testid");
-      expect(script).toContain("name-field");
+      expect(script).toContain('[data-testid="name-field"]');
     });
 
     it("includes assertions when provided", () => {
@@ -382,18 +542,20 @@ describe("cypressGenerator", () => {
         assertions: [{ type: "element-visible", selector: "#success" }],
       };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
-      expect(script).toContain("should('be.visible')");
+      expect(script).toContain("toBeVisible");
     });
 
     it("respects custom test name", () => {
       const steps: RecordedStep[] = [
         step({ type: "fill", selector: "#x", value: "v", timestamp: 1000 }),
       ];
-      const opts: RecordingGenerateOptions = { testName: "my custom test" };
+      const opts: RecordingGenerateOptions = {
+        testName: "my custom test",
+      };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
       expect(script).toContain("my custom test");
     });
@@ -408,10 +570,9 @@ describe("cypressGenerator", () => {
         }),
       ];
 
-      const script = cypressGenerator.generateFromRecording(steps);
+      const script = playwrightGenerator.generateFromRecording(steps);
 
-      expect(script).toContain("cy.intercept('**').as('requests')");
-      expect(script).toContain("cy.wait('@requests')");
+      expect(script).toContain("waitForLoadState('networkidle')");
     });
 
     it("generates wait-for-hidden step", () => {
@@ -424,9 +585,9 @@ describe("cypressGenerator", () => {
         }),
       ];
 
-      const script = cypressGenerator.generateFromRecording(steps);
+      const script = playwrightGenerator.generateFromRecording(steps);
 
-      expect(script).toContain("should('not.exist')");
+      expect(script).toContain("waitFor({ state: 'hidden', timeout: 10000 })");
     });
 
     it("generates wait-for-element step", () => {
@@ -439,9 +600,9 @@ describe("cypressGenerator", () => {
         }),
       ];
 
-      const script = cypressGenerator.generateFromRecording(steps);
+      const script = playwrightGenerator.generateFromRecording(steps);
 
-      expect(script).toContain("should('be.visible')");
+      expect(script).toContain("waitFor({ state: 'visible', timeout: 5000 })");
     });
 
     it("generates wait-for-url step", () => {
@@ -453,9 +614,9 @@ describe("cypressGenerator", () => {
         }),
       ];
 
-      const script = cypressGenerator.generateFromRecording(steps);
+      const script = playwrightGenerator.generateFromRecording(steps);
 
-      expect(script).toContain("cy.url().should('include', '/dashboard')");
+      expect(script).toContain("waitForURL('/dashboard')");
     });
 
     it("generates uncheck and clear and hover steps", () => {
@@ -466,11 +627,11 @@ describe("cypressGenerator", () => {
       ];
       const opts: RecordingGenerateOptions = { includeHoverSteps: true };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
-      expect(script).toContain("cy.get('#opt-out').uncheck()");
-      expect(script).toContain("cy.get('#field').clear()");
-      expect(script).toContain("trigger('mouseover')");
+      expect(script).toContain("page.locator('#opt-out').uncheck()");
+      expect(script).toContain("page.locator('#field').clear()");
+      expect(script).toContain("page.locator('#btn').hover()");
     });
 
     it("generates scroll step with scrollPosition", () => {
@@ -484,9 +645,9 @@ describe("cypressGenerator", () => {
       ];
       const opts: RecordingGenerateOptions = { includeScrollSteps: true };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
-      expect(script).toContain("cy.scrollTo(100, 200)");
+      expect(script).toContain("window.scrollTo(100, 200)");
     });
 
     it("generates scroll step without scrollPosition", () => {
@@ -495,7 +656,7 @@ describe("cypressGenerator", () => {
       ];
       const opts: RecordingGenerateOptions = { includeScrollSteps: true };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
       expect(script).toContain("// scroll");
     });
@@ -509,15 +670,15 @@ describe("cypressGenerator", () => {
         }),
       ];
 
-      const script = cypressGenerator.generateFromRecording(steps);
+      const script = playwrightGenerator.generateFromRecording(steps);
 
-      expect(script).toContain("should('be.visible')");
+      expect(script).toContain("toBeVisible");
     });
 
     it("generates assert step without assertion falls back to comment", () => {
       const steps: RecordedStep[] = [step({ type: "assert", timestamp: 1000 })];
 
-      const script = cypressGenerator.generateFromRecording(steps);
+      const script = playwrightGenerator.generateFromRecording(steps);
 
       expect(script).toContain("// assert");
     });
@@ -535,10 +696,10 @@ describe("cypressGenerator", () => {
       ];
       const opts: RecordingGenerateOptions = { includeScrollSteps: false };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
       expect(script).not.toContain("scrollTo");
-      expect(script).toContain("clear().type");
+      expect(script).toContain("fill");
       expect(script).toContain("click");
     });
 
@@ -550,10 +711,10 @@ describe("cypressGenerator", () => {
       ];
       const opts: RecordingGenerateOptions = { includeHoverSteps: false };
 
-      const script = cypressGenerator.generateFromRecording(steps, opts);
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
 
-      expect(script).not.toContain("mouseover");
-      expect(script).toContain("clear().type");
+      expect(script).not.toContain("hover");
+      expect(script).toContain("fill");
       expect(script).toContain("click");
     });
   });

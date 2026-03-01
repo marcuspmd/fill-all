@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pestGenerator } from "@/lib/e2e-export/pest-generator";
+import { pestGenerator } from "@/lib/e2e-export/framework/pest-generator";
 import type {
   CapturedAction,
   E2EGenerateOptions,

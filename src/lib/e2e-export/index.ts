@@ -19,9 +19,9 @@ export type {
   SmartSelector,
 } from "./e2e-export.types";
 
-export { playwrightGenerator } from "./playwright-generator";
-export { cypressGenerator } from "./cypress-generator";
-export { pestGenerator } from "./pest-generator";
+export { playwrightGenerator } from "./framework/playwright-generator";
+export { cypressGenerator } from "./framework/cypress-generator";
+export { pestGenerator } from "./framework/pest-generator";
 
 export {
   E2E_GENERATORS,

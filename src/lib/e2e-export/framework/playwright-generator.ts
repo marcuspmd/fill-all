@@ -16,8 +16,8 @@ import type {
   E2EGenerator,
   RecordedStep,
   RecordingGenerateOptions,
-} from "./e2e-export.types";
-import { pickBestSelector } from "./smart-selector";
+} from "../e2e-export.types";
+import { pickBestSelector } from "../smart-selector";
 
 function escapeString(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
