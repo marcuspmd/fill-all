@@ -59,15 +59,18 @@ Permitir que o usuário configure parâmetros específicos para cada gerador ao 
 
 ## 👁️ Melhorar Modo Watch (DOM Watcher)
 
-**Status**: 🚧 Em Progresso
+**Status**: ✅ Concluído
 
 Aprimorar o comportamento do `DOMWatcher` para lidar melhor com SPAs complexas, modais dinâmicos e campos com carregamento assíncrono.
 
-- Reduzir falsos positivos no debounce (atualmente 600ms fixo)
-- Adicionar opção para configurar o intervalo de debounce nas Settings
-- Detectar corretamente campos dentro de Shadow DOM
-- Melhorar detecção de remoção de formulários sem reprocessar toda a página
-- Opção para pausar/retomar o watcher via Popup
+- ✅ Debounce configurável via Settings (padrão 600ms)
+- ✅ Opção para habilitar/desabilitar auto-refill de novos campos
+- ✅ Suporte a observação dentro de Shadow DOM (configurável)
+- ✅ Refill inteligente: preenche apenas campos novos (não re-preenche existentes)
+- ✅ Opção para pausar/retomar o watcher via Popup
+- ✅ Sincronização de status do watcher entre DevTools e Popup
+- ✅ Card de configuração no Options Page com todas as opções do watcher
+- ✅ i18n completo para todas as strings do watcher
 
 ---
 
