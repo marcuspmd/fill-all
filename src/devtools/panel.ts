@@ -1395,6 +1395,12 @@ async function init(): Promise<void> {
   })) as { uiLanguage?: "auto" | "en" | "pt_BR" } | null;
   await initI18n(settings?.uiLanguage ?? "auto");
 
+  // Sync watcher state from content script
+  const watcherStatus = (await sendToPage({ type: "GET_WATCHER_STATUS" }).catch(
+    () => null,
+  )) as { watching: boolean } | null;
+  watcherActive = watcherStatus?.watching ?? false;
+
   // Inject log viewer styles
   const lvStyle = document.createElement("style");
   lvStyle.textContent = getLogViewerStyles("devtools");

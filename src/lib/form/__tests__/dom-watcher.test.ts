@@ -5,10 +5,13 @@ vi.mock("../form-detector", () => ({
   detectAllFields: vi
     .fn()
     .mockReturnValue({ fields: [], url: "http://localhost/" }),
+  detectAllFieldsAsync: vi
+    .fn()
+    .mockResolvedValue({ fields: [], url: "http://localhost/" }),
 }));
 
 vi.mock("../form-filler", () => ({
-  fillAllFields: vi.fn().mockResolvedValue([]),
+  fillSingleField: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -20,8 +23,8 @@ vi.mock("@/lib/logger", () => ({
   }),
 }));
 
-import { detectAllFields } from "../form-detector";
-import { fillAllFields } from "../form-filler";
+import { detectAllFields, detectAllFieldsAsync } from "../form-detector";
+import { fillSingleField } from "../form-filler";
 import {
   getWatcherConfig,
   isWatcherActive,
@@ -31,7 +34,8 @@ import {
 } from "../dom-watcher";
 
 const mockDetect = detectAllFields as ReturnType<typeof vi.fn>;
-const mockFill = fillAllFields as ReturnType<typeof vi.fn>;
+const mockDetectAsync = detectAllFieldsAsync as ReturnType<typeof vi.fn>;
+const mockFillSingle = fillSingleField as ReturnType<typeof vi.fn>;
 
 describe("dom-watcher", () => {
   beforeEach(() => {
@@ -130,6 +134,9 @@ describe("dom-watcher", () => {
         .mockReturnValueOnce({ fields: [] }) // initial signature
         .mockReturnValue({ fields: mockFields }); // after mutation
 
+      // detectAllFieldsAsync returns the new fields for refill
+      mockDetectAsync.mockResolvedValue({ fields: mockFields });
+
       startWatching(undefined, true);
 
       // Trigger a mutation
@@ -137,9 +144,11 @@ describe("dom-watcher", () => {
       document.body.appendChild(p);
 
       // Advance debounce
-      await vi.advanceTimersByTimeAsync(700);
+      await vi.runAllTimersAsync();
 
-      expect(mockFill).toHaveBeenCalled();
+      // Verify detectAllFieldsAsync was called (inside refillNewFields)
+      expect(mockDetectAsync).toHaveBeenCalled();
+      expect(mockFillSingle).toHaveBeenCalledTimes(2);
 
       vi.useRealTimers();
     });

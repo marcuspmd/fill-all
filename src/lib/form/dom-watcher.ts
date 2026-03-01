@@ -3,8 +3,8 @@
  * to detect new/changed form fields and re-fill them
  */
 
-import { detectAllFields } from "./form-detector";
-import { fillAllFields } from "./form-filler";
+import { detectAllFields, detectAllFieldsAsync } from "./form-detector";
+import { fillSingleField } from "./form-filler";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("DomWatcher");
@@ -158,7 +158,8 @@ function handleMutations(mutations: MutationRecord[]): void {
   debounceTimer = setTimeout(async () => {
     const newSignature = getCurrentFieldSignature();
     if (newSignature !== lastFieldSignature) {
-      const oldCount = lastFieldSignature.split("|").filter(Boolean).length;
+      const previousSignature = lastFieldSignature;
+      const oldCount = previousSignature.split("|").filter(Boolean).length;
       const newCount = newSignature.split("|").filter(Boolean).length;
       const diff = newCount - oldCount;
 
@@ -172,7 +173,7 @@ function handleMutations(mutations: MutationRecord[]): void {
         }
 
         if (activeConfig.autoRefill) {
-          await refillNewFields();
+          await refillNewFields(previousSignature);
         }
       } else if (diff !== 0) {
         log.info(`Form structure changed (${diff} fields)`);
@@ -206,12 +207,38 @@ function observeSingleShadowRoot(shadowRoot: ShadowRoot): void {
 }
 
 /**
- * Re-fills only the new fields that appeared after a DOM change
+ * Parses a field signature string into a Set of individual field keys.
  */
-async function refillNewFields(): Promise<void> {
+function parseSignature(sig: string): Set<string> {
+  return new Set(sig.split("|").filter(Boolean));
+}
+
+/**
+ * Re-fills only the new fields that appeared after a DOM change.
+ * Compares the previous signature against current fields to identify
+ * which fields are new and fills only those.
+ */
+async function refillNewFields(previousSignature: string): Promise<void> {
   isFillingInProgress = true;
   try {
-    await fillAllFields();
+    const oldKeys = parseSignature(previousSignature);
+    const { fields } = await detectAllFieldsAsync();
+
+    const newFields = fields.filter((f) => {
+      const key = `${f.selector}:${f.fieldType}`;
+      return !oldKeys.has(key);
+    });
+
+    if (newFields.length === 0) {
+      log.debug("No truly new fields to fill");
+      return;
+    }
+
+    log.info(`Filling ${newFields.length} new field(s) only`);
+    for (const field of newFields) {
+      await fillSingleField(field);
+    }
+
     lastFieldSignature = getCurrentFieldSignature();
   } finally {
     isFillingInProgress = false;
