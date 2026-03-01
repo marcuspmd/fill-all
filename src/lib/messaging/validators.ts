@@ -36,6 +36,10 @@ const settingsSchema = z
       .optional(),
     debugLog: z.boolean(),
     logLevel: z.enum(["debug", "info", "warn", "error"]),
+    watcherEnabled: z.boolean(),
+    watcherAutoRefill: z.boolean(),
+    watcherShadowDOM: z.boolean(),
+    watcherDebounceMs: z.number().int().min(100).max(5000),
   })
   .partial()
   .strict();
