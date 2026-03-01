@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fill All — Test Form</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 640px;
+        margin: 40px auto;
+        padding: 0 20px;
+        background: #f9fafb;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin-bottom: 24px;
+        color: #111827;
+      }
+      .field-group {
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #374151;
+      }
+      input,
+      select,
+      textarea {
+        display: block;
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        box-sizing: border-box;
+      }
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .checkbox-group input {
+        width: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Formulário de Teste — Fill All</h1>
+    <form id="main-form" novalidate>
+      <div class="field-group">
+        <label for="name">Nome Completo</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Digite seu nome completo"
+          autocomplete="name"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="email">E-mail</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="seu@email.com"
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="cpf">CPF</label>
+        <input
+          type="text"
+          id="cpf"
+          name="cpf"
+          placeholder="000.000.000-00"
+          maxlength="14"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="phone">Telefone</label>
+        <input
+          type="tel"
+          id="phone"
+          name="phone"
+          placeholder="(11) 99999-9999"
+          autocomplete="tel"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="birthdate">Data de Nascimento</label>
+        <input
+          type="date"
+          id="birthdate"
+          name="birthdate"
+          autocomplete="bday"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="gender">Gênero</label>
+        <select id="gender" name="gender">
+          <option value="">Selecione</option>
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
+          <option value="O">Outro</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="address">Endereço</label>
+        <input
+          type="text"
+          id="address"
+          name="address"
+          placeholder="Rua, número, bairro"
+          autocomplete="street-address"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="cep">CEP</label>
+        <input
+          type="text"
+          id="cep"
+          name="cep"
+          placeholder="00000-000"
+          maxlength="9"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="city">Cidade</label>
+        <input
+          type="text"
+          id="city"
+          name="city"
+          placeholder="Sua cidade"
+          autocomplete="address-level2"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="state">Estado</label>
+        <select id="state" name="state">
+          <option value="">Selecione o estado</option>
+          <option value="AC">Acre</option>
+          <option value="AL">Alagoas</option>
+          <option value="AM">Amazonas</option>
+          <option value="BA">Bahia</option>
+          <option value="CE">Ceará</option>
+          <option value="DF">Distrito Federal</option>
+          <option value="ES">Espírito Santo</option>
+          <option value="GO">Goiás</option>
+          <option value="MA">Maranhão</option>
+          <option value="MG">Minas Gerais</option>
+          <option value="MS">Mato Grosso do Sul</option>
+          <option value="MT">Mato Grosso</option>
+          <option value="PA">Pará</option>
+          <option value="PB">Paraíba</option>
+          <option value="PE">Pernambuco</option>
+          <option value="PI">Piauí</option>
+          <option value="PR">Paraná</option>
+          <option value="RJ">Rio de Janeiro</option>
+          <option value="RN">Rio Grande do Norte</option>
+          <option value="RO">Rondônia</option>
+          <option value="RR">Roraima</option>
+          <option value="RS">Rio Grande do Sul</option>
+          <option value="SC">Santa Catarina</option>
+          <option value="SE">Sergipe</option>
+          <option value="SP">São Paulo</option>
+          <option value="TO">Tocantins</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="password">Senha</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Mínimo 8 caracteres"
+          autocomplete="new-password"
+        />
+      </div>
+
+      <div class="field-group">
+        <label for="message">Mensagem</label>
+        <textarea
+          id="message"
+          name="message"
+          rows="4"
+          placeholder="Digite sua mensagem..."
+        ></textarea>
+      </div>
+
+      <div class="field-group checkbox-group">
+        <input type="checkbox" id="terms" name="terms" value="accepted" />
+        <label for="terms" style="margin-bottom: 0">Aceito os termos de uso</label>
+      </div>
+
+      <button type="submit" style="margin-top: 16px; padding: 10px 24px; background: #4f46e5; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+        Enviar
+      </button>
+    </form>
+  </body>
+</html>

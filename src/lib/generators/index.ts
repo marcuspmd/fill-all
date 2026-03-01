@@ -110,9 +110,19 @@ const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
   cep: (p) => generateCep(p?.formatted !== false),
 
   // ── Datas ───────────────────────────────────────────────────
-  "date-iso": () => generateDate("iso"),
-  "birth-date": (p) => generateBirthDate(p?.min ?? 18, p?.max ?? 65),
-  "future-date": (p) => generateFutureDate(p?.max ?? 90),
+  "date-iso": (p) =>
+    generateDate((p?.dateFormat as "iso" | "br" | "us") ?? "iso"),
+  "birth-date": (p) =>
+    generateBirthDate(
+      p?.min ?? 18,
+      p?.max ?? 65,
+      (p?.dateFormat as "iso" | "br" | "us") ?? "iso",
+    ),
+  "future-date": (p) =>
+    generateFutureDate(
+      p?.max ?? 90,
+      (p?.dateFormat as "iso" | "br" | "us") ?? "iso",
+    ),
 
   // ── Financeiro ──────────────────────────────────────────────
   money: (p) => generateMoney(p?.min ?? 1, p?.max ?? 10_000),
@@ -174,11 +184,31 @@ const generatorMap = buildGeneratorMap();
  * Generates a value for the given field type using the appropriate generator.
  * Falls back to random text (3 words) when no specific generator is registered.
  * @param fieldType - The classified field type to generate data for
+ * @param overrideParams - Optional params to override defaults from FIELD_TYPE_DEFINITIONS
  * @returns Generated string value
  */
-export function generate(fieldType: FieldType): string {
-  const fn = generatorMap.get(fieldType);
-  return fn ? fn() : generateText(3);
+export function generate(
+  fieldType: FieldType,
+  overrideParams?: GeneratorParams,
+): string {
+  if (!overrideParams) {
+    const fn = generatorMap.get(fieldType);
+    return fn ? fn() : generateText(3);
+  }
+
+  // Find the factory key for this field type
+  const def = FIELD_TYPE_DEFINITIONS.find((d) => d.type === fieldType);
+  if (!def?.generator) return generateText(3);
+
+  const factory = GENERATOR_FACTORIES[def.generator];
+  if (!factory) return generateText(3);
+
+  // Merge default params with overrides
+  const mergedParams: GeneratorParams = {
+    ...def.params,
+    ...overrideParams,
+  };
+  return factory(mergedParams);
 }
 
 export {

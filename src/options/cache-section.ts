@@ -4,6 +4,7 @@
 
 import type { FieldDetectionCacheEntry, FieldRule, FieldType } from "@/types";
 import type { RetrainResult } from "@/lib/ai/learning-store";
+import { t } from "@/lib/i18n";
 import { escapeHtml, showToast } from "./shared";
 
 interface LearnedEntryView {
@@ -22,8 +23,7 @@ async function loadFieldCache(): Promise<void> {
   list.innerHTML = "";
 
   if (!Array.isArray(cache) || cache.length === 0) {
-    list.innerHTML =
-      '<div class="empty">Nenhum cache de campos detectados</div>';
+    list.innerHTML = `<div class="empty">${t("noCacheEntries")}</div>`;
     return;
   }
 
@@ -35,10 +35,10 @@ async function loadFieldCache(): Promise<void> {
       <div class="rule-info">
         <strong>${escapeHtml(entry.hostname || entry.origin || entry.url)}</strong>
         <span class="rule-selector">${escapeHtml(entry.path || entry.url)}</span>
-        <span class="badge">${entry.count} campos</span>
-        <span class="rule-priority">Atualizado: ${new Date(entry.updatedAt).toLocaleString("pt-BR")}</span>
+        <span class="badge">${t("cacheFieldsCount", [String(entry.count)])}</span>
+        <span class="rule-priority">${t("updatedAtLabel")}: ${new Date(entry.updatedAt).toLocaleString()}</span>
       </div>
-      <button class="btn btn-sm btn-delete" data-cache-url="${escapeHtml(entry.url)}">Excluir</button>
+      <button class="btn btn-sm btn-delete" data-cache-url="${escapeHtml(entry.url)}">${t("btnDelete")}</button>
     `;
 
     item.querySelector(".btn-delete")?.addEventListener("click", async () => {
@@ -47,7 +47,7 @@ async function loadFieldCache(): Promise<void> {
         payload: entry.url,
       });
       await loadFieldCache();
-      showToast("Cache removido");
+      showToast(t("toastCacheEntryRemoved"));
     });
 
     list.appendChild(item);
@@ -64,11 +64,11 @@ async function loadLearnedEntries(): Promise<void> {
   if (!summary || !list) return;
 
   const items = Array.isArray(learned) ? learned : [];
-  summary.textContent = `Entradas aprendidas: ${items.length}`;
+  summary.textContent = t("learnedEntriesLabel", [String(items.length)]);
 
   list.innerHTML = "";
   if (items.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhuma entrada aprendida</div>';
+    list.innerHTML = `<div class="empty">${t("noLearnedEntries")}</div>`;
     return;
   }
 
@@ -96,7 +96,7 @@ function bindCacheEvents(): void {
     ?.addEventListener("click", async () => {
       await loadFieldCache();
       await loadLearnedEntries();
-      showToast("Cache atualizado");
+      showToast(t("toastCacheRefreshed"));
     });
 
   document
@@ -104,7 +104,7 @@ function bindCacheEvents(): void {
     ?.addEventListener("click", async () => {
       await chrome.runtime.sendMessage({ type: "CLEAR_FIELD_CACHE" });
       await loadFieldCache();
-      showToast("Cache limpo");
+      showToast(t("toastCacheCleared"));
     });
 
   document
@@ -112,7 +112,7 @@ function bindCacheEvents(): void {
     ?.addEventListener("click", async () => {
       await chrome.runtime.sendMessage({ type: "CLEAR_LEARNED_ENTRIES" });
       await loadLearnedEntries();
-      showToast("Aprendizado limpo");
+      showToast(t("toastLearningCleared"));
     });
 
   document
@@ -123,7 +123,7 @@ function bindCacheEvents(): void {
       })) as FieldRule[];
 
       if (!Array.isArray(rules) || rules.length === 0) {
-        showToast("Nenhuma regra para exportar", "error");
+        showToast(t("noRulesToExport"), "error");
         return;
       }
 
@@ -138,9 +138,7 @@ function bindCacheEvents(): void {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      showToast(
-        `${rules.length} regra(s) exportada(s). Execute: npm run import:rules fill-all-rules.json`,
-      );
+      showToast(t("rulesExportedMsg", [String(rules.length)]));
     });
 
   document
@@ -157,7 +155,7 @@ function bindCacheEvents(): void {
       ) as HTMLPreElement | null;
 
       btn.disabled = true;
-      btn.textContent = "Retreinando...";
+      btn.textContent = t("retraining");
 
       if (logBox) logBox.style.display = "none";
       if (logPre) logPre.textContent = "";
@@ -224,11 +222,15 @@ function bindCacheEvents(): void {
         }
 
         showToast(
-          `✅ ${result?.imported ?? 0} vetores atualizados de ${result?.totalRules ?? 0} regras (${result?.durationMs ?? elapsed}ms)`,
+          t("toastRetrainResult", [
+            String(result?.imported ?? 0),
+            String(result?.totalRules ?? 0),
+            String(result?.durationMs ?? elapsed),
+          ]),
         );
       } finally {
         btn.disabled = false;
-        btn.textContent = "🧠 Retreinar Vetores (Browser)";
+        btn.textContent = t("btnRetrainVectors");
       }
     });
 }

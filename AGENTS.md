@@ -20,6 +20,63 @@ Carregar no Chrome: `chrome://extensions/` → Modo de desenvolvedor → Carrega
 
 ---
 
+## Testes
+
+```bash
+npm test                  # Testes unitários (vitest run)
+npm run test:watch        # Unitários em modo watch
+npm run test:coverage     # Unitários + relatório de coverage HTML
+npm run test:e2e          # Testes E2E com Playwright (abre Chrome real)
+npm run test:e2e:ui       # Testes E2E com UI interativa do Playwright
+npm run test:all          # Unitários → E2E em sequência
+```
+
+### Estrutura de Arquivos de Teste
+
+```
+src/
+  lib/
+    <modulo>/
+      __tests__/
+        <arquivo>.test.ts           # Teste unitário → roda com Vitest
+        e2e/
+          <arquivo>.test.e2e.ts     # Teste E2E → roda com Playwright
+```
+
+### Regras de Nomenclatura
+
+| Tipo | Sufixo | Ferramenta | Exemplo |
+|------|--------|-----------|---------|
+| Unitário | `.test.ts` | Vitest | `cpf.test.ts` |
+| E2E | `.test.e2e.ts` | Playwright | `form-fill.test.e2e.ts` |
+
+### Coverage
+
+- Coverage unitário: Vitest + V8 → `.coverage/unit/`
+- Coverage E2E: Playwright CDP → `.coverage/e2e/` (um JSON por teste)
+- Coverage combinado: merge Istanbul → `coverage/` (HTML + LCOV + text)
+- Arquivos DOM-heavy excluídos do coverage unitário (cobertos pelos E2E):
+  - `dom-watcher.ts`, `form-filler.ts`, `floating-panel.ts`, `field-icon.ts`
+
+```bash
+npm run test:coverage          # Unitários + coverage → .coverage/unit/
+npm run test:e2e:coverage      # Build + E2E + coverage → .coverage/e2e/
+npm run coverage:merge         # Merge ambos → coverage/index.html
+npm run coverage:all           # Os 3 acima em sequência
+```
+
+#### Fixture de Coverage E2E
+
+Testes E2E que queiram ter coverage rastreado devem importar de:
+
+```typescript
+import { test, expect } from "@/__tests__/e2e/fixtures";
+```
+
+O fixture `_coverage` é `auto: true` — roda automaticamente para cada teste que usar este `test`, sem chamada explícita. Coleta cobertura de scripts `chrome-extension://` via CDP e salva JSON Istanbul em `.coverage/e2e/`.
+
+---
+
 ## Code Style & Conventions
 
 - **TypeScript strict** — `strict: true`, target ES2022, sem `any` implícito

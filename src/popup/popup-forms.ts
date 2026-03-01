@@ -9,6 +9,7 @@ import {
   sendToBackground,
   escapeHtml,
 } from "./popup-messaging";
+import { t } from "@/lib/i18n";
 
 function fieldCount(form: SavedForm): number {
   if (form.templateFields && form.templateFields.length > 0) {
@@ -24,11 +25,11 @@ function fieldSummary(form: SavedForm): string {
       (f) => f.mode === "generator",
     ).length;
     const parts: string[] = [];
-    if (fixed > 0) parts.push(`${fixed} fixo${fixed > 1 ? "s" : ""}`);
-    if (gen > 0) parts.push(`${gen} gerador${gen > 1 ? "es" : ""}`);
+    if (fixed > 0) parts.push(t("summaryFixed", [String(fixed)]));
+    if (gen > 0) parts.push(t("summaryGenerator", [String(gen)]));
     return parts.join(", ");
   }
-  return `${Object.keys(form.fields || {}).length} campos`;
+  return t("summaryFields", [String(Object.keys(form.fields || {}).length)]);
 }
 
 export async function loadSavedForms(): Promise<void> {
@@ -40,7 +41,7 @@ export async function loadSavedForms(): Promise<void> {
 
   list.innerHTML = "";
   if (!Array.isArray(forms) || forms.length === 0) {
-    list.innerHTML = '<div class="empty">Nenhum formulário salvo</div>';
+    list.innerHTML = `<div class="empty">${t("noSavedForms")}</div>`;
     return;
   }
 
@@ -54,9 +55,9 @@ export async function loadSavedForms(): Promise<void> {
         <span class="form-fields">${escapeHtml(fieldSummary(form))}</span>
       </div>
       <div class="form-actions">
-        <button class="btn btn-sm btn-apply" data-form-id="${escapeHtml(form.id)}" title="Aplicar template">▶ Aplicar</button>
-        <button class="btn btn-sm btn-edit" data-form-id="${escapeHtml(form.id)}" title="Editar campos">✎ Editar</button>
-        <button class="btn btn-sm btn-delete" data-form-id="${escapeHtml(form.id)}" title="Excluir">✕</button>
+        <button class="btn btn-sm btn-apply" data-form-id="${escapeHtml(form.id)}" title="${t("tooltipApply")}">${t("btnApply")}</button>
+        <button class="btn btn-sm btn-edit" data-form-id="${escapeHtml(form.id)}" title="${t("tooltipEdit")}">${t("btnEdit")}</button>
+        <button class="btn btn-sm btn-delete" data-form-id="${escapeHtml(form.id)}" title="${t("btnDelete")}">✕</button>
       </div>
     `;
 
@@ -102,13 +103,13 @@ function buildFieldRow(field: FormTemplateField): string {
       <div class="field-row-label">${escapeHtml(field.label || field.key)}</div>
       <div class="field-row-controls">
         <select class="field-mode-select">
-          <option value="fixed"${isFixed ? " selected" : ""}>Valor fixo</option>
-          <option value="generator"${!isFixed ? " selected" : ""}>Gerador</option>
+          <option value="fixed"${isFixed ? " selected" : ""}>${t("fixedValue")}</option>
+          <option value="generator"${!isFixed ? " selected" : ""}>${t("generatorMode")}</option>
         </select>
         <input
           type="text"
           class="field-fixed-value"
-          placeholder="Valor fixo"
+          placeholder="${t("fixedValue")}"
           value="${escapeHtml(field.fixedValue ?? "")}"
           style="display:${isFixed ? "inline-block" : "none"}"
         />
@@ -144,16 +145,16 @@ function openEditModal(form: SavedForm): void {
   modal.innerHTML = `
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Editar Template</h3>
-        <button class="modal-close" title="Fechar">✕</button>
+        <h3>${t("editTemplate")}</h3>
+        <button class="modal-close" title="${t("fpClose")}">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label>Nome</label>
+          <label>${t("formName")}</label>
           <input type="text" id="edit-form-name" value="${escapeHtml(form.name)}" />
         </div>
         <div class="form-group">
-          <label>URL Pattern</label>
+          <label>${t("formUrl")}</label>
           <input type="text" id="edit-form-url" value="${escapeHtml(form.urlPattern)}" />
         </div>
         <div class="template-fields-list">
@@ -161,8 +162,8 @@ function openEditModal(form: SavedForm): void {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-primary" id="edit-form-save">Salvar</button>
-        <button class="btn btn-secondary" id="edit-form-cancel">Cancelar</button>
+        <button class="btn btn-primary" id="edit-form-save">${t("btnSave")}</button>
+        <button class="btn btn-secondary" id="edit-form-cancel">${t("btnCancel")}</button>
       </div>
     </div>
   `;

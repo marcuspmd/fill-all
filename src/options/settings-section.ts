@@ -4,27 +4,25 @@
 
 import type { DetectionStrategyEntry, Settings } from "@/types";
 import { DEFAULT_DETECTION_PIPELINE } from "@/types";
+import { t, initI18n, localizeHTML } from "@/lib/i18n";
 import { escapeHtml, showToast } from "./shared";
 
 // ── Detection Pipeline ────────────────────────────────────────────────────────
 
-const STRATEGY_LABELS: Record<string, string> = {
-  "html-type": "Tipo HTML",
-  keyword: "Palavras-chave",
-  tensorflow: "TensorFlow.js (ML)",
-  "chrome-ai": "Chrome AI (Gemini Nano)",
-  "html-fallback": "Fallback HTML",
+const STRATEGY_LABEL_KEYS: Record<string, string> = {
+  "html-type": "strategyHtmlType",
+  keyword: "strategyKeyword",
+  tensorflow: "strategyTensorflow",
+  "chrome-ai": "strategyChromeAi",
+  "html-fallback": "strategyHtmlFallback",
 };
 
-const STRATEGY_DESCRIPTIONS: Record<string, string> = {
-  "html-type":
-    "Detecção determinística por type/tag HTML (email, number, date…)",
-  keyword: "Detecção por palavras-chave no nome/id/label (cpf, cnpj, nome…)",
-  tensorflow: "Classificação por modelo de ML com n-gramas de caractere",
-  "chrome-ai":
-    "Geração via Gemini Nano embutido no Chrome (requer Chrome 131+)",
-  "html-fallback":
-    "Fallback final: mapeamento básico de input[type] → FieldType",
+const STRATEGY_DESC_KEYS: Record<string, string> = {
+  "html-type": "strategyHtmlTypeDesc",
+  keyword: "strategyKeywordDesc",
+  tensorflow: "strategyTensorflowDesc",
+  "chrome-ai": "strategyChromeAiDesc",
+  "html-fallback": "strategyHtmlFallbackDesc",
 };
 
 let _dragSrcIdx: number | null = null;
@@ -54,20 +52,33 @@ async function saveGeneralSettings(): Promise<void> {
     )?.value as Settings["defaultStrategy"],
     locale: (document.getElementById("setting-locale") as HTMLSelectElement)
       ?.value as Settings["locale"],
-    showPanel: (
-      document.getElementById("setting-show-panel") as HTMLInputElement
+    fillEmptyOnly: (
+      document.getElementById("setting-fill-empty-only") as HTMLInputElement
     ).checked,
     debugLog: (document.getElementById("setting-debug-log") as HTMLInputElement)
       .checked,
     logLevel: (
       document.getElementById("setting-log-level") as HTMLSelectElement
     ).value as Settings["logLevel"],
+    logMaxEntries: Math.min(
+      10000,
+      Math.max(
+        100,
+        Number(
+          (
+            document.getElementById(
+              "setting-log-max-entries",
+            ) as HTMLInputElement
+          ).value,
+        ) || 1000,
+      ),
+    ),
   };
   await chrome.runtime.sendMessage({
     type: "SAVE_SETTINGS",
     payload: settings,
   });
-  showToast("Salvo automaticamente");
+  showToast(t("savedAuto"));
 }
 
 async function saveFieldIconSettings(): Promise<void> {
@@ -85,7 +96,65 @@ async function saveFieldIconSettings(): Promise<void> {
     type: "SAVE_SETTINGS",
     payload: settings,
   });
-  showToast("Salvo automaticamente");
+  showToast(t("savedAuto"));
+}
+
+async function saveAiSettings(): Promise<void> {
+  const settings: Partial<Settings> = {
+    showFillToast: (
+      document.getElementById("setting-show-fill-toast") as HTMLInputElement
+    ).checked,
+    showAiBadge: (
+      document.getElementById("setting-show-ai-badge") as HTMLInputElement
+    ).checked,
+    aiTimeoutMs: Math.min(
+      15000,
+      Math.max(
+        2000,
+        Number(
+          (document.getElementById("setting-ai-timeout") as HTMLInputElement)
+            .value,
+        ) || 5000,
+      ),
+    ),
+  };
+  await chrome.runtime.sendMessage({
+    type: "SAVE_SETTINGS",
+    payload: settings,
+  });
+  showToast(t("savedAuto"));
+}
+
+async function saveWatcherSettings(): Promise<void> {
+  const settings: Partial<Settings> = {
+    watcherEnabled: (
+      document.getElementById("setting-watcher-enabled") as HTMLInputElement
+    ).checked,
+    watcherAutoRefill: (
+      document.getElementById("setting-watcher-auto-refill") as HTMLInputElement
+    ).checked,
+    watcherShadowDOM: (
+      document.getElementById("setting-watcher-shadow-dom") as HTMLInputElement
+    ).checked,
+    watcherDebounceMs: Math.min(
+      5000,
+      Math.max(
+        100,
+        Number(
+          (
+            document.getElementById(
+              "setting-watcher-debounce",
+            ) as HTMLInputElement
+          ).value,
+        ) || 600,
+      ),
+    ),
+  };
+  await chrome.runtime.sendMessage({
+    type: "SAVE_SETTINGS",
+    payload: settings,
+  });
+  showToast(t("savedAuto"));
 }
 
 async function saveStrategiesSettings(): Promise<void> {
@@ -94,7 +163,7 @@ async function saveStrategiesSettings(): Promise<void> {
     type: "SAVE_SETTINGS",
     payload: { detectionPipeline: pipeline } as Partial<Settings>,
   });
-  showToast("Salvo automaticamente");
+  showToast(t("savedAuto"));
 }
 
 function getPipelineFromDOM(): DetectionStrategyEntry[] {
@@ -126,10 +195,10 @@ function renderStrategyList(pipeline: DetectionStrategyEntry[]): void {
     item.dataset.idx = String(idx);
 
     item.innerHTML = `
-      <span class="strategy-drag-handle" title="Arraste para reordenar">⠿</span>
+      <span class="strategy-drag-handle" title="${escapeHtml(t("dragToReorder"))}">⠿</span>
       <div class="strategy-info">
-        <span class="strategy-name">${escapeHtml(STRATEGY_LABELS[entry.name] ?? entry.name)}</span>
-        <span class="strategy-desc">${escapeHtml(STRATEGY_DESCRIPTIONS[entry.name] ?? "")}</span>
+        <span class="strategy-name">${escapeHtml(t(STRATEGY_LABEL_KEYS[entry.name] ?? entry.name))}</span>
+        <span class="strategy-desc">${escapeHtml(t(STRATEGY_DESC_KEYS[entry.name] ?? ""))}</span>
       </div>
       <label class="toggle" style="flex-shrink: 0;">
         <input type="checkbox" class="strategy-toggle" data-name="${escapeHtml(entry.name)}" ${entry.enabled ? "checked" : ""} />
@@ -207,7 +276,7 @@ async function checkChromeAiStatus(): Promise<void> {
   block.style.display = "block";
 
   if (!LanguageModel) {
-    statusText.innerHTML = `<strong style="color: var(--danger)">Chrome AI não disponível.</strong> Requer Chrome 131+ com a flag <code>#prompt-api-for-gemini-nano</code> ativada em <code>chrome://flags</code>.`;
+    statusText.innerHTML = `<strong style="color: var(--danger)">${t("chromeAiNotAvailableHtml")}</strong>`;
     if (downloadBtn) downloadBtn.style.display = "none";
     return;
   }
@@ -215,17 +284,17 @@ async function checkChromeAiStatus(): Promise<void> {
   try {
     const result = await LanguageModel.availability?.({ outputLanguage: "en" });
     if (result === "available") {
-      statusText.innerHTML = `<strong style="color: var(--success)">✅ Chrome AI disponível e pronto para uso.</strong>`;
+      statusText.innerHTML = `<strong style="color: var(--success)">✅ ${t("chromeAiReady")}</strong>`;
       if (downloadBtn) downloadBtn.style.display = "none";
     } else if (result === "downloadable") {
-      statusText.innerHTML = `<strong style="color: #f59e0b">⚠️ Chrome AI disponível mas o modelo precisa ser baixado.</strong>`;
+      statusText.innerHTML = `<strong style="color: #f59e0b">⚠️ ${t("chromeAiDownloadable")}</strong>`;
       if (downloadBtn) downloadBtn.style.display = "";
     } else {
-      statusText.innerHTML = `<strong style="color: var(--text-muted)">Chrome AI status: <code>${String(result ?? "desconhecido")}</code>.</strong>`;
+      statusText.innerHTML = `<strong style="color: var(--text-muted)">${escapeHtml(t("chromeAiStatusHtml", [String(result ?? "desconhecido")]))}</strong>`;
       if (downloadBtn) downloadBtn.style.display = "none";
     }
   } catch {
-    statusText.innerHTML = `<strong style="color: var(--danger)">Erro ao verificar Chrome AI.</strong>`;
+    statusText.innerHTML = `<strong style="color: var(--danger)">${t("chromeAiCheckError")}</strong>`;
     if (downloadBtn) downloadBtn.style.display = "none";
   }
 }
@@ -239,15 +308,19 @@ async function loadSettings(): Promise<void> {
   (document.getElementById("setting-highlight") as HTMLInputElement).checked =
     settings.highlightFilled;
 
-  // Panel setting
-  (document.getElementById("setting-show-panel") as HTMLInputElement).checked =
-    settings.showPanel ?? false;
+  // Fill empty only
+  (
+    document.getElementById("setting-fill-empty-only") as HTMLInputElement
+  ).checked = settings.fillEmptyOnly ?? false;
 
   // Debug logging settings
   (document.getElementById("setting-debug-log") as HTMLInputElement).checked =
     settings.debugLog ?? false;
   (document.getElementById("setting-log-level") as HTMLSelectElement).value =
     settings.logLevel ?? "warn";
+  (
+    document.getElementById("setting-log-max-entries") as HTMLInputElement
+  ).value = String(settings.logMaxEntries ?? 1000);
 
   // Field icon settings
   (
@@ -256,6 +329,41 @@ async function loadSettings(): Promise<void> {
   (
     document.getElementById("setting-field-icon-position") as HTMLSelectElement
   ).value = settings.fieldIconPosition ?? "inside";
+
+  // Locale and UI language
+  const localeEl = document.getElementById(
+    "setting-locale",
+  ) as HTMLSelectElement | null;
+  if (localeEl) localeEl.value = settings.locale ?? "pt-BR";
+
+  const uiLangEl = document.getElementById(
+    "setting-ui-language",
+  ) as HTMLSelectElement | null;
+  if (uiLangEl) uiLangEl.value = settings.uiLanguage ?? "auto";
+
+  // Watcher settings
+  (
+    document.getElementById("setting-watcher-enabled") as HTMLInputElement
+  ).checked = settings.watcherEnabled ?? false;
+  (
+    document.getElementById("setting-watcher-auto-refill") as HTMLInputElement
+  ).checked = settings.watcherAutoRefill ?? false;
+  (
+    document.getElementById("setting-watcher-shadow-dom") as HTMLInputElement
+  ).checked = settings.watcherShadowDOM ?? false;
+  (
+    document.getElementById("setting-watcher-debounce") as HTMLInputElement
+  ).value = String(settings.watcherDebounceMs ?? 600);
+
+  // AI feedback settings
+  (
+    document.getElementById("setting-show-fill-toast") as HTMLInputElement
+  ).checked = settings.showFillToast ?? true;
+  (
+    document.getElementById("setting-show-ai-badge") as HTMLInputElement
+  ).checked = settings.showAiBadge ?? false;
+  (document.getElementById("setting-ai-timeout") as HTMLInputElement).value =
+    String(settings.aiTimeoutMs ?? 5000);
 
   // Detection pipeline
   renderStrategyList(settings.detectionPipeline ?? DEFAULT_DETECTION_PIPELINE);
@@ -277,8 +385,10 @@ function bindSettingsEvents(): void {
     "setting-highlight",
     "setting-cache-enabled",
     "setting-show-panel",
+    "setting-fill-empty-only",
     "setting-debug-log",
     "setting-log-level",
+    "setting-log-max-entries",
     "setting-strategy",
     "setting-locale",
   ]) {
@@ -295,21 +405,72 @@ function bindSettingsEvents(): void {
     .getElementById("setting-field-icon-position")
     ?.addEventListener("change", debouncedSaveFieldIcon);
 
+  // Watcher — auto-save on any change
+  const debouncedSaveWatcher = debounce(() => {
+    void saveWatcherSettings();
+  }, 300);
+  for (const id of [
+    "setting-watcher-enabled",
+    "setting-watcher-auto-refill",
+    "setting-watcher-shadow-dom",
+    "setting-watcher-debounce",
+  ]) {
+    const el = document.getElementById(id);
+    el?.addEventListener("change", debouncedSaveWatcher);
+    if (el?.tagName === "INPUT" && (el as HTMLInputElement).type === "number") {
+      el.addEventListener("input", debouncedSaveWatcher);
+    }
+  }
+
+  // AI feedback — auto-save on any change
+  const debouncedSaveAi = debounce(() => {
+    void saveAiSettings();
+  }, 300);
+  for (const id of [
+    "setting-show-fill-toast",
+    "setting-show-ai-badge",
+    "setting-ai-timeout",
+  ]) {
+    const el = document.getElementById(id);
+    el?.addEventListener("change", debouncedSaveAi);
+    if (el?.tagName === "INPUT" && (el as HTMLInputElement).type === "number") {
+      el.addEventListener("input", debouncedSaveAi);
+    }
+  }
+
+  // UI language — dedicated handler that re-localises the page
+  document
+    .getElementById("setting-ui-language")
+    ?.addEventListener("change", async (e) => {
+      const lang = (e.target as HTMLSelectElement)
+        .value as Settings["uiLanguage"];
+      await chrome.runtime.sendMessage({
+        type: "SAVE_SETTINGS",
+        payload: { uiLanguage: lang } as Partial<Settings>,
+      });
+      await initI18n(lang);
+      localizeHTML();
+      void loadSettings(); // re-render strategy list and other dynamic content
+      showToast(t("uiLanguageChanged"));
+    });
+
   document
     .getElementById("btn-download-chrome-ai")
     ?.addEventListener("click", async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const LanguageModel = (globalThis as any).LanguageModel as
-        | { create?: () => Promise<unknown> }
+        | { create?: (opts?: { outputLanguage?: string }) => Promise<unknown> }
         | undefined;
       if (!LanguageModel?.create) return;
       try {
-        await LanguageModel.create();
+        await LanguageModel.create({ outputLanguage: "en" });
         void checkChromeAiStatus();
-        showToast("Download do modelo Chrome AI iniciado!");
+        showToast(t("chromeAiDownloadStart"));
       } catch (err) {
         showToast(
-          `Erro ao iniciar download: ${err instanceof Error ? err.message : String(err)}`,
+          t("chromeAiDownloadError", [
+            err instanceof Error ? err.message : String(err),
+          ]),
           "error",
         );
       }

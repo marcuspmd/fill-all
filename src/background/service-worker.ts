@@ -18,6 +18,11 @@ import { initLogger, createLogger } from "@/lib/logger";
 void initLogger();
 const log = createLogger("ServiceWorker");
 
+// Allow content scripts to access chrome.storage.session for shared log store
+chrome.storage.session.setAccessLevel({
+  accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS",
+});
+
 // ── Context Menu ──────────────────────────────────────────────────────────────
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -43,6 +48,14 @@ const CONTENT_SCRIPT_MESSAGES = new Set([
   "TOGGLE_PANEL",
   "SHOW_PANEL",
   "HIDE_PANEL",
+  "EXPORT_E2E",
+  "START_RECORDING",
+  "STOP_RECORDING",
+  "PAUSE_RECORDING",
+  "RESUME_RECORDING",
+  "GET_RECORDING_STATUS",
+  "GET_RECORDING_STEPS",
+  "EXPORT_RECORDING",
 ]);
 
 chrome.runtime.onMessage.addListener(

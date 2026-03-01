@@ -6,3 +6,8 @@ dist/
 .ds_store
 *ds_store
 *DS_STORE
+coverage/
+.coverage/
+playwright-report/
+test-results/
+.env

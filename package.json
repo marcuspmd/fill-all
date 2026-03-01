@@ -1,6 +1,6 @@
 {
   "name": "fill-all",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Chrome extension to auto-fill forms using AI, rules, and Brazilian document generators",
   "private": true,
   "scripts": {
@@ -9,7 +9,16 @@
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
     "train:model": "tsx --tsconfig tsconfig.json scripts/train-model.ts",
-    "import:rules": "tsx --tsconfig tsconfig.json scripts/import-rules-to-dataset.ts"
+    "import:rules": "tsx --tsconfig tsconfig.json scripts/import-rules-to-dataset.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:coverage": "VITE_COVERAGE=true npm run build && playwright test",
+    "test:all": "vitest run && playwright test",
+    "coverage:merge": "tsx --tsconfig tsconfig.json scripts/merge-coverage.ts",
+    "coverage:all": "npm run test:coverage && npm run test:e2e:coverage && npm run coverage:merge"
   },
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
@@ -19,11 +28,23 @@
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.3.0",
+    "@playwright/test": "^1.58.2",
     "@types/chrome": "^0.0.287",
+    "@types/istanbul-lib-coverage": "^2.0.6",
+    "@types/istanbul-lib-report": "^3.0.3",
+    "@types/istanbul-reports": "^3.0.4",
     "@types/node": "^22.19.11",
+    "@vitest/coverage-istanbul": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "happy-dom": "^20.7.0",
+    "istanbul-lib-coverage": "^3.2.2",
+    "istanbul-lib-report": "^3.0.1",
+    "istanbul-reports": "^3.2.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vite-plugin-istanbul": "^7.2.1",
+    "vitest": "^4.0.18"
   },
   "author": "marcusp",
   "license": "MIT"

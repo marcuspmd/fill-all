@@ -209,6 +209,28 @@ Usuário aciona ──▶ Background roteia ──▶ Content Script detecta cam
 | `npm run import:rules` | Importa regras exportadas para o dataset |
 | `npm run clean` | Limpa a pasta `dist/` |
 
+### Testes
+
+| Comando | Descrição |
+|---------|----------|
+| `npm test` | Testes unitários (Vitest) |
+| `npm run test:watch` | Unitários em modo watch |
+| `npm run test:coverage` | Unitários + coverage → `.coverage/unit/` |
+| `npm run test:e2e` | Testes E2E com Playwright (Chrome real) |
+| `npm run test:e2e:ui` | Testes E2E com UI interativa do Playwright |
+| `npm run test:e2e:coverage` | Build + E2E + coleta de coverage → `.coverage/e2e/` |
+| `npm run test:all` | Unitários → E2E em sequência |
+| `npm run coverage:merge` | Merge coverage unit + E2E → `coverage/index.html` |
+| `npm run coverage:all` | Coverage completo (unit + E2E + merge) |
+
+Testes E2E que queiram ter coverage rastreado devem importar de:
+
+```typescript
+import { test, expect } from "@/__tests__/e2e/fixtures";
+```
+
+O fixture `_coverage` é `auto: true` — roda automaticamente para cada teste sem chamada explícita.
+
 ## 🛠️ Stack Tecnológica
 
 | Camada | Tecnologia | Propósito |

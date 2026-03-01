@@ -59,6 +59,22 @@ export async function getSavedFormsForUrl(url: string): Promise<SavedForm[]> {
   return forms.filter((form) => matchUrlPattern(url, form.urlPattern));
 }
 
+/**
+ * Sets one form as the default, clearing `isDefault` from all others.
+ * @param formId - The form to mark as default
+ */
+export async function setDefaultForm(formId: string): Promise<void> {
+  await updateStorageAtomically(
+    STORAGE_KEYS.SAVED_FORMS,
+    [] as SavedForm[],
+    (forms) =>
+      forms.map((f) => ({
+        ...f,
+        isDefault: f.id === formId ? true : undefined,
+      })),
+  );
+}
+
 /** Type-safe repository implementation for saved forms */
 export const formsRepository: MutableStorageRepository<SavedForm> &
   UrlFilterableRepository<SavedForm> = {

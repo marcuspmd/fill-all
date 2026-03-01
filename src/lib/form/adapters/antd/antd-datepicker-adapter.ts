@@ -42,11 +42,16 @@ export const antdDatepickerAdapter: CustomComponentAdapter = {
   buildField(wrapper: HTMLElement): FormField {
     const input = wrapper.querySelector<HTMLInputElement>("input");
 
+    // antd v5 TimePicker adds .ant-picker-time to the wrapper
+    const isTimePicker = wrapper.classList.contains("ant-picker-time");
+
     const field: FormField = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
       fieldType: "date",
+      isInteractive: true,
+      interactiveType: isTimePicker ? "time-picker" : "date-picker",
       adapterName: "antd-datepicker",
       label: findAntLabel(wrapper),
       id: findAntId(wrapper) ?? input?.id ?? undefined,

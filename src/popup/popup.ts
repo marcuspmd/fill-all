@@ -33,6 +33,7 @@ import {
   escapeHtml,
 } from "./popup-messaging";
 import { initChromeAIStatus } from "./popup-chrome-ai";
+import { t, initI18n } from "@/lib/i18n";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,8 +49,12 @@ type TabId = (typeof TAB_IDS)[number];
 // };
 
 const TAB_LABELS: Record<TabId, string> = {
-  actions: "⚡ Ações",
-  generators: "🎲 Gerar",
+  get actions() {
+    return `⚡ ${t("tabActions")}`;
+  },
+  get generators() {
+    return `🎲 ${t("tabGenerators")}`;
+  },
 };
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -60,7 +65,7 @@ let savedForms: SavedForm[] = [];
 let ignoredFields: IgnoredField[] = [];
 let ignoredSelectors = new Set<string>();
 let watcherActive = false;
-let panelActive = false;
+let fillEmptyOnly = false;
 let pageUrl = "";
 
 const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> =
@@ -117,29 +122,31 @@ function renderActionsTab(): void {
     <div class="actions-grid">
       <button class="action-card primary" id="btn-fill-all">
         <span class="card-icon">⚡</span>
-        <span class="card-label">Preencher Tudo</span>
-        <span class="card-desc">Preenche todos os campos detectados</span>
+        <span class="card-label">${t("fillAll")}</span>
+        <span class="card-desc">${t("fillAllDesc")}</span>
       </button>
       <button class="action-card secondary" id="btn-save-form">
         <span class="card-icon">💾</span>
-        <span class="card-label">Salvar Form</span>
-        <span class="card-desc">Salva os valores atuais do formulário</span>
+        <span class="card-label">${t("saveForm")}</span>
+        <span class="card-desc">${t("saveFormDesc")}</span>
       </button>
       <button class="action-card ${watcherActive ? "active" : ""}" id="btn-toggle-watch">
         <span class="card-icon">${watcherActive ? "⏹️" : "👁️"}</span>
-        <span class="card-label">${watcherActive ? "Stop Watch" : "Watch"}</span>
-        <span class="card-desc">${watcherActive ? "Parar observação do DOM" : "Observa mudanças e preenche novos"}</span>
-      </button>
-      <button class="action-card ${panelActive ? "active" : ""}" id="btn-toggle-panel">
-        <span class="card-icon">📌</span>
-        <span class="card-label">${panelActive ? "Painel Ativo" : "Painel Flutuante"}</span>
-        <span class="card-desc">Mostra painel flutuante na página</span>
+        <span class="card-label">${watcherActive ? t("stopWatch") : t("watch")}</span>
+        <span class="card-desc">${watcherActive ? t("stopWatchDesc") : t("watchDesc")}</span>
       </button>
     </div>
     <div class="status-bar" id="status-bar">
-      ${detectedFields.length > 0 ? `${detectedFields.length} campos detectados` : "Nenhum campo detectado ainda"}
+      ${detectedFields.length > 0 ? `${detectedFields.length} ${t("fieldsDetected")}` : t("noFieldsDetected")}
     </div>
-    <a href="#" id="btn-options" class="btn-settings-link">⚙️ Configurações</a>
+    <div class="fill-option-row">
+      <label class="fill-option-label" for="toggle-fill-empty-only">${t("fillEmptyOnly")}</label>
+      <label class="fill-option-toggle">
+        <input type="checkbox" id="toggle-fill-empty-only" ${fillEmptyOnly ? "checked" : ""} />
+        <span class="slider"></span>
+      </label>
+    </div>
+    <a href="#" id="btn-options" class="btn-settings-link">${t("btnSettings")}</a>
   `;
 
   document
@@ -152,8 +159,8 @@ function renderActionsTab(): void {
     .getElementById("btn-toggle-watch")
     ?.addEventListener("click", handleToggleWatch);
   document
-    .getElementById("btn-toggle-panel")
-    ?.addEventListener("click", handleTogglePanel);
+    .getElementById("toggle-fill-empty-only")
+    ?.addEventListener("change", handleFillEmptyOnlyToggle);
   bindOptionsLink();
 }
 
@@ -166,10 +173,10 @@ async function handleFillAll(): Promise<void> {
   if (label) {
     label.textContent =
       result === null
-        ? "⚠️ Não disponível"
-        : `✓ ${res?.filled ?? 0} preenchidos`;
+        ? t("notAvailable")
+        : `✓ ${res?.filled ?? 0} ${t("filled")}`;
     setTimeout(() => {
-      label.textContent = "Preencher Tudo";
+      label.textContent = t("fillAll");
     }, 2000);
   }
 }
@@ -193,18 +200,12 @@ async function handleToggleWatch(): Promise<void> {
   renderActionsTab();
 }
 
-async function handleTogglePanel(): Promise<void> {
-  panelActive = !panelActive;
+async function handleFillEmptyOnlyToggle(): Promise<void> {
+  fillEmptyOnly = !fillEmptyOnly;
   await chrome.runtime.sendMessage({
     type: "SAVE_SETTINGS",
-    payload: { showPanel: panelActive },
+    payload: { fillEmptyOnly },
   });
-  if (panelActive) {
-    await sendToActiveTab({ type: "SHOW_PANEL" });
-  } else {
-    await sendToActiveTab({ type: "HIDE_PANEL" });
-  }
-  renderActionsTab();
 }
 
 // ── Fields Tab ───────────────────────────────────────────────────────────────
@@ -215,9 +216,9 @@ function renderFieldsTab(): void {
 
   content.innerHTML = `
     <div class="fields-toolbar">
-      <button class="btn btn-primary-solid" id="btn-detect">🔍 Detectar</button>
-      <button class="btn" id="btn-fill-all-fields">⚡ Preencher Todos</button>
-      <span class="fields-count">${detectedFields.length} campo(s)</span>
+      <button class="btn btn-primary-solid" id="btn-detect">🔍 ${t("btnDetect")}</button>
+      <button class="btn" id="btn-fill-all-fields">⚡ ${t("btnFillAll")}</button>
+      <span class="fields-count">${detectedFields.length} ${t("fieldCount")}</span>
     </div>
     <div id="fields-list"></div>
   `;
@@ -237,8 +238,7 @@ function renderFieldsList(): void {
   if (!list) return;
 
   if (detectedFields.length === 0) {
-    list.innerHTML =
-      '<div class="empty">Clique em "Detectar" para escanear os campos</div>';
+    list.innerHTML = `<div class="empty">${t("clickToDetect")}</div>`;
     return;
   }
 
@@ -248,12 +248,12 @@ function renderFieldsList(): void {
         <thead>
           <tr>
             <th>#</th>
-            <th>Tipo</th>
-            <th>Método</th>
-            <th>Conf.</th>
-            <th>ID / Name</th>
-            <th>Label</th>
-            <th>Ações</th>
+            <th>${t("columnType")}</th>
+            <th>${t("columnMethod")}</th>
+            <th>${t("columnConf")}</th>
+            <th>${t("columnIdName")}</th>
+            <th>${t("columnLabel")}</th>
+            <th>${t("columnActions")}</th>
           </tr>
         </thead>
         <tbody>
@@ -270,8 +270,8 @@ function renderFieldsList(): void {
               <td class="cell-mono">${escapeHtml(f.id || f.name || "-")}</td>
               <td>${escapeHtml(f.label || "-")}</td>
               <td class="cell-actions">
-                <button class="icon-btn" data-action="fill" data-selector="${escapeHtml(f.selector)}" title="Preencher">⚡</button>
-                <button class="icon-btn ${isIgnored ? "icon-btn-off" : ""}" data-action="toggle-ignore" data-selector="${escapeHtml(f.selector)}" data-label="${escapeHtml(f.label || f.name || f.id || f.selector)}" title="${isIgnored ? "Reativar" : "Ignorar"}">
+                <button class="icon-btn" data-action="fill" data-selector="${escapeHtml(f.selector)}" title="${t("actionFill")}">⚡</button>
+                <button class="icon-btn ${isIgnored ? "icon-btn-off" : ""}" data-action="toggle-ignore" data-selector="${escapeHtml(f.selector)}" data-label="${escapeHtml(f.label || f.name || f.id || f.selector)}" title="${isIgnored ? t("actionReactivate") : t("actionIgnore")}">
                   ${isIgnored ? "🚫" : "👁️"}
                 </button>
               </td>
@@ -304,7 +304,7 @@ async function handleDetect(): Promise<void> {
   const btn = document.getElementById("btn-detect") as HTMLButtonElement | null;
   if (btn) {
     btn.disabled = true;
-    btn.textContent = "⏳ Detectando...";
+    btn.textContent = t("detecting");
   }
 
   try {
@@ -330,7 +330,7 @@ async function handleDetect(): Promise<void> {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = "🔍 Detectar";
+      btn.textContent = `🔍 ${t("btnDetect")}`;
     }
   }
 }
@@ -373,13 +373,13 @@ function renderFormsTab(): void {
 
   content.innerHTML = `
     <div class="fields-toolbar">
-      <button class="btn" id="btn-load-forms">🔄 Carregar</button>
-      <span class="fields-count">${savedForms.length} formulário(s)</span>
+      <button class="btn" id="btn-load-forms">🔄 ${t("btnLoadForms")}</button>
+      <span class="fields-count">${savedForms.length} ${t("fieldCount")}</span>
     </div>
     <div class="forms-list" id="forms-list">
       ${
         savedForms.length === 0
-          ? '<div class="empty">Clique em "Carregar" para buscar formulários salvos</div>'
+          ? `<div class="empty">${t("clickToLoadForms")}</div>`
           : savedForms
               .map(
                 (form) => `
@@ -624,8 +624,8 @@ function updateStatusBar(): void {
   if (bar) {
     bar.textContent =
       detectedFields.length > 0
-        ? `${detectedFields.length} campos detectados`
-        : "Nenhum campo detectado ainda";
+        ? `${detectedFields.length} ${t("fieldsDetected")}`
+        : t("noFieldsDetected");
   }
 }
 
@@ -653,14 +653,18 @@ async function init(): Promise<void> {
     loadIgnoredData(),
     chrome.runtime.sendMessage({ type: "GET_SETTINGS" }) as Promise<{
       showPanel?: boolean;
+      uiLanguage?: "auto" | "en" | "pt_BR" | "es";
+      fillEmptyOnly?: boolean;
     } | null>,
     sendToActiveTab({ type: "GET_WATCHER_STATUS" }).catch(
       () => null,
     ) as Promise<{ watching: boolean } | null>,
   ]);
 
-  panelActive = settings?.showPanel ?? false;
+  fillEmptyOnly = settings?.fillEmptyOnly ?? false;
   watcherActive = watcherStatus?.watching ?? false;
+
+  await initI18n(settings?.uiLanguage ?? "auto");
 
   // Load forms in background
   void loadFormsData();

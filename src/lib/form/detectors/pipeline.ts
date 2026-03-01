@@ -7,7 +7,7 @@
  * Usage:
  *
  *   // use the default pipeline (html-type → keyword → tensorflow → html-fallback)
- *   const result = DEFAULT_PIPELINE.run(field);
+ *   const result = await DEFAULT_PIPELINE.runAsync(field);
  *
  *   // custom order — skip chrome-ai, put tensorflow before keyword
  *   const myPipeline = DEFAULT_PIPELINE.withOrder([
@@ -72,61 +72,8 @@ export class DetectionPipeline {
   constructor(readonly classifiers: ReadonlyArray<FieldClassifier>) {}
 
   /**
-   * Run classifiers in order, returning the first confident result.
-   * Falls back to { type: "unknown", method: "html-fallback", confidence: 0.1 }
-   * if no classifier produces a match.
-   */
-  run(field: FormField): PipelineResult {
-    const t0 = performance.now();
-    const timings: PipelineResult["timings"] = [];
-    const predictions: PipelineResult["predictions"] = [];
-    const decisionTrace: string[] = [];
-
-    for (const classifier of this.classifiers) {
-      const ct = performance.now();
-      const result = classifier.detect(field);
-      const classifierMs = performance.now() - ct;
-      timings.push({ strategy: classifier.name, durationMs: classifierMs });
-
-      if (result === null) {
-        decisionTrace.push(`${classifier.name}: null — skipped`);
-      } else if (result.type === "unknown") {
-        decisionTrace.push(
-          `${classifier.name}: unknown (${(result.confidence * 100).toFixed(0)}%) — skipped`,
-        );
-        predictions.push({ type: result.type, confidence: result.confidence });
-      } else {
-        predictions.push({ type: result.type, confidence: result.confidence });
-        decisionTrace.push(
-          `${classifier.name}: ${result.type} (${(result.confidence * 100).toFixed(0)}%) — selected`,
-        );
-        return {
-          ...result,
-          method: classifier.name,
-          durationMs: performance.now() - t0,
-          timings,
-          predictions,
-          decisionTrace,
-        };
-      }
-    }
-    decisionTrace.push("html-fallback: unknown — no classifier matched");
-    return {
-      type: "unknown",
-      method: "html-fallback",
-      confidence: 0.1,
-      durationMs: performance.now() - t0,
-      timings,
-      predictions,
-      decisionTrace,
-    };
-  }
-
-  /**
-   * Async variant of `run`. Prefers `detectAsync` when available on a classifier
+   * Async variant — prefers `detectAsync` when available on a classifier
    * (e.g. Chrome AI), falling back to the synchronous `detect` for all others.
-   * This allows async strategies to participate in the pipeline without breaking
-   * the synchronous API used by dom-watcher and other sync callers.
    */
   async runAsync(field: FormField): Promise<PipelineResult> {
     const t0 = performance.now();

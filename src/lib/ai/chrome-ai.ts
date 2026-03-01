@@ -6,13 +6,22 @@
 
 import type { FormField } from "@/types";
 import { createLogger } from "@/lib/logger";
+import {
+  fieldValueGeneratorPrompt,
+  renderSystemPrompt,
+} from "@/lib/ai/prompts";
+import type { FieldValueInput } from "@/lib/ai/prompts";
 
 const log = createLogger("ChromeAI");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const newApi = (globalThis as any).LanguageModel as
-  | LanguageModelStatic
-  | undefined;
+/**
+ * Lazily resolves the LanguageModel API from globalThis.
+ * Evaluated on every call so it works even when the API is injected after module load.
+ */
+function getLanguageModelApi(): LanguageModelStatic | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (globalThis as any).LanguageModel as LanguageModelStatic | undefined;
+}
 
 let session: LanguageModelSession | null = null;
 
@@ -23,13 +32,23 @@ let session: LanguageModelSession | null = null;
  */
 export async function isAvailable(): Promise<boolean> {
   try {
-    if (!newApi) {
+    const api = getLanguageModelApi();
+    if (!api) {
+      const context =
+        typeof globalThis !== "undefined"
+          ? Object.getOwnPropertyNames(globalThis).filter((k) =>
+              /ai|language|model|prompt/i.test(k),
+            )
+          : [];
       log.warn(
-        "LanguageModel API não encontrada no globalThis. Chrome AI indisponível.",
+        `LanguageModel API não encontrada no globalThis. ` +
+          `Contexto: ${typeof self !== "undefined" ? "service-worker" : "unknown"}, ` +
+          `AI-related keys: [${context.length > 0 ? context.join(", ") : "nenhuma"}]. ` +
+          `Chrome AI indisponível.`,
       );
       return false;
     }
-    const result = await newApi.availability({ outputLanguage: "en" });
+    const result = await api.availability({ outputLanguage: "en" });
     log.debug(`availability() retornou: "${result}"`);
     const available = result === "available" || result === "downloadable";
     if (!available) {
@@ -55,27 +74,22 @@ export async function getSession(): Promise<LanguageModelSession | null> {
 
   log.debug("Criando nova sessão...");
 
-  const systemPrompt = `You are a form field value generator. When given information about a form field (its label, name, type, placeholder), you generate a single realistic test value for it. Rules:
-- Return ONLY the value, no explanations
-- Use Brazilian Portuguese when generating names, addresses, etc.
-- Generate valid CPFs, CNPJs when asked
-- For dates, use ISO format (YYYY-MM-DD) unless the placeholder suggests otherwise
-- For emails, use realistic-looking addresses
-- Keep values concise and appropriate for the field`;
+  const systemPrompt = renderSystemPrompt(fieldValueGeneratorPrompt);
 
-  if (!newApi) {
+  const api = getLanguageModelApi();
+  if (!api) {
     log.warn("Chrome AI API não encontrada — sessão não criada.");
     return null;
   }
 
-  const avail = await newApi.availability({ outputLanguage: "en" });
+  const avail = await api.availability({ outputLanguage: "en" });
   if (avail === "unavailable") {
     log.warn(
       "Chrome AI indisponível (status: unavailable) — sessão não criada.",
     );
     return null;
   }
-  session = await newApi.create({ systemPrompt, outputLanguage: "en" });
+  session = await api.create({ systemPrompt, outputLanguage: "en" });
   log.debug("Sessão criada com sucesso.");
   return session!;
 }
@@ -97,19 +111,17 @@ export async function generateFieldValue(field: FormField): Promise<string> {
     return "";
   }
 
-  const context = [
-    field.label && `Label: ${field.label}`,
-    field.name && `Name: ${field.name}`,
-    field.id && `ID: ${field.id}`,
-    field.placeholder && `Placeholder: ${field.placeholder}`,
-    field.autocomplete && `Autocomplete: ${field.autocomplete}`,
-    `Type: ${(field.element as HTMLInputElement).type || "text"}`,
-    `Detected as: ${field.fieldType}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const input: FieldValueInput = {
+    label: field.label,
+    name: field.name,
+    id: field.id,
+    placeholder: field.placeholder,
+    autocomplete: field.autocomplete,
+    inputType: (field.element as HTMLInputElement).type || "text",
+    fieldType: field.fieldType,
+  };
 
-  const prompt = `Generate a realistic test value for this form field:\n${context}`;
+  const prompt = fieldValueGeneratorPrompt.buildPrompt(input);
 
   log.groupCollapsed(
     `Prompt → campo: "${field.label ?? field.name ?? field.selector}"`,
@@ -126,6 +138,30 @@ export async function generateFieldValue(field: FormField): Promise<string> {
   log.debug('\u25c4 Valor final (trimmed): "' + result.trim() + '"');
   log.groupEnd();
 
+  return result.trim();
+}
+
+/**
+ * Generates a value from serializable field metadata — no DOM element needed.
+ * Used by the background handler when proxying AI_GENERATE from content scripts.
+ */
+export async function generateFieldValueFromInput(
+  input: FieldValueInput,
+): Promise<string> {
+  log.debug(
+    `Gerando valor via input: label="${input.label ?? ""}" name="${input.name ?? ""}" type="${input.fieldType}"`,
+  );
+
+  const aiSession = await getSession();
+  if (!aiSession) {
+    log.warn("Sessão Chrome AI indisponível — não é possível gerar valor.");
+    return "";
+  }
+
+  const prompt = fieldValueGeneratorPrompt.buildPrompt(input);
+  const result = await aiSession.prompt(prompt);
+
+  log.debug(`Resposta (input proxy): "${result.trim()}"`);
   return result.trim();
 }
 

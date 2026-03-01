@@ -10,6 +10,7 @@ import {
   cacheHandler,
   learningHandler,
   datasetHandler,
+  aiHandler,
 } from "./handlers";
 
 const ALL_HANDLERS: ReadonlyArray<MessageHandler> = [
@@ -18,6 +19,7 @@ const ALL_HANDLERS: ReadonlyArray<MessageHandler> = [
   cacheHandler,
   learningHandler,
   datasetHandler,
+  aiHandler,
 ];
 
 /** Pre-built map: MessageType → MessageHandler for O(1) dispatch */

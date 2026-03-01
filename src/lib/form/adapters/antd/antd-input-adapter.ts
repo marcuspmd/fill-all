@@ -44,18 +44,51 @@ export const antdInputAdapter: CustomComponentAdapter = {
       "input, textarea",
     );
 
+    // ant-input-number always wraps a numeric spinbutton — classify it directly
+    // so downstream classifiers never misidentify it as select or text.
+    const isInputNumber = wrapper.classList.contains("ant-input-number");
+
+    const nativeType =
+      input instanceof HTMLInputElement ? input.type : undefined;
+    const autocomplete =
+      input instanceof HTMLInputElement
+        ? (input.getAttribute("autocomplete") ?? undefined)
+        : undefined;
+
+    // Only resolve fieldType for unambiguous native HTML types (confidence 1.0).
+    // Everything else stays "unknown" so TF.js / keyword / Chrome-AI classifiers
+    // can use contextSignals (label + name + placeholder + autocomplete) properly.
+    const resolvedFieldType = ((): FormField["fieldType"] => {
+      if (isInputNumber) return "number";
+      if (nativeType === "email") return "email";
+      if (nativeType === "tel") return "phone";
+      if (nativeType === "url") return "website";
+      if (nativeType === "password") return "password";
+      if (nativeType === "number") return "number";
+      if (nativeType === "date") return "date";
+      if (
+        nativeType &&
+        ["time", "datetime-local", "month", "week"].includes(nativeType)
+      )
+        return "date";
+      return "unknown";
+    })();
+
     const field: FormField = {
       element: wrapper,
       selector: getUniqueSelector(wrapper),
       category: "unknown",
-      fieldType: "unknown",
+      fieldType: resolvedFieldType,
       adapterName: "antd-input",
       label: findAntLabel(wrapper),
       name: findAntName(wrapper) ?? input?.name ?? undefined,
       id: findAntId(wrapper) ?? input?.id ?? undefined,
       placeholder: input?.placeholder || undefined,
+      // Expose autocomplete so buildSignals includes it in contextSignals,
+      // giving TF.js / keyword classifier a strong classification signal.
+      autocomplete: autocomplete || undefined,
       required: isAntRequired(wrapper),
-      inputType: input instanceof HTMLInputElement ? input.type : undefined,
+      inputType: nativeType,
       pattern:
         input instanceof HTMLInputElement && input.pattern
           ? input.pattern

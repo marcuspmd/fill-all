@@ -15,11 +15,12 @@ import {
   adaptGeneratedValue,
   generateWithConstraints,
 } from "@/lib/generators/adaptive";
+import { detectDateFormat, reformatDate } from "@/lib/generators/date";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("RuleEngine");
 
-const AI_TIMEOUT_MS = 5000;
+const DEFAULT_AI_TIMEOUT_MS = 5000;
 
 /**
  * Generator keys where AI genuinely adds value (free-text / open-ended).
@@ -44,15 +45,43 @@ const GENERATOR_ONLY_TYPES = new Set<FieldType>(
   ).map((d) => d.type),
 );
 
+/**
+ * Field types that produce date-like values (ISO strings).
+ * For these, we detect the display format expected by the field and reformat
+ * the generated ISO string accordingly before returning it.
+ */
+const DATE_FIELD_TYPES = new Set<FieldType>([
+  "date",
+  "birth-date",
+  "start-date",
+  "end-date",
+  "due-date",
+]);
+
+/**
+ * Generates a date value for a field, formatted according to the field's
+ * detected expected format (ISO, BR, or US).
+ */
+function generateDateForField(fieldType: FieldType, field: FormField): string {
+  const isoDate = generate(fieldType);
+  const format = detectDateFormat({
+    inputType: field.inputType,
+    placeholder: field.placeholder,
+    pattern: field.pattern,
+  });
+  return reformatDate(isoDate, format);
+}
+
 /** Wraps an AI call with a hard timeout so it never blocks indefinitely. */
 async function callAiWithTimeout(
   fn: (field: FormField) => Promise<string>,
   field: FormField,
   context: string,
+  timeoutMs = DEFAULT_AI_TIMEOUT_MS,
 ): Promise<string> {
   const label = field.label ?? field.id ?? field.selector;
   log.info(
-    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${AI_TIMEOUT_MS}ms)...`,
+    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${timeoutMs}ms)...`,
   );
   const start = Date.now();
 
@@ -60,8 +89,8 @@ async function callAiWithTimeout(
     fn(field),
     new Promise<string>((_, reject) =>
       setTimeout(
-        () => reject(new Error(`AI timeout (${AI_TIMEOUT_MS}ms)`)),
-        AI_TIMEOUT_MS,
+        () => reject(new Error(`AI timeout (${timeoutMs}ms)`)),
+        timeoutMs,
       ),
     ),
   ]);
@@ -86,6 +115,7 @@ export async function resolveFieldValue(
   url: string,
   aiGenerateFn?: (field: FormField) => Promise<string>,
   forceAIFirst = false,
+  aiTimeoutMs = DEFAULT_AI_TIMEOUT_MS,
 ): Promise<GenerationResult> {
   const selector = field.selector;
 
@@ -105,6 +135,7 @@ export async function resolveFieldValue(
         aiGenerateFn,
         field,
         "forceAIFirst",
+        aiTimeoutMs,
       );
       const value = adaptGeneratedValue(aiValue, {
         element: field.element,
@@ -164,17 +195,29 @@ export async function resolveFieldValue(
       matchingRule.generator !== "tensorflow"
     ) {
       const ruleGenerator = matchingRule.generator as FieldType;
-      const value = generateWithConstraints(() => generate(ruleGenerator), {
-        element: field.element,
-        requireValidity: false,
-      });
+      if (DATE_FIELD_TYPES.has(ruleGenerator)) {
+        const value = generateDateForField(ruleGenerator, field);
+        return { fieldSelector: selector, value, source: "generator" };
+      }
+      const value = generateWithConstraints(
+        () => generate(ruleGenerator, matchingRule.generatorParams),
+        {
+          element: field.element,
+          requireValidity: false,
+        },
+      );
       return { fieldSelector: selector, value, source: "generator" };
     }
 
     // If the rule says to use AI
     if (matchingRule.generator === "ai" && aiGenerateFn) {
       try {
-        const aiValue = await callAiWithTimeout(aiGenerateFn, field, "rule:ai");
+        const aiValue = await callAiWithTimeout(
+          aiGenerateFn,
+          field,
+          "rule:ai",
+          aiTimeoutMs,
+        );
         const value = adaptGeneratedValue(aiValue, {
           element: field.element,
           requireValidity: false,
@@ -188,6 +231,11 @@ export async function resolveFieldValue(
 
   // 5. Default generator based on detected field type
   const effectiveType = getEffectiveFieldType(field);
+  if (DATE_FIELD_TYPES.has(effectiveType)) {
+    const value = generateDateForField(effectiveType, field);
+    log.debug(`Gerador de data (${effectiveType}, detectado): "${value}"`);
+    return { fieldSelector: selector, value, source: "generator" };
+  }
   const value = generateWithConstraints(() => generate(effectiveType), {
     element: field.element,
     requireValidity: true,
@@ -238,6 +286,7 @@ export async function resolveFieldValue(
         aiGenerateFn,
         field,
         "último recurso",
+        aiTimeoutMs,
       );
       const adaptedAiValue = adaptGeneratedValue(aiValue, {
         element: field.element,

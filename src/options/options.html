@@ -3,31 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fill All - Configurações</title>
+  <title data-i18n="optionsPageTitle">Fill All — Settings</title>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>⚙️ Fill All — Configurações</h1>
+      <h1 data-i18n="optionsHeader">⚙️ Fill All — Settings</h1>
     </header>
 
     <div class="tabs">
-      <button class="tab active" data-tab="settings">Geral</button>
-      <button class="tab" data-tab="rules">Regras</button>
-      <button class="tab" data-tab="forms">Formulários Salvos</button>
-      <button class="tab" data-tab="dataset">Dataset & Treino</button>
-      <button class="tab" data-tab="cache">Cache & Aprendizado</button>
+      <button class="tab active" data-tab="settings" data-i18n="tabGeneral">General</button>
+      <button class="tab" data-tab="rules" data-i18n="tabRules">Rules</button>
+      <button class="tab" data-tab="forms" data-i18n="tabSavedForms">Saved Forms</button>
+      <button class="tab" data-tab="dataset" data-i18n="tabDataset">Dataset &amp; Training</button>
+      <button class="tab" data-tab="cache" data-i18n="tabCacheAndLearning">Cache &amp; Learning</button>
+      <button class="tab" data-tab="log" data-i18n="tabLog">Log</button>
     </div>
 
     <!-- Settings Tab -->
     <div class="tab-content active" id="tab-settings">
+
+      <!-- Language & Locale Card -->
       <div class="card">
-        <h2>Configurações Gerais</h2>
+        <h2 data-i18n="settingLanguageTitle">Language &amp; Locale</h2>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="setting-ui-language" data-i18n="settingUiLanguage">Interface language:</label>
+          <select id="setting-ui-language">
+            <option value="auto" data-i18n="uiLangAuto">Auto (browser default)</option>
+            <option value="en" data-i18n="uiLangEn">English</option>
+            <option value="pt_BR" data-i18n="uiLangPtBr">Português (Brasil)</option>
+            <option value="es" data-i18n="uiLangEs">Español</option>
+          </select>
+          <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--text-muted);" data-i18n="settingUiLanguageDesc">
+            Select the language for the extension interface.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="setting-locale" data-i18n="settingDataLocale">Data generation locale:</label>
+          <select id="setting-locale">
+            <option value="pt-BR" data-i18n="localePtBr">Português (Brasil)</option>
+            <option value="en-US" data-i18n="localeEnUs">English (US)</option>
+          </select>
+          <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--text-muted);" data-i18n="settingDataLocaleDesc">
+            Controls the format of generated data (CPF/CNPJ for pt-BR, SSN/EIN for en-US).
+          </div>
+        </div>
+
+      </div>
+
+      <!-- General Settings Card -->
+      <div class="card">
+        <h2 data-i18n="settingsGeneralTitle">General Settings</h2>
 
         <div class="toggle-group">
           <div>
-            <label>Destacar campos preenchidos</label>
-            <div class="description">Adiciona borda visual e exibe o nome detectado nos campos preenchidos</div>
+            <label data-i18n="settingHighlight">Highlight filled fields</label>
+            <div class="description" data-i18n="settingHighlightDesc">Adds a visual border and shows the detected name on filled fields</div>
           </div>
           <label class="toggle">
             <input type="checkbox" id="setting-highlight" />
@@ -37,8 +70,8 @@
 
         <div class="toggle-group">
           <div>
-            <label>Cache de detecção</label>
-            <div class="description">Guarda campos detectados por URL para carregamento rápido no popup</div>
+            <label data-i18n="settingCacheEnabled">Detection cache</label>
+            <div class="description" data-i18n="settingCacheEnabledDesc">Stores detected fields per URL for fast popup loading</div>
           </div>
           <label class="toggle">
             <input type="checkbox" id="setting-cache-enabled" />
@@ -48,19 +81,19 @@
 
         <div class="toggle-group">
           <div>
-            <label>Painel Flutuante</label>
-            <div class="description">Exibe automaticamente o painel flutuante de controles em todas as páginas</div>
+            <label data-i18n="settingFillEmptyOnly">Fill only empty fields</label>
+            <div class="description" data-i18n="settingFillEmptyOnlyDesc">Skips fields that already have a value</div>
           </div>
           <label class="toggle">
-            <input type="checkbox" id="setting-show-panel" />
+            <input type="checkbox" id="setting-fill-empty-only" />
             <span class="slider"></span>
           </label>
         </div>
 
         <div class="toggle-group" style="margin-top: 16px">
           <div>
-            <label>Logs de diagnóstico</label>
-            <div class="description">Exibe mensagens de depuração no console do navegador</div>
+            <label data-i18n="settingDebugLogs">Diagnostic logs</label>
+            <div class="description" data-i18n="settingDebugLogsDesc">Shows debug messages in the browser console</div>
           </div>
           <label class="toggle">
             <input type="checkbox" id="setting-debug-log" />
@@ -69,28 +102,34 @@
         </div>
 
         <div class="form-group" id="log-level-group" style="margin-top: 8px">
-          <label for="setting-log-level">Nível mínimo de log:</label>
+          <label for="setting-log-level" data-i18n="settingLogLevel">Minimum log level:</label>
           <select id="setting-log-level">
-            <option value="debug">Debug (tudo)</option>
-            <option value="info">Info</option>
-            <option value="warn">Warn</option>
-            <option value="error">Error (somente erros)</option>
+            <option value="debug" data-i18n="logLevelDebug">Debug (all)</option>
+            <option value="info" data-i18n="logLevelInfo">Info</option>
+            <option value="warn" data-i18n="logLevelWarn">Warn</option>
+            <option value="error" data-i18n="logLevelError">Error (errors only)</option>
+            <option value="audit" data-i18n="logLevelAudit">Audit (fills only)</option>
           </select>
+        </div>
+
+        <div class="form-group" id="log-max-entries-group" style="margin-top: 8px">
+          <label for="setting-log-max-entries" data-i18n="settingLogMaxEntries">Max log entries (buffer):</label>
+          <input id="setting-log-max-entries" type="number" min="100" max="10000" step="100" value="1000" style="width: 90px;" />
         </div>
 
       </div>
 
       <!-- Field Icon Card -->
       <div class="card">
-        <h2>Ícone de Campo</h2>
-        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
-          Configure a exibição do ícone de preenchimento rápido que aparece ao focar em um campo.
+        <h2 data-i18n="fieldIconTitle">Field Icon</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;" data-i18n="fieldIconConfigDesc">
+          Configure the display of the quick-fill icon that appears when focusing a field.
         </p>
 
         <div class="toggle-group">
           <div>
-            <label>Exibir ícone de campo</label>
-            <div class="description">Mostra o botão de preencher e salvar regra ao focar num campo</div>
+            <label data-i18n="settingShowFieldIcon">Show field icon</label>
+            <div class="description" data-i18n="settingShowFieldIconDesc">Shows the fill and save-rule button when focusing a field</div>
           </div>
           <label class="toggle">
             <input type="checkbox" id="setting-show-field-icon" />
@@ -99,32 +138,119 @@
         </div>
 
         <div class="form-group" id="field-icon-position-group" style="margin-top: 12px;">
-          <label for="setting-field-icon-position">Posição do ícone:</label>
+          <label for="setting-field-icon-position" data-i18n="settingFieldIconPosition">Icon position:</label>
           <select id="setting-field-icon-position">
-            <option value="above">Acima do campo</option>
-            <option value="inside">Dentro do campo (à direita)</option>
-            <option value="below">Abaixo do campo</option>
+            <option value="above" data-i18n="iconAbove">Above the field</option>
+            <option value="inside" data-i18n="iconInside">Inside the field (right)</option>
+            <option value="below" data-i18n="iconBelow">Below the field</option>
           </select>
-          <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--text-muted);">
-            Recarregue a aba ativa para aplicar a mudança de posição.
+          <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--text-muted);" data-i18n="iconPositionReloadNote">
+            Reload the active tab to apply the position change.
           </div>
         </div>
 
       </div>
 
+      <!-- AI Feedback Card -->
+      <div class="card">
+        <h2 data-i18n="aiFeedbackTitle">AI Feedback</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;" data-i18n="aiFeedbackDesc">
+          Configure visual feedback for AI-powered field filling.
+        </p>
+
+        <div class="toggle-group">
+          <div>
+            <label data-i18n="settingShowFillToast">Show fill toast</label>
+            <div class="description" data-i18n="settingShowFillToastDesc">Displays a brief summary notification after filling all fields</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-show-fill-toast" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-group" style="margin-top: 12px;">
+          <div>
+            <label data-i18n="settingShowAiBadge">Show AI badge on fields</label>
+            <div class="description" data-i18n="settingShowAiBadgeDesc">Adds a persistent ✨ AI badge to fields filled by AI — click the badge to dismiss it</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-show-ai-badge" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+          <label for="setting-ai-timeout" data-i18n="settingAiTimeout">AI generation timeout (ms):</label>
+          <input type="number" id="setting-ai-timeout" min="2000" max="15000" step="500" value="5000" style="max-width: 120px;" />
+          <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--text-muted);" data-i18n="settingAiTimeoutDesc">
+            Maximum time to wait for an AI response per field (2000–15000ms).
+          </div>
+        </div>
+      </div>
+
+      <!-- DOM Watcher Card -->
+      <div class="card">
+        <h2 data-i18n="watcherSettingsTitle">DOM Watcher</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;" data-i18n="watcherSettingsDesc">
+          Monitors the page for new form fields added dynamically (SPAs, multi-step forms) and fills them automatically.
+        </p>
+
+        <div class="toggle-group">
+          <div>
+            <label data-i18n="settingWatcherEnabled">Auto-start watcher</label>
+            <div class="description" data-i18n="settingWatcherEnabledDesc">Automatically starts the DOM watcher when a page loads</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-watcher-enabled" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-group">
+          <div>
+            <label data-i18n="settingWatcherAutoRefill">Auto-refill new fields</label>
+            <div class="description" data-i18n="settingWatcherAutoRefillDesc">Automatically fills new fields when they appear in the DOM</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-watcher-auto-refill" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-group">
+          <div>
+            <label data-i18n="settingWatcherShadowDOM">Observe Shadow DOM <span class="badge" style="font-size:10px;padding:2px 6px;margin-left:6px;">experimental</span></label>
+            <div class="description" data-i18n="settingWatcherShadowDOMDesc">Watches inside Shadow DOM trees for form fields (Web Components)</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="setting-watcher-shadow-dom" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="setting-watcher-debounce" data-i18n="settingWatcherDebounce">Debounce interval (ms):</label>
+          <input type="number" id="setting-watcher-debounce" min="100" max="5000" step="100" value="600" style="max-width: 120px;" />
+          <div class="description" style="margin-top: 4px; font-size: 12px; color: var(--text-muted);" data-i18n="settingWatcherDebounceDesc">
+            Time to wait after DOM changes before detecting new fields (100–5000ms).
+          </div>
+        </div>
+      </div>
+
       <!-- Detection Strategies Card -->
       <div class="card">
-        <h2>Estratégias de Detecção</h2>
-        <p class="description" style="margin-bottom: 12px; color: var(--text-muted); font-size: 13px;">
-          Arraste para reordenar as estratégias. A extensão tenta cada estratégia habilitada na ordem listada até encontrar um resultado.
+        <h2 data-i18n="detectionStrategiesTitle">Detection Strategies</h2>
+        <p class="description" style="margin-bottom: 12px; color: var(--text-muted); font-size: 13px;" data-i18n="detectionStrategiesDesc">
+          Drag to reorder strategies. The extension tries each enabled strategy in the listed order until it finds a result.
         </p>
 
         <div id="strategy-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
 
         <div id="chrome-ai-status-block" style="display:none; margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); background: var(--bg);">
           <div id="chrome-ai-status-text" style="color: var(--text-muted);"></div>
-          <button id="btn-download-chrome-ai" class="btn btn-secondary" style="display:none; margin-top: 8px; font-size: 12px;">
-            ⬇️ Iniciar download do modelo
+          <button id="btn-download-chrome-ai" class="btn btn-secondary" style="display:none; margin-top: 8px; font-size: 12px;" data-i18n="btnDownloadNow">
+            ⬇️ Start model download
           </button>
         </div>
 
@@ -134,59 +260,64 @@
     <!-- Rules Tab -->
     <div class="tab-content" id="tab-rules">
       <div class="card">
-        <h2>Regras por Site</h2>
-        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
-          Defina regras específicas para campos em sites diferentes. O campo "CPF" no site A pode ter um valor fixo, enquanto no site B é gerado automaticamente.
+        <h2 data-i18n="rulesSectionTitle">Rules by Site</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;" data-i18n="rulesSectionDesc">
+          Define specific rules for fields on different sites.
         </p>
         <div id="rules-list"></div>
       </div>
 
       <div class="card">
-        <h2>Nova Regra</h2>
+        <h2 data-i18n="newRuleTitle">New Rule</h2>
         <div class="form-row">
           <div class="form-group">
-            <label for="rule-url">Padrão de URL (use * como coringa):</label>
-            <input type="text" id="rule-url" placeholder="https://example.com/*" />
+            <label for="rule-url" data-i18n="ruleUrlPatternLabel">URL Pattern (use * as wildcard):</label>
+            <input type="text" id="rule-url" data-i18n-placeholder="ruleUrlPatternPlaceholder" placeholder="https://example.com/*" />
           </div>
           <div class="form-group">
-            <label for="rule-selector">Seletor CSS do campo:</label>
+            <label for="rule-selector" data-i18n="ruleSelectorLabel">Field CSS selector:</label>
             <input type="text" id="rule-selector" placeholder="#cpf, input[name='cpf']" />
           </div>
         </div>
 
         <div class="form-row-3">
           <div class="form-group">
-            <label for="rule-field-name">Nome do campo (opcional):</label>
+            <label for="rule-field-name" data-i18n="ruleFieldNameLabel">Field name (optional):</label>
             <input type="text" id="rule-field-name" placeholder="cpf" />
           </div>
           <div class="form-group">
-            <label for="rule-type">Tipo do campo:</label>
+            <label for="rule-type" data-i18n="ruleFieldTypeLabel">Field type:</label>
             <select id="rule-type">
-              <!-- preenchido dinamicamente -->
+              <!-- filled dynamically -->
             </select>
           </div>
           <div class="form-group">
-            <label for="rule-generator">Gerador:</label>
+            <label for="rule-generator" data-i18n="ruleGeneratorLabel">Generator:</label>
             <select id="rule-generator">
-              <!-- preenchido dinamicamente -->
+              <!-- filled dynamically -->
             </select>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="rule-fixed">Valor fixo (opcional):</label>
-            <input type="text" id="rule-fixed" placeholder="123.456.789-09" />
+            <label for="rule-fixed" data-i18n="ruleFixedValueLabel">Fixed value (optional):</label>
+            <input type="text" id="rule-fixed" data-i18n-placeholder="ruleFixedValuePlaceholder" placeholder="123.456.789-09" />
           </div>
           <div class="form-group">
-            <label for="rule-priority">Prioridade (maior = mais importante):</label>
+            <label for="rule-priority" data-i18n="rulePriorityLabel">Priority (higher = more important):</label>
             <input type="number" id="rule-priority" value="10" min="0" max="100" />
           </div>
         </div>
 
+        <div id="rule-params-container" class="form-group" style="display:none;">
+          <label data-i18n="paramSectionTitle">Generator Parameters</label>
+          <div id="rule-params-fields" class="form-row"></div>
+        </div>
+
         <div style="display: flex; gap: 8px;">
-          <button id="btn-save-rule" class="btn btn-primary">Salvar Regra</button>
-          <button id="btn-cancel-rule" class="btn btn-secondary" style="display: none;">Cancelar</button>
+          <button id="btn-save-rule" class="btn btn-primary" data-i18n="btnSaveRule">Save Rule</button>
+          <button id="btn-cancel-rule" class="btn btn-secondary" style="display: none;" data-i18n="btnCancelRule">Cancel</button>
         </div>
       </div>
     </div>
@@ -195,16 +326,16 @@
     <div class="tab-content" id="tab-forms">
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <h2 style="margin:0;">Formulários Salvos</h2>
+          <h2 style="margin:0;" data-i18n="formsTabTitle">Saved Forms</h2>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button id="btn-import-forms" class="btn btn-secondary btn-sm" title="Importar backup JSON">⬇ Importar</button>
-            <button id="btn-export-forms" class="btn btn-secondary btn-sm" title="Exportar backup JSON">⬆ Exportar</button>
-            <button id="btn-create-template" class="btn btn-primary btn-sm">+ Criar Template</button>
+            <button id="btn-import-forms" class="btn btn-secondary btn-sm" data-i18n-title="btnImport" data-i18n="btnImport">⬇ Import</button>
+            <button id="btn-export-forms" class="btn btn-secondary btn-sm" data-i18n-title="btnExport" data-i18n="btnExport">⬆ Export</button>
+            <button id="btn-create-template" class="btn btn-primary btn-sm" data-i18n="btnCreateTemplate">+ Create Template</button>
           </div>
         </div>
         <input type="file" id="import-forms-file" accept=".json" style="display:none;" />
-        <div class="description" style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
-          Templates definem valores padrão por tipo de campo (CPF, nome, data…) e se aplicam em qualquer site onde esses campos forem detectados.
+        <div class="description" style="font-size:12px;color:var(--text-muted);margin-bottom:14px;" data-i18n="formsTabDesc">
+          Templates define default values per field type (CPF, name, date…) and apply on any site where those fields are detected.
         </div>
         <div id="saved-forms-list"></div>
       </div>
@@ -215,18 +346,18 @@
 
       <!-- Model Status Card -->
       <div class="card">
-        <h2>Estado do Modelo</h2>
+        <h2 data-i18n="modelStatusTitle">Model Status</h2>
         <div id="model-status-block" style="margin-bottom: 12px; padding: 12px; border-radius: 6px; background: var(--bg-secondary, #1e1e1e); border: 1px solid var(--border-color, #333); font-size: 13px; line-height: 1.7;">
-          <div id="model-status-text" style="color: var(--text-muted, #888);">Verificando modelo...</div>
+          <div id="model-status-text" style="color: var(--text-muted, #888);" data-i18n="checkingModel">Checking model...</div>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button id="btn-train-model" class="btn btn-primary">&#x1F9E0; Treinar Modelo</button>
-          <button id="btn-delete-model" class="btn btn-delete" style="display:none;">&#x1F5D1; Remover Modelo Treinado</button>
+          <button id="btn-train-model" class="btn btn-primary" data-i18n="btnTrainModel">&#x1F9E0; Train Model</button>
+          <button id="btn-delete-model" class="btn btn-delete" style="display:none;" data-i18n="btnDeleteModel">&#x1F5D1; Remove Trained Model</button>
         </div>
 
         <!-- Training Progress -->
         <div id="training-progress-block" style="display:none; margin-top: 16px;">
-          <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px;">Progresso do Treinamento</div>
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px;" data-i18n="trainingProgressTitle">Training Progress</div>
           <div style="background: var(--bg-secondary, #1e1e1e); border-radius: 4px; overflow: hidden; height: 8px; margin-bottom: 8px; border: 1px solid var(--border-color);">
             <div id="training-progress-bar" style="height: 100%; background: #6366f1; width: 0%; transition: width .2s;"></div>
           </div>
@@ -252,46 +383,44 @@
 
       <!-- Add Entry Card -->
       <div class="card">
-        <h2>Adicionar Entrada ao Dataset</h2>
-        <p class="description" style="color: var(--text-muted); font-size: 13px; margin-bottom: 14px;">
-          Digite os sinais do campo como você os vê no HTML (label + name + id + placeholder concatenados).
-          Ex: <code>cpf cpf_field digite seu cpf</code>
+        <h2 data-i18n="addDatasetEntryTitle">Add Dataset Entry</h2>
+        <p class="description" style="color: var(--text-muted); font-size: 13px; margin-bottom: 14px;" data-i18n="datasetEntryDesc">
+          Type the field signals as you see them in the HTML (label + name + id + placeholder concatenated).
         </p>
         <div class="form-row">
           <div class="form-group" style="flex: 2;">
-            <label for="dataset-signals">Sinais do campo:</label>
-            <input type="text" id="dataset-signals" placeholder="cpf cpf_field digite seu cpf" />
+            <label for="dataset-signals" data-i18n="datasetSignalsLabel">Field signals:</label>
+            <input type="text" id="dataset-signals" placeholder="cpf cpf_field type your cpf" />
           </div>
           <div class="form-group">
-            <label for="dataset-type">Tipo:</label>
+            <label for="dataset-type" data-i18n="datasetTypeLabel">Type:</label>
             <select id="dataset-type">
-              <!-- preenchido dinamicamente -->
+              <!-- filled dynamically -->
             </select>
           </div>
           <div class="form-group">
-            <label for="dataset-difficulty">Dificuldade:</label>
+            <label for="dataset-difficulty" data-i18n="datasetDifficultyLabel">Difficulty:</label>
             <select id="dataset-difficulty">
-              <option value="easy">Fácil</option>
-              <option value="medium">Médio</option>
-              <option value="hard">Difícil</option>
+              <option value="easy" data-i18n="difficultyEasy">Easy</option>
+              <option value="medium" data-i18n="difficultyMedium">Medium</option>
+              <option value="hard" data-i18n="difficultyHard">Hard</option>
             </select>
           </div>
         </div>
-        <button id="btn-add-dataset-entry" class="btn btn-primary">Adicionar Entrada</button>
+        <button id="btn-add-dataset-entry" class="btn btn-primary" data-i18n="btnAddDatasetEntry">Add Entry</button>
       </div>
 
       <!-- Dataset List Card -->
       <div class="card">
-        <h2>Entradas do Dataset</h2>
+        <h2 data-i18n="datasetEntriesTitle">Dataset Entries</h2>
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center;">
-          <span id="dataset-count-badge" class="badge" style="font-size: 13px; padding: 4px 10px;">0 entradas</span>
-          <button id="btn-seed-dataset" class="btn btn-secondary" style="font-size: 12px;">&#x1F331; Importar Dataset Padrão</button>
-          <button id="btn-import-dataset" class="btn btn-secondary" style="font-size: 12px;">&#x1F4C2; Importar JSON</button>
-          <button id="btn-export-dataset" class="btn btn-secondary" style="font-size: 12px;">&#x1F4E5; Exportar JSON</button>
-          <button id="btn-clear-dataset" class="btn btn-delete" style="font-size: 12px;">&#x1F5D1; Limpar Dataset</button>
+          <span id="dataset-count-badge" class="badge" style="font-size: 13px; padding: 4px 10px;">0</span>
+          <button id="btn-seed-dataset" class="btn btn-secondary" style="font-size: 12px;" data-i18n="btnSeedDataset">&#x1F331; Import Default Dataset</button>
+          <button id="btn-import-dataset" class="btn btn-secondary" style="font-size: 12px;" data-i18n="btnImportDataset">&#x1F4C2; Import JSON</button>
+          <button id="btn-export-dataset" class="btn btn-secondary" style="font-size: 12px;" data-i18n="btnExportDataset">&#x1F4E5; Export JSON</button>
+          <button id="btn-clear-dataset" class="btn btn-delete" style="font-size: 12px;" data-i18n="btnClearDataset">&#x1F5D1; Clear Dataset</button>
         </div>
-        <input type="text" id="dataset-filter" placeholder="Filtrar por sinais ou tipo..." style="margin-bottom: 12px; width: 100%; box-sizing: border-box;" />
-        <input type="file" id="dataset-import-file" accept=".json" style="display:none;" />
+        <input type="text" id="dataset-filter" data-i18n-placeholder="datasetFilterPlaceholder" placeholder="Filter by signals or type;" />
         <div id="dataset-list"></div>
       </div>
     </div>
@@ -299,24 +428,31 @@
     <!-- Cache & Learning Tab (renamed) -->
     <div class="tab-content" id="tab-cache">
       <div class="card">
-        <h2>Cache de Detecção por Página</h2>
-        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;">
-          Guarda os campos detectados por URL para que o popup recupere o estado rapidamente.
+        <h2 data-i18n="cacheTabTitle">Detection Cache per Page</h2>
+        <p class="description" style="margin-bottom: 16px; color: var(--text-muted); font-size: 13px;" data-i18n="cacheTabDesc">
+          Stores detected fields per URL so the popup can recover state quickly.
         </p>
         <div style="display:flex; gap:8px; margin-bottom:16px;">
-          <button id="btn-refresh-cache" class="btn btn-primary">Atualizar</button>
-          <button id="btn-clear-cache" class="btn btn-delete">Limpar Todo Cache</button>
+          <button id="btn-refresh-cache" class="btn btn-primary" data-i18n="btnRefreshCacheLabel">Refresh</button>
+          <button id="btn-clear-cache" class="btn btn-delete" data-i18n="btnClearCacheLabel">Clear All Cache</button>
         </div>
         <div id="cache-list"></div>
       </div>
 
       <div class="card">
-        <h2>Aprendizado</h2>
+        <h2 data-i18n="learningTitle">Learning</h2>
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-          <button id="btn-clear-learning" class="btn btn-delete">Limpar Aprendizado</button>
+          <button id="btn-clear-learning" class="btn btn-delete" data-i18n="btnClearLearningLabel">Clear Learning</button>
         </div>
         <div id="learning-summary" class="empty" style="padding: 10px 0; text-align:left;"></div>
         <div id="learned-list"></div>
+      </div>
+    </div>
+
+    <!-- Log Tab -->
+    <div class="tab-content" id="tab-log">
+      <div class="card" style="height:calc(100vh - 200px);display:flex;flex-direction:column;">
+        <div id="options-log-viewer" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
       </div>
     </div>
   </div>

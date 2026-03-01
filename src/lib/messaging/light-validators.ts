@@ -37,17 +37,33 @@ export function parseStringPayload(input: unknown): string | null {
  */
 export function parseStartWatchingPayload(
   input: unknown,
-): { autoRefill?: boolean } | null {
+): { autoRefill?: boolean; debounceMs?: number; shadowDOM?: boolean } | null {
   if (input === undefined) return {};
   if (!input || typeof input !== "object") return null;
-  const payload = input as { autoRefill?: unknown };
+  const payload = input as Record<string, unknown>;
   if (
     payload.autoRefill !== undefined &&
     typeof payload.autoRefill !== "boolean"
   ) {
     return null;
   }
-  return { autoRefill: payload.autoRefill };
+  if (
+    payload.debounceMs !== undefined &&
+    typeof payload.debounceMs !== "number"
+  ) {
+    return null;
+  }
+  if (
+    payload.shadowDOM !== undefined &&
+    typeof payload.shadowDOM !== "boolean"
+  ) {
+    return null;
+  }
+  return {
+    autoRefill: payload.autoRefill as boolean | undefined,
+    debounceMs: payload.debounceMs as number | undefined,
+    shadowDOM: payload.shadowDOM as boolean | undefined,
+  };
 }
 
 /**
@@ -96,4 +112,38 @@ export function parseSavedFormPayload(input: unknown): SavedForm | null {
  */
 export function parseApplyTemplatePayload(input: unknown): SavedForm | null {
   return parseSavedFormPayload(input);
+}
+
+/**
+ * Lightweight E2E export payload parser.
+ * @param input - Raw payload from an `EXPORT_E2E` message
+ * @returns Object with `framework` string, or `null` if invalid
+ */
+export function parseExportE2EPayload(
+  input: unknown,
+): { framework: string } | null {
+  if (!input || typeof input !== "object") return null;
+  const value = input as { framework?: unknown };
+  if (typeof value.framework !== "string" || !value.framework) return null;
+  return { framework: value.framework };
+}
+
+/**
+ * Lightweight EXPORT_RECORDING payload parser.
+ * @param input - Raw payload from an `EXPORT_RECORDING` message
+ * @returns Object with `framework` and optional `testName`, or `null` if invalid
+ */
+export function parseExportRecordingPayload(
+  input: unknown,
+): { framework: string; testName?: string } | null {
+  if (!input || typeof input !== "object") return null;
+  const value = input as { framework?: unknown; testName?: unknown };
+  if (typeof value.framework !== "string" || !value.framework) return null;
+  const result: { framework: string; testName?: string } = {
+    framework: value.framework,
+  };
+  if (typeof value.testName === "string" && value.testName) {
+    result.testName = value.testName;
+  }
+  return result;
 }

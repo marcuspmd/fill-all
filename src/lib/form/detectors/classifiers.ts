@@ -181,12 +181,30 @@ export async function* streamNativeFieldsAsync(): AsyncGenerator<FormField> {
 
 /**
  * Scans native input/select/textarea elements synchronously using the active
- * pipeline. Chrome AI is skipped in sync mode. Used by dom-watcher.
+ * classifiers. Chrome AI (async-only) is skipped. Used by dom-watcher and
+ * detectAllFields().
  */
 export const nativeInputDetector: PageDetector = {
   name: "native-inputs",
   detect(): FormField[] {
-    return buildClassificationChain().runSync(collectNativeFields());
+    const fields = collectNativeFields();
+    const classifiers = getActiveClassifiers();
+    for (const field of fields) {
+      for (const classifier of classifiers) {
+        const result = classifier.detect(field);
+        if (result !== null && result.type !== "unknown") {
+          field.fieldType = result.type;
+          field.detectionMethod = classifier.name;
+          field.detectionConfidence = result.confidence;
+          break;
+        }
+      }
+      if (field.fieldType === "unknown") {
+        field.detectionMethod = "html-fallback";
+        field.detectionConfidence = 0.1;
+      }
+    }
+    return fields;
   },
 };
 
@@ -244,5 +262,67 @@ export function classifyCustomFieldsSync(fields: FormField[]): FormField[] {
       field.detectionConfidence = 0.9;
     }
   }
+  return fields;
+}
+
+/**
+ * Async classification for custom component fields.
+ *
+ * Custom adapter adapters populate label / name / placeholder / autocomplete but
+ * cannot determine domain-level fieldType (e.g. "company", "cpf"). This function
+ * runs the full active classifier chain — keyword → tensorflow → chrome-ai — so
+ * ambiguous fields reach TF.js/Gemini Nano with their contextSignals.
+ *
+ * Rules:
+ *  - html-type and html-fallback are excluded (not meaningful for custom DOM).
+ *  - Generic results ("text", "unknown") never stop the search — we keep trying
+ *    the next classifier so TF.js gets a chance to classify via contextSignals.
+ *  - The adapter's concrete type ("select", "checkbox", …) is preserved when
+ *    all classifiers fail to add semantic context.
+ *  - "custom-select" is stamped ONLY as a last resort when nothing matched.
+ */
+export async function classifyCustomFieldsAsync(
+  fields: FormField[],
+): Promise<FormField[]> {
+  const classifiers = getActiveClassifiers().filter(
+    // html-type probes native input[type] — meaningless for custom wrappers.
+    // html-fallback is a last-resort for native inputs — not for custom.
+    (c) => c.name !== "html-type" && c.name !== "html-fallback",
+  );
+
+  for (const field of fields) {
+    const adapterType = field.fieldType; // type set by the adapter (may be "unknown")
+    let classified = false;
+    const t0 = performance.now();
+
+    for (const classifier of classifiers) {
+      const result = classifier.detectAsync
+        ? await classifier.detectAsync(field)
+        : classifier.detect(field);
+
+      if (result === null) continue;
+
+      // Generic results ("text", "unknown") are not useful for custom fields —
+      // continue to the next classifier (e.g. TF.js) which may be more certain.
+      if (GENERIC_TYPES.has(result.type)) continue;
+
+      field.fieldType = result.type;
+      field.detectionMethod = classifier.name;
+      field.detectionConfidence = result.confidence;
+      field.detectionDurationMs = performance.now() - t0;
+      classified = true;
+      break;
+    }
+
+    if (!classified) {
+      // Nothing could determine the semantic type — preserve the adapter-set
+      // concrete type (e.g. "select") and stamp the fallback method.
+      // adapterType is already on field.fieldType; just record the method.
+      field.detectionMethod = "custom-select";
+      field.detectionConfidence = GENERIC_TYPES.has(adapterType) ? 0.5 : 0.9;
+      field.detectionDurationMs = performance.now() - t0;
+    }
+  }
+
   return fields;
 }

@@ -16,9 +16,8 @@
  *     htmlFallbackClassifier, // last resort
  *   );
  *
- * Three execution modes:
+ * Two execution modes:
  *
- *   chain.runSync(fields)   → FormField[]               — skips async classifiers
  *   chain.runAsync(fields)  → Promise<FormField[]>      — awaits all classifiers
  *   chain.stream(fields)    → AsyncGenerator<FormField> — yields each as it finishes
  */
@@ -60,18 +59,6 @@ export class FieldProcessingChain {
   }
 
   // ── Execution modes ──────────────────────────────────────────────────────────
-
-  /**
-   * Synchronous run — classifies every field before returning.
-   * Chrome AI classifier is skipped (it returns null synchronously).
-   */
-  runSync(fields: FormField[]): FormField[] {
-    const pipeline = new DetectionPipeline(this._classifiers);
-    return fields.map((field) => {
-      this.applyResult(field, pipeline.run(field));
-      return field;
-    });
-  }
 
   /**
    * Async run — awaits every classifier (including Chrome AI) per field,

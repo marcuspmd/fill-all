@@ -148,6 +148,7 @@ export const FIELD_TYPES = [
 
   // Componentes
   "select",
+  "multiselect",
   "checkbox",
   "radio",
   "file",
@@ -331,6 +332,9 @@ export interface FieldRule {
   /** Custom prompt for AI generation */
   aiPrompt?: string;
 
+  /** Override generator params per rule (min/max, formatted, length, etc.) */
+  generatorParams?: import("./field-type-definitions").GeneratorParams;
+
   /** Select option index: 0 = auto (random), 1 = first option, 2 = second, etc. */
   selectOptionIndex?: number;
   /** Priority (higher = takes precedence) */
@@ -378,6 +382,8 @@ export interface SavedForm {
   createdAt: number;
   /** When this template was last updated */
   updatedAt: number;
+  /** Whether this is the default form applied automatically */
+  isDefault?: boolean;
 }
 
 /** A field that should be skipped during auto-fill */
@@ -454,12 +460,32 @@ export interface Settings {
   /** Ordered list of classification strategies */
   detectionPipeline: DetectionStrategyEntry[];
 
-  /** Whether to always show the DevTools-style panel on every page */
-  showPanel: boolean;
   /** Whether debug logging is enabled (all console output is suppressed when false) */
   debugLog: boolean;
   /** Minimum log level to output: debug < info < warn < error */
   logLevel: "debug" | "info" | "warn" | "error";
+  /** Maximum number of log entries to keep in the persistent log store (50–5000) */
+  logMaxEntries: number;
+  /** Preferred UI language. "auto" follows the browser/Chrome locale. */
+  uiLanguage: "auto" | "en" | "pt_BR" | "es";
+  /** When true, only empty fields are filled — fields with an existing value are skipped */
+  fillEmptyOnly: boolean;
+
+  /** Whether to auto-start the DOM watcher when the page loads */
+  watcherEnabled: boolean;
+  /** Debounce interval in ms for the DOM watcher (100–5000) */
+  watcherDebounceMs: number;
+  /** Whether the DOM watcher should auto-refill new fields */
+  watcherAutoRefill: boolean;
+  /** Whether the DOM watcher should observe inside Shadow DOM trees (experimental) */
+  watcherShadowDOM: boolean;
+
+  /** Timeout in ms for AI field generation calls (2000–15000) */
+  aiTimeoutMs: number;
+  /** When true, shows a persistent AI badge on fields filled by AI (can be dismissed) */
+  showAiBadge: boolean;
+  /** When true, shows a brief toast notification after filling all fields */
+  showFillToast: boolean;
 }
 
 /** Message types for communication between extension parts */
@@ -477,13 +503,13 @@ export type MessageType =
   | "GET_SETTINGS"
   | "SAVE_SETTINGS"
   | "AI_GENERATE"
+  | "AI_CHECK_AVAILABLE"
+  | "AI_CLASSIFY_FIELD"
+  | "AI_OPTIMIZE_SCRIPT"
   | "DETECT_FIELDS"
   | "START_WATCHING"
   | "STOP_WATCHING"
   | "GET_WATCHER_STATUS"
-  | "TOGGLE_PANEL"
-  | "SHOW_PANEL"
-  | "HIDE_PANEL"
   | "FILL_FIELD_BY_SELECTOR"
   | "GET_IGNORED_FIELDS"
   | "ADD_IGNORED_FIELD"
@@ -508,6 +534,20 @@ export type MessageType =
   | "DELETE_RUNTIME_MODEL"
   | "APPLY_TEMPLATE"
   | "UPDATE_FORM"
+  | "SET_DEFAULT_FORM"
+  | "EXPORT_E2E"
+  | "START_RECORDING"
+  | "STOP_RECORDING"
+  | "PAUSE_RECORDING"
+  | "RESUME_RECORDING"
+  | "GET_RECORDING_STATUS"
+  | "GET_RECORDING_STEPS"
+  | "EXPORT_RECORDING"
+  | "REMOVE_RECORDING_STEP"
+  | "UPDATE_RECORDING_STEP"
+  | "CLEAR_RECORDING"
+  | "RECORDING_STEP_ADDED"
+  | "RECORDING_STEP_UPDATED"
   | "DEVTOOLS_RELAY";
 
 /** Payload for any message exchanged between extension contexts. */
@@ -549,7 +589,18 @@ export const DEFAULT_SETTINGS: Settings = {
   fieldIconPosition: "inside",
   detectionPipeline: DEFAULT_DETECTION_PIPELINE,
 
-  showPanel: false,
   debugLog: false,
   logLevel: "warn",
+  logMaxEntries: 1000,
+  uiLanguage: "auto",
+  fillEmptyOnly: false,
+
+  watcherEnabled: false,
+  watcherDebounceMs: 600,
+  watcherAutoRefill: true,
+  watcherShadowDOM: false,
+
+  aiTimeoutMs: 5000,
+  showAiBadge: false,
+  showFillToast: true,
 };

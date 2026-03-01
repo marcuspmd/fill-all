@@ -24,19 +24,47 @@ const settingsSchema = z
     forceAIFirst: z.boolean(),
     shortcut: z.string(),
     locale: z.enum(["pt-BR", "en-US"]),
+    uiLanguage: z.enum(["auto", "en", "pt_BR", "es"]),
     highlightFilled: z.boolean(),
     cacheEnabled: z.boolean(),
     showFieldIcon: z.boolean(),
     fieldIconPosition: z.enum(["above", "inside", "below"]),
     showPanel: z.boolean(),
+    fillEmptyOnly: z.boolean(),
     detectionPipeline: z
       .array(z.object({ name: z.string().min(1), enabled: z.boolean() }))
       .optional(),
     debugLog: z.boolean(),
     logLevel: z.enum(["debug", "info", "warn", "error"]),
+    watcherEnabled: z.boolean(),
+    watcherAutoRefill: z.boolean(),
+    watcherShadowDOM: z.boolean(),
+    watcherDebounceMs: z.number().int().min(100).max(5000),
+    aiTimeoutMs: z.number().int().min(2000).max(15000),
+    showAiBadge: z.boolean(),
+    showFillToast: z.boolean(),
+    logMaxEntries: z.number().int().min(100).max(10000),
   })
   .partial()
   .strict();
+
+const generatorParamsSchema = z
+  .object({
+    min: z.number().optional(),
+    max: z.number().optional(),
+    formatted: z.boolean().optional(),
+    length: z.number().int().min(1).max(128).optional(),
+    onlyNumbers: z.boolean().optional(),
+    onlyLetters: z.boolean().optional(),
+    prefix: z.string().optional(),
+    suffix: z.string().optional(),
+    pattern: z.string().optional(),
+    options: z.array(z.string()).optional(),
+    probability: z.number().min(0).max(1).optional(),
+    dateFormat: z.enum(["iso", "br", "us"]).optional(),
+  })
+  .passthrough()
+  .optional();
 
 const fieldRuleSchema = z
   .object({
@@ -48,6 +76,7 @@ const fieldRuleSchema = z
     fixedValue: z.string().optional(),
     generator: z.enum(["auto", "ai", "tensorflow", ...FIELD_TYPES]),
     aiPrompt: z.string().optional(),
+    generatorParams: generatorParamsSchema,
     selectOptionIndex: z.number().optional(),
     priority: z.number().min(0).max(100),
     createdAt: z.number(),
@@ -114,12 +143,15 @@ const savedFormSchema = z
     templateFields: z.array(templateFieldSchema).optional(),
     createdAt: z.number(),
     updatedAt: z.number(),
+    isDefault: z.boolean().optional(),
   })
   .strict();
 
 const startWatchingSchema = z
   .object({
     autoRefill: z.boolean().optional(),
+    debounceMs: z.number().int().min(100).max(5000).optional(),
+    shadowDOM: z.boolean().optional(),
   })
   .strict();
 
@@ -207,7 +239,7 @@ export function parseApplyTemplatePayload(input: unknown): SavedForm | null {
  */
 export function parseStartWatchingPayload(
   input: unknown,
-): { autoRefill?: boolean } | null {
+): { autoRefill?: boolean; debounceMs?: number; shadowDOM?: boolean } | null {
   const result = startWatchingSchema.safeParse(input ?? {});
   return result.success ? result.data : null;
 }

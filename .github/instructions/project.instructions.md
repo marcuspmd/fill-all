@@ -126,3 +126,28 @@ log.error("falha crítica", err);
 3. Chrome AI (se habilitado e disponível)
 4. TensorFlow.js (classifica campo → gerador)
 5. Gerador padrão (tipo detectado por HTML/keyword)
+
+## Testes
+
+### Estrutura
+
+```
+src/
+  lib/
+    <modulo>/
+      __tests__/
+        <arquivo>.test.ts        # Unitário — Vitest
+        e2e/
+          <arquivo>.test.e2e.ts  # E2E — Playwright
+```
+
+### Regras
+
+| Tipo | Sufixo | Ferramenta | Quando usar |
+|------|--------|-----------|-------------|
+| Unitário | `.test.ts` | Vitest | Lógica pura, generators, parsers, storage, classifiers |
+| E2E | `.test.e2e.ts` | Playwright | DOM, form-filler, floating-panel, extensão no Chrome real |
+
+- **Nunca misturar**: Vitest exclui `*.test.e2e.ts`; Playwright só pega `*.test.e2e.ts`
+- E2E pages HTML ficam em `e2e/pages/` e são servidas pelo `e2e/server.js` na porta 8765
+- Coverage é gerado apenas pelos testes unitários (Vitest + V8); E2E não geram coverage de linhas

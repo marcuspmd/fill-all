@@ -6,6 +6,7 @@ import { FIELD_TYPES, type FieldType } from "@/types";
 import {
   getFieldTypeLabel,
   getFieldTypeOptions,
+  getFieldTypeGroupedOptions,
 } from "@/lib/shared/field-type-catalog";
 
 export function generateId(): string {
@@ -68,10 +69,15 @@ function buildOptionsHtml(
   types: readonly FieldType[],
   selected?: string,
 ): string {
-  return buildOptionEntries(types)
+  return getFieldTypeGroupedOptions(types)
     .map(
-      (entry) =>
-        `<option value="${entry.value}" ${entry.value === selected ? "selected" : ""}>${entry.label}</option>`,
+      (group) =>
+        `<optgroup label="${group.label}">${group.options
+          .map(
+            (entry) =>
+              `<option value="${entry.value}"${entry.value === selected ? " selected" : ""}>${entry.label}</option>`,
+          )
+          .join("")}</optgroup>`,
     )
     .join("");
 }
@@ -94,18 +100,23 @@ export function syncFieldTypeOptionsInOptionsPage(): void {
 
   if (ruleGeneratorSelect) {
     const selected = ruleGeneratorSelect.value || "auto";
-    const fieldTypeOptions = buildOptionEntries(FIELD_TYPES)
+    const groupedFieldTypeOptions = getFieldTypeGroupedOptions(FIELD_TYPES)
       .map(
-        (entry) =>
-          `<option value="${entry.value}" ${entry.value === selected ? "selected" : ""}>${entry.label}</option>`,
+        (group) =>
+          `<optgroup label="${group.label}">${group.options
+            .map(
+              (entry) =>
+                `<option value="${entry.value}"${entry.value === selected ? " selected" : ""}>${entry.label}</option>`,
+            )
+            .join("")}</optgroup>`,
       )
       .join("");
 
     ruleGeneratorSelect.innerHTML = [
-      '<option value="auto">Automático</option>',
-      '<option value="ai">Chrome AI</option>',
-      '<option value="tensorflow">TensorFlow.js</option>',
-      fieldTypeOptions,
+      `<option value="auto"${selected === "auto" ? " selected" : ""}>Automático</option>`,
+      `<option value="ai"${selected === "ai" ? " selected" : ""}>Chrome AI</option>`,
+      `<option value="tensorflow"${selected === "tensorflow" ? " selected" : ""}>TensorFlow.js</option>`,
+      groupedFieldTypeOptions,
     ].join("");
     if (["auto", "ai", "tensorflow"].includes(selected)) {
       ruleGeneratorSelect.value = selected;

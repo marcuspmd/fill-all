@@ -261,7 +261,7 @@ export function injectStyles(): void {
       position: absolute;
       z-index: 2147483646;
       box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
-      width: 264px;
+      width: 280px;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       font-size: 12px;
       overflow: hidden;
@@ -355,6 +355,133 @@ export function injectStyles(): void {
     }
     #${RULE_POPUP_ID} .fa-rp-btn-cancel:hover {
       background: #f1f5f9;
+    }
+    /* ── Rule Popup — Suggestion Badge ──────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-suggestion {
+      align-items: center;
+      gap: 4px;
+      padding: 5px 8px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      font-size: 10px;
+      color: #15803d;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #${RULE_POPUP_ID} #fa-rp-suggestion-type {
+      color: #065f46;
+      font-weight: 700;
+    }
+    /* ── Rule Popup — Live Preview ───────────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-preview {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      background: #f8fafc;
+      border: 1px dashed #e2e8f0;
+      border-radius: 6px;
+      min-height: 28px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-preview-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    #${RULE_POPUP_ID} #fa-rp-preview-value {
+      flex: 1;
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    #${RULE_POPUP_ID} .fa-rp-preview-fixed {
+      color: #1e293b;
+      font-weight: 600;
+    }
+    #${RULE_POPUP_ID} .fa-rp-preview-generated {
+      color: #4f46e5;
+    }
+    #${RULE_POPUP_ID} #fa-rp-preview-refresh {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 1px 3px;
+      font-size: 13px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+    #${RULE_POPUP_ID} #fa-rp-preview-refresh:hover {
+      color: #4f46e5;
+      background: #ede9fe;
+    }
+    /* ── Rule Popup — Generator Params ───────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-params {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 6px 8px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-params-title {
+      font-size: 9px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-label {
+      font-size: 10px;
+      color: #475569;
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-input {
+      padding: 3px 6px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: inherit;
+      color: #1e293b;
+      background: #fff;
+      outline: none;
+      width: 70px;
+      box-sizing: border-box;
+      transition: border-color 0.15s;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-input:focus {
+      border-color: #6366f1;
+    }
+    #${RULE_POPUP_ID} .fa-rp-param-check {
+      width: 14px;
+      height: 14px;
+      accent-color: #4f46e5;
+    }
+    /* ── Rule Popup — Keyboard Hint ──────────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-hint {
+      font-size: 9px;
+      color: #94a3b8;
+      text-align: center;
+      padding-top: 2px;
+      letter-spacing: 0.2px;
     }
   `;
   document.head.appendChild(style);

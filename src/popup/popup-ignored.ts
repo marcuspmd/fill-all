@@ -3,6 +3,7 @@
  */
 
 import type { IgnoredField } from "@/types";
+import { t } from "@/lib/i18n";
 import { sendToBackground, escapeHtml } from "./popup-messaging";
 
 export async function loadIgnoredFields(): Promise<void> {
@@ -37,7 +38,7 @@ export async function loadIgnoredFields(): Promise<void> {
         <span class="field-label">${escapeHtml(field.label)}</span>
         <span class="ignored-url">${escapeHtml(displayUrl)}</span>
       </div>
-      <button class="btn btn-sm btn-delete" title="Parar de ignorar">✕</button>
+      <button class="btn btn-sm btn-delete" title="${t("stopIgnoring")}">✕</button>
     `;
 
     item.querySelector(".btn-delete")?.addEventListener("click", async () => {

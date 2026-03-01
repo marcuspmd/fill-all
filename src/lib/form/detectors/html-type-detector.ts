@@ -42,8 +42,8 @@ export function detectBasicType(
   if (type === "date") return { type: "date", method: "html-type" };
   if (["time", "datetime-local", "month", "week"].includes(type))
     return { type: "date", method: "html-type" };
-  if (["url", "search"].includes(type))
-    return { type: "text", method: "html-type" };
+  if (type === "url") return { type: "website", method: "html-type" };
+  if (type === "search") return { type: "text", method: "html-type" };
   if (type === "range") return { type: "number", method: "html-type" };
 
   return { type: "unknown", method: "html-type" };

@@ -8,6 +8,7 @@ import {
   getSavedForms,
   saveForm,
   deleteForm,
+  setDefaultForm,
 } from "@/lib/storage/forms-storage";
 import { getSettings, saveSettings } from "@/lib/storage/settings-storage";
 import {
@@ -26,6 +27,7 @@ const SUPPORTED: ReadonlyArray<MessageType> = [
   "GET_SAVED_FORMS",
   "DELETE_FORM",
   "UPDATE_FORM",
+  "SET_DEFAULT_FORM",
   "GET_SETTINGS",
   "SAVE_SETTINGS",
   "GET_IGNORED_FIELDS",
@@ -49,6 +51,13 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
       const form = parseSavedFormPayload(message.payload);
       if (!form) return { error: "Invalid payload for UPDATE_FORM" };
       await saveForm(form);
+      return { success: true };
+    }
+
+    case "SET_DEFAULT_FORM": {
+      const formId = parseStringPayload(message.payload);
+      if (!formId) return { error: "Invalid payload for SET_DEFAULT_FORM" };
+      await setDefaultForm(formId);
       return { success: true };
     }
 

@@ -26,7 +26,4 @@ export {
   TF_THRESHOLD,
 } from "./tensorflow-classifier";
 
-export {
-  chromeAiClassifier,
-  destroyClassifierSession,
-} from "./chrome-ai-classifier";
+export { chromeAiClassifier } from "./chrome-ai-classifier";

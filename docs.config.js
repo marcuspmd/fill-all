@@ -1,5 +1,10 @@
 /** @type {import('docs-kit').Config} */
 export default {
+  rootDir: "src",
+  output: {
+    site: "docs",   // used by `docs-kit build-site`
+    docs: "docs-kit-md",     // used by `docs-kit build-docs`
+  },
   include: [
     "**/*.ts",
     "**/*.tsx",
@@ -46,7 +51,7 @@ export default {
       showOnMenu: true
     },
     {
-      path: "./docs/",
+      path: "./docs-md/",
       category: "Documentation",
       autoDiscovery: true,
       showOnMenu: true
