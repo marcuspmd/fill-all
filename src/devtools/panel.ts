@@ -27,7 +27,7 @@ import { createLogViewer, getLogViewerStyles } from "@/lib/logger/log-viewer";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const TAB_IDS = ["actions", "fields", "forms", "log"] as const;
+const TAB_IDS = ["actions", "fields", "forms", "record", "log"] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 function getTabLabels(): Record<TabId, string> {
@@ -35,6 +35,7 @@ function getTabLabels(): Record<TabId, string> {
     actions: `⚡ ${t("tabActions")}`,
     fields: `🔍 ${t("tabFields")}`,
     forms: `📄 ${t("tabForms")}`,
+    record: `🔴 ${t("tabRecord")}`,
     log: `📋 ${t("tabLog")}`,
   };
 }
@@ -50,6 +51,34 @@ let watcherActive = false;
 let ignoredSelectors = new Set<string>();
 let logViewerInstance: LogViewer | null = null;
 
+// ── Record Mode State ────────────────────────────────────────────────────────
+
+type RecordingState = "idle" | "recording" | "paused" | "stopped";
+let recordingState: RecordingState = "idle";
+let recordedStepsPreview: Array<{
+  type: string;
+  selector?: string;
+  value?: string;
+  waitMs?: number;
+  url?: string;
+  label?: string;
+}> = [];
+
+const STEP_ICONS: Record<string, string> = {
+  fill: "✏️",
+  click: "🖱️",
+  select: "📋",
+  check: "☑️",
+  submit: "🚀",
+  wait: "⏱️",
+  navigate: "🔗",
+  scroll: "📜",
+};
+
+let optimizeWithAI = false;
+let isOptimizing = false;
+let readyScript: { script: string; framework: string } | null = null;
+
 const log = createLogger("DevToolsPanel");
 
 // ── Messaging ────────────────────────────────────────────────────────────────
@@ -63,6 +92,23 @@ async function sendToPage(message: ExtensionMessage): Promise<unknown> {
 
 async function sendToBackground(message: ExtensionMessage): Promise<unknown> {
   return chrome.runtime.sendMessage(message);
+}
+
+function getInspectedPageInfo(): Promise<
+  [string | undefined, string | undefined]
+> {
+  return new Promise((resolve) => {
+    chrome.devtools.inspectedWindow.eval(
+      "[location.href, document.title]",
+      (result: unknown) => {
+        if (Array.isArray(result) && result.length === 2) {
+          resolve([result[0] as string, result[1] as string]);
+        } else {
+          resolve([undefined, undefined]);
+        }
+      },
+    );
+  });
 }
 
 // ── Logging ──────────────────────────────────────────────────────────────────
@@ -403,6 +449,9 @@ function renderActiveTab(): void {
       break;
     case "forms":
       renderFormsTab();
+      break;
+    case "record":
+      renderRecordTab();
       break;
     case "log":
       renderLogTab();
@@ -750,6 +799,502 @@ function showEditFormScreen(form: SavedForm): void {
     });
 }
 
+// ── Record Tab ───────────────────────────────────────────────────────────────
+
+async function startRecording(): Promise<void> {
+  try {
+    await sendToPage({ type: "START_RECORDING" });
+    recordingState = "recording";
+    recordedStepsPreview = [];
+    addLog(t("logRecordStarted"), "success");
+    renderRecordTab();
+  } catch (err) {
+    addLog(`${t("logRecordError")}: ${err}`, "error");
+  }
+}
+
+async function stopRecording(): Promise<void> {
+  try {
+    await sendToPage({ type: "STOP_RECORDING" });
+    recordingState = "stopped";
+    addLog(t("logRecordStopped"), "info");
+    renderRecordTab();
+  } catch (err) {
+    addLog(`${t("logRecordError")}: ${err}`, "error");
+  }
+}
+
+async function pauseRecording(): Promise<void> {
+  try {
+    await sendToPage({ type: "PAUSE_RECORDING" });
+    recordingState = "paused";
+    addLog(t("logRecordPaused"), "info");
+    renderRecordTab();
+  } catch (err) {
+    addLog(`${t("logRecordError")}: ${err}`, "error");
+  }
+}
+
+async function resumeRecording(): Promise<void> {
+  try {
+    await sendToPage({ type: "RESUME_RECORDING" });
+    recordingState = "recording";
+    addLog(t("logRecordResumed"), "info");
+    renderRecordTab();
+  } catch (err) {
+    addLog(`${t("logRecordError")}: ${err}`, "error");
+  }
+}
+
+function setExportLoading(loading: boolean, framework?: string): void {
+  isOptimizing = loading;
+  const exportSection = document.querySelector(".record-export");
+  if (!exportSection) return;
+
+  const buttons = exportSection.querySelectorAll<HTMLButtonElement>(".btn");
+  const checkbox = document.getElementById(
+    "chk-optimize-ai",
+  ) as HTMLInputElement | null;
+  const existingOverlay = exportSection.querySelector(
+    ".export-loading-overlay",
+  );
+
+  if (loading) {
+    buttons.forEach((btn) => (btn.disabled = true));
+    if (checkbox) checkbox.disabled = true;
+
+    if (!existingOverlay) {
+      const overlay = document.createElement("div");
+      overlay.className = "export-loading-overlay";
+      overlay.innerHTML = `
+        <div class="export-loading-spinner"></div>
+        <span>${t("logRecordOptimizing")}${framework ? ` (${framework})` : ""}</span>
+      `;
+      exportSection.appendChild(overlay);
+    }
+  } else {
+    buttons.forEach((btn) => (btn.disabled = false));
+    if (checkbox) checkbox.disabled = false;
+    existingOverlay?.remove();
+  }
+}
+
+function showReadyState(script: string, framework: string): void {
+  readyScript = { script, framework };
+  const exportSection = document.querySelector(".record-export");
+  if (!exportSection) return;
+
+  const title = exportSection.querySelector(".record-export-title");
+  const toggle = exportSection.querySelector(
+    ".record-ai-toggle",
+  ) as HTMLElement | null;
+  const buttonsWrap = exportSection.querySelector(
+    ".record-export-buttons",
+  ) as HTMLElement | null;
+
+  if (title) title.textContent = `${t("recordScriptReady")} (${framework})`;
+  if (toggle) toggle.style.display = "none";
+  if (buttonsWrap) {
+    buttonsWrap.innerHTML = `
+      <button class="btn btn-copy-script" id="btn-copy-script">📋 ${t("recordCopyScript")}</button>
+      <button class="btn btn-dismiss-script" id="btn-dismiss-script">✕</button>
+    `;
+    document
+      .getElementById("btn-copy-script")
+      ?.addEventListener("click", async () => {
+        if (!readyScript) return;
+        await navigator.clipboard.writeText(readyScript.script);
+        addLog(
+          `${t("logRecordExported")} (${readyScript.framework})`,
+          "success",
+        );
+      });
+    document
+      .getElementById("btn-dismiss-script")
+      ?.addEventListener("click", () => {
+        readyScript = null;
+        renderRecordTab();
+      });
+  }
+}
+
+async function exportRecording(framework: string): Promise<void> {
+  if (isOptimizing) return;
+
+  try {
+    const result = (await sendToPage({
+      type: "EXPORT_RECORDING",
+      payload: {
+        framework,
+        options: {
+          includeAssertions: true,
+          smartSelectors: true,
+          smartWaits: true,
+        },
+      },
+    })) as { script?: string; error?: string };
+
+    if (!result?.script) {
+      addLog(result?.error ?? t("logRecordExportError"), "error");
+      return;
+    }
+
+    let finalScript = result.script;
+    let wasOptimized = false;
+
+    if (optimizeWithAI) {
+      setExportLoading(true, framework);
+      addLog(t("logRecordOptimizing"), "info");
+
+      try {
+        const [pageUrl, pageTitle] = await getInspectedPageInfo();
+
+        const optimized = (await sendToBackground({
+          type: "AI_OPTIMIZE_SCRIPT",
+          payload: {
+            script: result.script,
+            framework,
+            pageUrl,
+            pageTitle,
+            pageContext: undefined,
+          },
+        })) as string | null;
+
+        if (optimized) {
+          finalScript = optimized;
+          wasOptimized = true;
+          addLog(`${t("logRecordOptimized")} (${framework})`, "success");
+        } else {
+          addLog(t("logRecordOptimizeFailed"), "warn");
+        }
+      } finally {
+        setExportLoading(false);
+      }
+    }
+
+    showReadyState(finalScript, `${framework}${wasOptimized ? " ✨" : ""}`);
+  } catch (err) {
+    setExportLoading(false);
+    addLog(`${t("logRecordExportError")}: ${err}`, "error");
+  }
+}
+
+async function refreshRecordPreview(): Promise<void> {
+  try {
+    const result = (await sendToPage({
+      type: "GET_RECORDING_STEPS",
+    })) as {
+      steps?: Array<{
+        type: string;
+        selector?: string;
+        value?: string;
+        waitMs?: number;
+        url?: string;
+      }>;
+    };
+
+    if (result?.steps) {
+      recordedStepsPreview = result.steps;
+    }
+  } catch {
+    // silent
+  }
+  renderRecordStepsTable();
+}
+
+async function clearRecording(): Promise<void> {
+  try {
+    await sendToPage({ type: "CLEAR_RECORDING" });
+    recordedStepsPreview = [];
+    recordingState = "idle";
+    addLog(t("logRecordStopped"), "info");
+    renderRecordTab();
+  } catch (err) {
+    addLog(`${t("logRecordError")}: ${err}`, "error");
+  }
+}
+
+async function removeRecordStep(index: number): Promise<void> {
+  try {
+    const result = (await sendToPage({
+      type: "REMOVE_RECORDING_STEP",
+      payload: { index },
+    })) as { success?: boolean };
+    if (result?.success) {
+      recordedStepsPreview.splice(index, 1);
+      renderRecordStepsTable();
+    }
+  } catch (err) {
+    addLog(`${t("logRecordError")}: ${err}`, "error");
+  }
+}
+
+async function updateRecordStep(
+  index: number,
+  patch: { value?: string; waitTimeout?: number },
+): Promise<void> {
+  try {
+    const result = (await sendToPage({
+      type: "UPDATE_RECORDING_STEP",
+      payload: { index, patch },
+    })) as { success?: boolean };
+    if (result?.success) {
+      if (patch.value !== undefined) {
+        recordedStepsPreview[index].value = patch.value;
+      }
+      renderRecordStepsTable();
+    }
+  } catch (err) {
+    addLog(`${t("logRecordError")}: ${err}`, "error");
+  }
+}
+
+function renderRecordStepsTable(): void {
+  const tbody = document.getElementById("record-steps-body");
+  if (!tbody) return;
+
+  if (recordedStepsPreview.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">${t("recordNoSteps")}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = recordedStepsPreview
+    .map(
+      (step, i) => `
+      <tr>
+        <td class="cell-num">${i + 1}</td>
+        <td>${STEP_ICONS[step.type] ?? "❓"} ${escapeHtml(step.type)}</td>
+        <td class="cell-mono">${escapeHtml(step.selector ?? step.url ?? "-")}</td>
+        <td class="cell-value" data-step-index="${i}">
+          <span class="step-value-text" title="${t("actionEdit")}">${escapeHtml(step.value ?? (step.waitMs ? `${step.waitMs}ms` : "-"))}</span>
+        </td>
+        <td class="cell-actions">
+          <button class="icon-btn" data-step-action="edit" data-step-index="${i}" title="${t("actionEdit")}">✏️</button>
+          <button class="icon-btn" data-step-action="remove" data-step-index="${i}" title="🗑️">🗑️</button>
+        </td>
+      </tr>
+    `,
+    )
+    .join("");
+
+  const countEl = document.getElementById("record-step-count");
+  if (countEl) {
+    countEl.textContent = `${recordedStepsPreview.length} ${t("recordStepCount")}`;
+  }
+
+  // Wire step action buttons
+  tbody
+    .querySelectorAll<HTMLButtonElement>("[data-step-action]")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const action = btn.dataset.stepAction;
+        const index = Number(btn.dataset.stepIndex);
+        if (isNaN(index)) return;
+
+        if (action === "remove") {
+          void removeRecordStep(index);
+        } else if (action === "edit") {
+          showStepValueEditor(index);
+        }
+      });
+    });
+}
+
+function showStepValueEditor(index: number): void {
+  const step = recordedStepsPreview[index];
+  if (!step) return;
+
+  const cell = document.querySelector<HTMLTableCellElement>(
+    `td.cell-value[data-step-index="${index}"]`,
+  );
+  if (!cell) return;
+
+  const currentValue = step.value ?? "";
+  cell.innerHTML = `
+    <input type="text" class="edit-input step-edit-input" value="${escapeAttr(currentValue)}" />
+    <button class="icon-btn step-edit-save" title="✓">✅</button>
+    <button class="icon-btn step-edit-cancel" title="✕">❌</button>
+  `;
+
+  const input = cell.querySelector<HTMLInputElement>(".step-edit-input");
+  input?.focus();
+
+  cell.querySelector(".step-edit-save")?.addEventListener("click", () => {
+    const newValue = input?.value ?? currentValue;
+    void updateRecordStep(index, { value: newValue });
+  });
+
+  cell.querySelector(".step-edit-cancel")?.addEventListener("click", () => {
+    renderRecordStepsTable();
+  });
+
+  input?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const newValue = input.value ?? currentValue;
+      void updateRecordStep(index, { value: newValue });
+    } else if (e.key === "Escape") {
+      renderRecordStepsTable();
+    }
+  });
+}
+
+function renderRecordTab(): void {
+  const content = document.getElementById("content");
+  if (!content) return;
+
+  const isIdle = recordingState === "idle";
+  const isRecording = recordingState === "recording";
+  const isPaused = recordingState === "paused";
+  const isStopped = recordingState === "stopped";
+  const hasSteps = recordedStepsPreview.length > 0;
+
+  let controlsHtml = "";
+
+  if (isIdle) {
+    controlsHtml = `
+      <button class="action-card primary" id="btn-record-start">
+        <span class="card-icon">🔴</span>
+        <span class="card-label">${t("recordStart")}</span>
+        <span class="card-desc">${t("recordStartDesc")}</span>
+      </button>`;
+  } else if (isRecording || isPaused) {
+    controlsHtml = `
+      <button class="action-card btn-danger" id="btn-record-stop">
+        <span class="card-icon">⏹️</span>
+        <span class="card-label">${t("recordStop")}</span>
+      </button>
+      <button class="action-card secondary" id="btn-record-pause">
+        <span class="card-icon">${isPaused ? "▶️" : "⏸️"}</span>
+        <span class="card-label">${isPaused ? t("recordResume") : t("recordPause")}</span>
+      </button>`;
+  } else if (isStopped) {
+    controlsHtml = `
+      <button class="action-card primary" id="btn-record-start">
+        <span class="card-icon">🔴</span>
+        <span class="card-label">${t("recordStart")}</span>
+        <span class="card-desc">${t("recordStartDesc")}</span>
+      </button>
+      ${
+        hasSteps
+          ? `<button class="action-card btn-danger" id="btn-record-clear">
+        <span class="card-icon">🗑️</span>
+        <span class="card-label">${t("recordClear") ?? "Limpar"}</span>
+      </button>`
+          : ""
+      }`;
+  }
+
+  const statusText = isRecording
+    ? t("recordStatusRecording")
+    : isPaused
+      ? t("recordStatusPaused")
+      : isStopped
+        ? (t("recordStatusStopped") ?? t("recordStatusIdle"))
+        : t("recordStatusIdle");
+
+  const indicatorClass = isRecording
+    ? "recording"
+    : isPaused
+      ? "paused"
+      : isStopped
+        ? "stopped"
+        : "";
+
+  const showTable = !isIdle || hasSteps;
+  const showExport = (isStopped || isPaused) && hasSteps;
+
+  content.innerHTML = `
+    <div class="record-section">
+      <div class="record-controls">
+        ${controlsHtml}
+      </div>
+
+      <div class="record-status">
+        <span class="record-indicator ${indicatorClass}"></span>
+        <span>${statusText}</span>
+        <span class="fields-count" id="record-step-count">${recordedStepsPreview.length} ${t("recordStepCount")}</span>
+      </div>
+
+      ${
+        showTable
+          ? `<div class="table-wrap">
+        <table class="fields-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>${t("recordColAction")}</th>
+              <th>${t("recordColSelector")}</th>
+              <th>${t("recordColValue")}</th>
+              <th>${t("columnActions")}</th>
+            </tr>
+          </thead>
+          <tbody id="record-steps-body">
+            <tr><td colspan="5" class="empty">${t("recordNoSteps")}</td></tr>
+          </tbody>
+        </table>
+      </div>`
+          : `<div class="table-wrap">
+        <div class="empty">${t("recordClickStart")}</div>
+      </div>`
+      }
+
+      ${
+        showExport
+          ? `
+        <div class="record-export">
+          <div class="record-export-title">${t("recordExportTitle")}</div>
+          <label class="record-ai-toggle" title="${t("recordOptimizeAIDesc")}">
+            <input type="checkbox" id="chk-optimize-ai" ${optimizeWithAI ? "checked" : ""} />
+            <span>✨ ${t("recordOptimizeAI")}</span>
+          </label>
+          <div class="record-export-buttons">
+            <button class="btn" data-export-framework="playwright">🎭 Playwright</button>
+            <button class="btn" data-export-framework="cypress">🌲 Cypress</button>
+            <button class="btn" data-export-framework="pest">🐘 Pest/Dusk</button>
+          </div>
+        </div>
+      `
+          : ""
+      }
+    </div>
+  `;
+
+  // Wire events
+  document
+    .getElementById("btn-record-start")
+    ?.addEventListener("click", () => void startRecording());
+  document
+    .getElementById("btn-record-stop")
+    ?.addEventListener("click", () => void stopRecording());
+  document.getElementById("btn-record-pause")?.addEventListener("click", () => {
+    if (isPaused) void resumeRecording();
+    else void pauseRecording();
+  });
+  document
+    .getElementById("btn-record-clear")
+    ?.addEventListener("click", () => void clearRecording());
+
+  document
+    .getElementById("chk-optimize-ai")
+    ?.addEventListener("change", (e) => {
+      optimizeWithAI = (e.target as HTMLInputElement).checked;
+    });
+
+  content
+    .querySelectorAll<HTMLButtonElement>("[data-export-framework]")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const fw = btn.dataset.exportFramework;
+        if (fw) void exportRecording(fw);
+      });
+    });
+
+  // Render steps if we have them
+  if (showTable) {
+    renderRecordStepsTable();
+  }
+}
+
 function renderLogTab(): void {
   const content = document.getElementById("content");
   if (!content) return;
@@ -769,11 +1314,74 @@ function renderLogTab(): void {
   void logViewerInstance.refresh();
 }
 
+// ── Real-time Recording Listener ─────────────────────────────────────────────
+
+chrome.runtime.onMessage.addListener(
+  (message: { type?: string; payload?: Record<string, unknown> }, sender) => {
+    if (sender.tab?.id !== inspectedTabId) return;
+
+    if (message.type === "RECORDING_STEP_ADDED") {
+      const p = message.payload as
+        | {
+            step?: {
+              type: string;
+              selector?: string;
+              value?: string;
+              url?: string;
+              label?: string;
+            };
+            index?: number;
+          }
+        | undefined;
+
+      if (p?.step) {
+        recordedStepsPreview.push(p.step);
+        renderRecordStepsTable();
+      }
+    }
+
+    if (message.type === "RECORDING_STEP_UPDATED") {
+      const p = message.payload as
+        | {
+            step?: {
+              type: string;
+              selector?: string;
+              value?: string;
+              url?: string;
+              label?: string;
+            };
+            index?: number;
+          }
+        | undefined;
+
+      if (
+        p?.step &&
+        typeof p.index === "number" &&
+        recordedStepsPreview[p.index]
+      ) {
+        recordedStepsPreview[p.index] = p.step;
+        renderRecordStepsTable();
+      }
+    }
+  },
+);
+
 // ── Navigation Listener ──────────────────────────────────────────────────────
 
 chrome.devtools.network.onNavigated.addListener(() => {
   detectedFields = [];
   watcherActive = false;
+  // Preserve steps if recording is stopped (user hasn't cleared yet)
+  if (recordingState !== "stopped") {
+    recordedStepsPreview = [];
+  }
+  if (
+    recordingState !== "recording" &&
+    recordingState !== "paused" &&
+    recordingState !== "stopped"
+  ) {
+    recordingState = "idle";
+  }
   ignoredSelectors.clear();
   renderActiveTab();
   updateStatusBar();

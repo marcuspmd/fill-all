@@ -15,6 +15,7 @@ import type {
   FieldClassifierOutput,
   FieldValueInput,
 } from "@/lib/ai/prompts";
+import type { ScriptOptimizerInput } from "@/lib/ai/prompts/script-optimizer.prompt";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("ChromeAIProxy");
@@ -93,6 +94,36 @@ export async function classifyFieldViaProxy(
     return null;
   } catch (err) {
     log.warn("Erro ao classificar campo via proxy:", err);
+    return null;
+  }
+}
+
+/**
+ * Optimizes an E2E test script by proxying the request to the background
+ * service worker where Chrome AI (Gemini Nano) runs.
+ *
+ * @returns Optimized script string, or `null` when AI is unavailable or fails.
+ */
+export async function optimizeScriptViaProxy(
+  input: ScriptOptimizerInput,
+): Promise<string | null> {
+  try {
+    const result = await chrome.runtime.sendMessage({
+      type: "AI_OPTIMIZE_SCRIPT",
+      payload: input,
+    });
+
+    if (typeof result === "string" && result.length > 0) {
+      log.debug(
+        `AI_OPTIMIZE_SCRIPT → ${result.length} chars (framework: ${input.framework})`,
+      );
+      return result;
+    }
+
+    log.debug("AI_OPTIMIZE_SCRIPT → null (sem resultado)");
+    return null;
+  } catch (err) {
+    log.warn("Erro ao otimizar script via proxy:", err);
     return null;
   }
 }

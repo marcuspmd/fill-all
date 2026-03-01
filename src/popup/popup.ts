@@ -141,6 +141,16 @@ function renderActionsTab(): void {
         <span class="card-label">${panelActive ? t("panelActive") : t("panelFloating")}</span>
         <span class="card-desc">${t("panelDesc")}</span>
       </button>
+      <div class="action-card" id="btn-export-e2e-card">
+        <span class="card-icon">🧪</span>
+        <span class="card-label" id="export-e2e-label">${t("exportE2E")}</span>
+        <span class="card-desc">${t("exportE2EDesc")}</span>
+        <select class="e2e-framework-select" id="e2e-framework-select">
+          <option value="playwright">Playwright</option>
+          <option value="cypress">Cypress</option>
+          <option value="pest">Pest/Dusk</option>
+        </select>
+      </div>
     </div>
     <div class="status-bar" id="status-bar">
       ${detectedFields.length > 0 ? `${detectedFields.length} ${t("fieldsDetected")}` : t("noFieldsDetected")}
@@ -167,6 +177,12 @@ function renderActionsTab(): void {
   document
     .getElementById("btn-toggle-panel")
     ?.addEventListener("click", handleTogglePanel);
+  document
+    .getElementById("btn-export-e2e-card")
+    ?.addEventListener("click", handleExportE2E);
+  document
+    .getElementById("e2e-framework-select")
+    ?.addEventListener("click", (e) => e.stopPropagation());
   document
     .getElementById("toggle-fill-empty-only")
     ?.addEventListener("change", handleFillEmptyOnlyToggle);
@@ -229,6 +245,62 @@ async function handleTogglePanel(): Promise<void> {
     await sendToActiveTab({ type: "HIDE_PANEL" });
   }
   renderActionsTab();
+}
+
+async function handleExportE2E(): Promise<void> {
+  const label = document.getElementById("export-e2e-label");
+  const select = document.getElementById(
+    "e2e-framework-select",
+  ) as HTMLSelectElement | null;
+  const framework = select?.value ?? "playwright";
+
+  if (label) label.textContent = t("exportE2EGenerating");
+
+  try {
+    const result = (await sendToActiveTab({
+      type: "EXPORT_E2E",
+      payload: { framework },
+    })) as { success?: boolean; script?: string; actionsCount?: number } | null;
+
+    if (!result?.success || !result.script) {
+      if (label) label.textContent = t("exportE2EFail");
+      return;
+    }
+
+    // Download as file
+    downloadScript(result.script, framework);
+
+    // Also copy to clipboard as fallback
+    await navigator.clipboard.writeText(result.script);
+    if (label)
+      label.textContent = `${t("exportE2ESuccess")} (${result.actionsCount})`;
+  } catch {
+    if (label) label.textContent = t("exportE2EFail");
+  } finally {
+    setTimeout(() => {
+      if (label) label.textContent = t("exportE2E");
+    }, 3000);
+  }
+}
+
+function downloadScript(script: string, framework: string): void {
+  const extensions: Record<string, string> = {
+    playwright: ".spec.ts",
+    cypress: ".cy.ts",
+    pest: ".php",
+  };
+
+  const ext = extensions[framework] ?? ".txt";
+  const filename = `form-fill${ext}`;
+  const blob = new Blob([script], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+
+  URL.revokeObjectURL(url);
 }
 
 // ── Fields Tab ───────────────────────────────────────────────────────────────

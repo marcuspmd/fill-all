@@ -8,6 +8,8 @@
 import type { MessageHandler } from "@/types/interfaces";
 import type { ExtensionMessage, MessageType } from "@/types";
 import { isAvailable, generateFieldValueFromInput } from "@/lib/ai/chrome-ai";
+import { optimizeScript } from "@/lib/ai/script-optimizer";
+import type { ScriptOptimizerInput } from "@/lib/ai/prompts/script-optimizer.prompt";
 import {
   fieldClassifierPrompt,
   type FieldClassifierInput,
@@ -22,6 +24,7 @@ const SUPPORTED: ReadonlyArray<MessageType> = [
   "AI_CHECK_AVAILABLE",
   "AI_CLASSIFY_FIELD",
   "AI_GENERATE",
+  "AI_OPTIMIZE_SCRIPT",
 ];
 
 // ── Classifier session management ─────────────────────────────────────────────
@@ -137,6 +140,15 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
         return "";
       }
       return generateFieldValueFromInput(payload as unknown as FieldValueInput);
+    }
+
+    case "AI_OPTIMIZE_SCRIPT": {
+      const payload = message.payload as ScriptOptimizerInput | undefined;
+      if (!payload?.script || !payload?.framework) {
+        log.warn("AI_OPTIMIZE_SCRIPT recebido sem script ou framework.");
+        return null;
+      }
+      return optimizeScript(payload);
     }
 
     default:

@@ -29,6 +29,105 @@
   "tabLog": {
     "message": "Log"
   },
+  "tabRecord": {
+    "message": "Record"
+  },
+  "recordStart": {
+    "message": "Start recording"
+  },
+  "recordStartDesc": {
+    "message": "Records your interactions with the form"
+  },
+  "recordStop": {
+    "message": "Stop"
+  },
+  "recordPause": {
+    "message": "Pause"
+  },
+  "recordResume": {
+    "message": "Resume"
+  },
+  "recordRefresh": {
+    "message": "Refresh"
+  },
+  "recordStatusRecording": {
+    "message": "Recording..."
+  },
+  "recordStatusPaused": {
+    "message": "Paused"
+  },
+  "recordStatusStopped": {
+    "message": "Stopped"
+  },
+  "recordStatusIdle": {
+    "message": "Ready to record"
+  },
+  "recordStepCount": {
+    "message": "steps"
+  },
+  "recordNoSteps": {
+    "message": "No steps recorded yet"
+  },
+  "recordClickStart": {
+    "message": "Click Start recording to begin"
+  },
+  "recordClear": {
+    "message": "Clear"
+  },
+  "recordColAction": {
+    "message": "Action"
+  },
+  "recordColSelector": {
+    "message": "Selector"
+  },
+  "recordColValue": {
+    "message": "Value"
+  },
+  "recordExportTitle": {
+    "message": "Export as test"
+  },
+  "logRecordStarted": {
+    "message": "Recording started"
+  },
+  "logRecordStopped": {
+    "message": "Recording stopped"
+  },
+  "logRecordPaused": {
+    "message": "Recording paused"
+  },
+  "logRecordResumed": {
+    "message": "Recording resumed"
+  },
+  "recordOptimizeAI": {
+    "message": "Optimize with AI"
+  },
+  "recordOptimizeAIDesc": {
+    "message": "Uses Chrome AI (Gemini Nano) to improve selectors, assertions and structure"
+  },
+  "logRecordExported": {
+    "message": "Test copied to clipboard"
+  },
+  "recordScriptReady": {
+    "message": "Script ready"
+  },
+  "recordCopyScript": {
+    "message": "Copy script"
+  },
+  "logRecordOptimizing": {
+    "message": "Optimizing script with AI..."
+  },
+  "logRecordOptimized": {
+    "message": "Script optimized with AI and copied to clipboard"
+  },
+  "logRecordOptimizeFailed": {
+    "message": "AI optimization unavailable — original script copied"
+  },
+  "logRecordExportError": {
+    "message": "Failed to export recording"
+  },
+  "logRecordError": {
+    "message": "Recording error"
+  },
   "tabGeneral": {
     "message": "General"
   },
@@ -1349,5 +1448,128 @@
   },
   "uiLanguageChanged": {
     "message": "Interface language updated."
+  },
+  "exportE2E": {
+    "message": "Export E2E"
+  },
+  "exportE2EDesc": {
+    "message": "Generate E2E test script"
+  },
+  "exportE2EGenerating": {
+    "message": "Generating..."
+  },
+  "exportE2ESuccess": {
+    "message": "✓ Script copied!"
+  },
+  "exportE2EFail": {
+    "message": "Failed to generate script"
+  },
+  "exportE2ENoFields": {
+    "message": "No fields detected"
+  },
+  "exportE2EFramework": {
+    "message": "Framework"
+  },
+  "contextMenuExportE2E": {
+    "message": "Fill All - Export E2E script"
+  },
+  "fpRecordLabel": {
+    "message": "Record"
+  },
+  "fpRecordDesc": {
+    "message": "Record user interactions"
+  },
+  "fpRecordStopLabel": {
+    "message": "Stop"
+  },
+  "fpRecordStopDesc": {
+    "message": "Stop and export recording"
+  },
+  "fpRecordResumeLabel": {
+    "message": "Resume"
+  },
+  "fpRecordingStarted": {
+    "message": "Recording started — interact with the page"
+  },
+  "fpRecordingResumed": {
+    "message": "Recording resumed"
+  },
+  "fpRecordingPaused": {
+    "message": "Recording paused"
+  },
+  "fpRecordingDiscarded": {
+    "message": "Recording discarded"
+  },
+  "fpExportRecording": {
+    "message": "Export Recording"
+  },
+  "fpRecordedSteps": {
+    "message": "Recorded steps"
+  },
+  "fpTestName": {
+    "message": "Test name"
+  },
+  "fpTestNamePlaceholder": {
+    "message": "e.g. Login flow"
+  },
+  "fpFramework": {
+    "message": "Framework"
+  },
+  "fpExport": {
+    "message": "Export"
+  },
+  "fpPauseRecording": {
+    "message": "Pause"
+  },
+  "fpDiscardRecording": {
+    "message": "Discard"
+  },
+  "fpContinueRecording": {
+    "message": "Continue recording"
+  },
+  "fpNoRecordedSteps": {
+    "message": "No steps were recorded"
+  },
+  "fpExportFailed": {
+    "message": "Failed to generate script"
+  },
+  "fpExportSuccess": {
+    "message": "Script exported successfully"
+  },
+  "fpSteps": {
+    "message": "steps"
+  },
+  "fpPreview": {
+    "message": "Preview"
+  },
+  "fpSmartWaits": {
+    "message": "Smart waits (network-aware)"
+  },
+  "fpIncludeAssertions": {
+    "message": "Include assertions"
+  },
+  "fpStepType": {
+    "message": "Type"
+  },
+  "fpStepValue": {
+    "message": "Value"
+  },
+  "fpStepSelector": {
+    "message": "Selector"
+  },
+  "fpRecordingStopped": {
+    "message": "Recording stopped — review your steps"
+  },
+  "fpClear": {
+    "message": "Clear"
+  },
+  "fpDeleteStep": {
+    "message": "Delete step"
+  },
+  "fpEditValue": {
+    "message": "Edit value"
+  },
+  "fpEditTimeout": {
+    "message": "Edit timeout (ms)"
   }
 }

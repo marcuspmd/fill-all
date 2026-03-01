@@ -39,3 +39,12 @@ export type {
 export { fieldValueGeneratorPrompt } from "./field-value-generator.prompt";
 
 export type { FieldValueInput } from "./field-value-generator.prompt";
+
+// ── Script Optimizer Prompt ───────────────────────────────────────────────────
+
+export {
+  scriptOptimizerPrompt,
+  OPTIMIZER_TEMPERATURE,
+} from "./script-optimizer.prompt";
+
+export type { ScriptOptimizerInput } from "./script-optimizer.prompt";

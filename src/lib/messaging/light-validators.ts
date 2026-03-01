@@ -97,3 +97,37 @@ export function parseSavedFormPayload(input: unknown): SavedForm | null {
 export function parseApplyTemplatePayload(input: unknown): SavedForm | null {
   return parseSavedFormPayload(input);
 }
+
+/**
+ * Lightweight E2E export payload parser.
+ * @param input - Raw payload from an `EXPORT_E2E` message
+ * @returns Object with `framework` string, or `null` if invalid
+ */
+export function parseExportE2EPayload(
+  input: unknown,
+): { framework: string } | null {
+  if (!input || typeof input !== "object") return null;
+  const value = input as { framework?: unknown };
+  if (typeof value.framework !== "string" || !value.framework) return null;
+  return { framework: value.framework };
+}
+
+/**
+ * Lightweight EXPORT_RECORDING payload parser.
+ * @param input - Raw payload from an `EXPORT_RECORDING` message
+ * @returns Object with `framework` and optional `testName`, or `null` if invalid
+ */
+export function parseExportRecordingPayload(
+  input: unknown,
+): { framework: string; testName?: string } | null {
+  if (!input || typeof input !== "object") return null;
+  const value = input as { framework?: unknown; testName?: unknown };
+  if (typeof value.framework !== "string" || !value.framework) return null;
+  const result: { framework: string; testName?: string } = {
+    framework: value.framework,
+  };
+  if (typeof value.testName === "string" && value.testName) {
+    result.testName = value.testName;
+  }
+  return result;
+}

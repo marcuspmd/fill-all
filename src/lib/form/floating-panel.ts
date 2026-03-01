@@ -39,12 +39,47 @@ import {
 import { t } from "@/lib/i18n";
 import { createLogger } from "@/lib/logger";
 import {
+  startRecording,
+  stopRecording,
+  pauseRecording,
+  resumeRecording,
+  getRecordingSession,
+  getRecordingStatus,
+  generateE2EFromRecording,
+  getCapturedResponses,
+  E2E_GENERATORS,
+  setOnStepAdded,
+  setOnStepUpdated,
+  removeStep,
+  updateStep,
+  clearSession,
+} from "@/lib/e2e-export";
+import type {
+  E2EFramework,
+  RecordedStep,
+  RecordingGenerateOptions,
+} from "@/lib/e2e-export";
+import {
   createLogViewer,
   getLogViewerStyles,
   type LogViewer,
 } from "@/lib/logger/log-viewer";
 
 const log = createLogger("FloatingPanel");
+
+const STEP_ICONS: Record<string, string> = {
+  fill: "✏️",
+  click: "🖱️",
+  select: "📋",
+  check: "☑️",
+  submit: "🚀",
+  navigate: "🔗",
+  wait: "⏳",
+  "network-wait": "🌐",
+  scroll: "📜",
+  hover: "👆",
+  keypress: "⌨️",
+};
 
 const PANEL_ID = "fill-all-floating-panel";
 const STORAGE_KEY = "fill_all_panel_state";
@@ -206,6 +241,22 @@ function getPanelHTML(): string {
             <span class="fa-card-label">${t("fpClearBadgesLabel")}</span>
             <span class="fa-card-desc">${t("fpClearBadgesDesc")}</span>
           </button>
+          <button class="fa-action-card fa-card-outline" id="fa-btn-record">
+            <span class="fa-card-icon">🔴</span>
+            <span class="fa-card-label">${t("fpRecordLabel")}</span>
+            <span class="fa-card-desc">${t("fpRecordDesc")}</span>
+          </button>
+          <div id="fa-live-steps" class="fa-live-steps" style="display:none">
+            <div class="fa-live-steps-header">
+              <span class="fa-live-steps-title">📹 <span id="fa-live-steps-count">0</span> ${t("fpSteps")}</span>
+              <div class="fa-live-steps-actions">
+                <button class="fa-btn fa-btn-sm" id="fa-live-pause" title="${t("fpPauseRecording")}">⏸</button>
+                <button class="fa-btn fa-btn-sm fa-btn-primary" id="fa-live-export" title="${t("fpExport")}" style="display:none">📤</button>
+                <button class="fa-btn fa-btn-sm fa-btn-danger" id="fa-live-clear" title="${t("fpClear")}" style="display:none">🗑️</button>
+              </div>
+            </div>
+            <div class="fa-live-steps-list" id="fa-live-steps-list"></div>
+          </div>
         </div>
         <div class="fa-status-bar" id="fa-status-bar"></div>
       </div>
@@ -857,6 +908,320 @@ function getPanelCSS(): string {
       text-align: center;
       font-style: italic;
     }
+
+    /* ─── Record Mode ─── */
+    #${PANEL_ID} .fa-card-outline.active .fa-card-icon {
+      animation: fa-pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes fa-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    #${PANEL_ID} #fa-record-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15,23,42,0.92);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      border-radius: 12px;
+    }
+    #${PANEL_ID} .fa-record-dialog {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 20px;
+      width: 320px;
+      max-width: 90%;
+    }
+    #${PANEL_ID} .fa-record-dialog h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      color: #e2e8f0;
+    }
+    #${PANEL_ID} .fa-record-dialog p {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    #${PANEL_ID} .fa-record-form {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    #${PANEL_ID} .fa-record-form label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    #${PANEL_ID} .fa-record-form input,
+    #${PANEL_ID} .fa-record-form select {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 13px;
+      color: #e2e8f0;
+      font-family: inherit;
+    }
+    #${PANEL_ID} .fa-record-form input:focus,
+    #${PANEL_ID} .fa-record-form select:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+    #${PANEL_ID} .fa-record-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    #${PANEL_ID} .fa-btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #334155;
+      background: rgba(255,255,255,0.05);
+      color: #cbd5e1;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    #${PANEL_ID} .fa-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    #${PANEL_ID} .fa-btn-primary {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: #fff;
+    }
+    #${PANEL_ID} .fa-btn-primary:hover {
+      background: #4338ca;
+    }
+    #${PANEL_ID} .fa-btn-secondary {
+      background: rgba(251,191,36,0.15);
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+    #${PANEL_ID} .fa-btn-secondary:hover {
+      background: rgba(251,191,36,0.25);
+    }
+    #${PANEL_ID} .fa-btn-danger {
+      background: rgba(239,68,68,0.15);
+      border-color: #ef4444;
+      color: #f87171;
+    }
+    #${PANEL_ID} .fa-btn-danger:hover {
+      background: rgba(239,68,68,0.25);
+    }
+    #${PANEL_ID} .fa-record-dialog-wide {
+      width: 520px;
+      max-width: 95%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #${PANEL_ID} .fa-record-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 8px;
+    }
+    #${PANEL_ID} .fa-record-tabs .fa-tab {
+      padding: 5px 12px;
+      border-radius: 6px 6px 0 0;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #94a3b8;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    #${PANEL_ID} .fa-record-tabs .fa-tab.active {
+      background: #1e293b;
+      border-color: #334155;
+      border-bottom-color: #1e293b;
+      color: #e2e8f0;
+    }
+    #${PANEL_ID} .fa-record-tabs .fa-tab:hover:not(.active) {
+      color: #cbd5e1;
+      background: rgba(255,255,255,0.05);
+    }
+    #${PANEL_ID} .fa-tab-content {
+      display: none;
+    }
+    #${PANEL_ID} .fa-tab-content.active {
+      display: block;
+    }
+    #${PANEL_ID} .fa-preview-table-wrap {
+      max-height: 280px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+      border: 1px solid #334155;
+      border-radius: 6px;
+    }
+    #${PANEL_ID} .fa-preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    #${PANEL_ID} .fa-preview-table th {
+      background: #0f172a;
+      color: #94a3b8;
+      font-weight: 600;
+      padding: 6px 8px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+    }
+    #${PANEL_ID} .fa-preview-table td {
+      padding: 5px 8px;
+      border-top: 1px solid #1e293b;
+      color: #cbd5e1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+    #${PANEL_ID} .fa-preview-table code {
+      font-size: 11px;
+      color: #a5b4fc;
+      background: rgba(99,102,241,0.1);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    #${PANEL_ID} .fa-preview-table tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+    }
+    #${PANEL_ID} .fa-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #94a3b8;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    #${PANEL_ID} .fa-checkbox-label input[type="checkbox"] {
+      accent-color: #6366f1;
+      width: 14px;
+      height: 14px;
+    }
+
+    /* ─── Live Steps List ─── */
+    #${PANEL_ID} .fa-live-steps {
+      margin-top: 10px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background: #1e293b;
+      overflow: hidden;
+    }
+    #${PANEL_ID} .fa-live-steps-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+    }
+    #${PANEL_ID} .fa-live-steps-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #a5b4fc;
+    }
+    #${PANEL_ID} .fa-live-steps-actions {
+      display: flex;
+      gap: 4px;
+    }
+    #${PANEL_ID} .fa-btn-sm {
+      padding: 3px 8px;
+      font-size: 11px;
+      border-radius: 4px;
+      min-width: 28px;
+    }
+    #${PANEL_ID} .fa-live-steps-list {
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    #${PANEL_ID} .fa-live-step-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-bottom: 1px solid #1e293b;
+      font-size: 11px;
+      transition: background 0.1s;
+    }
+    #${PANEL_ID} .fa-live-step-row:hover {
+      background: rgba(255,255,255,0.03);
+    }
+    #${PANEL_ID} .fa-live-step-num {
+      color: #64748b;
+      font-weight: 700;
+      min-width: 18px;
+      text-align: right;
+    }
+    #${PANEL_ID} .fa-live-step-icon {
+      font-size: 13px;
+    }
+    #${PANEL_ID} .fa-live-step-type {
+      color: #94a3b8;
+      font-weight: 600;
+      min-width: 48px;
+    }
+    #${PANEL_ID} .fa-live-step-desc {
+      color: #cbd5e1;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    #${PANEL_ID} .fa-live-step-value,
+    #${PANEL_ID} .fa-live-step-timeout {
+      flex-shrink: 0;
+    }
+    #${PANEL_ID} .fa-live-edit-value,
+    #${PANEL_ID} .fa-live-edit-timeout {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      color: #e2e8f0;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    #${PANEL_ID} .fa-live-edit-value {
+      width: 80px;
+    }
+    #${PANEL_ID} .fa-live-edit-timeout {
+      width: 50px;
+    }
+    #${PANEL_ID} .fa-live-edit-value:focus,
+    #${PANEL_ID} .fa-live-edit-timeout:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+    #${PANEL_ID} .fa-live-step-delete {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      transition: all 0.15s;
+      font-family: inherit;
+      line-height: 1;
+    }
+    #${PANEL_ID} .fa-live-step-delete:hover {
+      background: rgba(239,68,68,0.15);
+      color: #f87171;
+    }
   `;
 }
 
@@ -1085,6 +1450,39 @@ function setupActionHandlers(panel: HTMLElement): void {
     clearAllBadges();
     setStatus(panel, t("fpBadgesCleared"), "info");
     addLog(t("logBadgesRemoved"), "info");
+  });
+
+  // Record mode toggle
+  panel.querySelector("#fa-btn-record")?.addEventListener("click", () => {
+    handleRecordToggle(panel);
+  });
+
+  // Live step controls
+  panel.querySelector("#fa-live-pause")?.addEventListener("click", () => {
+    const status = getRecordingStatus();
+    if (status === "recording") {
+      pauseRecording();
+      setOnStepAdded(null);
+      setOnStepUpdated(null);
+      const card = panel.querySelector("#fa-btn-record") as HTMLButtonElement;
+      const iconEl = card?.querySelector<HTMLElement>(".fa-card-icon");
+      const labelEl = card?.querySelector<HTMLElement>(".fa-card-label");
+      if (iconEl) iconEl.textContent = "▶️";
+      if (labelEl) labelEl.textContent = t("fpRecordResumeLabel");
+      setStatus(panel, t("fpRecordingPaused"), "info");
+      addLog(t("fpRecordingPaused"), "info");
+    }
+  });
+
+  panel.querySelector("#fa-live-export")?.addEventListener("click", () => {
+    showExportRecordingDialog(panel);
+  });
+
+  panel.querySelector("#fa-live-clear")?.addEventListener("click", () => {
+    clearSession();
+    resetRecordButton(panel);
+    setStatus(panel, t("fpRecordingDiscarded"), "info");
+    addLog(t("fpRecordingDiscarded"), "info");
   });
 
   // Open options page
@@ -1730,4 +2128,441 @@ function restoreState(panel: HTMLElement): void {
   } catch {
     // Silently fail
   }
+}
+
+/* ─── Record Mode ─── */
+
+function handleRecordToggle(panel: HTMLElement): void {
+  const status = getRecordingStatus();
+  const card = panel.querySelector("#fa-btn-record") as HTMLButtonElement;
+  const iconEl = card?.querySelector<HTMLElement>(".fa-card-icon");
+  const labelEl = card?.querySelector<HTMLElement>(".fa-card-label");
+  const descEl = card?.querySelector<HTMLElement>(".fa-card-desc");
+  const liveSteps = panel.querySelector("#fa-live-steps") as HTMLElement;
+
+  if (status === "stopped") {
+    // Start recording
+    startRecording();
+    card?.classList.add("active");
+    if (iconEl) iconEl.textContent = "⏹";
+    if (labelEl) labelEl.textContent = t("fpRecordStopLabel");
+    if (descEl) descEl.textContent = t("fpRecordStopDesc");
+    setStatus(panel, t("fpRecordingStarted"), "info");
+    addLog(t("fpRecordingStarted"), "info");
+
+    // Show live step list
+    if (liveSteps) {
+      liveSteps.style.display = "";
+      const listEl = liveSteps.querySelector("#fa-live-steps-list");
+      if (listEl) listEl.innerHTML = "";
+      updateLiveStepCount(panel, 0);
+      showLiveRecordingControls(panel);
+    }
+
+    // Set callbacks for real-time updates
+    setOnStepAdded((step, index) => {
+      appendLiveStepRow(panel, step, index);
+      const session = getRecordingSession();
+      updateLiveStepCount(panel, session?.steps.length ?? 0);
+    });
+    setOnStepUpdated((_step, index) => {
+      updateLiveStepRow(panel, _step, index);
+    });
+  } else if (status === "recording") {
+    // Stop recording — keep steps for review
+    stopRecording();
+    setOnStepAdded(null);
+    setOnStepUpdated(null);
+    card?.classList.remove("active");
+    if (iconEl) iconEl.textContent = "🔴";
+    if (labelEl) labelEl.textContent = t("fpRecordLabel");
+    if (descEl) descEl.textContent = t("fpRecordDesc");
+    setStatus(panel, t("fpRecordingStopped"), "info");
+    addLog(t("fpRecordingStopped"), "info");
+
+    // Show export + clear buttons
+    showLiveReviewControls(panel);
+  } else if (status === "paused") {
+    resumeRecording();
+    card?.classList.add("active");
+    if (iconEl) iconEl.textContent = "⏹";
+    if (labelEl) labelEl.textContent = t("fpRecordStopLabel");
+    setStatus(panel, t("fpRecordingResumed"), "info");
+    addLog(t("fpRecordingResumed"), "info");
+
+    showLiveRecordingControls(panel);
+
+    setOnStepAdded((step, index) => {
+      appendLiveStepRow(panel, step, index);
+      const session = getRecordingSession();
+      updateLiveStepCount(panel, session?.steps.length ?? 0);
+    });
+    setOnStepUpdated((_step, index) => {
+      updateLiveStepRow(panel, _step, index);
+    });
+  }
+}
+
+function resetRecordButton(panel: HTMLElement): void {
+  const card = panel.querySelector("#fa-btn-record") as HTMLButtonElement;
+  const iconEl = card?.querySelector<HTMLElement>(".fa-card-icon");
+  const labelEl = card?.querySelector<HTMLElement>(".fa-card-label");
+  const descEl = card?.querySelector<HTMLElement>(".fa-card-desc");
+  card?.classList.remove("active");
+  if (iconEl) iconEl.textContent = "🔴";
+  if (labelEl) labelEl.textContent = t("fpRecordLabel");
+  if (descEl) descEl.textContent = t("fpRecordDesc");
+
+  // Hide live step list
+  const liveSteps = panel.querySelector("#fa-live-steps") as HTMLElement;
+  if (liveSteps) {
+    liveSteps.style.display = "none";
+    const listEl = liveSteps.querySelector("#fa-live-steps-list");
+    if (listEl) listEl.innerHTML = "";
+  }
+}
+
+/* ─── Live Step List Helpers ─── */
+
+function updateLiveStepCount(panel: HTMLElement, count: number): void {
+  const el = panel.querySelector("#fa-live-steps-count");
+  if (el) el.textContent = String(count);
+}
+
+function showLiveRecordingControls(panel: HTMLElement): void {
+  const pauseBtn = panel.querySelector("#fa-live-pause") as HTMLElement;
+  const exportBtn = panel.querySelector("#fa-live-export") as HTMLElement;
+  const clearBtn = panel.querySelector("#fa-live-clear") as HTMLElement;
+  if (pauseBtn) pauseBtn.style.display = "";
+  if (exportBtn) exportBtn.style.display = "none";
+  if (clearBtn) clearBtn.style.display = "none";
+}
+
+function showLiveReviewControls(panel: HTMLElement): void {
+  const pauseBtn = panel.querySelector("#fa-live-pause") as HTMLElement;
+  const exportBtn = panel.querySelector("#fa-live-export") as HTMLElement;
+  const clearBtn = panel.querySelector("#fa-live-clear") as HTMLElement;
+  if (pauseBtn) pauseBtn.style.display = "none";
+  if (exportBtn) exportBtn.style.display = "";
+  if (clearBtn) clearBtn.style.display = "";
+}
+
+function buildStepDescription(step: RecordedStep): string {
+  return step.label || step.value || step.url || step.key || "";
+}
+
+function appendLiveStepRow(
+  panel: HTMLElement,
+  step: RecordedStep,
+  index: number,
+): void {
+  const listEl = panel.querySelector("#fa-live-steps-list");
+  if (!listEl) return;
+
+  const icon = STEP_ICONS[step.type] ?? "❓";
+  const desc = buildStepDescription(step);
+  const row = document.createElement("div");
+  row.className = "fa-live-step-row";
+  row.setAttribute("data-step-index", String(index));
+  row.innerHTML = `
+    <span class="fa-live-step-num">${index + 1}</span>
+    <span class="fa-live-step-icon">${icon}</span>
+    <span class="fa-live-step-type">${escapeHtml(step.type)}</span>
+    <span class="fa-live-step-desc" title="${escapeHtml(desc)}">${escapeHtml(desc.slice(0, 30))}</span>
+    <span class="fa-live-step-value">
+      ${step.value !== undefined ? `<input class="fa-live-edit-value" type="text" value="${escapeHtml(step.value)}" title="${t("fpEditValue")}" />` : ""}
+    </span>
+    <span class="fa-live-step-timeout">
+      <input class="fa-live-edit-timeout" type="number" value="${step.waitTimeout ?? ""}" min="0" step="500" placeholder="ms" title="${t("fpEditTimeout")}" />
+    </span>
+    <button class="fa-live-step-delete" title="${t("fpDeleteStep")}">✕</button>
+  `;
+
+  // Wire up inline edit for value
+  const valueInput = row.querySelector<HTMLInputElement>(".fa-live-edit-value");
+  valueInput?.addEventListener("change", () => {
+    updateStep(index, { value: valueInput.value });
+  });
+
+  // Wire up inline edit for timeout
+  const timeoutInput = row.querySelector<HTMLInputElement>(
+    ".fa-live-edit-timeout",
+  );
+  timeoutInput?.addEventListener("change", () => {
+    const ms = parseInt(timeoutInput.value, 10);
+    updateStep(index, { waitTimeout: isNaN(ms) ? undefined : ms });
+  });
+
+  // Wire up delete
+  row.querySelector(".fa-live-step-delete")?.addEventListener("click", () => {
+    removeStep(index);
+    row.remove();
+    // Re-index remaining rows
+    reindexLiveStepRows(panel);
+    const session = getRecordingSession();
+    updateLiveStepCount(panel, session?.steps.length ?? 0);
+  });
+
+  listEl.appendChild(row);
+  // Auto-scroll to bottom
+  listEl.scrollTop = listEl.scrollHeight;
+}
+
+function updateLiveStepRow(
+  panel: HTMLElement,
+  step: RecordedStep,
+  index: number,
+): void {
+  const listEl = panel.querySelector("#fa-live-steps-list");
+  if (!listEl) return;
+
+  const row = listEl.querySelector(
+    `[data-step-index="${index}"]`,
+  ) as HTMLElement;
+  if (!row) return;
+
+  const desc = buildStepDescription(step);
+  const descEl = row.querySelector(".fa-live-step-desc") as HTMLElement;
+  if (descEl) {
+    descEl.textContent = desc.slice(0, 30);
+    descEl.title = desc;
+  }
+
+  const valueInput = row.querySelector<HTMLInputElement>(".fa-live-edit-value");
+  if (valueInput && step.value !== undefined) {
+    valueInput.value = step.value;
+  }
+}
+
+function reindexLiveStepRows(panel: HTMLElement): void {
+  const listEl = panel.querySelector("#fa-live-steps-list");
+  if (!listEl) return;
+
+  const rows = listEl.querySelectorAll<HTMLElement>(".fa-live-step-row");
+  rows.forEach((row, i) => {
+    row.setAttribute("data-step-index", String(i));
+    const numEl = row.querySelector(".fa-live-step-num");
+    if (numEl) numEl.textContent = String(i + 1);
+  });
+}
+
+function showExportRecordingDialog(panel: HTMLElement): void {
+  const session = getRecordingSession();
+  if (!session) return;
+
+  const stepsCount = session.steps.length;
+  const httpResponses = getCapturedResponses();
+  const frameworkOptions = E2E_GENERATORS.map(
+    (g) =>
+      `<option value="${g.name}">${g.name.charAt(0).toUpperCase() + g.name.slice(1)}</option>`,
+  ).join("");
+
+  // Build preview of recorded steps
+  const stepRows = session.steps
+    .map((step, i) => {
+      const icon = STEP_ICONS[step.type] ?? "❓";
+      const desc = step.label || step.value || step.url || step.key || "";
+      const sel = step.selector
+        ? `<code>${escapeHtml(step.selector)}</code>`
+        : "";
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${icon} ${escapeHtml(step.type)}</td>
+        <td title="${escapeHtml(desc)}">${escapeHtml(desc.slice(0, 40))}</td>
+        <td title="${escapeHtml(step.selector ?? "")}">${sel}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const httpRows = httpResponses
+    .map(
+      (r) =>
+        `<tr><td>${escapeHtml(r.method)}</td><td title="${escapeHtml(r.url)}">${escapeHtml(r.url.slice(0, 50))}</td><td>${r.status}</td></tr>`,
+    )
+    .join("");
+
+  const overlay = document.createElement("div");
+  overlay.id = "fa-record-overlay";
+  overlay.innerHTML = `
+    <div class="fa-record-dialog fa-record-dialog-wide">
+      <h3>📹 ${t("fpExportRecording")}</h3>
+
+      <div class="fa-record-tabs">
+        <button class="fa-tab active" data-tab="preview">🔍 ${t("fpPreview")} (${stepsCount})</button>
+        <button class="fa-tab" data-tab="export">📤 ${t("fpExport")}</button>
+        ${httpResponses.length > 0 ? `<button class="fa-tab" data-tab="http">🌐 HTTP (${httpResponses.length})</button>` : ""}
+      </div>
+
+      <div class="fa-tab-content active" id="fa-tab-preview">
+        <div class="fa-preview-table-wrap">
+          <table class="fa-preview-table">
+            <thead><tr><th>#</th><th>${t("fpStepType")}</th><th>${t("fpStepValue")}</th><th>${t("fpStepSelector")}</th></tr></thead>
+            <tbody>${stepRows}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="fa-tab-content" id="fa-tab-export">
+        <div class="fa-record-form">
+          <label>${t("fpTestName")}:</label>
+          <input type="text" id="fa-record-test-name" placeholder="${t("fpTestNamePlaceholder")}" />
+          <label>${t("fpFramework")}:</label>
+          <select id="fa-record-framework">${frameworkOptions}</select>
+          <label class="fa-checkbox-label">
+            <input type="checkbox" id="fa-record-smart-waits" checked />
+            ${t("fpSmartWaits")}
+          </label>
+          <label class="fa-checkbox-label">
+            <input type="checkbox" id="fa-record-assertions" checked />
+            ${t("fpIncludeAssertions")}
+          </label>
+        </div>
+      </div>
+
+      ${
+        httpResponses.length > 0
+          ? `
+      <div class="fa-tab-content" id="fa-tab-http">
+        <div class="fa-preview-table-wrap">
+          <table class="fa-preview-table">
+            <thead><tr><th>Method</th><th>URL</th><th>Status</th></tr></thead>
+            <tbody>${httpRows}</tbody>
+          </table>
+        </div>
+      </div>`
+          : ""
+      }
+
+      <div class="fa-record-actions">
+        <button class="fa-btn fa-btn-primary" id="fa-record-export">${t("fpExport")}</button>
+        <button class="fa-btn fa-btn-secondary" id="fa-record-pause">${t("fpPauseRecording")}</button>
+        <button class="fa-btn fa-btn-danger" id="fa-record-discard">${t("fpDiscardRecording")}</button>
+        <button class="fa-btn" id="fa-record-cancel">${t("fpContinueRecording")}</button>
+      </div>
+    </div>
+  `;
+
+  panel.appendChild(overlay);
+
+  // Tab switching logic
+  overlay.querySelectorAll<HTMLButtonElement>(".fa-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      overlay
+        .querySelectorAll(".fa-tab")
+        .forEach((t) => t.classList.remove("active"));
+      overlay
+        .querySelectorAll(".fa-tab-content")
+        .forEach((c) => c.classList.remove("active"));
+      tab.classList.add("active");
+      const target = tab.getAttribute("data-tab");
+      overlay.querySelector(`#fa-tab-${target}`)?.classList.add("active");
+    });
+  });
+
+  overlay.querySelector("#fa-record-export")?.addEventListener("click", () => {
+    const framework = (
+      overlay.querySelector("#fa-record-framework") as HTMLSelectElement
+    )?.value as E2EFramework;
+    const testName = (
+      overlay.querySelector("#fa-record-test-name") as HTMLInputElement
+    )?.value;
+    const includeAssertions =
+      (overlay.querySelector("#fa-record-assertions") as HTMLInputElement)
+        ?.checked ?? true;
+    const smartWaits =
+      (overlay.querySelector("#fa-record-smart-waits") as HTMLInputElement)
+        ?.checked ?? true;
+
+    // Use current session (already stopped or still active)
+    const status = getRecordingStatus();
+    if (status === "recording" || status === "paused") {
+      stopRecording();
+    }
+    const recordedSession = getRecordingSession();
+    if (!recordedSession || recordedSession.steps.length === 0) {
+      setStatus(panel, t("fpNoRecordedSteps"), "error");
+      overlay.remove();
+      resetRecordButton(panel);
+      return;
+    }
+
+    const options: RecordingGenerateOptions = {
+      testName: testName || undefined,
+      pageUrl: recordedSession.startUrl,
+      includeAssertions,
+      minWaitThreshold: smartWaits ? 500 : 0,
+    };
+
+    const script = generateE2EFromRecording(
+      framework,
+      recordedSession.steps,
+      options,
+    );
+
+    clearSession();
+    overlay.remove();
+    resetRecordButton(panel);
+
+    if (!script) {
+      setStatus(panel, t("fpExportFailed"), "error");
+      return;
+    }
+
+    downloadScript(script, framework, testName);
+    setStatus(
+      panel,
+      `${t("fpExportSuccess")} (${recordedSession.steps.length} ${t("fpSteps")})`,
+      "success",
+    );
+    addLog(
+      `${t("fpExportSuccess")}: ${framework} (${recordedSession.steps.length} ${t("fpSteps")})`,
+      "success",
+    );
+  });
+
+  overlay.querySelector("#fa-record-pause")?.addEventListener("click", () => {
+    pauseRecording();
+    overlay.remove();
+    const card = panel.querySelector("#fa-btn-record") as HTMLButtonElement;
+    const iconEl = card?.querySelector<HTMLElement>(".fa-card-icon");
+    const labelEl = card?.querySelector<HTMLElement>(".fa-card-label");
+    if (iconEl) iconEl.textContent = "▶️";
+    if (labelEl) labelEl.textContent = t("fpRecordResumeLabel");
+    setStatus(panel, t("fpRecordingPaused"), "info");
+    addLog(t("fpRecordingPaused"), "info");
+  });
+
+  overlay.querySelector("#fa-record-discard")?.addEventListener("click", () => {
+    clearSession();
+    overlay.remove();
+    resetRecordButton(panel);
+    setStatus(panel, t("fpRecordingDiscarded"), "info");
+    addLog(t("fpRecordingDiscarded"), "info");
+  });
+
+  overlay.querySelector("#fa-record-cancel")?.addEventListener("click", () => {
+    overlay.remove();
+  });
+}
+
+function downloadScript(
+  script: string,
+  framework: string,
+  testName?: string,
+): void {
+  const ext = framework === "pest" ? ".php" : ".ts";
+  const baseName = testName
+    ? testName.toLowerCase().replace(/\s+/g, "-")
+    : "recorded-test";
+  const fileName = `${baseName}.test${ext}`;
+
+  const blob = new Blob([script], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }

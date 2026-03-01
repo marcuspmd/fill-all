@@ -29,6 +29,105 @@
   "tabLog": {
     "message": "Log"
   },
+  "tabRecord": {
+    "message": "Grabar"
+  },
+  "recordStart": {
+    "message": "Iniciar grabación"
+  },
+  "recordStartDesc": {
+    "message": "Graba tus interacciones con el formulario"
+  },
+  "recordStop": {
+    "message": "Detener"
+  },
+  "recordPause": {
+    "message": "Pausar"
+  },
+  "recordResume": {
+    "message": "Continuar"
+  },
+  "recordRefresh": {
+    "message": "Actualizar"
+  },
+  "recordStatusRecording": {
+    "message": "Grabando..."
+  },
+  "recordStatusPaused": {
+    "message": "Pausado"
+  },
+  "recordStatusStopped": {
+    "message": "Detenido"
+  },
+  "recordStatusIdle": {
+    "message": "Listo para grabar"
+  },
+  "recordStepCount": {
+    "message": "pasos"
+  },
+  "recordNoSteps": {
+    "message": "No hay pasos grabados aún"
+  },
+  "recordClickStart": {
+    "message": "Haga clic en Iniciar grabación para comenzar"
+  },
+  "recordClear": {
+    "message": "Limpiar"
+  },
+  "recordColAction": {
+    "message": "Acción"
+  },
+  "recordColSelector": {
+    "message": "Selector"
+  },
+  "recordColValue": {
+    "message": "Valor"
+  },
+  "recordExportTitle": {
+    "message": "Exportar como prueba"
+  },
+  "logRecordStarted": {
+    "message": "Grabación iniciada"
+  },
+  "logRecordStopped": {
+    "message": "Grabación detenida"
+  },
+  "logRecordPaused": {
+    "message": "Grabación pausada"
+  },
+  "logRecordResumed": {
+    "message": "Grabación reanudada"
+  },
+  "recordOptimizeAI": {
+    "message": "Optimizar con IA"
+  },
+  "recordOptimizeAIDesc": {
+    "message": "Usa Chrome AI (Gemini Nano) para mejorar selectores, aserciones y estructura"
+  },
+  "logRecordExported": {
+    "message": "Prueba copiada al portapapeles"
+  },
+  "recordScriptReady": {
+    "message": "Script listo"
+  },
+  "recordCopyScript": {
+    "message": "Copiar script"
+  },
+  "logRecordOptimizing": {
+    "message": "Optimizando script con IA..."
+  },
+  "logRecordOptimized": {
+    "message": "Script optimizado con IA y copiado al portapapeles"
+  },
+  "logRecordOptimizeFailed": {
+    "message": "Optimización con IA no disponible — script original copiado"
+  },
+  "logRecordExportError": {
+    "message": "Error al exportar grabación"
+  },
+  "logRecordError": {
+    "message": "Error en la grabación"
+  },
   "tabGeneral": {
     "message": "General"
   },
@@ -1349,5 +1448,128 @@
   },
   "uiLanguageChanged": {
     "message": "Idioma de la interfaz actualizado."
+  },
+  "exportE2E": {
+    "message": "Exportar E2E"
+  },
+  "exportE2EDesc": {
+    "message": "Generar script de prueba E2E"
+  },
+  "exportE2EGenerating": {
+    "message": "Generando..."
+  },
+  "exportE2ESuccess": {
+    "message": "✓ Script copiado!"
+  },
+  "exportE2EFail": {
+    "message": "Error al generar script"
+  },
+  "exportE2ENoFields": {
+    "message": "Ningún campo detectado"
+  },
+  "exportE2EFramework": {
+    "message": "Framework"
+  },
+  "contextMenuExportE2E": {
+    "message": "Fill All - Exportar script E2E"
+  },
+  "fpRecordLabel": {
+    "message": "Grabar"
+  },
+  "fpRecordDesc": {
+    "message": "Grabar interacciones del usuario"
+  },
+  "fpRecordStopLabel": {
+    "message": "Detener"
+  },
+  "fpRecordStopDesc": {
+    "message": "Detener y exportar grabación"
+  },
+  "fpRecordResumeLabel": {
+    "message": "Reanudar"
+  },
+  "fpRecordingStarted": {
+    "message": "Grabación iniciada — interactúe con la página"
+  },
+  "fpRecordingResumed": {
+    "message": "Grabación reanudada"
+  },
+  "fpRecordingPaused": {
+    "message": "Grabación pausada"
+  },
+  "fpRecordingDiscarded": {
+    "message": "Grabación descartada"
+  },
+  "fpExportRecording": {
+    "message": "Exportar Grabación"
+  },
+  "fpRecordedSteps": {
+    "message": "Pasos grabados"
+  },
+  "fpTestName": {
+    "message": "Nombre del test"
+  },
+  "fpTestNamePlaceholder": {
+    "message": "ej: Flujo de login"
+  },
+  "fpFramework": {
+    "message": "Framework"
+  },
+  "fpExport": {
+    "message": "Exportar"
+  },
+  "fpPauseRecording": {
+    "message": "Pausar"
+  },
+  "fpDiscardRecording": {
+    "message": "Descartar"
+  },
+  "fpContinueRecording": {
+    "message": "Continuar grabando"
+  },
+  "fpNoRecordedSteps": {
+    "message": "No se grabaron pasos"
+  },
+  "fpExportFailed": {
+    "message": "Error al generar script"
+  },
+  "fpExportSuccess": {
+    "message": "Script exportado con éxito"
+  },
+  "fpSteps": {
+    "message": "pasos"
+  },
+  "fpPreview": {
+    "message": "Vista previa"
+  },
+  "fpSmartWaits": {
+    "message": "Esperas inteligentes (network-aware)"
+  },
+  "fpIncludeAssertions": {
+    "message": "Incluir aserciones"
+  },
+  "fpStepType": {
+    "message": "Tipo"
+  },
+  "fpStepValue": {
+    "message": "Valor"
+  },
+  "fpStepSelector": {
+    "message": "Selector"
+  },
+  "fpRecordingStopped": {
+    "message": "Grabación detenida — revise sus pasos"
+  },
+  "fpClear": {
+    "message": "Limpiar"
+  },
+  "fpDeleteStep": {
+    "message": "Eliminar paso"
+  },
+  "fpEditValue": {
+    "message": "Editar valor"
+  },
+  "fpEditTimeout": {
+    "message": "Editar timeout (ms)"
   }
 }

@@ -21,6 +21,30 @@ import {
 import { saveForm, getSettings } from "@/lib/storage/storage";
 import { initI18n } from "@/lib/i18n";
 import {
+  buildCapturedActions,
+  detectSubmitActions,
+  generateE2EScript,
+  generateE2EFromRecording,
+  detectAssertions,
+  detectNegativeAssertions,
+  startRecording,
+  stopRecording,
+  pauseRecording,
+  resumeRecording,
+  getRecordingStatus,
+  getRecordingSession,
+  setOnStepAdded,
+  setOnStepUpdated,
+  removeStep,
+  updateStep,
+  clearSession,
+} from "@/lib/e2e-export";
+import type {
+  E2EFramework,
+  E2EGenerateOptions,
+  RecordingGenerateOptions,
+} from "@/lib/e2e-export";
+import {
   startWatching,
   stopWatching,
   isWatcherActive,
@@ -45,6 +69,8 @@ import {
   parseSavedFormPayload,
   parseStartWatchingPayload,
   parseStringPayload,
+  parseExportE2EPayload,
+  parseExportRecordingPayload,
 } from "@/lib/messaging/light-validators";
 import { initLogger } from "@/lib/logger";
 
@@ -301,6 +327,186 @@ async function handleContentMessage(
 
     case "RELOAD_CLASSIFIER": {
       void reloadClassifier();
+      return { success: true };
+    }
+
+    case "EXPORT_E2E": {
+      const parsed = parseExportE2EPayload(message.payload);
+      if (!parsed) return { error: "Invalid payload for EXPORT_E2E" };
+
+      const framework = parsed.framework as E2EFramework;
+      const { fields } = await detectAllFieldsAsync();
+      const results = await fillAllFields();
+      const actions = buildCapturedActions(fields, results);
+
+      // Detect submit buttons and append to actions
+      const submitActions = detectSubmitActions();
+      const allActions = [...actions, ...submitActions];
+
+      // Detect assertions from the page
+      const pageUrl = window.location.href;
+      const assertions = detectAssertions(allActions, pageUrl);
+      const negativeAssertions = detectNegativeAssertions(allActions);
+
+      const options: E2EGenerateOptions = {
+        pageUrl,
+        includeAssertions: true,
+        includeNegativeTest: true,
+        useSmartSelectors: true,
+        assertions: [...assertions, ...negativeAssertions],
+      };
+
+      const script = generateE2EScript(framework, allActions, options);
+
+      if (!script) return { error: `Unsupported framework: ${framework}` };
+
+      showNotification(
+        `✓ Script ${framework} gerado (${allActions.length} ações)`,
+      );
+      return { success: true, script, actionsCount: allActions.length };
+    }
+
+    case "START_RECORDING": {
+      startRecording();
+
+      setOnStepAdded((step, index) => {
+        chrome.runtime
+          .sendMessage({
+            type: "RECORDING_STEP_ADDED",
+            payload: {
+              step: {
+                type: step.type,
+                selector: step.selector,
+                value: step.value,
+                url: step.url,
+                label: step.label,
+              },
+              index,
+            },
+          })
+          .catch(() => {});
+      });
+
+      setOnStepUpdated((step, index) => {
+        chrome.runtime
+          .sendMessage({
+            type: "RECORDING_STEP_UPDATED",
+            payload: {
+              step: {
+                type: step.type,
+                selector: step.selector,
+                value: step.value,
+                url: step.url,
+                label: step.label,
+              },
+              index,
+            },
+          })
+          .catch(() => {});
+      });
+
+      showNotification("🔴 Gravação iniciada");
+      return { success: true };
+    }
+
+    case "STOP_RECORDING": {
+      const session = stopRecording();
+      if (!session) return { error: "No recording in progress" };
+      showNotification(
+        `⏹ Gravação finalizada (${session.steps.length} passos)`,
+      );
+      return { success: true, stepsCount: session.steps.length };
+    }
+
+    case "PAUSE_RECORDING": {
+      pauseRecording();
+      showNotification("⏸ Gravação pausada");
+      return { success: true };
+    }
+
+    case "RESUME_RECORDING": {
+      resumeRecording();
+      showNotification("🔴 Gravação retomada");
+      return { success: true };
+    }
+
+    case "GET_RECORDING_STATUS": {
+      return { success: true, status: getRecordingStatus() };
+    }
+
+    case "GET_RECORDING_STEPS": {
+      const session = getRecordingSession();
+      if (!session) return { success: true, steps: [] };
+      return {
+        success: true,
+        steps: session.steps.map((s, i, arr) => ({
+          type: s.type,
+          selector: s.selector,
+          value: s.value,
+          waitMs: i > 0 ? s.timestamp - arr[i - 1].timestamp : 0,
+          url: s.url,
+        })),
+      };
+    }
+
+    case "EXPORT_RECORDING": {
+      const recPayload = parseExportRecordingPayload(message.payload);
+      if (!recPayload) return { error: "Invalid payload for EXPORT_RECORDING" };
+
+      const session = getRecordingSession();
+      if (!session || session.steps.length === 0) {
+        return { error: "No recorded steps available" };
+      }
+
+      const recOptions: RecordingGenerateOptions = {
+        testName: recPayload.testName,
+        pageUrl: session.startUrl,
+        includeAssertions: true,
+        minWaitThreshold: 500,
+      };
+
+      const recScript = generateE2EFromRecording(
+        recPayload.framework as E2EFramework,
+        session.steps,
+        recOptions,
+      );
+
+      if (!recScript) {
+        return { error: `Unsupported framework: ${recPayload.framework}` };
+      }
+
+      showNotification(
+        `✓ Script ${recPayload.framework} gerado (${session.steps.length} passos gravados)`,
+      );
+      return {
+        success: true,
+        script: recScript,
+        stepsCount: session.steps.length,
+      };
+    }
+
+    case "REMOVE_RECORDING_STEP": {
+      const payload = message.payload as { index?: number } | undefined;
+      if (typeof payload?.index !== "number") {
+        return { error: "Invalid index" };
+      }
+      const removed = removeStep(payload.index);
+      return { success: removed };
+    }
+
+    case "UPDATE_RECORDING_STEP": {
+      const payload = message.payload as
+        | { index?: number; patch?: { value?: string; waitTimeout?: number } }
+        | undefined;
+      if (typeof payload?.index !== "number" || !payload.patch) {
+        return { error: "Invalid payload" };
+      }
+      const updated = updateStep(payload.index, payload.patch);
+      return { success: updated };
+    }
+
+    case "CLEAR_RECORDING": {
+      clearSession();
       return { success: true };
     }
 
