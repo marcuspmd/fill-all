@@ -109,7 +109,10 @@ describe("action-recorder", () => {
 
       expect(result).not.toBeNull();
       expect(result!.status).toBe("stopped");
-      expect(getRecordingSession()).toBeNull();
+      // Session is preserved after stop so it can be exported;
+      // only clearSession() / startRecording() resets it to null.
+      expect(getRecordingSession()).not.toBeNull();
+      expect(getRecordingSession()!.status).toBe("stopped");
     });
 
     it("returns null when stopping without active session", () => {
@@ -394,9 +397,10 @@ describe("action-recorder", () => {
         selector: "#name",
         value: "test",
       };
+      // addManualStep is a no-op unless a recording is active
       addManualStep(step);
 
-      expect(getRecordingSession()).toBeNull();
+      expect(getRecordingStatus()).toBe("stopped");
     });
   });
 
@@ -407,12 +411,15 @@ describe("action-recorder", () => {
       startRecording();
       stopRecording();
 
+      const stepsBeforeInteraction = getRecordingSession()!.steps.length;
+
       // After stopping, new interactions should not create steps
       const input = makeInput({ id: "after-stop" });
       input.value = "test";
       fireInput(input);
 
-      expect(getRecordingSession()).toBeNull();
+      // Stopped session is preserved for export, but no new steps were added
+      expect(getRecordingSession()!.steps.length).toBe(stepsBeforeInteraction);
     });
 
     it("handles multiple start/stop cycles cleanly", () => {
@@ -1041,8 +1048,8 @@ describe("action-recorder", () => {
       expect(removeStep(999)).toBe(false);
     });
 
-    it("removeStep returns false when no session", () => {
-      // No session (after stopRecording clears it)
+    it("removeStep returns false when no active session", () => {
+      // removeStep operates on the active (recording) session, not the stopped one
       expect(removeStep(0)).toBe(false);
     });
 

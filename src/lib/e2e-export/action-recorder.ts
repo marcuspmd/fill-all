@@ -23,6 +23,11 @@ import { extractSmartSelectors } from "./smart-selector";
 // ---------------------------------------------------------------------------
 
 let session: RecordingSession | null = null;
+/**
+ * Holds the last stopped session so it can be exported after recording ends.
+ * Cleared by `clearSession()` or when a new recording starts.
+ */
+let stoppedSession: RecordingSession | null = null;
 let mutationObserver: MutationObserver | null = null;
 let lastActionTimestamp = 0;
 let pendingMutationTimer: ReturnType<typeof setTimeout> | null = null;
@@ -607,6 +612,9 @@ export function startRecording(): RecordingSession {
   // Stop any existing session
   if (session) stopRecording();
 
+  // Clear any previously stopped session so the new recording starts clean
+  stoppedSession = null;
+
   session = {
     steps: [
       {
@@ -687,15 +695,18 @@ export function stopRecording(): RecordingSession | null {
   lastActionTimestamp = 0;
 
   const final = session;
+  stoppedSession = final; // preserve for export after recording ends
   session = null;
   return final;
 }
 
 /**
  * Returns the current recording session (or null if not recording).
+ * After `stopRecording()`, returns the stopped session so it can still be
+ * exported. Returns null only after `clearSession()` or a new `startRecording()`.
  */
 export function getRecordingSession(): RecordingSession | null {
-  return session;
+  return session ?? stoppedSession;
 }
 
 /**
@@ -766,6 +777,7 @@ export function updateStep(
  */
 export function clearSession(): void {
   session = null;
+  stoppedSession = null;
   lastActionTimestamp = 0;
   capturedResponses = [];
 }
