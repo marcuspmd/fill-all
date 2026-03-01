@@ -9,6 +9,11 @@ import {
   getRecordingStatus,
   addManualStep,
   getCapturedResponses,
+  setOnStepAdded,
+  setOnStepUpdated,
+  removeStep,
+  updateStep,
+  clearSession,
 } from "@/lib/e2e-export/action-recorder";
 import type { RecordedStep } from "@/lib/e2e-export/e2e-export.types";
 
@@ -761,6 +766,509 @@ describe("action-recorder", () => {
       const responses2 = getCapturedResponses();
       expect(responses1).not.toBe(responses2);
       expect(responses1).toEqual(responses2);
+    });
+
+    it("does not insert network-idle step when last action was too long ago", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        status: 200,
+        ok: true,
+      } as Response);
+      globalThis.fetch = mockFetch;
+
+      startRecording();
+
+      // Advance time enough that the "last user action" is considered stale (>10s)
+      await vi.advanceTimersByTimeAsync(15_000);
+
+      await globalThis.fetch("/api/search");
+
+      // Advance past NETWORK_IDLE_THRESHOLD_MS (500ms)
+      await vi.advanceTimersByTimeAsync(600);
+
+      const s = getRecordingSession()!;
+      const idleSteps = s.steps.filter(
+        (st) => st.type === "wait-for-network-idle",
+      );
+      expect(idleSteps).toHaveLength(0);
+    });
+
+    it("skips fetch tracking when not recording", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({ status: 200 } as Response);
+      globalThis.fetch = mockFetch;
+
+      startRecording();
+      pauseRecording();
+
+      // Fetch while paused — should not be tracked
+      await globalThis.fetch("/api/data");
+
+      expect(getCapturedResponses()).toHaveLength(0);
+    });
+
+    it("intercepts fetch with URL object as input", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({ status: 200 } as Response);
+      globalThis.fetch = mockFetch;
+
+      startRecording();
+      await globalThis.fetch(new URL("https://example.com/api"));
+
+      const responses = getCapturedResponses();
+      expect(responses[0].url).toBe("https://example.com/api");
+    });
+
+    it("intercepts fetch with Request object as input", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({ status: 200 } as Response);
+      globalThis.fetch = mockFetch;
+
+      startRecording();
+      await globalThis.fetch(new Request("https://example.com/request"));
+
+      const responses = getCapturedResponses();
+      expect(responses[0].url).toBe("https://example.com/request");
+    });
+  });
+
+  // ── XHR monitoring ─────────────────────────────────────────────────
+
+  describe("XHR monitoring", () => {
+    it("intercepts XHR and captures response on loadend", async () => {
+      startRecording();
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", "/api/xhr-test");
+      xhr.send();
+
+      // Manually fire loadend to simulate completion
+      Object.defineProperty(xhr, "status", { value: 200 });
+      xhr.dispatchEvent(new Event("loadend"));
+
+      await vi.advanceTimersByTimeAsync(10);
+
+      const responses = getCapturedResponses();
+      expect(responses.some((r) => r.url === "/api/xhr-test")).toBe(true);
+      expect(responses.find((r) => r.url === "/api/xhr-test")?.method).toBe(
+        "GET",
+      );
+    });
+
+    it("restores XHR prototype on stop", () => {
+      const origOpen = XMLHttpRequest.prototype.open;
+      const origSend = XMLHttpRequest.prototype.send;
+
+      startRecording();
+
+      // Should be patched
+      expect(XMLHttpRequest.prototype.open).not.toBe(origOpen);
+
+      stopRecording();
+
+      // Should be restored
+      expect(XMLHttpRequest.prototype.open).toBe(origOpen);
+      expect(XMLHttpRequest.prototype.send).toBe(origSend);
+    });
+
+    it("does not track XHR when session is not recording", () => {
+      startRecording();
+      pauseRecording();
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", "/api/paused");
+      xhr.send();
+
+      expect(getCapturedResponses()).toHaveLength(0);
+    });
+  });
+
+  // ── Navigation event handlers ────────────────────────────────────
+
+  describe("navigation event handlers", () => {
+    it("onBeforeUnload adds a navigate step", () => {
+      startRecording();
+      window.dispatchEvent(new Event("beforeunload"));
+
+      const s = getRecordingSession()!;
+      const navSteps = s.steps.filter((st) => st.type === "navigate");
+      expect(navSteps.length).toBeGreaterThanOrEqual(2); // initial + beforeunload
+      expect(navSteps[navSteps.length - 1].label).toBe("Page navigation");
+    });
+
+    it("onBeforeUnload is ignored when not recording", () => {
+      startRecording();
+      pauseRecording();
+
+      const s = getRecordingSession()!;
+      const countBefore = s.steps.length;
+
+      window.dispatchEvent(new Event("beforeunload"));
+
+      expect(s.steps.length).toBe(countBefore);
+    });
+
+    it("onHashChange adds a wait-for-url step with hash value", () => {
+      startRecording();
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+      const s = getRecordingSession()!;
+      const hashSteps = s.steps.filter((st) => st.type === "wait-for-url");
+      expect(hashSteps.length).toBeGreaterThanOrEqual(1);
+      expect(hashSteps[hashSteps.length - 1].label).toContain("hash");
+    });
+
+    it("onHashChange is ignored when not recording", () => {
+      startRecording();
+      pauseRecording();
+
+      const s = getRecordingSession()!;
+      const countBefore = s.steps.length;
+
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+      expect(s.steps.length).toBe(countBefore);
+    });
+
+    it("onPopState adds a wait-for-url step", () => {
+      startRecording();
+      window.dispatchEvent(new PopStateEvent("popstate"));
+
+      const s = getRecordingSession()!;
+      const popSteps = s.steps.filter((st) => st.type === "wait-for-url");
+      expect(popSteps.length).toBeGreaterThanOrEqual(1);
+      expect(popSteps[popSteps.length - 1].label).toContain("popstate");
+    });
+
+    it("onPopState is ignored when not recording", () => {
+      startRecording();
+      pauseRecording();
+
+      const s = getRecordingSession()!;
+      const countBefore = s.steps.length;
+
+      window.dispatchEvent(new PopStateEvent("popstate"));
+
+      expect(s.steps.length).toBe(countBefore);
+    });
+  });
+
+  // ── Step management API ─────────────────────────────────────────────
+
+  describe("step management API", () => {
+    it("setOnStepAdded callback fires when step is added", () => {
+      const cb = vi.fn();
+      setOnStepAdded(cb);
+      startRecording();
+
+      const input = makeInput({ id: "name", type: "text" });
+      input.value = "Alice";
+      fireInput(input);
+
+      expect(cb).toHaveBeenCalled();
+      const [step, index] = cb.mock.calls[cb.mock.calls.length - 1];
+      expect(step.type).toBe("fill");
+      expect(typeof index).toBe("number");
+
+      setOnStepAdded(null);
+    });
+
+    it("setOnStepAdded(null) clears the callback", () => {
+      const cb = vi.fn();
+      setOnStepAdded(cb);
+      setOnStepAdded(null);
+      startRecording();
+
+      const input = makeInput({ type: "text" });
+      input.value = "test";
+      fireInput(input);
+
+      expect(cb).not.toHaveBeenCalled();
+    });
+
+    it("setOnStepUpdated callback fires when debounced step is updated", () => {
+      const cb = vi.fn();
+      setOnStepUpdated(cb);
+      startRecording();
+
+      const input = makeInput({ id: "u", type: "text" });
+
+      // First input
+      input.value = "a";
+      fireInput(input);
+
+      // Second rapid input — triggers debounce update callback
+      input.value = "ab";
+      fireInput(input);
+
+      expect(cb).toHaveBeenCalled();
+      const [step] = cb.mock.calls[0];
+      expect(step.value).toBe("ab");
+
+      setOnStepUpdated(null);
+    });
+
+    it("setOnStepUpdated(null) clears the callback", () => {
+      const cb = vi.fn();
+      setOnStepUpdated(cb);
+      setOnStepUpdated(null);
+      startRecording();
+
+      const input = makeInput({ id: "x", type: "text" });
+      input.value = "a";
+      fireInput(input);
+      input.value = "ab";
+      fireInput(input);
+
+      expect(cb).not.toHaveBeenCalled();
+    });
+
+    it("removeStep removes step at given index", () => {
+      startRecording();
+
+      const input = makeInput({ type: "text" });
+      input.value = "hello";
+      fireInput(input);
+
+      const s = getRecordingSession()!;
+      const lenBefore = s.steps.length;
+      const result = removeStep(lenBefore - 1);
+
+      expect(result).toBe(true);
+      expect(s.steps.length).toBe(lenBefore - 1);
+    });
+
+    it("removeStep returns false for invalid index", () => {
+      startRecording();
+
+      expect(removeStep(-1)).toBe(false);
+      expect(removeStep(999)).toBe(false);
+    });
+
+    it("removeStep returns false when no session", () => {
+      // No session (after stopRecording clears it)
+      expect(removeStep(0)).toBe(false);
+    });
+
+    it("updateStep patches value and waitTimeout", () => {
+      startRecording();
+
+      const input = makeInput({ type: "text" });
+      input.value = "original";
+      fireInput(input);
+
+      const s = getRecordingSession()!;
+      const idx = s.steps.length - 1;
+
+      const result = updateStep(idx, { value: "updated", waitTimeout: 3000 });
+
+      expect(result).toBe(true);
+      expect(s.steps[idx].value).toBe("updated");
+      expect(s.steps[idx].waitTimeout).toBe(3000);
+    });
+
+    it("updateStep fires onStepUpdatedCallback", () => {
+      const cb = vi.fn();
+      setOnStepUpdated(cb);
+      startRecording();
+
+      const input = makeInput({ type: "text" });
+      input.value = "v";
+      fireInput(input);
+
+      const s = getRecordingSession()!;
+      updateStep(s.steps.length - 1, { value: "new" });
+
+      expect(cb).toHaveBeenCalled();
+      setOnStepUpdated(null);
+    });
+
+    it("updateStep returns false for invalid index", () => {
+      startRecording();
+      expect(updateStep(-1, { value: "x" })).toBe(false);
+      expect(updateStep(999, { value: "x" })).toBe(false);
+    });
+
+    it("updateStep returns false when no session", () => {
+      expect(updateStep(0, { value: "x" })).toBe(false);
+    });
+
+    it("clearSession resets session to null", () => {
+      startRecording();
+      expect(getRecordingSession()).not.toBeNull();
+
+      clearSession();
+
+      expect(getRecordingSession()).toBeNull();
+      expect(getCapturedResponses()).toHaveLength(0);
+    });
+
+    it("clearSession with no active session is safe", () => {
+      // No session running
+      expect(() => clearSession()).not.toThrow();
+      expect(getRecordingSession()).toBeNull();
+    });
+  });
+
+  // ── Label resolution — parentLabel branch ──────────────────────────
+
+  describe("resolveLabel — parentLabel branch", () => {
+    it("resolves label when input is wrapped directly inside a label", () => {
+      const label = document.createElement("label");
+      label.textContent = "Username";
+      const input = document.createElement("input");
+      input.type = "text";
+      label.appendChild(input);
+      document.body.appendChild(label);
+
+      startRecording();
+      input.value = "alice";
+      fireInput(input);
+
+      const s = getRecordingSession()!;
+      const fillStep = s.steps.find((st) => st.type === "fill");
+      expect(fillStep?.label).toBe("Username");
+    });
+  });
+
+  // ── Input event from non-form-field elements ──────────────────────
+
+  describe("input event from non-form-field elements", () => {
+    it("ignores input events on non-form elements (div)", () => {
+      startRecording();
+      const div = document.createElement("div");
+      document.body.appendChild(div);
+
+      div.dispatchEvent(new Event("input", { bubbles: true }));
+
+      const s = getRecordingSession()!;
+      // Only the initial navigate step
+      expect(s.steps).toHaveLength(1);
+    });
+  });
+
+  // ── onChange edge cases ───────────────────────────────────────────
+
+  describe("onChange edge cases", () => {
+    it("ignores change events on non-select elements", () => {
+      startRecording();
+      const input = makeInput({ type: "text" });
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+
+      const s = getRecordingSession()!;
+      expect(s.steps).toHaveLength(1);
+    });
+
+    it("updates existing select step value when same selector fires change again", () => {
+      const sel = makeSelect({ id: "country" }, ["us", "br"]);
+      startRecording();
+
+      // First — add a select step via onInput (or onChange)
+      sel.value = "us";
+      fireChange(sel); // adds select step
+
+      const s = getRecordingSession()!;
+      const selectStepsBefore = s.steps.filter((st) => st.type === "select");
+      expect(selectStepsBefore).toHaveLength(1);
+
+      // Second change on same selector — should UPDATE in place, not add new step
+      sel.value = "br";
+      fireChange(sel);
+
+      const selectStepsAfter = s.steps.filter((st) => st.type === "select");
+      expect(selectStepsAfter).toHaveLength(1);
+      expect(selectStepsAfter[0].value).toBe("br");
+    });
+  });
+
+  // ── onClick — submit input type ─────────────────────────────────
+
+  describe("onClick — HTMLInputElement submit", () => {
+    it("input[type=submit] is handled by isFormField (onClick early-exits)", () => {
+      // input[type=submit] matches FORM_FIELD_SELECTOR so onClick returns early.
+      // The submit detection for HTMLInputElement inside onClick is dead code;
+      // button[type=submit] is the supported path (tested in click-capture suite).
+      startRecording();
+
+      const submitInput = makeInput({ type: "submit", value: "Go" });
+      fireClick(submitInput);
+
+      const s = getRecordingSession()!;
+      // No submit step — input[type=submit] treated as form field, not a submit trigger
+      const submitStep = s.steps.find((st) => st.type === "submit");
+      expect(submitStep).toBeUndefined();
+    });
+  });
+
+  // ── onInput — select element via input event ─────────────────────
+
+  describe("onInput — select element fires input event", () => {
+    it("captures select step from input event on select element", () => {
+      const sel = makeSelect({ id: "lang" }, ["en", "pt"]);
+      startRecording();
+
+      sel.value = "pt";
+      fireInput(sel);
+
+      const s = getRecordingSession()!;
+      const step = s.steps.find((st) => st.type === "select");
+      expect(step).toBeDefined();
+      expect(step?.value).toBe("pt");
+    });
+  });
+
+  // ── Mutation observer ──────────────────────────────────────────────
+
+  describe("mutation observer", () => {
+    it("inserts wait-for-element step when a new visible form field appears", async () => {
+      startRecording();
+
+      // Dynamically add a new input to trigger MutationObserver
+      const newInput = document.createElement("input");
+      newInput.type = "text";
+      newInput.id = "dynamic-field";
+      document.body.appendChild(newInput);
+
+      // Wait for MutationObserver callback + debounce
+      await vi.advanceTimersByTimeAsync(500);
+
+      const s = getRecordingSession()!;
+      const waitStep = s.steps.find((st) => st.type === "wait-for-element");
+      expect(waitStep).toBeDefined();
+      expect(waitStep?.label).toContain("field");
+    });
+
+    it("inserts wait-for-hidden step when a spinner element is removed", async () => {
+      // Add a spinner first, then record + remove it
+      const spinner = document.createElement("div");
+      spinner.className = "spinner";
+      document.body.appendChild(spinner);
+
+      startRecording();
+
+      // Remove the spinner to trigger the MutationObserver
+      document.body.removeChild(spinner);
+
+      await vi.advanceTimersByTimeAsync(500);
+
+      const s = getRecordingSession()!;
+      const waitHiddenStep = s.steps.find(
+        (st) => st.type === "wait-for-hidden",
+      );
+      expect(waitHiddenStep).toBeDefined();
+      expect(waitHiddenStep?.label).toContain("loading");
+    });
+
+    it("does not process mutations when paused", async () => {
+      startRecording();
+      pauseRecording();
+
+      const newInput = document.createElement("input");
+      newInput.type = "text";
+      document.body.appendChild(newInput);
+
+      await vi.advanceTimersByTimeAsync(500);
+
+      const s = getRecordingSession()!;
+      expect(
+        s.steps.filter((st) => st.type === "wait-for-element"),
+      ).toHaveLength(0);
     });
   });
 });

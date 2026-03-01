@@ -244,6 +244,27 @@ describe("pestGenerator", () => {
 
       expect(script).not.toContain("validation errors");
     });
+
+    it("includes field-error assertions in negative test", () => {
+      const actions: CapturedAction[] = [
+        {
+          selector: "#email",
+          value: "a@b.com",
+          actionType: "fill",
+          required: true,
+        },
+        { selector: "#submit", value: "", actionType: "click" },
+      ];
+      const opts: E2EGenerateOptions = {
+        pageUrl: "https://example.com",
+        includeNegativeTest: true,
+        assertions: [{ type: "field-error", selector: ".error-message" }],
+      };
+
+      const script = pestGenerator.generate(actions, opts);
+
+      expect(script).toContain("assertVisible('.error-message')");
+    });
   });
 
   // ── generateFromRecording ────────────────────────────────────────

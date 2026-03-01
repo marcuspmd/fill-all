@@ -383,6 +383,36 @@ describe("playwrightGenerator", () => {
 
       expect(script).not.toContain("class FormPage");
     });
+
+    it("generates camelCase property names for multi-word labels", () => {
+      const actions: CapturedAction[] = [
+        {
+          selector: "#first-name",
+          value: "John",
+          actionType: "fill",
+          label: "First Name",
+        },
+        {
+          selector: "#date-of-birth",
+          value: "1990-01-01",
+          actionType: "fill",
+          label: "Date Of Birth",
+        },
+        {
+          selector: "#submit-btn",
+          value: "",
+          actionType: "click",
+          label: "Submit Form",
+        },
+      ];
+      const opts: E2EGenerateOptions = { includePOM: true };
+
+      const script = playwrightGenerator.generate(actions, opts);
+
+      expect(script).toContain("get firstName()");
+      expect(script).toContain("get dateOfBirth()");
+      expect(script).toContain("get submitButton()");
+    });
   });
 
   // ── generateFromRecording ────────────────────────────────────────
@@ -716,6 +746,46 @@ describe("playwrightGenerator", () => {
       expect(script).not.toContain("hover");
       expect(script).toContain("fill");
       expect(script).toContain("click");
+    });
+
+    it("generates navigate step when pageUrl is not provided (not skipped)", () => {
+      const steps: RecordedStep[] = [
+        step({ type: "navigate", url: "https://example.com", timestamp: 1000 }),
+        step({
+          type: "fill",
+          selector: "#name",
+          value: "John",
+          timestamp: 1100,
+        }),
+      ];
+      // No pageUrl → navigate at index 0 is NOT skipped, recordedStepLine("navigate") is called
+
+      const script = playwrightGenerator.generateFromRecording(steps);
+
+      expect(script).toContain("await page.goto('https://example.com')");
+    });
+
+    it("generates navigate step at non-first position", () => {
+      const steps: RecordedStep[] = [
+        step({
+          type: "fill",
+          selector: "#name",
+          value: "John",
+          timestamp: 1000,
+        }),
+        step({
+          type: "navigate",
+          url: "https://example.com/step2",
+          timestamp: 1100,
+        }),
+      ];
+      const opts: RecordingGenerateOptions = {
+        pageUrl: "https://example.com",
+      };
+
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
+
+      expect(script).toContain("await page.goto('https://example.com/step2')");
     });
   });
 });

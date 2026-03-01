@@ -82,6 +82,35 @@ describe("Smart Selector Extractor", () => {
       expect(selectors[0].value).toContain("aria-labelledby");
     });
 
+    it("falls through when aria-labelledby references non-existent element", () => {
+      // aria-labelledby points to an id that doesn't exist in the document
+      const el = createElement("input", {
+        "aria-labelledby": "nonexistent-id",
+        id: "my-input",
+      });
+
+      const selectors = extractSmartSelectors(el);
+      // Should not produce an aria-labelledby selector; falls back to id/css
+      const ariaLabelledBySelector = selectors.find((s) =>
+        s.value.includes("aria-labelledby"),
+      );
+      expect(ariaLabelledBySelector).toBeUndefined();
+      expect(selectors.length).toBeGreaterThan(0);
+    });
+
+    it("falls through when aria-labelledby element has empty text", () => {
+      const label = createElement("label", { id: "lbl-empty" });
+      label.textContent = "   ";
+      const el = createElement("input", { "aria-labelledby": "lbl-empty" });
+
+      const selectors = extractSmartSelectors(el);
+      // Label has only whitespace, so aria-labelledby strategy should not appear
+      const ariaLabelledBySelector = selectors.find((s) =>
+        s.value.includes("aria-labelledby"),
+      );
+      expect(ariaLabelledBySelector).toBeUndefined();
+    });
+
     it("extracts role selector with aria-label name", () => {
       const el = createElement("div", {
         role: "textbox",
@@ -93,6 +122,16 @@ describe("Smart Selector Extractor", () => {
       expect(roleSelector).toBeDefined();
       expect(roleSelector!.value).toContain("role");
       expect(roleSelector!.value).toContain("textbox");
+    });
+
+    it("extracts role selector without name when aria-label and name are absent", () => {
+      const el = createElement("div", { role: "combobox" });
+
+      const selectors = extractSmartSelectors(el);
+      const roleSelector = selectors.find((s) => s.strategy === "role");
+      expect(roleSelector).toBeDefined();
+      expect(roleSelector!.value).toBe('[role="combobox"]');
+      expect(roleSelector!.description).toBe('role="combobox"');
     });
 
     it("extracts name attribute selector", () => {
@@ -183,6 +222,28 @@ describe("Smart Selector Extractor", () => {
       const fallback = selectors.find((s) => s.strategy === "css");
       expect(fallback).toBeDefined();
       expect(fallback!.value).toContain(">");
+    });
+
+    it("builds CSS fallback stopping at ancestor with id", () => {
+      const section = createElement("section", { id: "main-section" });
+      const div = createElement("div", {}, section);
+      const el = createElement("button", {}, div);
+
+      const selectors = extractSmartSelectors(el);
+      const fallback = selectors.find((s) => s.strategy === "css");
+      expect(fallback).toBeDefined();
+      expect(fallback!.value).toContain("#main-section");
+    });
+
+    it("builds CSS fallback with nth-of-type for sibling elements", () => {
+      const container = createElement("div", {});
+      createElement("input", {}, container);
+      const el = createElement("input", {}, container);
+
+      const selectors = extractSmartSelectors(el);
+      const fallback = selectors.find((s) => s.strategy === "css");
+      expect(fallback).toBeDefined();
+      expect(fallback!.value).toContain("nth-of-type");
     });
   });
 

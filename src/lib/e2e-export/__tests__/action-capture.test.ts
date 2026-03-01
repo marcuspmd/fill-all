@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   buildCapturedActions,
   detectSubmitActions,
@@ -160,6 +160,36 @@ describe("buildCapturedActions", () => {
 
     expect(actions[0].fieldType).toBe("cpf");
   });
+
+  it("detects submit action type for input[type=submit]", () => {
+    const inputSubmit = document.createElement("input");
+    inputSubmit.type = "submit";
+
+    const field = {
+      ...makeField({ selector: "#sub" }),
+      element: inputSubmit,
+    } as FormField;
+    const results = [makeResult("#sub", "")];
+
+    const actions = buildCapturedActions([field], results);
+
+    expect(actions[0].actionType).toBe("submit");
+  });
+
+  it("detects submit action type for button[type=submit]", () => {
+    const btnSubmit = document.createElement("button");
+    btnSubmit.type = "submit";
+
+    const field = {
+      ...makeField({ selector: "#btn" }),
+      element: btnSubmit,
+    } as FormField;
+    const results = [makeResult("#btn", "")];
+
+    const actions = buildCapturedActions([field], results);
+
+    expect(actions[0].actionType).toBe("submit");
+  });
 });
 
 describe("detectSubmitActions", () => {
@@ -244,5 +274,31 @@ describe("detectSubmitActions", () => {
       "<form><button name='submit-form' type='submit'>Go</button></form>";
     const actions = detectSubmitActions();
     expect(actions[0].selector).toBe('button[name="submit-form"]');
+  });
+
+  it("falls back to 'Submit' label when button[type=submit] has empty text content", () => {
+    // Covers binary-expr fallback on el.textContent?.trim() || "Submit" for non-input elements
+    document.body.innerHTML =
+      "<form><button id='btn-empty' type='submit'></button></form>";
+    const actions = detectSubmitActions();
+    expect(actions).toHaveLength(1);
+    expect(actions[0].label).toBe("Submit");
+  });
+
+  it("falls back to 'Submit' label when form button without type has empty text content", () => {
+    // Covers binary-expr fallback on btn.textContent?.trim() || "Submit" in form loop
+    document.body.innerHTML =
+      "<form><button id='btn-no-label'></button></form>";
+    const actions = detectSubmitActions();
+    expect(actions).toHaveLength(1);
+    expect(actions[0].label).toBe("Submit");
+  });
+
+  it("uses [type] selector when element has type attribute but no id, testid, or name", () => {
+    // Covers the `if (type) return` branch in buildQuickSelector
+    document.body.innerHTML = "<form><input type='submit' value='Go' /></form>";
+    const actions = detectSubmitActions();
+    expect(actions).toHaveLength(1);
+    expect(actions[0].selector).toBe('input[type="submit"]');
   });
 });
