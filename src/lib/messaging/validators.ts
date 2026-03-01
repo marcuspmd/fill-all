@@ -122,6 +122,8 @@ const savedFormSchema = z
 const startWatchingSchema = z
   .object({
     autoRefill: z.boolean().optional(),
+    debounceMs: z.number().int().min(100).max(5000).optional(),
+    shadowDOM: z.boolean().optional(),
   })
   .strict();
 
@@ -209,7 +211,7 @@ export function parseApplyTemplatePayload(input: unknown): SavedForm | null {
  */
 export function parseStartWatchingPayload(
   input: unknown,
-): { autoRefill?: boolean } | null {
+): { autoRefill?: boolean; debounceMs?: number; shadowDOM?: boolean } | null {
   const result = startWatchingSchema.safeParse(input ?? {});
   return result.success ? result.data : null;
 }

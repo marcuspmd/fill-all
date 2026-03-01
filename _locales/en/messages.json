@@ -494,6 +494,36 @@
   "iconPositionReloadNote": {
     "message": "Reload the active tab to apply the position change."
   },
+  "watcherTitle": {
+    "message": "DOM Watcher"
+  },
+  "watcherConfigDesc": {
+    "message": "Watches for DOM changes on the page and automatically fills new form fields."
+  },
+  "settingWatcherEnabled": {
+    "message": "Auto-start watcher"
+  },
+  "settingWatcherEnabledDesc": {
+    "message": "Starts DOM observation as soon as the page loads"
+  },
+  "settingWatcherAutoRefill": {
+    "message": "Auto-fill new fields"
+  },
+  "settingWatcherAutoRefillDesc": {
+    "message": "Automatically fills newly detected fields by the watcher"
+  },
+  "settingWatcherDebounce": {
+    "message": "Debounce (ms):"
+  },
+  "settingWatcherDebounceDesc": {
+    "message": "Wait time after a DOM change before processing (100–5000ms)"
+  },
+  "settingWatcherShadowDOM": {
+    "message": "Watch Shadow DOM"
+  },
+  "settingWatcherShadowDOMDesc": {
+    "message": "Watches fields inside Shadow DOM (experimental — may impact performance)"
+  },
   "detectionStrategiesTitle": {
     "message": "Detection Strategies"
   },

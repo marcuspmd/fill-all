@@ -86,6 +86,38 @@ async function saveFieldIconSettings(): Promise<void> {
   showToast(t("savedAuto"));
 }
 
+async function saveWatcherSettings(): Promise<void> {
+  const settings: Partial<Settings> = {
+    watcherEnabled: (
+      document.getElementById("setting-watcher-enabled") as HTMLInputElement
+    ).checked,
+    watcherAutoRefill: (
+      document.getElementById("setting-watcher-auto-refill") as HTMLInputElement
+    ).checked,
+    watcherShadowDOM: (
+      document.getElementById("setting-watcher-shadow-dom") as HTMLInputElement
+    ).checked,
+    watcherDebounceMs: Math.min(
+      5000,
+      Math.max(
+        100,
+        Number(
+          (
+            document.getElementById(
+              "setting-watcher-debounce",
+            ) as HTMLInputElement
+          ).value,
+        ) || 600,
+      ),
+    ),
+  };
+  await chrome.runtime.sendMessage({
+    type: "SAVE_SETTINGS",
+    payload: settings,
+  });
+  showToast(t("savedAuto"));
+}
+
 async function saveStrategiesSettings(): Promise<void> {
   const pipeline = getPipelineFromDOM();
   await chrome.runtime.sendMessage({
@@ -267,6 +299,20 @@ async function loadSettings(): Promise<void> {
   ) as HTMLSelectElement | null;
   if (uiLangEl) uiLangEl.value = settings.uiLanguage ?? "auto";
 
+  // Watcher settings
+  (
+    document.getElementById("setting-watcher-enabled") as HTMLInputElement
+  ).checked = settings.watcherEnabled ?? false;
+  (
+    document.getElementById("setting-watcher-auto-refill") as HTMLInputElement
+  ).checked = settings.watcherAutoRefill ?? false;
+  (
+    document.getElementById("setting-watcher-shadow-dom") as HTMLInputElement
+  ).checked = settings.watcherShadowDOM ?? false;
+  (
+    document.getElementById("setting-watcher-debounce") as HTMLInputElement
+  ).value = String(settings.watcherDebounceMs ?? 600);
+
   // Detection pipeline
   renderStrategyList(settings.detectionPipeline ?? DEFAULT_DETECTION_PIPELINE);
   console.log("[loadSettings] Estratégias renderizadas");
@@ -305,6 +351,23 @@ function bindSettingsEvents(): void {
   document
     .getElementById("setting-field-icon-position")
     ?.addEventListener("change", debouncedSaveFieldIcon);
+
+  // Watcher — auto-save on any change
+  const debouncedSaveWatcher = debounce(() => {
+    void saveWatcherSettings();
+  }, 300);
+  for (const id of [
+    "setting-watcher-enabled",
+    "setting-watcher-auto-refill",
+    "setting-watcher-shadow-dom",
+    "setting-watcher-debounce",
+  ]) {
+    const el = document.getElementById(id);
+    el?.addEventListener("change", debouncedSaveWatcher);
+    if (el?.tagName === "INPUT" && (el as HTMLInputElement).type === "number") {
+      el.addEventListener("input", debouncedSaveWatcher);
+    }
+  }
 
   // UI language — dedicated handler that re-localises the page
   document

@@ -11,12 +11,36 @@ const log = createLogger("DomWatcher");
 
 type DomWatcherCallback = (newFieldsCount: number) => void;
 
+export interface WatcherConfig {
+  /** Debounce interval in ms (default 600) */
+  debounceMs?: number;
+  /** Whether to auto-refill new fields (default false) */
+  autoRefill?: boolean;
+  /** Whether to observe inside Shadow DOM trees (default false) */
+  shadowDOM?: boolean;
+}
+
+const DEFAULT_DEBOUNCE_MS = 600;
+
 let observer: MutationObserver | null = null;
+let shadowObservers: MutationObserver[] = [];
 let isWatching = false;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let lastFieldSignature = "";
 let onNewFieldsCallback: DomWatcherCallback | null = null;
 let isFillingInProgress = false;
+let activeConfig: Required<WatcherConfig> = {
+  debounceMs: DEFAULT_DEBOUNCE_MS,
+  autoRefill: false,
+  shadowDOM: false,
+};
+
+const OBSERVE_OPTIONS: MutationObserverInit = {
+  childList: true,
+  subtree: true,
+  attributes: true,
+  attributeFilter: ["disabled", "hidden", "style", "class"],
+};
 
 /**
  * Starts watching the DOM for form changes.
@@ -24,85 +48,31 @@ let isFillingInProgress = false;
  */
 export function startWatching(
   callback?: DomWatcherCallback,
-  autoRefill = false,
+  autoRefill?: boolean,
+  config?: WatcherConfig,
 ): void {
   if (isWatching) return;
+
+  activeConfig = {
+    debounceMs: config?.debounceMs ?? DEFAULT_DEBOUNCE_MS,
+    autoRefill: config?.autoRefill ?? autoRefill ?? false,
+    shadowDOM: config?.shadowDOM ?? false,
+  };
 
   onNewFieldsCallback = callback ?? null;
   lastFieldSignature = getCurrentFieldSignature();
   isWatching = true;
 
-  observer = new MutationObserver((mutations) => {
-    // Ignore mutations triggered by the extension itself
-    if (isFillingInProgress) return;
+  observer = new MutationObserver(handleMutations);
+  observer.observe(document.body, OBSERVE_OPTIONS);
 
-    // Check if any mutation is relevant (not just style/class changes on our elements)
-    const isRelevant = mutations.some((m) => {
-      if (
-        m.type === "childList" &&
-        (m.addedNodes.length > 0 || m.removedNodes.length > 0)
-      ) {
-        return true;
-      }
-      if (m.type === "attributes") {
-        const target = m.target as HTMLElement;
-        // Ignore our own highlight changes
-        if (target.id === "fill-all-notification") return false;
-        // Relevant if it's a form-related attribute change
-        if (
-          m.attributeName === "disabled" ||
-          m.attributeName === "hidden" ||
-          m.attributeName === "style" ||
-          m.attributeName === "class"
-        ) {
-          return hasFormContent(target);
-        }
-      }
-      return false;
-    });
+  if (activeConfig.shadowDOM) {
+    observeShadowRoots(document.body);
+  }
 
-    if (!isRelevant) return;
-
-    // Debounce to avoid processing rapid successive changes
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(async () => {
-      const newSignature = getCurrentFieldSignature();
-      if (newSignature !== lastFieldSignature) {
-        const oldCount = lastFieldSignature.split("|").filter(Boolean).length;
-        const newCount = newSignature.split("|").filter(Boolean).length;
-        const diff = newCount - oldCount;
-
-        lastFieldSignature = newSignature;
-
-        if (diff > 0) {
-          log.info(`Detected ${diff} new form field(s)`);
-
-          if (onNewFieldsCallback) {
-            onNewFieldsCallback(diff);
-          }
-
-          if (autoRefill) {
-            await refillNewFields();
-          }
-        } else if (diff !== 0) {
-          // Fields were removed or changed - update signature
-          log.info(`Form structure changed (${diff} fields)`);
-          if (onNewFieldsCallback) {
-            onNewFieldsCallback(diff);
-          }
-        }
-      }
-    }, 600);
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["disabled", "hidden", "style", "class"],
-  });
-
-  log.debug("DOM watcher started");
+  log.debug(
+    `DOM watcher started (debounce=${activeConfig.debounceMs}ms, autoRefill=${activeConfig.autoRefill}, shadowDOM=${activeConfig.shadowDOM})`,
+  );
 }
 
 /**
@@ -113,6 +83,10 @@ export function stopWatching(): void {
     observer.disconnect();
     observer = null;
   }
+  for (const so of shadowObservers) {
+    so.disconnect();
+  }
+  shadowObservers = [];
   if (debounceTimer) {
     clearTimeout(debounceTimer);
     debounceTimer = null;
@@ -130,10 +104,105 @@ export function isWatcherActive(): boolean {
 }
 
 /**
+ * Returns the active watcher configuration
+ */
+export function getWatcherConfig(): Required<WatcherConfig> {
+  return { ...activeConfig };
+}
+
+/**
  * Marks that filling is in progress (to avoid self-triggering)
  */
 export function setFillingInProgress(value: boolean): void {
   isFillingInProgress = value;
+}
+
+// ── Internal Helpers ──────────────────────────────────────────────────────────
+
+function handleMutations(mutations: MutationRecord[]): void {
+  if (isFillingInProgress) return;
+
+  const isRelevant = mutations.some((m) => {
+    if (
+      m.type === "childList" &&
+      (m.addedNodes.length > 0 || m.removedNodes.length > 0)
+    ) {
+      // When Shadow DOM is enabled, watch newly attached shadow hosts
+      if (activeConfig.shadowDOM) {
+        for (const node of m.addedNodes) {
+          if (node instanceof HTMLElement && node.shadowRoot) {
+            observeSingleShadowRoot(node.shadowRoot);
+          }
+        }
+      }
+      return true;
+    }
+    if (m.type === "attributes") {
+      const target = m.target as HTMLElement;
+      if (target.id === "fill-all-notification") return false;
+      if (
+        m.attributeName === "disabled" ||
+        m.attributeName === "hidden" ||
+        m.attributeName === "style" ||
+        m.attributeName === "class"
+      ) {
+        return hasFormContent(target);
+      }
+    }
+    return false;
+  });
+
+  if (!isRelevant) return;
+
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    const newSignature = getCurrentFieldSignature();
+    if (newSignature !== lastFieldSignature) {
+      const oldCount = lastFieldSignature.split("|").filter(Boolean).length;
+      const newCount = newSignature.split("|").filter(Boolean).length;
+      const diff = newCount - oldCount;
+
+      lastFieldSignature = newSignature;
+
+      if (diff > 0) {
+        log.info(`Detected ${diff} new form field(s)`);
+
+        if (onNewFieldsCallback) {
+          onNewFieldsCallback(diff);
+        }
+
+        if (activeConfig.autoRefill) {
+          await refillNewFields();
+        }
+      } else if (diff !== 0) {
+        log.info(`Form structure changed (${diff} fields)`);
+        if (onNewFieldsCallback) {
+          onNewFieldsCallback(diff);
+        }
+      }
+    }
+  }, activeConfig.debounceMs);
+}
+
+/**
+ * Walks a subtree to find existing open shadow roots and attach observers.
+ */
+function observeShadowRoots(root: Element | Document): void {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+  let node = walker.nextNode();
+  while (node) {
+    if (node instanceof HTMLElement && node.shadowRoot) {
+      observeSingleShadowRoot(node.shadowRoot);
+    }
+    node = walker.nextNode();
+  }
+}
+
+function observeSingleShadowRoot(shadowRoot: ShadowRoot): void {
+  const so = new MutationObserver(handleMutations);
+  so.observe(shadowRoot, OBSERVE_OPTIONS);
+  shadowObservers.push(so);
+  log.debug(`Attached shadow root observer (total=${shadowObservers.length})`);
 }
 
 /**
@@ -154,9 +223,7 @@ async function refillNewFields(): Promise<void> {
  */
 function getCurrentFieldSignature(): string {
   const { fields } = detectAllFields();
-
   const fieldSigs = fields.map((f) => `${f.selector}:${f.fieldType}`);
-
   return fieldSigs.sort().join("|");
 }
 
@@ -173,7 +240,6 @@ function hasFormContent(el: HTMLElement): boolean {
     return true;
   }
 
-  // Check if it's a custom select container
   if (
     el.classList.contains("ant-select") ||
     el.classList.contains("ant-form-item") ||
@@ -183,7 +249,6 @@ function hasFormContent(el: HTMLElement): boolean {
     return true;
   }
 
-  // Check if it contains form elements
   return (
     el.querySelector("input, select, textarea, .ant-select, .ant-form-item") !==
     null

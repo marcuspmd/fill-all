@@ -203,6 +203,29 @@ describe("parseStartWatchingPayload", () => {
     });
   });
 
+  it("returns object with all optional fields", () => {
+    const input = { autoRefill: true, debounceMs: 300, shadowDOM: true };
+    expect(parseStartWatchingPayload(input)).toEqual(input);
+  });
+
+  it("returns object with debounceMs only", () => {
+    expect(parseStartWatchingPayload({ debounceMs: 1000 })).toEqual({
+      debounceMs: 1000,
+    });
+  });
+
+  it("returns null for debounceMs below 100", () => {
+    expect(parseStartWatchingPayload({ debounceMs: 50 })).toBeNull();
+  });
+
+  it("returns null for debounceMs above 5000", () => {
+    expect(parseStartWatchingPayload({ debounceMs: 10000 })).toBeNull();
+  });
+
+  it("returns null for non-integer debounceMs", () => {
+    expect(parseStartWatchingPayload({ debounceMs: 100.5 })).toBeNull();
+  });
+
   it("returns null for invalid input", () => {
     expect(parseStartWatchingPayload("invalid")).toBeNull();
   });

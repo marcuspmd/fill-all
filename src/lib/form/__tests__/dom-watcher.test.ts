@@ -23,6 +23,7 @@ vi.mock("@/lib/logger", () => ({
 import { detectAllFields } from "../form-detector";
 import { fillAllFields } from "../form-filler";
 import {
+  getWatcherConfig,
   isWatcherActive,
   setFillingInProgress,
   startWatching,
@@ -158,6 +159,80 @@ describe("dom-watcher", () => {
 
       await vi.advanceTimersByTimeAsync(700);
 
+      expect(callback).toHaveBeenCalledWith(1);
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe("getWatcherConfig", () => {
+    it("returns default config when started without config", () => {
+      startWatching();
+      const config = getWatcherConfig();
+      expect(config).toEqual({
+        debounceMs: 600,
+        autoRefill: false,
+        shadowDOM: false,
+      });
+    });
+
+    it("returns custom config when started with config", () => {
+      startWatching(undefined, undefined, {
+        debounceMs: 1000,
+        autoRefill: true,
+        shadowDOM: true,
+      });
+      const config = getWatcherConfig();
+      expect(config).toEqual({
+        debounceMs: 1000,
+        autoRefill: true,
+        shadowDOM: true,
+      });
+    });
+
+    it("returns a copy (not a reference to internal state)", () => {
+      startWatching();
+      const config1 = getWatcherConfig();
+      const config2 = getWatcherConfig();
+      expect(config1).toEqual(config2);
+      expect(config1).not.toBe(config2);
+    });
+
+    it("respects autoRefill param over config", () => {
+      startWatching(undefined, true, { autoRefill: false });
+      const config = getWatcherConfig();
+      // config.autoRefill takes precedence when explicitly set in config
+      expect(config.autoRefill).toBe(false);
+    });
+
+    it("falls back autoRefill param when config.autoRefill is undefined", () => {
+      startWatching(undefined, true, { debounceMs: 200 });
+      const config = getWatcherConfig();
+      expect(config.autoRefill).toBe(true);
+      expect(config.debounceMs).toBe(200);
+    });
+  });
+
+  describe("WatcherConfig debounce", () => {
+    it("uses custom debounce interval from config", async () => {
+      vi.useFakeTimers();
+
+      const mockFields = [{ selector: "#f1", fieldType: "email" }];
+      mockDetect
+        .mockReturnValueOnce({ fields: [] })
+        .mockReturnValue({ fields: mockFields });
+
+      const callback = vi.fn();
+      startWatching(callback, false, { debounceMs: 200 });
+
+      document.body.appendChild(document.createElement("input"));
+
+      // Should NOT fire at 150ms
+      await vi.advanceTimersByTimeAsync(150);
+      expect(callback).not.toHaveBeenCalled();
+
+      // Should fire at 200ms
+      await vi.advanceTimersByTimeAsync(60);
       expect(callback).toHaveBeenCalledWith(1);
 
       vi.useRealTimers();

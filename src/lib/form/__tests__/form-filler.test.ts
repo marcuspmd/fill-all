@@ -108,6 +108,10 @@ const DEFAULT_SETTINGS: Settings = {
   logLevel: "warn",
   uiLanguage: "auto",
   fillEmptyOnly: false,
+  watcherEnabled: false,
+  watcherDebounceMs: 600,
+  watcherAutoRefill: true,
+  watcherShadowDOM: false,
 };
 
 // ── Import SUT AFTER mocks ────────────────────────────────────────────────────

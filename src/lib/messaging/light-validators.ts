@@ -37,17 +37,33 @@ export function parseStringPayload(input: unknown): string | null {
  */
 export function parseStartWatchingPayload(
   input: unknown,
-): { autoRefill?: boolean } | null {
+): { autoRefill?: boolean; debounceMs?: number; shadowDOM?: boolean } | null {
   if (input === undefined) return {};
   if (!input || typeof input !== "object") return null;
-  const payload = input as { autoRefill?: unknown };
+  const payload = input as Record<string, unknown>;
   if (
     payload.autoRefill !== undefined &&
     typeof payload.autoRefill !== "boolean"
   ) {
     return null;
   }
-  return { autoRefill: payload.autoRefill };
+  if (
+    payload.debounceMs !== undefined &&
+    typeof payload.debounceMs !== "number"
+  ) {
+    return null;
+  }
+  if (
+    payload.shadowDOM !== undefined &&
+    typeof payload.shadowDOM !== "boolean"
+  ) {
+    return null;
+  }
+  return {
+    autoRefill: payload.autoRefill as boolean | undefined,
+    debounceMs: payload.debounceMs as number | undefined,
+    shadowDOM: payload.shadowDOM as boolean | undefined,
+  };
 }
 
 /**

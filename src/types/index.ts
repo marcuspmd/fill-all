@@ -462,6 +462,15 @@ export interface Settings {
   uiLanguage: "auto" | "en" | "pt_BR" | "es";
   /** When true, only empty fields are filled — fields with an existing value are skipped */
   fillEmptyOnly: boolean;
+
+  /** Whether to auto-start the DOM watcher when the page loads */
+  watcherEnabled: boolean;
+  /** Debounce interval in ms for the DOM watcher (100–5000) */
+  watcherDebounceMs: number;
+  /** Whether the DOM watcher should auto-refill new fields */
+  watcherAutoRefill: boolean;
+  /** Whether the DOM watcher should observe inside Shadow DOM trees (experimental) */
+  watcherShadowDOM: boolean;
 }
 
 /** Message types for communication between extension parts */
@@ -568,4 +577,9 @@ export const DEFAULT_SETTINGS: Settings = {
   logLevel: "warn",
   uiLanguage: "auto",
   fillEmptyOnly: false,
+
+  watcherEnabled: false,
+  watcherDebounceMs: 600,
+  watcherAutoRefill: true,
+  watcherShadowDOM: false,
 };

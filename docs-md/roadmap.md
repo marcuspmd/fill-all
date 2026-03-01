@@ -59,7 +59,7 @@ Permitir que o usuário configure parâmetros específicos para cada gerador ao 
 
 ## 👁️ Melhorar Modo Watch (DOM Watcher)
 
-**Status**: 🔲 Planejado
+**Status**: 🚧 Em Progresso
 
 Aprimorar o comportamento do `DOMWatcher` para lidar melhor com SPAs complexas, modais dinâmicos e campos com carregamento assíncrono.
 
@@ -91,7 +91,7 @@ Evoluir o sistema de logging centralizado para facilitar o diagnóstico de probl
 
 Adicionar modo onde o Gemini Nano analisa o formulário como um todo e gera valores coerentes para todos os campos de forma contextualizada, em vez de classificar campo por campo individualmente.
 
-- Nova opção no Popup: "Preencher com AI (contextual)"
+- Nova opção no forms icon: "Preencher com AI (contextual)" ou "por upload de documento/foto" ou upload de csv/excel/json com dados estruturados.
 - Enviar sinais de todos os campos como contexto único para o Gemini Nano
 - Gerar valores coerentes entre si (ex: nome + e-mail + empresa do mesmo perfil)
 - Fallback automático para pipeline padrão caso a AI não esteja disponível

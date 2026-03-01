@@ -494,6 +494,36 @@
   "iconPositionReloadNote": {
     "message": "Recarregue a aba ativa para aplicar a mudança de posição."
   },
+  "watcherTitle": {
+    "message": "DOM Watcher"
+  },
+  "watcherConfigDesc": {
+    "message": "Observa mudanças no DOM da página e preenche automaticamente novos campos de formulário."
+  },
+  "settingWatcherEnabled": {
+    "message": "Iniciar watcher automaticamente"
+  },
+  "settingWatcherEnabledDesc": {
+    "message": "Inicia a observação do DOM assim que a página carrega"
+  },
+  "settingWatcherAutoRefill": {
+    "message": "Re-preencher novos campos"
+  },
+  "settingWatcherAutoRefillDesc": {
+    "message": "Preenche automaticamente campos novos detectados pelo watcher"
+  },
+  "settingWatcherDebounce": {
+    "message": "Debounce (ms):"
+  },
+  "settingWatcherDebounceDesc": {
+    "message": "Tempo de espera após uma mudança no DOM antes de processar (100–5000ms)"
+  },
+  "settingWatcherShadowDOM": {
+    "message": "Observar Shadow DOM"
+  },
+  "settingWatcherShadowDOMDesc": {
+    "message": "Observa campos dentro de Shadow DOM (experimental — pode impactar performance)"
+  },
   "detectionStrategiesTitle": {
     "message": "Estratégias de Detecção"
   },
