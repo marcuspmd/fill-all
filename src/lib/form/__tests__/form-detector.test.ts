@@ -24,6 +24,9 @@ vi.mock("@/lib/form/detectors/classifiers", () => ({
   classifyCustomFieldsSync: vi
     .fn()
     .mockImplementation((fields: FormField[]) => fields),
+  classifyCustomFieldsAsync: vi
+    .fn()
+    .mockImplementation((fields: FormField[]) => Promise.resolve(fields)),
 }));
 
 vi.mock("@/lib/form/adapters/adapter-registry", () => ({
@@ -41,6 +44,7 @@ import {
   detectNativeFieldsAsync,
   streamNativeFieldsAsync,
   classifyCustomFieldsSync,
+  classifyCustomFieldsAsync,
 } from "@/lib/form/detectors/classifiers";
 import { detectCustomComponents } from "@/lib/form/adapters/adapter-registry";
 
@@ -71,6 +75,9 @@ describe("form-detector", () => {
     );
     vi.mocked(classifyCustomFieldsSync).mockImplementation(
       (f) => f as FormField[],
+    );
+    vi.mocked(classifyCustomFieldsAsync).mockImplementation((f) =>
+      Promise.resolve(f as FormField[]),
     );
     vi.mocked(detectCustomComponents).mockReturnValue([]);
   });

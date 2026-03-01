@@ -19,9 +19,12 @@ import {
   buildClassifiersFromSettings,
   nativeInputDetector,
   classifyCustomFieldsSync,
+  classifyCustomFieldsAsync,
   detectNativeFieldsAsync,
   streamNativeFieldsAsync,
   keywordClassifier,
+  tensorflowClassifier,
+  chromeAiClassifier,
 } from "../classifiers";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -439,5 +442,139 @@ describe("classifyCustomFieldsSync", () => {
     classifyCustomFieldsSync([field1, field2]);
     expect(field1.fieldType).toBe("cpf");
     expect(field2.detectionMethod).toBe("custom-select");
+  });
+});
+
+// ── classifyCustomFieldsAsync ─────────────────────────────────────────────────
+
+describe("classifyCustomFieldsAsync", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns same array reference", async () => {
+    const fields: FormField[] = [];
+    const result = await classifyCustomFieldsAsync(fields);
+    expect(result).toBe(fields);
+  });
+
+  it("classifies via keyword when it returns a concrete type", async () => {
+    const field = makeCustomField({ fieldType: "unknown", label: "CPF" });
+    vi.spyOn(keywordClassifier, "detect").mockReturnValueOnce({
+      type: "cpf",
+      confidence: 0.99,
+    });
+    await classifyCustomFieldsAsync([field]);
+    expect(field.fieldType).toBe("cpf");
+    expect(field.detectionMethod).toBe("keyword");
+    expect(field.detectionConfidence).toBe(0.99);
+  });
+
+  it("skips keyword generic result and falls through to tensorflow", async () => {
+    const field = makeCustomField({
+      fieldType: "unknown",
+      label: "Razão Social",
+      contextSignals: "razão social companyname organization",
+    });
+    vi.spyOn(keywordClassifier, "detect").mockReturnValueOnce({
+      type: "text", // generic — should be skipped
+      confidence: 0.4,
+    });
+    vi.spyOn(tensorflowClassifier, "detect").mockReturnValueOnce({
+      type: "company",
+      confidence: 0.87,
+    });
+    await classifyCustomFieldsAsync([field]);
+    expect(field.fieldType).toBe("company");
+    expect(field.detectionMethod).toBe("tensorflow");
+    expect(field.detectionConfidence).toBe(0.87);
+  });
+
+  it("skips keyword 'unknown' result and falls through to tensorflow", async () => {
+    const field = makeCustomField({
+      fieldType: "unknown",
+      label: "Empresa",
+    });
+    vi.spyOn(keywordClassifier, "detect").mockReturnValueOnce({
+      type: "unknown",
+      confidence: 0.1,
+    });
+    vi.spyOn(tensorflowClassifier, "detect").mockReturnValueOnce({
+      type: "company",
+      confidence: 0.82,
+    });
+    await classifyCustomFieldsAsync([field]);
+    expect(field.fieldType).toBe("company");
+    expect(field.detectionMethod).toBe("tensorflow");
+  });
+
+  it("falls through to chrome-ai when keyword and tensorflow return generic/null", async () => {
+    const field = makeCustomField({ fieldType: "unknown", label: "Empresa" });
+    vi.spyOn(keywordClassifier, "detect").mockReturnValueOnce(null);
+    vi.spyOn(tensorflowClassifier, "detect").mockReturnValueOnce(null);
+    vi.spyOn(chromeAiClassifier, "detectAsync").mockResolvedValueOnce({
+      type: "company",
+      confidence: 0.75,
+    });
+    await classifyCustomFieldsAsync([field]);
+    expect(field.fieldType).toBe("company");
+    expect(field.detectionMethod).toBe("chrome-ai");
+  });
+
+  it("stamps custom-select with low confidence when fieldType stays unknown", async () => {
+    const field = makeCustomField({ fieldType: "unknown", label: "???" });
+    vi.spyOn(keywordClassifier, "detect").mockReturnValueOnce(null);
+    vi.spyOn(tensorflowClassifier, "detect").mockReturnValueOnce(null);
+    vi.spyOn(chromeAiClassifier, "detectAsync").mockResolvedValueOnce(null);
+    await classifyCustomFieldsAsync([field]);
+    expect(field.fieldType).toBe("unknown");
+    expect(field.detectionMethod).toBe("custom-select");
+    expect(field.detectionConfidence).toBe(0.5);
+  });
+
+  it("stamps custom-select with high confidence when adapter has concrete type but classifiers fail", async () => {
+    const field = makeCustomField({ fieldType: "select", label: "Opções" });
+    vi.spyOn(keywordClassifier, "detect").mockReturnValueOnce(null);
+    vi.spyOn(tensorflowClassifier, "detect").mockReturnValueOnce(null);
+    vi.spyOn(chromeAiClassifier, "detectAsync").mockResolvedValueOnce(null);
+    await classifyCustomFieldsAsync([field]);
+    expect(field.fieldType).toBe("select"); // preserved from adapter
+    expect(field.detectionMethod).toBe("custom-select");
+    expect(field.detectionConfidence).toBe(0.9); // high — we know it's a select
+  });
+
+  it("does NOT use html-type or html-fallback classifiers", async () => {
+    const field = makeCustomField({ fieldType: "unknown", label: "Campo" });
+    vi.spyOn(keywordClassifier, "detect").mockReturnValueOnce(null);
+    vi.spyOn(tensorflowClassifier, "detect").mockReturnValueOnce(null);
+    vi.spyOn(chromeAiClassifier, "detectAsync").mockResolvedValueOnce(null);
+    // If html-type or html-fallback ran, they'd set detectionMethod to their names
+    await classifyCustomFieldsAsync([field]);
+    expect(field.detectionMethod).toBe("custom-select");
+  });
+
+  it("processes multiple fields independently", async () => {
+    const field1 = makeCustomField({
+      id: "f1",
+      fieldType: "unknown",
+      label: "CPF",
+    });
+    const field2 = makeCustomField({
+      id: "f2",
+      fieldType: "unknown",
+      label: "Empresa",
+    });
+    vi.spyOn(keywordClassifier, "detect")
+      .mockReturnValueOnce({ type: "cpf", confidence: 0.99 })
+      .mockReturnValueOnce(null);
+    vi.spyOn(tensorflowClassifier, "detect").mockReturnValueOnce({
+      type: "company",
+      confidence: 0.85,
+    });
+    await classifyCustomFieldsAsync([field1, field2]);
+    expect(field1.fieldType).toBe("cpf");
+    expect(field1.detectionMethod).toBe("keyword");
+    expect(field2.fieldType).toBe("company");
+    expect(field2.detectionMethod).toBe("tensorflow");
   });
 });

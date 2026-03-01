@@ -22,6 +22,20 @@ vi.mock("@/lib/logger", () => ({
     error: vi.fn(),
   })),
 }));
+
+// Mock waitForElement para não precisar de timers reais nos testes unitários.
+// Retorna o primeiro elemento que corresponde ao seletor, ou null se não existir.
+vi.mock("../antd-utils", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../antd-utils")>();
+  return {
+    ...original,
+    waitForElement: vi.fn(
+      (selector: string): Promise<HTMLElement | null> =>
+        Promise.resolve(document.querySelector<HTMLElement>(selector)),
+    ),
+  };
+});
+
 import { antdSelectAdapter } from "../antd-select-adapter";
 import { antdDatepickerAdapter } from "../antd-datepicker-adapter";
 import { antdSliderAdapter } from "../antd-slider-adapter";
@@ -85,6 +99,46 @@ function makeSelect(options?: {
   return wrapper;
 }
 
+/**
+ * Helpers para nova estrutura CSS-var do antd v5.17+ (sem .ant-select-selector).
+ * O input .ant-select-input é filho direto de .ant-select-content e é o trigger.
+ */
+function makeNewCssVarSelect(options?: {
+  disabled?: boolean;
+  placeholder?: string;
+  multiple?: boolean;
+}): HTMLElement {
+  const wrapper = document.createElement("div");
+  wrapper.className = options?.multiple
+    ? "ant-select ant-select-multiple ant-select-css-var"
+    : "ant-select ant-select-single ant-select-css-var";
+  if (options?.disabled) wrapper.classList.add("ant-select-disabled");
+
+  const content = document.createElement("div");
+  content.className = "ant-select-content";
+
+  const placeholder = document.createElement("div");
+  placeholder.className = "ant-select-placeholder";
+  placeholder.textContent = options?.placeholder ?? "";
+
+  const input = document.createElement("input");
+  input.className = "ant-select-input";
+  input.setAttribute("role", "combobox");
+  input.setAttribute("aria-expanded", "false");
+  input.setAttribute("aria-haspopup", "listbox");
+  input.type = "search";
+
+  content.appendChild(placeholder);
+  content.appendChild(input);
+  wrapper.appendChild(content);
+
+  const suffix = document.createElement("div");
+  suffix.className = "ant-select-suffix";
+  wrapper.appendChild(suffix);
+
+  return wrapper;
+}
+
 function makeDatepicker(options?: { disabled?: boolean }): HTMLElement {
   const wrapper = document.createElement("div");
   wrapper.className = "ant-picker";
@@ -95,6 +149,23 @@ function makeDatepicker(options?: { disabled?: boolean }): HTMLElement {
 
   const input = document.createElement("input");
   input.placeholder = "Selecione a data";
+
+  inputDiv.appendChild(input);
+  wrapper.appendChild(inputDiv);
+
+  return wrapper;
+}
+
+function makeTimePicker(options?: { disabled?: boolean }): HTMLElement {
+  const wrapper = document.createElement("div");
+  wrapper.className = "ant-picker ant-picker-time";
+  if (options?.disabled) wrapper.classList.add("ant-picker-disabled");
+
+  const inputDiv = document.createElement("div");
+  inputDiv.className = "ant-picker-input";
+
+  const input = document.createElement("input");
+  input.placeholder = "Select time";
 
   inputDiv.appendChild(input);
   wrapper.appendChild(inputDiv);
@@ -144,7 +215,9 @@ describe("antdSelectAdapter", () => {
   });
 
   it("selector está correto", () => {
-    expect(antdSelectAdapter.selector).toBe(".ant-select");
+    expect(antdSelectAdapter.selector).toBe(
+      ".ant-select:not(.ant-select-auto-complete):not(.ant-select-disabled)",
+    );
   });
 
   it("matches: retorna true para .ant-select sem disabled", () => {
@@ -162,6 +235,12 @@ describe("antdSelectAdapter", () => {
   it("matches: retorna false para elemento sem ant-select", () => {
     const el = document.createElement("div");
     el.className = "other-class";
+    expect(antdSelectAdapter.matches(el)).toBe(false);
+  });
+
+  it("matches: retorna false para .ant-select-auto-complete (tem adapter próprio)", () => {
+    const el = document.createElement("div");
+    el.className = "ant-select ant-select-auto-complete";
     expect(antdSelectAdapter.matches(el)).toBe(false);
   });
 
@@ -200,6 +279,97 @@ describe("antdSelectAdapter", () => {
 
     const result = await antdSelectAdapter.fill(wrapper, "valor");
     expect(result).toBe(false);
+  });
+
+  // ─── Nova estrutura CSS-var antd v5.17+ ─────────────────────────────────────
+
+  describe("nova estrutura CSS-var (antd v5.17+)", () => {
+    it("matches: retorna true para .ant-select-css-var", () => {
+      const wrapper = makeNewCssVarSelect();
+      expect(antdSelectAdapter.matches(wrapper)).toBe(true);
+    });
+
+    it("matches: retorna false para .ant-select-css-var disabled", () => {
+      const wrapper = makeNewCssVarSelect({ disabled: true });
+      expect(antdSelectAdapter.matches(wrapper)).toBe(false);
+    });
+
+    it("buildField: extrai placeholder de .ant-select-placeholder", () => {
+      const wrapper = makeNewCssVarSelect({
+        placeholder: "Selecione o estado",
+      });
+      document.body.appendChild(wrapper);
+
+      const field = antdSelectAdapter.buildField(wrapper);
+      expect(field.placeholder).toBe("Selecione o estado");
+      expect(field.fieldType).toBe("select");
+      expect(field.adapterName).toBe("antd-select");
+    });
+
+    it("fill: retorna false quando sem selector E sem combobox", async () => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "ant-select ant-select-css-var";
+      document.body.appendChild(wrapper);
+
+      const result = await antdSelectAdapter.fill(wrapper, "valor");
+      expect(result).toBe(false);
+    });
+
+    it("fill: dispara click no input, não diretamente no content div", async () => {
+      const wrapper = makeNewCssVarSelect({ placeholder: "Selecione" });
+      document.body.appendChild(wrapper);
+
+      const input = wrapper.querySelector<HTMLInputElement>("input")!;
+      const contentDiv = wrapper.querySelector<HTMLElement>(
+        ".ant-select-content",
+      )!;
+
+      const inputMousedowns: number[] = [];
+      const contentDirectMousedowns: number[] = [];
+
+      input.addEventListener("mousedown", (e) => {
+        if (e.target === input) inputMousedowns.push(1);
+      });
+      contentDiv.addEventListener("mousedown", (e) => {
+        // Conta apenas mousedowns com target=contentDiv (direto, não bubbled do input)
+        if (e.target === contentDiv) contentDirectMousedowns.push(1);
+      });
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "ant-select-dropdown";
+      const option = document.createElement("div");
+      option.className = "ant-select-item-option";
+      option.setAttribute("title", "Opção A");
+      option.textContent = "Opção A";
+      dropdown.appendChild(option);
+      document.body.appendChild(dropdown);
+
+      await antdSelectAdapter.fill(wrapper, "Opção A");
+
+      expect(inputMousedowns.length).toBeGreaterThan(0);
+      expect(contentDirectMousedowns.length).toBe(0);
+    });
+
+    it("fill: seleciona opção no dropdown para nova estrutura", async () => {
+      const wrapper = makeNewCssVarSelect({ placeholder: "Selecione" });
+      document.body.appendChild(wrapper);
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "ant-select-dropdown";
+      const option = document.createElement("div");
+      option.className = "ant-select-item-option";
+      option.setAttribute("title", "São Paulo");
+      option.textContent = "São Paulo";
+      dropdown.appendChild(option);
+      document.body.appendChild(dropdown);
+
+      let clicked = false;
+      option.addEventListener("click", () => (clicked = true));
+
+      const result = await antdSelectAdapter.fill(wrapper, "São Paulo");
+      expect(result).toBe(true);
+      expect(clicked).toBe(true);
+    });
   });
 
   it("fill: seleciona opção correspondente no dropdown visível", async () => {
@@ -320,6 +490,25 @@ describe("antdDatepickerAdapter", () => {
     expect(field.fieldType).toBe("date");
     expect(field.adapterName).toBe("antd-datepicker");
     expect(field.placeholder).toBe("Selecione a data");
+    expect(field.isInteractive).toBe(true);
+    expect(field.interactiveType).toBe("date-picker");
+  });
+
+  it("buildField: retorna interactiveType 'time-picker' para .ant-picker-time", () => {
+    const wrapper = makeTimePicker();
+    document.body.appendChild(wrapper);
+
+    const field = antdDatepickerAdapter.buildField(wrapper);
+
+    expect(field.fieldType).toBe("date");
+    expect(field.isInteractive).toBe(true);
+    expect(field.interactiveType).toBe("time-picker");
+    expect(field.adapterName).toBe("antd-datepicker");
+  });
+
+  it("matches: retorna true para .ant-picker-time (TimePicker)", () => {
+    const wrapper = makeTimePicker();
+    expect(antdDatepickerAdapter.matches(wrapper)).toBe(true);
   });
 
   it("buildField: sem input, placeholder fica undefined", () => {

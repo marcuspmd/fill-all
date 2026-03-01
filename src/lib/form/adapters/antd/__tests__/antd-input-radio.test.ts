@@ -137,6 +137,15 @@ describe("antdInputAdapter", () => {
     expect(field.fieldType).toBe("unknown");
   });
 
+  it("buildField retorna fieldType 'number' para .ant-input-number", () => {
+    const { wrapper } = makeInputNumber();
+    document.body.appendChild(wrapper);
+
+    const field = antdInputAdapter.buildField(wrapper);
+    expect(field.fieldType).toBe("number");
+    expect(field.adapterName).toBe("antd-input");
+  });
+
   it("buildField extrai name, id e inputType", () => {
     const { wrapper } = makeAffixWrapper("email", {
       name: "email",
@@ -148,7 +157,90 @@ describe("antdInputAdapter", () => {
     expect(field.name).toBe("email");
     expect(field.id).toBe("email-field");
     expect(field.inputType).toBe("email");
+    expect(field.fieldType).toBe("email");
   });
+
+  it("buildField retorna fieldType 'website' para type='url'", () => {
+    const { wrapper } = makeAffixWrapper("url", {
+      placeholder: "https://www.empresa.com.br",
+    });
+    document.body.appendChild(wrapper);
+
+    const field = antdInputAdapter.buildField(wrapper);
+    expect(field.fieldType).toBe("website");
+    expect(field.inputType).toBe("url");
+  });
+
+  it("buildField retorna fieldType 'website' para autocomplete='url'", () => {
+    const { wrapper, input } = makeAffixWrapper("text", {
+      placeholder: "https://www.empresa.com.br",
+    });
+    input.setAttribute("autocomplete", "url");
+    document.body.appendChild(wrapper);
+
+    const field = antdInputAdapter.buildField(wrapper);
+    // autocomplete é preservado para os classificadores downstream (TF.js / keyword)
+    expect(field.autocomplete).toBe("url");
+    // fieldType fica unknown para que o pipeline classifique corretamente
+    expect(field.fieldType).toBe("unknown");
+  });
+
+  it("buildField retorna fieldType 'phone' para type='tel'", () => {
+    const { wrapper } = makeAffixWrapper("tel");
+    document.body.appendChild(wrapper);
+
+    const field = antdInputAdapter.buildField(wrapper);
+    expect(field.fieldType).toBe("phone");
+  });
+
+  it("buildField retorna fieldType 'password' para type='password'", () => {
+    const { wrapper } = makeAffixWrapper("password");
+    document.body.appendChild(wrapper);
+
+    const field = antdInputAdapter.buildField(wrapper);
+    expect(field.fieldType).toBe("password");
+  });
+
+  it("buildField retorna fieldType 'date' para type='date'", () => {
+    const { wrapper } = makeAffixWrapper("date");
+    document.body.appendChild(wrapper);
+
+    const field = antdInputAdapter.buildField(wrapper);
+    expect(field.fieldType).toBe("date");
+  });
+
+  it.each([
+    ["organization", "company"],
+    ["name", "full-name"],
+    ["given-name", "first-name"],
+    ["family-name", "last-name"],
+    ["username", "username"],
+    ["postal-code", "cep"],
+    ["country", "country"],
+    ["address-level1", "state"],
+    ["address-level2", "city"],
+    ["street-address", "street"],
+    ["cc-number", "credit-card-number"],
+    ["cc-exp", "credit-card-expiration"],
+    ["cc-csc", "credit-card-cvv"],
+    ["bday", "birth-date"],
+    ["current-password", "password"],
+    ["new-password", "password"],
+  ] as [string, string][])(
+    "buildField preserva autocomplete='%s' no campo para classificadores downstream",
+    (ac) => {
+      const { wrapper, input } = makeAffixWrapper("text");
+      input.setAttribute("autocomplete", ac);
+      document.body.appendChild(wrapper);
+
+      const field = antdInputAdapter.buildField(wrapper);
+      expect(field.autocomplete).toBe(ac);
+      // fieldType é "unknown" — deixado para TF.js / keyword classifier
+      expect(field.fieldType).toBe("unknown");
+
+      wrapper.remove();
+    },
+  );
 
   it("buildField extrai pattern e maxLength do input", () => {
     const { wrapper, input } = makeAffixWrapper("text");

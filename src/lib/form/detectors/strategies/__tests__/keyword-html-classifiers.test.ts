@@ -271,10 +271,10 @@ describe("detectBasicType", () => {
     expect(detectBasicType(el).type).toBe("date");
   });
 
-  it("maps input[type=url] to text", () => {
+  it("maps input[type=url] to website", () => {
     const el = document.createElement("input");
     el.type = "url";
-    expect(detectBasicType(el).type).toBe("text");
+    expect(detectBasicType(el).type).toBe("website");
   });
 
   it("maps input[type=search] to text", () => {

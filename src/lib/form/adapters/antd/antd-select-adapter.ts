@@ -3,7 +3,7 @@
  *
  * Detects and fills `<Select>`, `<TreeSelect>`, `<Cascader>`, and `<AutoComplete>` components.
  *
- * DOM structure — Single (antd v5):
+ * DOM structure — Single (antd v5 classic):
  *   <div class="ant-select ant-select-single ...">
  *     <div class="ant-select-selector">
  *       <span class="ant-select-selection-search">
@@ -12,6 +12,15 @@
  *       <span class="ant-select-selection-placeholder">Placeholder</span>
  *       <span class="ant-select-selection-item">Selected text</span>
  *     </div>
+ *   </div>
+ *
+ * DOM structure — Single (antd v5 CSS-var / v5.17+):
+ *   <div class="ant-select ant-select-single ant-select-css-var ...">
+ *     <div class="ant-select-content">
+ *       <div class="ant-select-placeholder">Placeholder</div>
+ *       <input class="ant-select-input" role="combobox" type="search" />
+ *     </div>
+ *     <div class="ant-select-suffix">...</div>
  *   </div>
  *
  * DOM structure — Multiple (antd v5):
@@ -48,20 +57,28 @@ const log = createLogger("AntdSelect");
 
 export const antdSelectAdapter: CustomComponentAdapter = {
   name: "antd-select",
-  selector: ".ant-select",
+  // Exclude auto-complete: it also has .ant-select but has its own adapter that
+  // comes after this one in the registry. Without the exclusion, auto-complete
+  // elements would be claimed here before antdAutoCompleteAdapter runs.
+  selector:
+    ".ant-select:not(.ant-select-auto-complete):not(.ant-select-disabled)",
 
   matches(el: HTMLElement): boolean {
-    // Must have the ant-select class and not be disabled
+    // Must have the ant-select class, not disabled, and not an AutoComplete
+    // (AutoComplete also has .ant-select — its dedicated adapter handles it).
     return (
       el.classList.contains("ant-select") &&
-      !el.classList.contains("ant-select-disabled")
+      !el.classList.contains("ant-select-disabled") &&
+      !el.classList.contains("ant-select-auto-complete")
     );
   },
 
   buildField(wrapper: HTMLElement): FormField {
-    const placeholder = wrapper
-      .querySelector<HTMLElement>(".ant-select-selection-placeholder")
-      ?.textContent?.trim();
+    // Old antd v5 uses .ant-select-selection-placeholder; new CSS-var structure uses .ant-select-placeholder
+    const placeholder = (
+      wrapper.querySelector<HTMLElement>(".ant-select-selection-placeholder") ??
+      wrapper.querySelector<HTMLElement>(".ant-select-placeholder")
+    )?.textContent?.trim();
 
     const isMultiple = wrapper.classList.contains("ant-select-multiple");
     const options = extractDropdownOptions(wrapper);
@@ -88,27 +105,54 @@ export const antdSelectAdapter: CustomComponentAdapter = {
     const isMultiple = wrapper.classList.contains("ant-select-multiple");
     const wrapperSelector = getUniqueSelector(wrapper);
 
-    // Open the dropdown — try multiple trigger strategies for React/antd compatibility.
-    // Multiple mode uses `.ant-select-content`; single mode uses `.ant-select-selector`.
-    const clickTarget = wrapper.querySelector<HTMLElement>(
-      ".ant-select-selector, .ant-select-content",
-    );
     const combobox = wrapper.querySelector<HTMLInputElement>(
       "input[role='combobox'], .ant-select-selection-search-input, .ant-select-input",
     );
 
-    if (!clickTarget) {
+    // Old antd v5 classic: has .ant-select-selector wrapping the search input.
+    // New antd v5 CSS-var / v5.17+: no .ant-select-selector; the input is a direct
+    // child of .ant-select-content and IS the toggle trigger.
+    // IMPORTANT: for the new structure, we must NOT fire mousedown on BOTH the
+    // input and its parent — two consecutive mousedowns on the same React handler
+    // chain cause an open/close toggle leaving the dropdown closed.
+    const selectorEl = wrapper.querySelector<HTMLElement>(
+      ".ant-select-selector",
+    );
+
+    if (!selectorEl && !combobox) {
       log.warn(`Container do select não encontrado em: ${wrapperSelector}`);
       return false;
     }
 
-    // Strategy 1: focus the inner combobox input (React registers this reliably)
-    if (combobox) {
-      combobox.focus();
-      combobox.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    if (selectorEl) {
+      // Old structure: focus + mousedown on search input, then simulateClick selector.
+      if (combobox) {
+        combobox.focus();
+        combobox.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      }
+      simulateClick(selectorEl);
+    } else {
+      // New CSS-var structure: dispatch mousedown ONLY on the input.
+      // A full simulateClick (mousedown → mouseup → click) would cause React to
+      // process the 'click' handler and toggle the dropdown closed immediately
+      // after the 'mousedown' handler opened it.
+      if (combobox) {
+        combobox.focus();
+        combobox.dispatchEvent(
+          new MouseEvent("mousedown", { bubbles: true, cancelable: true }),
+        );
+      } else {
+        // Fallback: trigger via the content wrapper
+        const contentEl = wrapper.querySelector<HTMLElement>(
+          ".ant-select-content",
+        );
+        if (contentEl) {
+          contentEl.dispatchEvent(
+            new MouseEvent("mousedown", { bubbles: true, cancelable: true }),
+          );
+        }
+      }
     }
-    // Strategy 2: click the selector/content container
-    simulateClick(clickTarget);
 
     // Wait for the dropdown to render
     const dropdown = await waitForElement(
@@ -117,11 +161,9 @@ export const antdSelectAdapter: CustomComponentAdapter = {
     );
 
     if (!dropdown) {
-      // Last attempt: try pointerdown which some antd versions listen to
-      wrapper.dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
-      );
-      clickTarget.dispatchEvent(
+      // Last attempt: pointerdown on the direct trigger (single event, no double-fire)
+      const triggerEl = selectorEl ?? combobox ?? wrapper;
+      triggerEl.dispatchEvent(
         new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
       );
       await new Promise((r) => setTimeout(r, 300));
@@ -138,10 +180,10 @@ export const antdSelectAdapter: CustomComponentAdapter = {
     }
 
     if (isMultiple) {
-      return selectMultipleOptions(wrapper, value);
+      return await selectMultipleOptions(wrapper, value);
     }
 
-    return selectOption(wrapper, value);
+    return await selectOption(wrapper, value);
   },
 };
 
@@ -173,7 +215,10 @@ function extractDropdownOptions(
   return undefined;
 }
 
-function selectOption(wrapper: HTMLElement, value: string): boolean {
+async function selectOption(
+  wrapper: HTMLElement,
+  value: string,
+): Promise<boolean> {
   // Search input inside the select — supports both single and multiple DOM variants.
   const searchInput = wrapper.querySelector<HTMLInputElement>(
     ".ant-select-selection-search-input, .ant-select-input",
@@ -193,6 +238,31 @@ function selectOption(wrapper: HTMLElement, value: string): boolean {
       searchInput.dispatchEvent(new Event("input", { bubbles: true }));
       searchInput.dispatchEvent(new Event("change", { bubbles: true }));
     }
+  }
+
+  // Wait for options to appear. Handles both regular re-renders and AJAX/server-side
+  // selects that load options asynchronously after the search input event fires.
+  let hasOptions = await waitForElement(
+    ".ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option",
+    2000,
+  );
+
+  // If no options appeared after typing (AJAX returned no results or hasn't loaded
+  // yet), clear the search and wait again — many AJAX selects show their default
+  // list when the query is empty.
+  if (!hasOptions && searchInput) {
+    const clearSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    if (clearSetter) {
+      clearSetter.call(searchInput, "");
+      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    hasOptions = await waitForElement(
+      ".ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option",
+      1500,
+    );
   }
 
   // Try to find and click the matching option from visible dropdowns
@@ -244,7 +314,16 @@ function selectOption(wrapper: HTMLElement, value: string): boolean {
  * 2. Otherwise, pick 1–3 random non-selected options from the dropdown.
  * 3. Close the dropdown by pressing Escape after all selections.
  */
-function selectMultipleOptions(wrapper: HTMLElement, value: string): boolean {
+async function selectMultipleOptions(
+  wrapper: HTMLElement,
+  value: string,
+): Promise<boolean> {
+  // Wait for options to load before attempting to click — handles AJAX-loaded selects.
+  await waitForElement(
+    ".ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option",
+    2000,
+  );
+
   const dropdowns = document.querySelectorAll<HTMLElement>(
     ".ant-select-dropdown:not(.ant-select-dropdown-hidden)",
   );
