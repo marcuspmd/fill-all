@@ -91,6 +91,117 @@ function handleCheckboxOrRadio(element: HTMLInputElement): void {
   element.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+function showFillToast(filled: number, total: number, aiCount: number): void {
+  const toast = document.createElement("div");
+  toast.setAttribute("data-fill-all-toast", "1");
+
+  const aiNote =
+    aiCount > 0
+      ? `<span style="opacity:0.85;font-size:11px"> (${aiCount} via ✨ IA)</span>`
+      : "";
+  toast.innerHTML = `
+    <span style="font-size:15px;margin-right:6px">✅</span>
+    <span><strong>${filled}</strong> de <strong>${total}</strong> campos preenchidos${aiNote}</span>
+    <button data-fill-all-toast-close style="
+      background:none;border:none;color:inherit;cursor:pointer;
+      font-size:14px;margin-left:12px;opacity:0.7;padding:0;line-height:1;
+    " title="Fechar">×</button>
+  `;
+
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #1e1e2e;
+    color: #e2e8f0;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.38);
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0;
+    transform: translateY(12px);
+    max-width: 320px;
+  `;
+
+  document.body.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      toast.style.opacity = "1";
+      toast.style.transform = "translateY(0)";
+    });
+  });
+
+  const dismiss = (): void => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(12px)";
+    setTimeout(() => toast.remove(), 350);
+  };
+
+  const closeBtn = toast.querySelector<HTMLButtonElement>(
+    "[data-fill-all-toast-close]",
+  );
+  closeBtn?.addEventListener("click", dismiss);
+
+  const timer = setTimeout(dismiss, 4000);
+  toast.addEventListener("mouseenter", () => clearTimeout(timer));
+  toast.addEventListener("mouseleave", () => setTimeout(dismiss, 1500));
+}
+
+function showAiFieldBadge(element: HTMLElement): void {
+  // Remove any existing AI badge on this element
+  const existingBadge = element.parentElement?.querySelector(
+    "[data-fill-all-ai-badge]",
+  );
+  existingBadge?.remove();
+
+  const badge = document.createElement("span");
+  badge.setAttribute("data-fill-all-ai-badge", "1");
+  badge.title = "Preenchido por IA (Fill All) — clique para remover";
+  badge.style.cssText = `
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    position: absolute;
+    font-size: 10px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+    padding: 2px 6px 2px 5px;
+    border-radius: 4px;
+    z-index: 2147483646;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    box-shadow: 0 1px 4px rgba(99,102,241,0.45);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    pointer-events: auto;
+    line-height: 1.4;
+    letter-spacing: 0.1px;
+  `;
+  badge.innerHTML = `<span style="font-size:11px">✨</span>AI<span style="opacity:0.7;font-size:9px;margin-left:2px">×</span>`;
+
+  function positionBadge(): void {
+    const rect = element.getBoundingClientRect();
+    badge.style.top = `${rect.top + window.scrollY - 20}px`;
+    badge.style.left = `${rect.right + window.scrollX - 42}px`;
+  }
+
+  positionBadge();
+  badge.style.position = "absolute";
+  document.body.appendChild(badge);
+
+  badge.addEventListener("click", () => badge.remove());
+}
+
 function highlightField(element: HTMLElement, detectedLabel?: string): void {
   const original = element.style.outline;
   element.style.outline = "2px solid #4F46E5";
@@ -227,6 +338,7 @@ async function doFillAllFields(options?: {
         url,
         aiGenerateFn,
         settings.forceAIFirst,
+        settings.aiTimeoutMs,
       );
 
       await applyValueToField(field, result.value);
@@ -249,6 +361,10 @@ async function doFillAllFields(options?: {
         );
       }
 
+      if (settings.showAiBadge && result.source === "ai") {
+        showAiFieldBadge(field.element);
+      }
+
       // Update progress — filled
       progress.updateFilled(field, result);
 
@@ -267,6 +383,11 @@ async function doFillAllFields(options?: {
 
   // Show summary
   progress.done(results.length, totalFields);
+
+  const aiFilledCount = results.filter((r) => r.source === "ai").length;
+  if (settings.showFillToast !== false) {
+    showFillToast(results.length, totalFields, aiFilledCount);
+  }
 
   return results;
 }
@@ -293,6 +414,7 @@ export async function fillSingleField(
       url,
       aiGenerateFn,
       settings.forceAIFirst,
+      settings.aiTimeoutMs,
     );
     await applyValueToField(field, result.value);
     logAuditFill({

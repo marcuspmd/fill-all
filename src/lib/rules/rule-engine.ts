@@ -20,7 +20,7 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("RuleEngine");
 
-const AI_TIMEOUT_MS = 5000;
+const DEFAULT_AI_TIMEOUT_MS = 5000;
 
 /**
  * Generator keys where AI genuinely adds value (free-text / open-ended).
@@ -77,10 +77,11 @@ async function callAiWithTimeout(
   fn: (field: FormField) => Promise<string>,
   field: FormField,
   context: string,
+  timeoutMs = DEFAULT_AI_TIMEOUT_MS,
 ): Promise<string> {
   const label = field.label ?? field.id ?? field.selector;
   log.info(
-    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${AI_TIMEOUT_MS}ms)...`,
+    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${timeoutMs}ms)...`,
   );
   const start = Date.now();
 
@@ -88,8 +89,8 @@ async function callAiWithTimeout(
     fn(field),
     new Promise<string>((_, reject) =>
       setTimeout(
-        () => reject(new Error(`AI timeout (${AI_TIMEOUT_MS}ms)`)),
-        AI_TIMEOUT_MS,
+        () => reject(new Error(`AI timeout (${timeoutMs}ms)`)),
+        timeoutMs,
       ),
     ),
   ]);
@@ -114,6 +115,7 @@ export async function resolveFieldValue(
   url: string,
   aiGenerateFn?: (field: FormField) => Promise<string>,
   forceAIFirst = false,
+  aiTimeoutMs = DEFAULT_AI_TIMEOUT_MS,
 ): Promise<GenerationResult> {
   const selector = field.selector;
 
@@ -133,6 +135,7 @@ export async function resolveFieldValue(
         aiGenerateFn,
         field,
         "forceAIFirst",
+        aiTimeoutMs,
       );
       const value = adaptGeneratedValue(aiValue, {
         element: field.element,
@@ -206,7 +209,12 @@ export async function resolveFieldValue(
     // If the rule says to use AI
     if (matchingRule.generator === "ai" && aiGenerateFn) {
       try {
-        const aiValue = await callAiWithTimeout(aiGenerateFn, field, "rule:ai");
+        const aiValue = await callAiWithTimeout(
+          aiGenerateFn,
+          field,
+          "rule:ai",
+          aiTimeoutMs,
+        );
         const value = adaptGeneratedValue(aiValue, {
           element: field.element,
           requireValidity: false,
@@ -275,6 +283,7 @@ export async function resolveFieldValue(
         aiGenerateFn,
         field,
         "último recurso",
+        aiTimeoutMs,
       );
       const adaptedAiValue = adaptGeneratedValue(aiValue, {
         element: field.element,

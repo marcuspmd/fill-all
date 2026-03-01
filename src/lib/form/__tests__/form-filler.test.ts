@@ -131,6 +131,9 @@ const DEFAULT_SETTINGS: Settings = {
   watcherAutoRefill: true,
   watcherShadowDOM: false,
   logMaxEntries: 1000,
+  aiTimeoutMs: 5000,
+  showAiBadge: false,
+  showFillToast: false,
 };
 
 /** Helper: wraps an array of fields into an async generator for streamAllFields mock */

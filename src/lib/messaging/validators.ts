@@ -40,6 +40,10 @@ const settingsSchema = z
     watcherAutoRefill: z.boolean(),
     watcherShadowDOM: z.boolean(),
     watcherDebounceMs: z.number().int().min(100).max(5000),
+    aiTimeoutMs: z.number().int().min(2000).max(15000),
+    showAiBadge: z.boolean(),
+    showFillToast: z.boolean(),
+    logMaxEntries: z.number().int().min(100).max(10000),
   })
   .partial()
   .strict();

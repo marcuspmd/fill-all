@@ -475,6 +475,13 @@ export interface Settings {
   watcherAutoRefill: boolean;
   /** Whether the DOM watcher should observe inside Shadow DOM trees (experimental) */
   watcherShadowDOM: boolean;
+
+  /** Timeout in ms for AI field generation calls (2000–15000) */
+  aiTimeoutMs: number;
+  /** When true, shows a persistent AI badge on fields filled by AI (can be dismissed) */
+  showAiBadge: boolean;
+  /** When true, shows a brief toast notification after filling all fields */
+  showFillToast: boolean;
 }
 
 /** Message types for communication between extension parts */
@@ -588,4 +595,8 @@ export const DEFAULT_SETTINGS: Settings = {
   watcherDebounceMs: 600,
   watcherAutoRefill: true,
   watcherShadowDOM: false,
+
+  aiTimeoutMs: 5000,
+  showAiBadge: false,
+  showFillToast: true,
 };

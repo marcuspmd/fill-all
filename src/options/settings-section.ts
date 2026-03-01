@@ -99,6 +99,32 @@ async function saveFieldIconSettings(): Promise<void> {
   showToast(t("savedAuto"));
 }
 
+async function saveAiSettings(): Promise<void> {
+  const settings: Partial<Settings> = {
+    showFillToast: (
+      document.getElementById("setting-show-fill-toast") as HTMLInputElement
+    ).checked,
+    showAiBadge: (
+      document.getElementById("setting-show-ai-badge") as HTMLInputElement
+    ).checked,
+    aiTimeoutMs: Math.min(
+      15000,
+      Math.max(
+        2000,
+        Number(
+          (document.getElementById("setting-ai-timeout") as HTMLInputElement)
+            .value,
+        ) || 5000,
+      ),
+    ),
+  };
+  await chrome.runtime.sendMessage({
+    type: "SAVE_SETTINGS",
+    payload: settings,
+  });
+  showToast(t("savedAuto"));
+}
+
 async function saveWatcherSettings(): Promise<void> {
   const settings: Partial<Settings> = {
     watcherEnabled: (
@@ -329,6 +355,16 @@ async function loadSettings(): Promise<void> {
     document.getElementById("setting-watcher-debounce") as HTMLInputElement
   ).value = String(settings.watcherDebounceMs ?? 600);
 
+  // AI feedback settings
+  (
+    document.getElementById("setting-show-fill-toast") as HTMLInputElement
+  ).checked = settings.showFillToast ?? true;
+  (
+    document.getElementById("setting-show-ai-badge") as HTMLInputElement
+  ).checked = settings.showAiBadge ?? false;
+  (document.getElementById("setting-ai-timeout") as HTMLInputElement).value =
+    String(settings.aiTimeoutMs ?? 5000);
+
   // Detection pipeline
   renderStrategyList(settings.detectionPipeline ?? DEFAULT_DETECTION_PIPELINE);
   console.log("[loadSettings] Estratégias renderizadas");
@@ -383,6 +419,22 @@ function bindSettingsEvents(): void {
     el?.addEventListener("change", debouncedSaveWatcher);
     if (el?.tagName === "INPUT" && (el as HTMLInputElement).type === "number") {
       el.addEventListener("input", debouncedSaveWatcher);
+    }
+  }
+
+  // AI feedback — auto-save on any change
+  const debouncedSaveAi = debounce(() => {
+    void saveAiSettings();
+  }, 300);
+  for (const id of [
+    "setting-show-fill-toast",
+    "setting-show-ai-badge",
+    "setting-ai-timeout",
+  ]) {
+    const el = document.getElementById(id);
+    el?.addEventListener("change", debouncedSaveAi);
+    if (el?.tagName === "INPUT" && (el as HTMLInputElement).type === "number") {
+      el.addEventListener("input", debouncedSaveAi);
     }
   }
 
