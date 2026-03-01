@@ -9,6 +9,7 @@ import type {
   FieldType,
   IgnoredField,
 } from "@/types";
+import { FIELD_TYPES } from "@/types";
 import { matchUrlPattern } from "@/lib/url/match-url-pattern";
 import { t } from "@/lib/i18n";
 import {
@@ -18,6 +19,7 @@ import {
   escapeHtml,
 } from "./popup-messaging";
 import { loadIgnoredFields } from "./popup-ignored";
+import { getFieldTypeGroupedOptions } from "@/lib/shared/field-type-catalog";
 
 type DetectFieldItem = DetectedFieldSummary;
 
@@ -25,35 +27,6 @@ interface DetectFieldsResponse {
   count: number;
   fields: DetectFieldItem[];
 }
-
-const FIELD_TYPE_OPTIONS: Array<{ value: FieldType; label: string }> = (
-  [
-    { value: "cpf", label: "CPF" },
-    { value: "cnpj", label: "CNPJ" },
-    { value: "email", label: "E-mail" },
-    { value: "phone", label: "Telefone" },
-    { value: "full-name", label: "Nome Completo" },
-    { value: "first-name", label: "Primeiro Nome" },
-    { value: "last-name", label: "Sobrenome" },
-    { value: "rg", label: "RG" },
-    { value: "company", label: "Empresa" },
-    { value: "cep", label: "CEP" },
-    { value: "address", label: "Endereço" },
-    { value: "city", label: "Cidade" },
-    { value: "state", label: "Estado" },
-    { value: "date", label: "Data" },
-    { value: "birth-date", label: "Nascimento" },
-    { value: "money", label: "Dinheiro" },
-    { value: "number", label: "Número" },
-    { value: "password", label: "Senha" },
-    { value: "username", label: "Username" },
-    { value: "text", label: "Texto" },
-    { value: "select", label: "Select" },
-    { value: "checkbox", label: "Checkbox" },
-    { value: "radio", label: "Radio" },
-    { value: "unknown", label: "Desconhecido" },
-  ] as Array<{ value: FieldType; label: string }>
-).sort((a, b) => b.label.localeCompare(a.label, "pt-BR"));
 
 export function bindDetectEvents(): void {
   document.getElementById("btn-detect")?.addEventListener("click", async () => {
@@ -154,12 +127,19 @@ function buildFieldItem(
   item.className = "list-item field-detect-item";
   if (existingRule?.id) item.dataset.ruleId = existingRule.id;
 
-  const typeOptions = FIELD_TYPE_OPTIONS.map(
-    (opt) =>
-      `<option value="${escapeHtml(opt.value)}"${
-        opt.value === effectiveType ? " selected" : ""
-      }>${escapeHtml(opt.label)}</option>`,
-  ).join("");
+  const typeOptions = getFieldTypeGroupedOptions(FIELD_TYPES)
+    .map(
+      (group) =>
+        `<optgroup label="${group.label}">${group.options
+          .map(
+            (entry) =>
+              `<option value="${escapeHtml(entry.value)}"${
+                entry.value === effectiveType ? " selected" : ""
+              }>${escapeHtml(entry.label)}</option>`,
+          )
+          .join("")}</optgroup>`,
+    )
+    .join("");
 
   const isMoney = effectiveType === "money";
   const isNumber = effectiveType === "number";

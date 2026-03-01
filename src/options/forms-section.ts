@@ -6,48 +6,13 @@ import type { SavedForm, FormTemplateField, FieldType } from "@/types";
 import { FIELD_TYPES } from "@/types";
 import { t } from "@/lib/i18n";
 import { escapeHtml, showToast } from "./shared";
-
-/** Labels mais legíveis para os tipos de campo */
-const FIELD_TYPE_LABELS: Partial<Record<FieldType, string>> = {
-  name: "Nome",
-  "first-name": "Primeiro nome",
-  "last-name": "Sobrenome",
-  "full-name": "Nome completo",
-  email: "E-mail",
-  phone: "Telefone",
-  mobile: "Celular",
-  cpf: "CPF",
-  cnpj: "CNPJ",
-  "cpf-cnpj": "CPF / CNPJ",
-  rg: "RG",
-  "birth-date": "Data de nascimento",
-  date: "Data",
-  address: "Endereço",
-  street: "Rua",
-  "house-number": "Número",
-  complement: "Complemento",
-  neighborhood: "Bairro",
-  city: "Cidade",
-  state: "Estado",
-  country: "País",
-  cep: "CEP",
-  password: "Senha",
-  "confirm-password": "Confirmar senha",
-  username: "Usuário",
-  company: "Empresa",
-  "job-title": "Cargo",
-  "credit-card-number": "Cartão de crédito",
-  "credit-card-expiration": "Validade do cartão",
-  "credit-card-cvv": "CVV",
-  "pix-key": "Chave Pix",
-  money: "Valor monetário",
-  website: "Site",
-  text: "Texto genérico",
-  number: "Número",
-};
+import {
+  getFieldTypeGroupedOptions,
+  getFieldTypeLabel,
+} from "@/lib/shared/field-type-catalog";
 
 function fieldTypeLabel(ft: FieldType): string {
-  return FIELD_TYPE_LABELS[ft] ?? ft;
+  return getFieldTypeLabel(ft);
 }
 
 function fieldSummary(form: SavedForm): string {
@@ -65,17 +30,31 @@ function fieldSummary(form: SavedForm): string {
 }
 
 function buildFieldTypeOptions(selected?: string): string {
-  return FIELD_TYPES.map(
-    (ft) =>
-      `<option value="${ft}"${ft === selected ? " selected" : ""}>${fieldTypeLabel(ft)} (${ft})</option>`,
-  ).join("");
+  return getFieldTypeGroupedOptions(FIELD_TYPES)
+    .map(
+      (group) =>
+        `<optgroup label="${group.label}">${group.options
+          .map(
+            (entry) =>
+              `<option value="${entry.value}"${entry.value === selected ? " selected" : ""}>${entry.label} (${entry.value})</option>`,
+          )
+          .join("")}</optgroup>`,
+    )
+    .join("");
 }
 
 function buildGeneratorOptions(selected?: string): string {
-  return FIELD_TYPES.map(
-    (ft) =>
-      `<option value="${ft}"${ft === selected ? " selected" : ""}>${fieldTypeLabel(ft)} (${ft})</option>`,
-  ).join("");
+  return getFieldTypeGroupedOptions(FIELD_TYPES)
+    .map(
+      (group) =>
+        `<optgroup label="${group.label}">${group.options
+          .map(
+            (entry) =>
+              `<option value="${entry.value}"${entry.value === selected ? " selected" : ""}>${entry.label} (${entry.value})</option>`,
+          )
+          .join("")}</optgroup>`,
+    )
+    .join("");
 }
 
 function legacyFieldsToTemplate(

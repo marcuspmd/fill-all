@@ -1,4 +1,9 @@
-import { FIELD_TYPES, type FieldType } from "@/types";
+import {
+  FIELD_TYPES,
+  FIELD_TYPES_BY_CATEGORY,
+  type FieldCategory,
+  type FieldType,
+} from "@/types";
 
 /**
  * Human-readable label overrides for field types.
@@ -35,6 +40,28 @@ export interface FieldTypeOption {
   label: string;
 }
 
+/** A named group of field type options, used to render `<optgroup>` elements. */
+export interface FieldTypeGroup {
+  category: FieldCategory;
+  label: string;
+  options: FieldTypeOption[];
+}
+
+/** Portuguese labels for each field category. */
+const FIELD_CATEGORY_LABELS: Record<FieldCategory, string> = {
+  personal: "Pessoal",
+  contact: "Contato",
+  address: "Endereço",
+  document: "Documentos",
+  financial: "Financeiro",
+  authentication: "Autenticação",
+  professional: "Profissional",
+  ecommerce: "E-commerce",
+  system: "Sistema",
+  generic: "Genérico",
+  unknown: "Desconhecido",
+};
+
 /** Returns a human-readable label for the given field type. */
 export function getFieldTypeLabel(type: FieldType): string {
   const override = FIELD_TYPE_LABEL_OVERRIDES[type];
@@ -55,5 +82,30 @@ export function getFieldTypeOptions(
 ): FieldTypeOption[] {
   return [...types]
     .map((type) => ({ value: type, label: getFieldTypeLabel(type) }))
+    .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+}
+
+/**
+ * Returns field type options grouped by category, sorted alphabetically within
+ * each group and with groups themselves sorted alphabetically by their label.
+ * Groups with no matching types are omitted.
+ */
+export function getFieldTypeGroupedOptions(
+  types: readonly FieldType[] = FIELD_TYPES,
+): FieldTypeGroup[] {
+  const typeSet = new Set(types);
+
+  return (
+    Object.entries(FIELD_TYPES_BY_CATEGORY) as [FieldCategory, FieldType[]][]
+  )
+    .map(([category, categoryTypes]) => ({
+      category,
+      label: FIELD_CATEGORY_LABELS[category],
+      options: categoryTypes
+        .filter((t) => typeSet.has(t))
+        .map((type) => ({ value: type, label: getFieldTypeLabel(type) }))
+        .sort((a, b) => a.label.localeCompare(b.label, "pt-BR")),
+    }))
+    .filter((group) => group.options.length > 0)
     .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 }

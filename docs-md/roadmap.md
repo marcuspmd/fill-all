@@ -33,14 +33,15 @@ Adicionar modo de preenchimento seletivo que ignora campos que já possuem valor
 
 ## ⚙️ Melhoria na Opção de Adicionar Regras no Input
 
-**Status**: 🔲 Planejado
+**Status**: ✅ Concluído
 
 Melhorar a experiência de criação de regras diretamente ao clicar no ícone do campo (field icon), tornando o fluxo mais intuitivo e completo.
 
-- Preview em tempo real do valor gerado pela regra
-- Sugestão automática do gerador mais adequado ao campo
-- Validação inline com feedback visual
-- Atalhos de teclado para confirmar/cancelar
+- ✅ Preview em tempo real do valor gerado pela regra (fixo ou por gerador)
+- ✅ Sugestão automática do gerador mais adequado ao campo (via HTML type + keyword classifier)
+- ✅ Badge visual indicando o tipo sugerido com botão de refresh
+- ✅ Atalhos de teclado: Enter para salvar, Escape para cancelar
+- ✅ Hint de atalho visível no rodapé do popup
 
 ---
 
