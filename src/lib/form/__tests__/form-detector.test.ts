@@ -200,6 +200,62 @@ describe("form-detector", () => {
       const { fields } = await detectAllFieldsAsync();
       expect(fields).toHaveLength(2);
     });
+
+    it("cobre elemento não-input, campos sem label/id/name e ordenação por duração", async () => {
+      // Field with a <select> element (NOT HTMLInputElement) — covers the "—" branch
+      const selectElement = document.createElement("select");
+      const fieldNoInfo: FormField = {
+        element: selectElement,
+        selector: "select",
+        fieldType: "select" as any,
+        label: undefined,
+        name: undefined,
+        id: undefined,
+        placeholder: "",
+        required: false,
+        category: "generic",
+        detectionMethod: "custom-select",
+        detectionConfidence: 1.0,
+        detectionDurationMs: 15,
+      };
+
+      // Field with id but no label — covers label ?? id fallback in slowTop.map
+      const field2: FormField = {
+        element: document.createElement("input"),
+        selector: "#f2",
+        fieldType: "text" as any,
+        label: undefined,
+        name: undefined,
+        id: "field2",
+        placeholder: "",
+        required: false,
+        category: "generic",
+        detectionMethod: "keyword",
+        detectionDurationMs: 10,
+      };
+
+      // Field with name but no label or id — covers label ?? id ?? name fallback
+      const field3: FormField = {
+        element: document.createElement("input"),
+        selector: "[name=f3]",
+        fieldType: "text" as any,
+        label: undefined,
+        name: "field3",
+        id: undefined,
+        placeholder: "",
+        required: false,
+        category: "generic",
+        detectionDurationMs: 5,
+      };
+
+      vi.mocked(detectNativeFieldsAsync).mockResolvedValue([
+        fieldNoInfo,
+        field2,
+        field3,
+      ]);
+      const { fields } = await detectAllFieldsAsync();
+      expect(fields).toHaveLength(3);
+    });
   });
 
   // ─────────────────────── streamAllFields ────────────────────────────

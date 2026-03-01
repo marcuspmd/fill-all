@@ -437,4 +437,80 @@ describe("rule-engine/resolveFieldValue", () => {
     expect(result.value).toBe("");
     expect(result.source).toBe("generator");
   });
+
+  it("encontra regra pelo fieldSelector quando CSS selector corresponde ao elemento", async () => {
+    // Arrange — element with id that matches the CSS selector
+    const input = document.createElement("input");
+    input.id = "css-match-field";
+    const field = createField({
+      element: input,
+      selector: "#css-match-field",
+      name: "unrelated-name",
+      id: "css-match-field",
+    });
+    mockGetRulesForUrl.mockResolvedValue([
+      createRule({
+        fieldSelector: "#css-match-field",
+        fieldName: "unrelated-name",
+        fixedValue: "css-found",
+      }),
+    ]);
+
+    // Act
+    const result = await resolveFieldValue(field, "https://example.com");
+
+    // Assert — rule matched via CSS selector (line 280)
+    expect(result.value).toBe("css-found");
+    expect(result.source).toBe("rule");
+  });
+
+  it("ignora regra que não corresponde ao selector nem ao fieldName", async () => {
+    // Arrange — rule where neither CSS selector nor fieldName match the field
+    const field = createField({
+      name: "email",
+      id: "email",
+      selector: "#email",
+    });
+    mockGetRulesForUrl.mockResolvedValue([
+      createRule({
+        fieldSelector: "#never-exists",
+        fieldName: "other-field-name",
+        fixedValue: "should-not-be-used",
+      }),
+    ]);
+    mockGenerateWithConstraints.mockReturnValue("generated-fallback");
+
+    // Act
+    const result = await resolveFieldValue(field, "https://example.com");
+
+    // Assert — no rule matched, falls back to generator (line 289)
+    expect(result.source).toBe("generator");
+    expect(result.value).toBe("generated-fallback");
+  });
+
+  it("rejeita com timeout quando AI demora mais que AI_TIMEOUT_MS (fake timers)", async () => {
+    // Arrange — use fake timers so we can advance past the AI timeout
+    vi.useFakeTimers();
+    const neverResolves = new Promise<string>(() => {});
+    const aiGenerateFn = vi.fn().mockReturnValue(neverResolves);
+    const field = createField({ fieldType: "text" });
+    mockGenerateWithConstraints.mockReturnValue("fallback-after-timeout");
+
+    // Act — start the resolution, advance time past the AI timeout
+    const resultPromise = resolveFieldValue(
+      field,
+      "https://example.com",
+      aiGenerateFn,
+      true,
+    );
+    await vi.runAllTimersAsync();
+
+    const result = await resultPromise;
+
+    // Assert — AI timed out (line 63), fell back to generator
+    expect(result.source).toBe("generator");
+    expect(result.value).toBe("fallback-after-timeout");
+
+    vi.useRealTimers();
+  });
 });

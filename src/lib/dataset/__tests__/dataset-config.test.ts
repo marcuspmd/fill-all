@@ -80,4 +80,15 @@ describe("dataset-config", () => {
     expect(Array.isArray(report.leakedSignals)).toBe(true);
     expect(report.typeCounts).toBeTypeOf("object");
   });
+
+  it("detecta tipos sub-representados quando minSamplesPerType é alto", () => {
+    // Arrange & Act — use high threshold to ensure some types have fewer samples
+    const report = checkDatasetHealth(999999);
+
+    // Assert — the .map(([type]) => type) callback must have been called
+    expect(report.underrepresentedTypes.length).toBeGreaterThan(0);
+    expect(
+      report.underrepresentedTypes.every((t) => typeof t === "string"),
+    ).toBe(true);
+  });
 });

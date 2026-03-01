@@ -618,5 +618,104 @@ describe("playwrightGenerator", () => {
 
       expect(script).toContain("waitForURL('/dashboard')");
     });
+
+    it("generates uncheck and clear and hover steps", () => {
+      const steps: RecordedStep[] = [
+        step({ type: "uncheck", selector: "#opt-out", timestamp: 1000 }),
+        step({ type: "clear", selector: "#field", timestamp: 1100 }),
+        step({ type: "hover", selector: "#btn", timestamp: 1200 }),
+      ];
+      const opts: RecordingGenerateOptions = { includeHoverSteps: true };
+
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
+
+      expect(script).toContain("page.locator('#opt-out').uncheck()");
+      expect(script).toContain("page.locator('#field').clear()");
+      expect(script).toContain("page.locator('#btn').hover()");
+    });
+
+    it("generates scroll step with scrollPosition", () => {
+      const steps: RecordedStep[] = [
+        step({
+          type: "scroll",
+          selector: "#page",
+          scrollPosition: { x: 100, y: 200 },
+          timestamp: 1000,
+        }),
+      ];
+      const opts: RecordingGenerateOptions = { includeScrollSteps: true };
+
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
+
+      expect(script).toContain("window.scrollTo(100, 200)");
+    });
+
+    it("generates scroll step without scrollPosition", () => {
+      const steps: RecordedStep[] = [
+        step({ type: "scroll", selector: "#page", timestamp: 1000 }),
+      ];
+      const opts: RecordingGenerateOptions = { includeScrollSteps: true };
+
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
+
+      expect(script).toContain("// scroll");
+    });
+
+    it("generates assert step with assertion", () => {
+      const steps: RecordedStep[] = [
+        step({
+          type: "assert",
+          assertion: { type: "element-visible", selector: "#success" },
+          timestamp: 1000,
+        }),
+      ];
+
+      const script = playwrightGenerator.generateFromRecording(steps);
+
+      expect(script).toContain("toBeVisible");
+    });
+
+    it("generates assert step without assertion falls back to comment", () => {
+      const steps: RecordedStep[] = [step({ type: "assert", timestamp: 1000 })];
+
+      const script = playwrightGenerator.generateFromRecording(steps);
+
+      expect(script).toContain("// assert");
+    });
+
+    it("filters out scroll steps when includeScrollSteps is false", () => {
+      const steps: RecordedStep[] = [
+        step({ type: "fill", selector: "#name", value: "A", timestamp: 1000 }),
+        step({
+          type: "scroll",
+          selector: "#page",
+          scrollPosition: { x: 0, y: 500 },
+          timestamp: 1100,
+        }),
+        step({ type: "click", selector: "#btn", timestamp: 1200 }),
+      ];
+      const opts: RecordingGenerateOptions = { includeScrollSteps: false };
+
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
+
+      expect(script).not.toContain("scrollTo");
+      expect(script).toContain("fill");
+      expect(script).toContain("click");
+    });
+
+    it("filters out hover steps when includeHoverSteps is false", () => {
+      const steps: RecordedStep[] = [
+        step({ type: "fill", selector: "#name", value: "A", timestamp: 1000 }),
+        step({ type: "hover", selector: "#tooltip", timestamp: 1100 }),
+        step({ type: "click", selector: "#btn", timestamp: 1200 }),
+      ];
+      const opts: RecordingGenerateOptions = { includeHoverSteps: false };
+
+      const script = playwrightGenerator.generateFromRecording(steps, opts);
+
+      expect(script).not.toContain("hover");
+      expect(script).toContain("fill");
+      expect(script).toContain("click");
+    });
   });
 });

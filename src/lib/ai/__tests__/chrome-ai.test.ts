@@ -164,4 +164,122 @@ describe("chrome-ai", () => {
     // Act & Assert — não deve lançar
     expect(() => module.destroySession()).not.toThrow();
   });
+
+  it("isAvailable retorna false quando api existe mas status não é available/downloadable", async () => {
+    // Arrange — api existe mas status é "after-download"
+    Reflect.set(globalThis as object, "LanguageModel", {
+      availability: vi.fn().mockResolvedValue("after-download"),
+      create: vi.fn(),
+    });
+    const module = await import("@/lib/ai/chrome-ai");
+
+    // Act
+    const result = await module.isAvailable();
+
+    // Assert
+    expect(result).toBe(false);
+  });
+
+  it("getSession retorna null quando availability retorna unavailable", async () => {
+    // Arrange — api existe mas está unavailable
+    const create = vi.fn();
+    Reflect.set(globalThis as object, "LanguageModel", {
+      availability: vi.fn().mockResolvedValue("unavailable"),
+      create,
+    });
+    const module = await import("@/lib/ai/chrome-ai");
+
+    // Act
+    const result = await module.getSession();
+
+    // Assert
+    expect(result).toBeNull();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("generateFieldValue com field sem label mas com name usa name no log", async () => {
+    // Arrange — cobre branch label ?? name (label é undefined, name definido)
+    const fakeSession = {
+      prompt: vi.fn().mockResolvedValue("  gerado  "),
+      destroy: vi.fn(),
+    };
+    Reflect.set(globalThis as object, "LanguageModel", {
+      availability: vi.fn().mockResolvedValue("available"),
+      create: vi.fn().mockResolvedValue(fakeSession),
+    });
+    const module = await import("@/lib/ai/chrome-ai");
+    const element = document.createElement("input");
+    const field = {
+      element,
+      selector: "#campo",
+      category: "generic",
+      fieldType: "text",
+      label: undefined,
+      name: "campo",
+      id: "campo",
+      placeholder: "",
+      required: false,
+    } as unknown as FormField;
+
+    // Act
+    const value = await module.generateFieldValue(field);
+
+    // Assert
+    expect(value).toBe("gerado");
+  });
+
+  it("generateFieldValue com field sem label e sem name usa selector no log", async () => {
+    // Arrange — cobre branch label ?? name ?? selector (ambos undefined)
+    const fakeSession = {
+      prompt: vi.fn().mockResolvedValue("  anon  "),
+      destroy: vi.fn(),
+    };
+    Reflect.set(globalThis as object, "LanguageModel", {
+      availability: vi.fn().mockResolvedValue("available"),
+      create: vi.fn().mockResolvedValue(fakeSession),
+    });
+    const module = await import("@/lib/ai/chrome-ai");
+    const element = document.createElement("input");
+    const field = {
+      element,
+      selector: "#anon",
+      category: "generic",
+      fieldType: "text",
+      label: undefined,
+      name: undefined,
+      id: undefined,
+      placeholder: "",
+      required: false,
+    } as unknown as FormField;
+
+    // Act
+    const value = await module.generateFieldValue(field);
+
+    // Assert
+    expect(value).toBe("anon");
+  });
+
+  it("generateFieldValueFromInput com label e name undefined cobre fallbacks de log", async () => {
+    // Arrange — cobre input.label ?? "" e input.name ?? "" quando undefined
+    const fakeSession = {
+      prompt: vi.fn().mockResolvedValue("  resultado  "),
+      destroy: vi.fn(),
+    };
+    Reflect.set(globalThis as object, "LanguageModel", {
+      availability: vi.fn().mockResolvedValue("available"),
+      create: vi.fn().mockResolvedValue(fakeSession),
+    });
+    const module = await import("@/lib/ai/chrome-ai");
+
+    // Act
+    const value = await module.generateFieldValueFromInput({
+      label: undefined,
+      name: undefined,
+      fieldType: "text",
+      inputType: "text",
+    });
+
+    // Assert
+    expect(value).toBe("resultado");
+  });
 });
