@@ -233,6 +233,24 @@
   "btnDelete": {
     "message": "Eliminar"
   },
+  "btnSetDefault": {
+    "message": "⭐ Predeterminado"
+  },
+  "badgeDefault": {
+    "message": "Predeterminado"
+  },
+  "btnNewForm": {
+    "message": "+ Nuevo Formulario"
+  },
+  "msgConfirmDeleteForm": {
+    "message": "¿Eliminar este formulario permanentemente?"
+  },
+  "logFormSetDefault": {
+    "message": "Formulario establecido como predeterminado"
+  },
+  "newFormTitle": {
+    "message": "Nuevo Formulario"
+  },
   "btnSaveRule": {
     "message": "Guardar Regla"
   },

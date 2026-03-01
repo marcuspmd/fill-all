@@ -378,6 +378,8 @@ export interface SavedForm {
   createdAt: number;
   /** When this template was last updated */
   updatedAt: number;
+  /** Whether this is the default form applied automatically */
+  isDefault?: boolean;
 }
 
 /** A field that should be skipped during auto-fill */
@@ -521,6 +523,7 @@ export type MessageType =
   | "DELETE_RUNTIME_MODEL"
   | "APPLY_TEMPLATE"
   | "UPDATE_FORM"
+  | "SET_DEFAULT_FORM"
   | "EXPORT_E2E"
   | "START_RECORDING"
   | "STOP_RECORDING"

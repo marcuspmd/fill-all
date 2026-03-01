@@ -270,6 +270,16 @@ body {
   background: rgba(166, 227, 161, 0.15);
 }
 
+.btn-secondary {
+  border-color: rgba(137, 180, 250, 0.3);
+  color: var(--accent);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  background: rgba(137, 180, 250, 0.1);
+}
+
 /* ── Edit Form Screen ── */
 
 .edit-form-screen {
@@ -344,6 +354,19 @@ body {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 6px;
+}
+
+.edit-field-key-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.edit-field-key-wrap .edit-input {
+  flex: 1;
+  font-family: monospace;
+  font-size: 11px;
 }
 
 .edit-field-key {
@@ -558,6 +581,19 @@ body {
 .form-name {
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.badge-default {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(249, 226, 175, 0.2);
+  color: var(--warning);
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .form-meta {

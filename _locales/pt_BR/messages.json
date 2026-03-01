@@ -233,6 +233,24 @@
   "btnDelete": {
     "message": "Excluir"
   },
+  "btnSetDefault": {
+    "message": "⭐ Definir Padrão"
+  },
+  "badgeDefault": {
+    "message": "Padrão"
+  },
+  "btnNewForm": {
+    "message": "+ Novo Formulário"
+  },
+  "msgConfirmDeleteForm": {
+    "message": "Excluir este formulário permanentemente?"
+  },
+  "logFormSetDefault": {
+    "message": "Formulário definido como padrão"
+  },
+  "newFormTitle": {
+    "message": "Novo Formulário"
+  },
   "btnSaveRule": {
     "message": "Salvar Regra"
   },

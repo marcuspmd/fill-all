@@ -47,6 +47,7 @@ const inspectedTabId = chrome.devtools.inspectedWindow.tabId;
 let activeTab: TabId = "actions";
 let detectedFields: DetectedFieldSummary[] = [];
 let savedForms: SavedForm[] = [];
+let formsLoaded = false;
 let watcherActive = false;
 let ignoredSelectors = new Set<string>();
 let logViewerInstance: LogViewer | null = null;
@@ -325,6 +326,7 @@ async function loadForms(): Promise<void> {
     addLog(`Erro: ${err}`, "error");
     savedForms = [];
   }
+  formsLoaded = true;
   if (activeTab === "forms") renderFormsTab();
 }
 
@@ -350,6 +352,33 @@ async function deleteFormById(formId: string): Promise<void> {
   } catch (err) {
     addLog(`Erro ao remover: ${err}`, "error");
   }
+}
+
+async function setFormAsDefault(formId: string): Promise<void> {
+  try {
+    await sendToBackground({ type: "SET_DEFAULT_FORM", payload: formId });
+    savedForms = savedForms.map((f) => ({
+      ...f,
+      isDefault: f.id === formId ? true : undefined,
+    }));
+    addLog(t("logFormSetDefault"), "success");
+    renderFormsTab();
+  } catch (err) {
+    addLog(`Erro: ${err}`, "error");
+  }
+}
+
+function showNewFormScreen(): void {
+  const blankForm: SavedForm = {
+    id: crypto.randomUUID(),
+    name: t("newFormTitle"),
+    urlPattern: "*",
+    fields: {},
+    templateFields: [],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  showEditFormScreen(blankForm, true);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -449,6 +478,7 @@ function renderActiveTab(): void {
       break;
     case "forms":
       renderFormsTab();
+      void loadForms();
       break;
     case "record":
       renderRecordTab();
@@ -605,30 +635,37 @@ function renderFormsTab(): void {
   content.innerHTML = `
     <div class="fields-toolbar">
       <button class="btn" id="btn-load-forms">🔄 ${t("btnLoadForms")}</button>
+      <button class="btn btn-success" id="btn-new-form">+ ${t("btnNewForm")}</button>
       <span class="fields-count">${savedForms.length} ${t("formCount")}</span>
     </div>
     <div class="forms-list">
       ${
-        savedForms.length === 0
-          ? `<div class="empty">${t("loadFormsDesc")}</div>`
-          : savedForms
-              .map(
-                (form) => `
+        !formsLoaded
+          ? `<div class="empty">⏳ ${t("logLoadingForms")}</div>`
+          : savedForms.length === 0
+            ? `<div class="empty">${t("loadFormsDesc")}</div>`
+            : savedForms
+                .map(
+                  (form) => `
           <div class="form-card">
             <div class="form-info">
-              <span class="form-name">${escapeHtml(form.name)}</span>
+              <span class="form-name">
+                ${escapeHtml(form.name)}
+                ${form.isDefault ? `<span class="badge-default">${t("badgeDefault")}</span>` : ""}
+              </span>
               <span class="form-meta">${form.templateFields?.length ?? Object.keys(form.fields).length} ${t("fieldCount")} · ${new Date(form.updatedAt).toLocaleDateString()}</span>
               <span class="form-url">${escapeHtml(form.urlPattern)}</span>
             </div>
             <div class="form-actions">
               <button class="btn btn-sm" data-form-id="${escapeAttr(form.id)}" data-action="apply">▶️ ${t("btnApply")}</button>
               <button class="btn btn-sm btn-warning" data-form-id="${escapeAttr(form.id)}" data-action="edit">✏️ ${t("btnEdit")}</button>
-              <button class="btn btn-sm btn-danger" data-form-id="${escapeAttr(form.id)}" data-action="delete">🗑️</button>
+              <button class="btn btn-sm btn-secondary" data-form-id="${escapeAttr(form.id)}" data-action="setDefault" title="${t("btnSetDefault")}">⭐</button>
+              <button class="btn btn-sm btn-danger" data-form-id="${escapeAttr(form.id)}" data-action="delete" title="${t("msgConfirmDeleteForm")}">🗑️</button>
             </div>
           </div>
         `,
-              )
-              .join("")
+                )
+                .join("")
       }
     </div>
   `;
@@ -636,6 +673,10 @@ function renderFormsTab(): void {
   document
     .getElementById("btn-load-forms")
     ?.addEventListener("click", loadForms);
+
+  document
+    .getElementById("btn-new-form")
+    ?.addEventListener("click", showNewFormScreen);
 
   content
     .querySelectorAll<HTMLButtonElement>("[data-form-id]")
@@ -648,17 +689,22 @@ function renderFormsTab(): void {
 
         if (action === "apply") void applySavedForm(form);
         else if (action === "edit") showEditFormScreen(form);
-        else if (action === "delete") void deleteFormById(form.id);
+        else if (action === "setDefault") void setFormAsDefault(form.id);
+        else if (action === "delete") {
+          if (window.confirm(t("msgConfirmDeleteForm"))) {
+            void deleteFormById(form.id);
+          }
+        }
       });
     });
 }
 
-function showEditFormScreen(form: SavedForm): void {
+function showEditFormScreen(form: SavedForm, isNew = false): void {
   const content = document.getElementById("content");
   if (!content) return;
 
-  // Normalise to templateFields
-  const templateFields: FormTemplateField[] =
+  // Normalise to templateFields — mutable working copy
+  const editingFields: FormTemplateField[] =
     form.templateFields && form.templateFields.length > 0
       ? form.templateFields.map((f) => ({ ...f }))
       : Object.entries(form.fields).map(([key, value]) => ({
@@ -668,15 +714,15 @@ function showEditFormScreen(form: SavedForm): void {
           fixedValue: value,
         }));
 
-  const fieldOptionsHtml = FIELD_TYPES.map(
-    (t) => `<option value="${t}">${t}</option>`,
-  ).join("");
-
-  const fieldsHtml = templateFields
-    .map(
-      (f, i) => `
+  function buildFieldRowHtml(f: FormTemplateField, i: number): string {
+    return `
       <div class="edit-field-row" data-field-index="${i}">
-        <div class="edit-field-key" title="${escapeAttr(f.key)}">${escapeHtml(f.label || f.key)}</div>
+        <div class="edit-field-key-wrap">
+          <input type="text" class="edit-input edit-field-key-input" data-field-key="${i}"
+            placeholder="Seletor / nome" value="${escapeAttr(f.key)}" />
+          <input type="text" class="edit-input edit-field-label-input" data-field-label="${i}"
+            placeholder="${t("formName")}" value="${escapeAttr(f.label || f.key)}" />
+        </div>
         <div class="edit-field-controls">
           <select class="edit-select" data-field-mode="${i}">
             <option value="fixed"${f.mode === "fixed" ? " selected" : ""}>${t("fixedValue")}</option>
@@ -689,19 +735,54 @@ function showEditFormScreen(form: SavedForm): void {
           <select class="edit-select edit-field-value" data-field-gen="${i}"
             style="display:${f.mode === "generator" ? "block" : "none"}">
             ${FIELD_TYPES.map(
-              (t) =>
-                `<option value="${t}"${f.generatorType === t ? " selected" : ""}>${t}</option>`,
+              (ft) =>
+                `<option value="${ft}"${f.generatorType === ft ? " selected" : ""}>${ft}</option>`,
             ).join("")}
           </select>
         </div>
+        <button class="btn btn-sm btn-danger edit-remove-field" data-remove-field="${i}" title="${t("tooltipRemoveField")}">🗑</button>
       </div>
-    `,
-    )
-    .join("");
+    `;
+  }
+
+  function renderFields(list: HTMLElement): void {
+    list.innerHTML = editingFields
+      .map((f, i) => buildFieldRowHtml(f, i))
+      .join("");
+
+    list
+      .querySelectorAll<HTMLSelectElement>("[data-field-mode]")
+      .forEach((sel) => {
+        sel.addEventListener("change", () => {
+          const idx = sel.dataset.fieldMode;
+          const fixedInput = list.querySelector<HTMLElement>(
+            `[data-field-fixed="${idx}"]`,
+          );
+          const genSelect = list.querySelector<HTMLElement>(
+            `[data-field-gen="${idx}"]`,
+          );
+          const isFixed = sel.value === "fixed";
+          if (fixedInput) fixedInput.style.display = isFixed ? "block" : "none";
+          if (genSelect) genSelect.style.display = isFixed ? "none" : "block";
+        });
+      });
+
+    list
+      .querySelectorAll<HTMLButtonElement>("[data-remove-field]")
+      .forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = parseInt(btn.dataset.removeField ?? "", 10);
+          if (!isNaN(idx)) {
+            editingFields.splice(idx, 1);
+            renderFields(list);
+          }
+        });
+      });
+  }
 
   content.innerHTML = `
     <div class="edit-form-screen">
-      <div class="edit-form-title">✏️ ${t("editTemplate")}</div>
+      <div class="edit-form-title">${isNew ? "➕" : "✏️"} ${t(isNew ? "newFormTitle" : "editTemplate")}</div>
       <div class="edit-meta-grid">
         <div class="edit-input-group">
           <label class="edit-label">${t("formName")}</label>
@@ -712,39 +793,31 @@ function showEditFormScreen(form: SavedForm): void {
           <input class="edit-input" id="edit-form-url" type="text" value="${escapeAttr(form.urlPattern)}" />
         </div>
       </div>
-      ${
-        templateFields.length > 0
-          ? `<div class="edit-section-header">${t("editFieldsHeader")}</div>
-             <div class="edit-fields-list">${fieldsHtml}</div>`
-          : ""
-      }
+      <div class="edit-section-header">${t("editFieldsHeader")}</div>
+      <div class="edit-fields-list" id="edit-fields-list"></div>
       <div class="edit-form-footer">
         <button class="btn" id="edit-form-cancel">✕ ${t("btnCancel")}</button>
+        <button class="btn btn-secondary" id="edit-add-field">+ ${t("btnAddField")}</button>
         <button class="btn btn-success" id="edit-form-save">💾 ${t("btnSave")}</button>
       </div>
     </div>
   `;
 
-  // Wire up mode toggles
-  content
-    .querySelectorAll<HTMLSelectElement>("[data-field-mode]")
-    .forEach((sel) => {
-      sel.addEventListener("change", () => {
-        const idx = sel.dataset.fieldMode;
-        const fixedInput = content.querySelector<HTMLElement>(
-          `[data-field-fixed="${idx}"]`,
-        );
-        const genSelect = content.querySelector<HTMLElement>(
-          `[data-field-gen="${idx}"]`,
-        );
-        const isFixed = sel.value === "fixed";
-        if (fixedInput) fixedInput.style.display = isFixed ? "block" : "none";
-        if (genSelect) genSelect.style.display = isFixed ? "none" : "block";
-      });
-    });
+  const fieldsList = content.querySelector<HTMLElement>("#edit-fields-list")!;
+  renderFields(fieldsList);
 
   document.getElementById("edit-form-cancel")?.addEventListener("click", () => {
     renderFormsTab();
+  });
+
+  document.getElementById("edit-add-field")?.addEventListener("click", () => {
+    editingFields.push({
+      key: `field_${editingFields.length + 1}`,
+      label: "",
+      mode: "fixed",
+      fixedValue: "",
+    });
+    renderFields(fieldsList);
   });
 
   document
@@ -757,20 +830,26 @@ function showEditFormScreen(form: SavedForm): void {
         document.getElementById("edit-form-url") as HTMLInputElement
       )?.value.trim();
 
-      const updatedFields: FormTemplateField[] = templateFields.map((f, i) => {
-        const modeEl = content.querySelector<HTMLSelectElement>(
+      const updatedFields: FormTemplateField[] = editingFields.map((f, i) => {
+        const keyEl = fieldsList.querySelector<HTMLInputElement>(
+          `[data-field-key="${i}"]`,
+        );
+        const labelEl = fieldsList.querySelector<HTMLInputElement>(
+          `[data-field-label="${i}"]`,
+        );
+        const modeEl = fieldsList.querySelector<HTMLSelectElement>(
           `[data-field-mode="${i}"]`,
         );
-        const fixedEl = content.querySelector<HTMLInputElement>(
+        const fixedEl = fieldsList.querySelector<HTMLInputElement>(
           `[data-field-fixed="${i}"]`,
         );
-        const genEl = content.querySelector<HTMLSelectElement>(
+        const genEl = fieldsList.querySelector<HTMLSelectElement>(
           `[data-field-gen="${i}"]`,
         );
         const mode = (modeEl?.value ?? f.mode) as FormFieldMode;
         return {
-          key: f.key,
-          label: f.label,
+          key: keyEl?.value.trim() || f.key,
+          label: labelEl?.value.trim() || f.label || f.key,
           mode,
           fixedValue:
             mode === "fixed" ? (fixedEl?.value ?? f.fixedValue) : undefined,
@@ -790,11 +869,15 @@ function showEditFormScreen(form: SavedForm): void {
 
       await sendToBackground({ type: "UPDATE_FORM", payload: updated });
 
-      // Update local state
-      const idx = savedForms.findIndex((f) => f.id === form.id);
-      if (idx >= 0) savedForms[idx] = updated;
+      if (isNew) {
+        savedForms = [...savedForms, updated];
+        addLog(`${t("logFormSaved")}: ${updated.name}`, "success");
+      } else {
+        const idx = savedForms.findIndex((f) => f.id === form.id);
+        if (idx >= 0) savedForms[idx] = updated;
+        addLog(`${t("logTemplateUpdated")}: ${updated.name}`, "success");
+      }
 
-      addLog(`${t("logTemplateUpdated")}: ${updated.name}`, "success");
       renderFormsTab();
     });
 }

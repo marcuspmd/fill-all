@@ -120,6 +120,7 @@ const savedFormSchema = z
     templateFields: z.array(templateFieldSchema).optional(),
     createdAt: z.number(),
     updatedAt: z.number(),
+    isDefault: z.boolean().optional(),
   })
   .strict();
 

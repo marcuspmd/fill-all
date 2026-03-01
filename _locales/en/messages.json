@@ -233,6 +233,24 @@
   "btnDelete": {
     "message": "Delete"
   },
+  "btnSetDefault": {
+    "message": "⭐ Set Default"
+  },
+  "badgeDefault": {
+    "message": "Default"
+  },
+  "btnNewForm": {
+    "message": "+ New Form"
+  },
+  "msgConfirmDeleteForm": {
+    "message": "Delete this form permanently?"
+  },
+  "logFormSetDefault": {
+    "message": "Form set as default"
+  },
+  "newFormTitle": {
+    "message": "New Form"
+  },
   "btnSaveRule": {
     "message": "Save Rule"
   },
