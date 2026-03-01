@@ -117,20 +117,21 @@ Cobertura de testes unitários e E2E implementada com Vitest + Playwright, garan
 
 ## 🧾 Exportar Preenchimento como Script E2E (Playwright / Cypress / Pest)
 
-**Status**: 🔲 Planejado
+**Status**: ✅ Concluído
 
 Transformar o Fill All em um acelerador de engenharia de testes: ao preencher um formulário, a extensão captura os campos e valores utilizados e gera automaticamente um script E2E pronto para uso nos principais frameworks — sem nenhuma chamada externa, 100% client-side, preservando a privacidade dos dados.
 
-- Capturar o melhor seletor de cada campo durante o preenchimento (prioridade: `#id` → `[data-testid]` → `[name]` → fallback genérico)
-- Armazenar as ações como array de `{ selector, value, type }` no content script
-- Gerar código para os frameworks suportados via padrão **Strategy**:
-  - **Playwright**: `page.locator(selector).fill(value)` / `.check()`
-  - **Cypress**: `cy.get(selector).type(value)` / `.check()`
-  - **Pest/Dusk (PHP)**: `$browser->type(selector, value)` / `->check()` / `->radio()`
-- Nova seção **"Export to E2E"** no Popup com `<select>` de framework e `<textarea>` com o código gerado
-- Botão "Copiar para área de transferência" com feedback visual
-- Implementação via `GeneratorFactory` + interfaces `E2EGenerator` por framework (fácil extensão futura)
-- Zero dependências externas — execução 100% local, compatível com ambientes corporativos e dados sensíveis
+- ✅ Captura o melhor seletor de cada campo durante o preenchimento (prioridade: `#id` → `[data-testid]` → `[name]` → fallback genérico)
+- ✅ Armazena as ações como array de `{ selector, value, type }` no content script
+- ✅ Gera código para os frameworks suportados via padrão **Strategy**:
+  - ✅ **Playwright**: `page.locator(selector).fill(value)` / `.check()`
+  - ✅ **Cypress**: `cy.get(selector).type(value)` / `.check()`
+  - ✅ **Pest/Dusk (PHP)**: `$browser->type(selector, value)` / `->check()` / `->radio()`
+- ✅ Seção **"Export to E2E"** no Popup com `<select>` de framework e download do script
+- ✅ Botão "Copiar para área de transferência" com feedback visual
+- ✅ Gravação interativa no DevTools: start/stop/pause/resume, edição de steps, otimização com Chrome AI
+- ✅ Geração de asserções automáticas por tipo de campo
+- ✅ Zero dependências externas — execução 100% local, compatível com ambientes corporativos e dados sensíveis
 
 ---
 

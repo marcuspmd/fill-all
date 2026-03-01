@@ -25,9 +25,10 @@ import {
   retrainLearnedFromRules,
   storeLearnedEntry,
 } from "@/lib/ai/learning-store";
-import type { FieldRule, LearnedEntry } from "@/types";
+import type { FieldRule } from "@/types";
+import type { LearnedEntry } from "@/lib/ai/learning-store";
 
-const chromeMock = globalThis.chrome as {
+const chromeMock = globalThis.chrome as unknown as {
   storage: {
     local: {
       get: ReturnType<typeof vi.fn>;
@@ -56,6 +57,10 @@ function makeRule(overrides: Partial<FieldRule> = {}): FieldRule {
     fieldName: "cpf",
     urlPattern: "*",
     fixedValue: undefined,
+    generator: "auto",
+    priority: 0,
+    createdAt: 0,
+    updatedAt: 0,
     ...overrides,
   };
 }
@@ -152,10 +157,10 @@ describe("learning-store", () => {
 
     it("usa generatorType fornecido em vez do type", async () => {
       chromeMock.storage.local.get.mockResolvedValue({});
-      await storeLearnedEntry("telefone", "phone", "cellphone");
+      await storeLearnedEntry("telefone", "phone", "mobile");
       const [[arg]] = chromeMock.storage.local.set.mock.calls;
       const stored = arg[LEARNED_STORAGE_KEY] as LearnedEntry[];
-      expect(stored[0].generatorType).toBe("cellphone");
+      expect(stored[0].generatorType).toBe("mobile");
     });
 
     it("limita a MAX_LEARNED_ENTRIES (500) entradas", async () => {
