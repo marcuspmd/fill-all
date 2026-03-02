@@ -548,12 +548,22 @@ export type MessageType =
   | "CLEAR_RECORDING"
   | "RECORDING_STEP_ADDED"
   | "RECORDING_STEP_UPDATED"
+  | "CLEAR_FORM"
   | "DEVTOOLS_RELAY";
 
 /** Payload for any message exchanged between extension contexts. */
 export interface ExtensionMessage {
   type: MessageType;
   payload?: unknown;
+}
+
+/** Message sent via Port during field detection streaming */
+export interface StreamedFieldMessage {
+  type: "field" | "progress" | "complete" | "error";
+  field?: DetectedFieldSummary;
+  total?: number;
+  current?: number;
+  error?: string;
 }
 
 /** Result of a generation operation */

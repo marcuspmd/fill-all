@@ -7,6 +7,7 @@ import type {
   ExtensionMessage,
   FormField,
   SavedForm,
+  StreamedFieldMessage,
 } from "@/types";
 import {
   fillAllFields,
@@ -17,6 +18,7 @@ import {
 import {
   detectAllFieldsAsync,
   detectFormFields,
+  streamAllFields,
 } from "@/lib/form/form-detector";
 import { saveForm, getSettings } from "@/lib/storage/storage";
 import { initI18n } from "@/lib/i18n";
@@ -517,6 +519,37 @@ async function handleContentMessage(
       return { success: true };
     }
 
+    case "CLEAR_FORM": {
+      const fields = detectFormFields();
+      let cleared = 0;
+
+      for (const field of fields) {
+        const el = field.element;
+        if (el instanceof HTMLInputElement) {
+          if (el.type === "checkbox" || el.type === "radio") {
+            el.checked = false;
+          } else {
+            el.value = "";
+          }
+          cleared++;
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        } else if (el instanceof HTMLSelectElement) {
+          el.value = "";
+          cleared++;
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        } else if (el instanceof HTMLTextAreaElement) {
+          el.value = "";
+          cleared++;
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }
+
+      showNotification(`✓ ${cleared} campo(s) limpo(s)`);
+      return { success: true, cleared };
+    }
+
     default:
       return { error: `Unknown message type: ${message.type}` };
   }
@@ -665,3 +698,83 @@ async function initContentScript(): Promise<void> {
 }
 
 void initContentScript();
+
+/**
+ * Handle streaming detection via Port-based communication.
+ * DevTools connects with port name "field-detection-stream" to receive
+ * fields incrementally as they are detected (instead of waiting for all).
+ */
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== "field-detection-stream") return;
+
+  let cancelled = false;
+
+  // Clean up on disconnect
+  port.onDisconnect.addListener(() => {
+    cancelled = true;
+  });
+
+  // Start streaming fields
+  (async () => {
+    try {
+      let index = 0;
+
+      for await (const field of streamAllFields()) {
+        if (cancelled) break;
+
+        const summary: DetectedFieldSummary = {
+          selector: field.selector,
+          fieldType: field.fieldType,
+          label: field.label || field.name || field.id || "unknown",
+          name: field.name,
+          id: field.id,
+          placeholder: field.placeholder,
+          required: field.required,
+          contextualType: field.contextualType,
+          detectionMethod: field.detectionMethod,
+          detectionConfidence: field.detectionConfidence,
+        };
+
+        if (field.element instanceof HTMLSelectElement) {
+          summary.options = Array.from(field.element.options).map((o) => ({
+            value: o.value,
+            text: o.text.trim(),
+          }));
+        }
+
+        if (
+          field.element instanceof HTMLInputElement &&
+          (field.element.type === "checkbox" || field.element.type === "radio")
+        ) {
+          summary.checkboxValue = field.element.value;
+          summary.checkboxChecked = field.element.checked;
+        }
+
+        index++;
+
+        const message: StreamedFieldMessage = {
+          type: "field",
+          field: summary,
+          current: index,
+        };
+
+        port.postMessage(message);
+      }
+
+      if (!cancelled) {
+        port.postMessage({
+          type: "complete",
+          total: index,
+          current: index,
+        } as StreamedFieldMessage);
+      }
+    } catch (error) {
+      if (!cancelled) {
+        port.postMessage({
+          type: "error",
+          error: error instanceof Error ? error.message : "Unknown error",
+        } as StreamedFieldMessage);
+      }
+    }
+  })().catch(() => {});
+});

@@ -13,6 +13,7 @@ import type {
   FormTemplateField,
   FormFieldMode,
   FieldType,
+  StreamedFieldMessage,
 } from "@/types";
 import { FIELD_TYPES } from "@/types";
 import {
@@ -178,28 +179,311 @@ async function toggleWatch(): Promise<void> {
 
 // ── Detect Fields ────────────────────────────────────────────────────────────
 
-async function detectFields(): Promise<void> {
+/**
+ * Stream-based field detection — receives fields incrementally as they are
+ * detected, updating the UI in real-time instead of waiting for all.
+ */
+async function detectFieldsStreaming(): Promise<void> {
+  detectedFields = [];
   addLog(t("logDetecting"));
+
   try {
-    const result = (await sendToPage({ type: "DETECT_FIELDS" })) as {
-      count?: number;
-      fields?: DetectedFieldSummary[];
+    const STREAM_IDLE_TIMEOUT_MS = 4000;
+
+    let detectionComplete = false;
+    let receivedAnyMessage = false;
+    let streamIdleTimeoutId: number | null = null;
+
+    const clearStreamIdleTimeout = (): void => {
+      if (streamIdleTimeoutId !== null) {
+        window.clearTimeout(streamIdleTimeoutId);
+        streamIdleTimeoutId = null;
+      }
     };
-    if (result?.fields) {
-      detectedFields = result.fields;
-      addLog(`${result.count} ${t("fieldsDetected")}`, "success");
-    } else {
-      detectedFields = [];
-      addLog(t("logNoFieldDetected"), "warn");
+
+    const enableFillActions = (): void => {
+      document
+        .getElementById("btn-fill-all-fields")
+        ?.removeAttribute("disabled");
+      document
+        .getElementById("btn-fill-empty-fields")
+        ?.removeAttribute("disabled");
+    };
+
+    const resetDetectButtonToIdle = (): void => {
+      const detectButton = document.getElementById("btn-detect-fields");
+      if (!detectButton) return;
+      detectButton.removeAttribute("disabled");
+      detectButton.textContent = `🔍 ${t("detectFields")}`;
+    };
+
+    const enableFieldsActions = (): void => {
+      resetDetectButtonToIdle();
+      enableFillActions();
+    };
+
+    const fallbackDetectOnce = async (): Promise<void> => {
+      const result = (await sendToPage({ type: "DETECT_FIELDS" })) as {
+        fields?: DetectedFieldSummary[];
+        error?: string;
+      };
+
+      if (result?.error) {
+        addLog(`Erro ao detectar: ${result.error}`, "error");
+        return;
+      }
+
+      detectedFields = Array.isArray(result?.fields) ? result.fields : [];
+      if (activeTab === "fields") {
+        renderFieldsTab();
+      }
+      addLog(`${detectedFields.length} ${t("fieldsDetected")}`, "success");
+    };
+
+    const finalizeDetection = (
+      port: chrome.runtime.Port,
+      options?: {
+        warning?: string;
+      },
+    ): void => {
+      if (detectionComplete) return;
+      detectionComplete = true;
+      clearStreamIdleTimeout();
+
+      if (options?.warning) {
+        addLog(options.warning, "warn");
+      }
+
+      const tbody = document.getElementById("fields-tbody");
+      if (tbody && tbody.children.length === 0) {
+        tbody.innerHTML = `<tr class="row-empty"><td colspan="7" style="text-align: center; padding: 20px;">${t("logNoFieldDetected")}</td></tr>`;
+      }
+
+      enableFieldsActions();
+
+      try {
+        port.disconnect();
+      } catch {
+        // no-op
+      }
+    };
+
+    const scheduleStreamIdleFinalization = (
+      port: chrome.runtime.Port,
+    ): void => {
+      clearStreamIdleTimeout();
+      streamIdleTimeoutId = window.setTimeout(() => {
+        if (!detectionComplete && receivedAnyMessage) {
+          finalizeDetection(port, {
+            warning: "Detecção finalizada por inatividade do stream",
+          });
+          addLog(`${detectedFields.length} ${t("fieldsDetected")}`, "success");
+        }
+      }, STREAM_IDLE_TIMEOUT_MS);
+    };
+
+    // Render loading state with empty table
+    if (activeTab === "fields") {
+      const content = document.getElementById("content");
+      if (content) {
+        content.innerHTML = `
+          <div class="fields-toolbar">
+            <button class="btn" id="btn-detect-fields" disabled>🔄 ${t("detectFields")} ...</button>
+            <button class="btn" id="btn-fill-all-fields" disabled>⚡ ${t("fillAll")}</button>
+            <button class="btn" id="btn-fill-empty-fields" disabled>🟦 ${t("fillOnlyEmpty")}</button>
+            <button class="btn btn-danger" id="btn-clear-fields">🗑️ Limpar Detectados</button>
+            <button class="btn btn-danger" id="btn-clear-form">🧹 Limpar Form</button>
+            <span class="fields-count">0 ${t("fieldCount")}</span>
+          </div>
+          <div class="table-wrap">
+            <table class="fields-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>${t("columnType")}</th>
+                  <th>${t("columnMethod")}</th>
+                  <th>${t("columnConf")}</th>
+                  <th>${t("columnIdName")}</th>
+                  <th>${t("columnLabel")}</th>
+                  <th>${t("columnActions")}</th>
+                </tr>
+              </thead>
+              <tbody id="fields-tbody">
+                <tr class="row-loading"><td colspan="7" style="text-align: center; padding: 20px;">⏳ Detectando campos...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        document
+          .getElementById("btn-detect-fields")
+          ?.addEventListener("click", () => {
+            void detectFields();
+          });
+        document
+          .getElementById("btn-fill-all-fields")
+          ?.addEventListener("click", () => {
+            void fillAll();
+          });
+        document
+          .getElementById("btn-fill-empty-fields")
+          ?.addEventListener("click", () => {
+            void fillOnlyEmpty();
+          });
+        document
+          .getElementById("btn-clear-fields")
+          ?.addEventListener("click", clearDetectedFields);
+        document
+          .getElementById("btn-clear-form")
+          ?.addEventListener("click", clearForm);
+      }
     }
+
+    // Open port for streaming
+    const port = chrome.tabs.connect(inspectedTabId, {
+      name: "field-detection-stream",
+    });
+
+    scheduleStreamIdleFinalization(port);
+
+    // Handle incoming fields
+    port.onMessage.addListener((message: StreamedFieldMessage) => {
+      receivedAnyMessage = true;
+      scheduleStreamIdleFinalization(port);
+
+      if (message.type === "field" && message.field) {
+        detectedFields.push(message.field);
+        enableFillActions();
+
+        // Update table with new field
+        const tbody = document.getElementById("fields-tbody");
+        if (tbody) {
+          // Remove loading row if this is the first field
+          const loadingRow = tbody.querySelector(".row-loading");
+          if (loadingRow) loadingRow.remove();
+
+          const fieldIndex = detectedFields.length;
+          const field = message.field;
+          const isIgnored = ignoredSelectors.has(field.selector);
+          const displayType = field.contextualType || field.fieldType;
+          const method = field.detectionMethod || "-";
+
+          const row = document.createElement("tr");
+          row.className = isIgnored ? "row-ignored" : "";
+          row.innerHTML = `
+            <td class="cell-num">${fieldIndex}</td>
+            <td>${renderTypeBadge(displayType)}</td>
+            <td>${renderMethodBadge(method)}</td>
+            <td>${renderConfidenceBadge(field.detectionConfidence)}</td>
+            <td class="cell-mono">${escapeHtml(field.id || field.name || "-")}</td>
+            <td>${escapeHtml(field.label || "-")}</td>
+            <td class="cell-actions">
+              <button class="icon-btn" data-action="fill" data-selector="${escapeAttr(field.selector)}" title="${t("actionFill")}">⚡</button>
+              <button class="icon-btn" data-action="inspect" data-selector="${escapeAttr(field.selector)}" title="${t("actionInspect")}">🔎</button>
+              <button class="icon-btn ${isIgnored ? "icon-btn-off" : ""}" data-action="toggle-ignore" data-selector="${escapeAttr(field.selector)}" data-label="${escapeAttr(field.label || field.name || field.id || field.selector)}" title="${isIgnored ? t("actionReactivate") : t("actionIgnore")}">
+                ${isIgnored ? "🚫" : "👁️"}
+              </button>
+            </td>
+          `;
+
+          tbody.appendChild(row);
+
+          // Attach event listeners to new row
+          row
+            .querySelectorAll<HTMLButtonElement>("[data-action]")
+            .forEach((btn) => {
+              btn.addEventListener("click", () => {
+                const action = btn.dataset.action;
+                const sel = btn.dataset.selector;
+                if (!sel) return;
+
+                switch (action) {
+                  case "fill":
+                    void fillField(sel);
+                    break;
+                  case "inspect":
+                    inspectElement(sel);
+                    break;
+                  case "toggle-ignore":
+                    void toggleIgnore(sel, btn.dataset.label || sel);
+                    break;
+                }
+              });
+            });
+
+          // Update count
+          const countSpan = document.querySelector(".fields-count");
+          if (countSpan) {
+            countSpan.textContent = `${detectedFields.length} ${t("fieldCount")}`;
+          }
+        }
+      } else if (message.type === "complete") {
+        addLog(`${detectedFields.length} ${t("fieldsDetected")}`, "success");
+        finalizeDetection(port);
+      } else if (message.type === "error") {
+        addLog(`Erro ao detectar: ${message.error}`, "error");
+        finalizeDetection(port);
+      }
+    });
+
+    port.onDisconnect.addListener(() => {
+      clearStreamIdleTimeout();
+      if (!detectionComplete) {
+        const reason = chrome.runtime.lastError?.message;
+        addLog(
+          reason
+            ? `Conexão perdida durante detecção: ${reason}`
+            : "Conexão perdida durante detecção",
+          "warn",
+        );
+        if (!receivedAnyMessage) {
+          void fallbackDetectOnce().finally(() => {
+            detectionComplete = true;
+            enableFieldsActions();
+          });
+          return;
+        }
+        detectionComplete = true;
+        enableFieldsActions();
+      }
+    });
   } catch (err) {
     addLog(`Erro ao detectar: ${err}`, "error");
     detectedFields = [];
+    if (activeTab === "fields") {
+      renderFieldsTab();
+    }
   }
 
   await loadIgnoredFields();
+  updateStatusBar();
+}
+
+async function detectFields(): Promise<void> {
+  await detectFieldsStreaming();
+}
+
+// ── Clear Fields & Form ──────────────────────────────────────────────────────
+
+async function clearDetectedFields(): Promise<void> {
+  detectedFields = [];
+  addLog("Campos detectados limpos", "info");
   if (activeTab === "fields") renderFieldsTab();
   updateStatusBar();
+}
+
+async function clearForm(): Promise<void> {
+  addLog("Limpando formulário...", "info");
+  try {
+    const response = await sendToPage({
+      type: "CLEAR_FORM",
+      payload: undefined,
+    });
+    addLog("✓ Formulário limpo com sucesso", "success");
+  } catch (err) {
+    addLog(`✗ Erro ao limpar formulário: ${err}`, "error");
+    log.error("Error clearing form:", err);
+  }
 }
 
 // ── Ignored Fields ───────────────────────────────────────────────────────────
@@ -568,6 +852,8 @@ function renderFieldsTab(): void {
       <button class="btn" id="btn-detect-fields">🔍 ${t("detectFields")}</button>
       <button class="btn" id="btn-fill-all-fields">⚡ ${t("fillAll")}</button>
       <button class="btn" id="btn-fill-empty-fields">🟦 ${t("fillOnlyEmpty")}</button>
+      <button class="btn btn-danger" id="btn-clear-fields" ${detectedFields.length === 0 ? "disabled" : ""}>🗑️ Limpar Detectados</button>
+      <button class="btn btn-danger" id="btn-clear-form">🧹 Limpar Form</button>
       <span class="fields-count">${detectedFields.length} ${t("fieldCount")}</span>
     </div>
     <div class="table-wrap">
@@ -624,6 +910,12 @@ function renderFieldsTab(): void {
   document
     .getElementById("btn-fill-empty-fields")
     ?.addEventListener("click", fillOnlyEmpty);
+  document
+    .getElementById("btn-clear-fields")
+    ?.addEventListener("click", clearDetectedFields);
+  document
+    .getElementById("btn-clear-form")
+    ?.addEventListener("click", clearForm);
 
   content
     .querySelectorAll<HTMLButtonElement>("[data-action]")
