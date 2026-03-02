@@ -224,10 +224,11 @@ async function selectOption(
     ".ant-select-selection-search-input, .ant-select-input",
   );
 
-  // Only type into the search box when we have a real search value.
-  // Typing an empty string can trigger React to re-render/close the dropdown
-  // before we get a chance to click an option.
-  if (searchInput && value) {
+  // Only type into the search box when we have a real search value AND the input
+  // is not readonly. Readonly inputs indicate a non-searchable select — typing
+  // via native setter bypasses readonly but still fires React input events,
+  // which get interpreted as a search query and filter out all options.
+  if (searchInput && value && !searchInput.readOnly) {
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
       window.HTMLInputElement.prototype,
       "value",
@@ -249,8 +250,8 @@ async function selectOption(
 
   // If no options appeared after typing (AJAX returned no results or hasn't loaded
   // yet), clear the search and wait again — many AJAX selects show their default
-  // list when the query is empty.
-  if (!hasOptions && searchInput) {
+  // list when the query is empty. Skip for readonly inputs (non-searchable selects).
+  if (!hasOptions && searchInput && !searchInput.readOnly) {
     const clearSetter = Object.getOwnPropertyDescriptor(
       window.HTMLInputElement.prototype,
       "value",
