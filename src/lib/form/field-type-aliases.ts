@@ -54,8 +54,7 @@ export const FIELD_TYPE_DERIVATIONS: Partial<Record<FieldType, DerivationFn>> =
     // --- Phone group ---
     phone: (values) => values.get("mobile") ?? values.get("whatsapp") ?? null,
     mobile: (values) => values.get("phone") ?? values.get("whatsapp") ?? null,
-    whatsapp: (values) =>
-      values.get("mobile") ?? values.get("phone") ?? null,
+    whatsapp: (values) => values.get("mobile") ?? values.get("phone") ?? null,
 
     // --- Authentication ---
     "confirm-password": (values) => values.get("password") ?? null,
@@ -70,6 +69,12 @@ export const FIELD_TYPE_DERIVATIONS: Partial<Record<FieldType, DerivationFn>> =
     amount: (values) => values.get("money") ?? values.get("price") ?? null,
 
     // --- Date variants ---
+    date: (values) =>
+      values.get("birth-date") ??
+      values.get("start-date") ??
+      values.get("end-date") ??
+      values.get("due-date") ??
+      null,
     "birth-date": (values) => values.get("date") ?? null,
     "start-date": (values) => values.get("date") ?? null,
     "end-date": (values) => values.get("date") ?? null,

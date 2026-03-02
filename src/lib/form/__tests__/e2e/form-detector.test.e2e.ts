@@ -155,8 +155,8 @@ test.describe("form-detector — DETECT_FIELDS (async pipeline)", () => {
       (f) => f.id === "birthdate" || f.name === "birthdate",
     );
     expect(dateField).toBeDefined();
-    // date field detected by HTML type="date" → fieldType "date" or "birthdate"
-    expect(["date", "birthdate"]).toContain(dateField?.fieldType);
+    // date field detected by HTML type="date" → fieldType "date", "birthdate" or "birth-date"
+    expect(["date", "birthdate", "birth-date"]).toContain(dateField?.fieldType);
   });
 
   test("confidence values are in range 0–1", async ({ page }) => {

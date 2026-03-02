@@ -114,7 +114,7 @@ describe("DetectionPipeline.runAsync", () => {
 
   it("includes decision trace entries", async () => {
     const nullClassifier = makeClassifier("keyword", null);
-    const emailClassifier = makeClassifier("html-type", {
+    const emailClassifier = makeClassifier("chrome-ai", {
       type: "email",
       confidence: 0.9,
     });

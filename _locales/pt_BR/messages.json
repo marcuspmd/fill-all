@@ -1012,6 +1012,12 @@
   "tooltipRemoveField": {
     "message": "Remover campo"
   },
+  "tooltipMatchByFieldType": {
+    "message": "Correspondência por tipo de campo (opcional)"
+  },
+  "matchBySelectorOption": {
+    "message": "— Por seletor/nome —"
+  },
   "errorTemplateNameRequired": {
     "message": "Informe o nome do template"
   },

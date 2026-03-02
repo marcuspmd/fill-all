@@ -358,7 +358,7 @@ function openEditPanel(form: SavedForm): void {
           <th>${isTypeBased ? t("fieldDetectedTypeHeader") : t("fieldColumnHeader")}</th>
           <th>${t("fieldModeHeader")}</th>
           <th>${t("fieldValueHeader")}</th>
-          ${isTypeBased ? "<th></th>" : ""}
+          <th></th>
         </tr>
       </thead>
       <tbody id="edit-fields-tbody">
@@ -367,7 +367,7 @@ function openEditPanel(form: SavedForm): void {
             isTypeBased
               ? buildTemplateFieldRow(field)
               : `
-          <tr data-key="${escapeHtml(field.key)}" class="template-field-row">
+          <tr data-key="${escapeHtml(field.key)}" class="template-field-row template-field-row--legacy">
             <td class="field-label-cell">${escapeHtml(field.label || field.key)}</td>
             <td>
               <select class="field-mode-select">
@@ -389,13 +389,18 @@ function openEditPanel(form: SavedForm): void {
                 ${buildGeneratorOptions(field.generatorType)}
               </select>
             </td>
+            <td>
+              <button class="btn btn-sm btn-delete btn-remove-row" title="${t("removeFieldTitle")}">✕</button>
+            </td>
           </tr>
         `,
           )
           .join("")}
       </tbody>
     </table>
-    ${isTypeBased ? `<div style="margin-bottom:12px;"><button class="btn btn-secondary btn-sm" id="edit-add-field-row">${t("btnAddField")}</button></div>` : ""}
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-secondary btn-sm" id="edit-add-field-row">${t("btnAddField")}</button>
+    </div>
     <div class="edit-panel-actions">
       <button class="btn btn-primary" id="edit-panel-save">${t("btnSave")}</button>
       <button class="btn btn-secondary" id="edit-panel-cancel">${t("btnCancel")}</button>
@@ -422,7 +427,7 @@ function openEditPanel(form: SavedForm): void {
     target.closest("tr")?.remove();
   });
 
-  // Add field row (type-based only)
+  // Add field row (always type-based for new rows)
   panel.querySelector("#edit-add-field-row")?.addEventListener("click", () => {
     const tbody = panel!.querySelector("#edit-fields-tbody");
     if (!tbody) return;
@@ -448,10 +453,6 @@ function openEditPanel(form: SavedForm): void {
 
       const updatedFields: FormTemplateField[] = [];
       panel!.querySelectorAll("tr.template-field-row").forEach((row) => {
-        const key = (row as HTMLElement).dataset.key ?? "";
-        const label =
-          row.querySelector(".field-label-cell")?.textContent?.trim() ?? key;
-
         const mode = (
           row.querySelector(".field-mode-select") as HTMLSelectElement
         ).value as "fixed" | "generator";
@@ -462,10 +463,13 @@ function openEditPanel(form: SavedForm): void {
           row.querySelector(".field-generator-select") as HTMLSelectElement
         ).value as FieldType;
 
-        if (isTypeBased) {
-          const matchType = (
-            row.querySelector(".field-type-match-select") as HTMLSelectElement
-          ).value as FieldType;
+        const typeMatchSelect = row.querySelector(
+          ".field-type-match-select",
+        ) as HTMLSelectElement | null;
+
+        if (typeMatchSelect) {
+          // Type-based row (template row with matchByFieldType)
+          const matchType = typeMatchSelect.value as FieldType;
           updatedFields.push({
             key: matchType,
             label: fieldTypeLabel(matchType),
@@ -475,6 +479,10 @@ function openEditPanel(form: SavedForm): void {
             generatorType: mode === "generator" ? generatorType : undefined,
           });
         } else {
+          // Legacy row (captured from DOM, key is CSS selector/name)
+          const key = (row as HTMLElement).dataset.key ?? "";
+          const label =
+            row.querySelector(".field-label-cell")?.textContent?.trim() ?? key;
           updatedFields.push({
             key,
             label,

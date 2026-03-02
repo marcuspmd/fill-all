@@ -99,7 +99,7 @@ function buildGeneratorOptions(selected?: string): string {
 function buildFieldRow(field: FormTemplateField): string {
   const isFixed = field.mode === "fixed";
   return `
-    <div class="template-field-row" data-key="${escapeHtml(field.key)}">
+    <div class="template-field-row" data-key="${escapeHtml(field.key)}" data-match-type="${escapeHtml(field.matchByFieldType ?? "")}">
       <div class="field-row-label">${escapeHtml(field.label || field.key)}</div>
       <div class="field-row-controls">
         <select class="field-mode-select">
@@ -216,10 +216,13 @@ function openEditModal(form: SavedForm): void {
           row.querySelector(".field-generator-select") as HTMLSelectElement
         ).value as FieldType;
 
+        const matchByFieldType = ((row as HTMLElement).dataset.matchType ||
+          undefined) as FieldType | undefined;
         updatedFields.push({
           key,
           label,
           mode,
+          matchByFieldType,
           fixedValue: mode === "fixed" ? fixedValue : undefined,
           generatorType: mode === "generator" ? generatorType : undefined,
         });

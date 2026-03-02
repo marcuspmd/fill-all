@@ -1012,6 +1012,12 @@
   "tooltipRemoveField": {
     "message": "Eliminar campo"
   },
+  "tooltipMatchByFieldType": {
+    "message": "Coincidencia por tipo de campo (opcional)"
+  },
+  "matchBySelectorOption": {
+    "message": "— Por selector/nombre —"
+  },
   "errorTemplateNameRequired": {
     "message": "Ingresa el nombre de la plantilla"
   },

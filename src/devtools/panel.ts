@@ -21,6 +21,10 @@ import {
   renderConfidenceBadge,
 } from "@/lib/ui";
 import { t, initI18n } from "@/lib/i18n";
+import {
+  getFieldTypeGroupedOptions,
+  getFieldTypeLabel,
+} from "@/lib/shared/field-type-catalog";
 import { createLogger } from "@/lib/logger";
 import type { LogViewer } from "@/lib/logger/log-viewer";
 import { createLogViewer, getLogViewerStyles } from "@/lib/logger/log-viewer";
@@ -28,6 +32,22 @@ import { createLogViewer, getLogViewerStyles } from "@/lib/logger/log-viewer";
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const TAB_IDS = ["actions", "fields", "forms", "record", "log"] as const;
+
+function buildGroupedFieldTypeOptions(selected?: string): string {
+  return getFieldTypeGroupedOptions(FIELD_TYPES)
+    .map(
+      (group) =>
+        `<optgroup label="${group.label}">${group.options
+          .map(
+            (entry) =>
+              `<option value="${entry.value}"${
+                entry.value === selected ? " selected" : ""
+              }>${entry.label} (${entry.value})</option>`,
+          )
+          .join("")}</optgroup>`,
+    )
+    .join("");
+}
 type TabId = (typeof TAB_IDS)[number];
 
 function getTabLabels(): Record<TabId, string> {
@@ -722,6 +742,10 @@ function showEditFormScreen(form: SavedForm, isNew = false): void {
             placeholder="Seletor / nome" value="${escapeAttr(f.key)}" />
           <input type="text" class="edit-input edit-field-label-input" data-field-label="${i}"
             placeholder="${t("formName")}" value="${escapeAttr(f.label || f.key)}" />
+          <select class="edit-select edit-field-match-type" data-field-match-type="${i}" title="${t("tooltipMatchByFieldType")}">
+            <option value=""${!f.matchByFieldType ? " selected" : ""}>${t("matchBySelectorOption")}</option>
+            ${buildGroupedFieldTypeOptions(f.matchByFieldType)}
+          </select>
         </div>
         <div class="edit-field-controls">
           <select class="edit-select" data-field-mode="${i}">
@@ -734,10 +758,7 @@ function showEditFormScreen(form: SavedForm, isNew = false): void {
             style="display:${f.mode === "fixed" ? "block" : "none"}" />
           <select class="edit-select edit-field-value" data-field-gen="${i}"
             style="display:${f.mode === "generator" ? "block" : "none"}">
-            ${FIELD_TYPES.map(
-              (ft) =>
-                `<option value="${ft}"${f.generatorType === ft ? " selected" : ""}>${ft}</option>`,
-            ).join("")}
+            ${buildGroupedFieldTypeOptions(f.generatorType)}
           </select>
         </div>
         <button class="btn btn-sm btn-danger edit-remove-field" data-remove-field="${i}" title="${t("tooltipRemoveField")}">🗑</button>
@@ -846,11 +867,19 @@ function showEditFormScreen(form: SavedForm, isNew = false): void {
         const genEl = fieldsList.querySelector<HTMLSelectElement>(
           `[data-field-gen="${i}"]`,
         );
+        const matchTypeEl = fieldsList.querySelector<HTMLSelectElement>(
+          `[data-field-match-type="${i}"]`,
+        );
         const mode = (modeEl?.value ?? f.mode) as FormFieldMode;
+        const matchByFieldType = matchTypeEl?.value
+          ? (matchTypeEl.value as FieldType)
+          : undefined;
+        const keyValue = keyEl?.value.trim() || f.key;
         return {
-          key: keyEl?.value.trim() || f.key,
+          key: matchByFieldType ?? keyValue,
           label: labelEl?.value.trim() || f.label || f.key,
           mode,
+          matchByFieldType,
           fixedValue:
             mode === "fixed" ? (fixedEl?.value ?? f.fixedValue) : undefined,
           generatorType:
