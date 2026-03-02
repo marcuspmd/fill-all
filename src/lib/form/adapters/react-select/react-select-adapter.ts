@@ -29,11 +29,14 @@
  * Disabled: `.react-select--is-disabled` on the container root.
  *
  * Filling strategy:
- *   1. MouseDown + click on the control to open the dropdown.
- *   2. Wait for `.react-select__menu` to appear (inline or portaled).
- *   3. For searchable fields: type the value to filter options.
- *   4. For single-select: click the matching option or the first available one.
- *   5. For multi-select: click up to 3 random options.
+ *   1. Focus the combobox input so react-select sets isFocused=true.
+ *   2. Click the dropdown indicator (preferred) or control to open the menu.
+ *   3. Fallback: ArrowDown key event to guarantee menu opens.
+ *   4. Wait for `.react-select__menu` to appear (inline or portaled).
+ *   5. For searchable fields: type the value to filter; if no match clear and
+ *      fall back to the full unfiltered list.
+ *   6. For single-select: click the matching option or the first available one.
+ *   7. For multi-select: click up to 3 random options.
  */
 
 import type { FormField } from "@/types";
@@ -121,21 +124,47 @@ export const reactSelectAdapter: CustomComponentAdapter = {
     );
     const isSearchable = searchInput !== null;
 
-    // Open the dropdown: mousedown triggers React's onMouseDown handler
-    control.dispatchEvent(
+    // The accessible combobox input for focus/keyboard events
+    const comboboxInput =
+      wrapper.querySelector<HTMLInputElement>("input[role='combobox']") ??
+      searchInput;
+
+    // Step 1: Focus the input so react-select sets isFocused=true.
+    // Without this, the first mousedown only focuses (doesn't open the menu).
+    comboboxInput?.focus();
+    await new Promise<void>((r) => setTimeout(r, 30));
+
+    // Step 2: Prefer clicking the dropdown indicator — its onMouseDown always
+    // calls openMenu() directly, unlike the control which first checks isFocused.
+    const indicator = wrapper.querySelector<HTMLElement>(
+      ".react-select__dropdown-indicator",
+    );
+    const trigger = indicator ?? control;
+    trigger.dispatchEvent(
       new MouseEvent("mousedown", { bubbles: true, cancelable: true }),
     );
-    control.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-    control.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    trigger.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    trigger.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
-    // Wait for the menu to render (may be portaled to document.body)
-    const menu = await waitForReactSelectMenu(wrapper, 800);
+    // Step 3: ArrowDown on the focused input opens the menu in react-select v5
+    // regardless of onMouseDown outcome — acts as a reliable fallback.
+    comboboxInput?.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "ArrowDown",
+        keyCode: 40,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    // Step 4: Wait for the menu to render (may be portaled to document.body)
+    const menu = await waitForReactSelectMenu(wrapper, 1500);
     if (!menu) {
       log.warn(`Menu react-select não apareceu para: ${wrapperSelector}`);
       return false;
     }
 
-    // For searchable fields: type the desired value to filter options
+    // Step 5: For searchable fields — type the value to filter options
     if (isSearchable && searchInput) {
       const nativeSetter = Object.getOwnPropertyDescriptor(
         window.HTMLInputElement.prototype,
@@ -148,14 +177,37 @@ export const reactSelectAdapter: CustomComponentAdapter = {
       searchInput.dispatchEvent(new Event("change", { bubbles: true }));
 
       // Allow react-select to re-render filtered options
-      await new Promise<void>((r) => setTimeout(r, 150));
+      await new Promise<void>((r) => setTimeout(r, 300));
     }
 
-    const available = Array.from(
+    let available = Array.from(
       menu.querySelectorAll<HTMLElement>(
         ".react-select__option:not(.react-select__option--is-disabled)",
       ),
     );
+
+    // Step 6: If filtering removed all options, clear the input so the full
+    // list is restored and we can still pick the closest match.
+    if (available.length === 0 && isSearchable && searchInput) {
+      log.debug(
+        `Nenhuma opção após filtro — limpando input para: ${wrapperSelector}`,
+      );
+      const nativeSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        "value",
+      )?.set;
+      nativeSetter
+        ? nativeSetter.call(searchInput, "")
+        : (searchInput.value = "");
+      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise<void>((r) => setTimeout(r, 200));
+
+      available = Array.from(
+        menu.querySelectorAll<HTMLElement>(
+          ".react-select__option:not(.react-select__option--is-disabled)",
+        ),
+      );
+    }
 
     if (available.length === 0) {
       log.warn(`Nenhuma opção disponível para: ${wrapperSelector}`);
@@ -205,10 +257,15 @@ export const reactSelectAdapter: CustomComponentAdapter = {
  *
  * react-select renders the menu either:
  *   a) inline — directly inside the container wrapper, OR
- *   b) portaled — appended to `document.body` and linked via
- *      `aria-controls` on the search input → the listbox container id.
+ *   b) portaled — appended to `document.body` (menuPortalTarget).
  *
- * We check both locations and use MutationObserver as fallback.
+ * Portal detection: react-select sets `aria-controls` on the search input
+ * ONLY while the menu is open, so we must read it dynamically (each check),
+ * not once at call time.
+ *
+ * Fallback: scan `document.body` for `.react-select__menu` elements not
+ * contained within this wrapper — handles the portal case even without
+ * `aria-controls`.
  */
 function waitForReactSelectMenu(
   wrapper: HTMLElement,
@@ -217,14 +274,26 @@ function waitForReactSelectMenu(
   const findInline = () =>
     wrapper.querySelector<HTMLElement>(".react-select__menu");
 
-  // Use aria-controls to locate portaled menus
-  const input = wrapper.querySelector<HTMLInputElement>("input[aria-controls]");
-  const listboxId = input?.getAttribute("aria-controls") ?? null;
-
+  // Re-read aria-controls on every check because react-select only sets it
+  // while the menu is open (aria-expanded="true").
   const findPortaled = (): HTMLElement | null => {
-    if (!listboxId) return null;
-    const listbox = document.getElementById(listboxId);
-    return listbox?.closest<HTMLElement>(".react-select__menu") ?? null;
+    const input = wrapper.querySelector<HTMLInputElement>(
+      "input[aria-controls]",
+    );
+    const listboxId = input?.getAttribute("aria-controls") ?? null;
+    if (listboxId) {
+      const listbox = document.getElementById(listboxId);
+      const byAriaControls =
+        listbox?.closest<HTMLElement>(".react-select__menu") ?? null;
+      if (byAriaControls) return byAriaControls;
+    }
+
+    // Broader fallback: any .react-select__menu in the document that is NOT
+    // a child of this wrapper (i.e. a portaled one).
+    const allMenus = Array.from(
+      document.querySelectorAll<HTMLElement>(".react-select__menu"),
+    );
+    return allMenus.find((m) => !wrapper.contains(m)) ?? null;
   };
 
   const existing = findInline() ?? findPortaled();
