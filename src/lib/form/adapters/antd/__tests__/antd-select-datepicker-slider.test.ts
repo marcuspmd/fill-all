@@ -39,6 +39,7 @@ vi.mock("../antd-utils", async (importOriginal) => {
 import { antdSelectAdapter } from "../antd-select-adapter";
 import { antdDatepickerAdapter } from "../antd-datepicker-adapter";
 import { antdSliderAdapter } from "../antd-slider-adapter";
+import { waitForElement } from "../antd-utils";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -445,6 +446,213 @@ describe("antdSelectAdapter", () => {
 
     const result = await antdSelectAdapter.fill(wrapper, "algum-valor");
     expect(result).toBe(false);
+  });
+
+  // ─── buildField multiselect ────────────────────────────────────────────────
+
+  it("buildField: retorna fieldType multiselect para .ant-select-multiple", () => {
+    const wrapper = makeSelect();
+    wrapper.classList.add("ant-select-multiple");
+    document.body.appendChild(wrapper);
+
+    const field = antdSelectAdapter.buildField(wrapper);
+    expect(field.fieldType).toBe("multiselect");
+    expect(field.adapterName).toBe("antd-select");
+  });
+
+  // ─── AJAX fallback (selectOption lines 255-263) ────────────────────────────
+
+  it("fill: limpa busca e retenta quando primeira busca não retorna opções (AJAX fallback)", async () => {
+    const wrapper = makeSelect();
+    document.body.appendChild(wrapper);
+
+    const dropdown = document.createElement("div");
+    dropdown.className = "ant-select-dropdown";
+    const option = document.createElement("div");
+    option.className = "ant-select-item-option";
+    option.setAttribute("title", "Resultado AJAX");
+    option.textContent = "Resultado AJAX";
+    dropdown.appendChild(option);
+    document.body.appendChild(dropdown);
+
+    // Simulate AJAX delay: dropdown appears immediately but item-option list
+    // is empty on the first check, only appearing after the search is cleared.
+    vi.mocked(waitForElement)
+      .mockResolvedValueOnce(dropdown) // dropdown check passes
+      .mockResolvedValueOnce(null); // first item-option check: no results yet
+    // third call falls back to default (document.querySelector) – option already in DOM
+
+    const searchInput = wrapper.querySelector<HTMLInputElement>("input")!;
+    const inputValues: string[] = [];
+    searchInput.addEventListener("input", () =>
+      inputValues.push(searchInput.value),
+    );
+
+    let clicked = false;
+    option.addEventListener("click", () => (clicked = true));
+
+    const result = await antdSelectAdapter.fill(wrapper, "Resultado AJAX");
+    expect(result).toBe(true);
+    expect(clicked).toBe(true);
+    // The clear step dispatches an input event with value ""
+    expect(inputValues).toContain("");
+  });
+
+  // ─── Multiselect fill (selectMultipleOptions lines 307-400) ───────────────
+
+  describe("multiselect (ant-select-multiple)", () => {
+    function makeMultipleSelect(): HTMLElement {
+      const wrapper = makeSelect();
+      wrapper.classList.add("ant-select-multiple");
+      return wrapper;
+    }
+
+    function makeDropdownWithOptions(titles: string[]): HTMLElement {
+      const dropdown = document.createElement("div");
+      dropdown.className = "ant-select-dropdown";
+      for (const title of titles) {
+        const opt = document.createElement("div");
+        opt.className = "ant-select-item-option";
+        opt.setAttribute("title", title);
+        opt.textContent = title;
+        dropdown.appendChild(opt);
+      }
+      return dropdown;
+    }
+
+    it("fill: seleciona múltiplas opções por valores separados por vírgula", async () => {
+      const wrapper = makeMultipleSelect();
+      document.body.appendChild(wrapper);
+
+      const dropdown = makeDropdownWithOptions([
+        "Opção A",
+        "Opção B",
+        "Opção C",
+      ]);
+      document.body.appendChild(dropdown);
+
+      const clicks: string[] = [];
+      dropdown.querySelectorAll(".ant-select-item-option").forEach((opt) => {
+        opt.addEventListener("click", () =>
+          clicks.push(opt.getAttribute("title")!),
+        );
+      });
+
+      const result = await antdSelectAdapter.fill(wrapper, "Opção A, Opção C");
+      expect(result).toBe(true);
+      expect(clicks).toContain("Opção A");
+      expect(clicks).toContain("Opção C");
+      expect(clicks).not.toContain("Opção B");
+    });
+
+    it("fill: seleciona opções aleatórias quando value está vazio", async () => {
+      const wrapper = makeMultipleSelect();
+      document.body.appendChild(wrapper);
+
+      const dropdown = makeDropdownWithOptions([
+        "Opção A",
+        "Opção B",
+        "Opção C",
+      ]);
+      document.body.appendChild(dropdown);
+
+      let clickCount = 0;
+      dropdown.querySelectorAll(".ant-select-item-option").forEach((opt) => {
+        opt.addEventListener("click", () => clickCount++);
+      });
+
+      const result = await antdSelectAdapter.fill(wrapper, "");
+      expect(result).toBe(true);
+      expect(clickCount).toBeGreaterThanOrEqual(1);
+      expect(clickCount).toBeLessThanOrEqual(3);
+    });
+
+    it("fill: seleciona aleatoriamente quando valor não casa com nenhuma opção", async () => {
+      const wrapper = makeMultipleSelect();
+      document.body.appendChild(wrapper);
+
+      const dropdown = makeDropdownWithOptions(["Opção A", "Opção B"]);
+      document.body.appendChild(dropdown);
+
+      let clicked = false;
+      dropdown.querySelectorAll(".ant-select-item-option").forEach((opt) => {
+        opt.addEventListener("click", () => (clicked = true));
+      });
+
+      const result = await antdSelectAdapter.fill(wrapper, "valor-inexistente");
+      expect(result).toBe(true);
+      expect(clicked).toBe(true);
+    });
+
+    it("fill: dispara keydown Escape após seleção múltipla", async () => {
+      const wrapper = makeMultipleSelect();
+      document.body.appendChild(wrapper);
+
+      const dropdown = makeDropdownWithOptions(["Opção A"]);
+      document.body.appendChild(dropdown);
+
+      const searchInput = wrapper.querySelector<HTMLInputElement>("input")!;
+      let escapeFired = false;
+      searchInput.addEventListener("keydown", (e: KeyboardEvent) => {
+        if (e.key === "Escape") escapeFired = true;
+      });
+
+      await antdSelectAdapter.fill(wrapper, "Opção A");
+      expect(escapeFired).toBe(true);
+    });
+
+    it("fill: retorna false quando dropdown não tem opções", async () => {
+      const wrapper = makeMultipleSelect();
+      document.body.appendChild(wrapper);
+
+      // Empty dropdown — no item-option children
+      const dropdown = document.createElement("div");
+      dropdown.className = "ant-select-dropdown";
+      document.body.appendChild(dropdown);
+
+      const result = await antdSelectAdapter.fill(wrapper, "Opção A");
+      expect(result).toBe(false);
+    });
+
+    it("fill: faz match parcial em valores separados por vírgula", async () => {
+      const wrapper = makeMultipleSelect();
+      document.body.appendChild(wrapper);
+
+      const dropdown = makeDropdownWithOptions([
+        "São Paulo - SP",
+        "Rio de Janeiro - RJ",
+      ]);
+      document.body.appendChild(dropdown);
+
+      const clicks: string[] = [];
+      dropdown.querySelectorAll(".ant-select-item-option").forEach((opt) => {
+        opt.addEventListener("click", () =>
+          clicks.push(opt.getAttribute("title")!),
+        );
+      });
+
+      const result = await antdSelectAdapter.fill(wrapper, "São Paulo, Rio");
+      expect(result).toBe(true);
+      expect(clicks).toContain("São Paulo - SP");
+      expect(clicks).toContain("Rio de Janeiro - RJ");
+    });
+
+    it("fill: nova estrutura CSS-var múltipla — seleciona opção", async () => {
+      const wrapper = makeNewCssVarSelect({ multiple: true });
+      document.body.appendChild(wrapper);
+
+      const dropdown = makeDropdownWithOptions(["CSS Var Opção"]);
+      document.body.appendChild(dropdown);
+
+      let clicked = false;
+      dropdown
+        .querySelector(".ant-select-item-option")!
+        .addEventListener("click", () => (clicked = true));
+
+      const result = await antdSelectAdapter.fill(wrapper, "CSS Var Opção");
+      expect(result).toBe(true);
+      expect(clicked).toBe(true);
+    });
   });
 });
 

@@ -408,4 +408,302 @@ describe("log-viewer", () => {
       expect(css).toContain("#ffffff"); // light background
     });
   });
+
+  // ── Time range filtering ────────────────────────────────────────────────
+
+  describe("time range filtering", () => {
+    it("filters entries from timeFrom onward", async () => {
+      const fromInput = "2030-06-15T12:00";
+      const fromMs = new Date(fromInput).getTime();
+      const earlyEntry = makeEntry({
+        ts: new Date(fromMs - 3_600_000).toISOString(),
+      });
+      const lateEntry = makeEntry({
+        ts: new Date(fromMs + 3_600_000).toISOString(),
+      });
+      mockLoadLogEntries.mockResolvedValue([earlyEntry, lateEntry]);
+
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      const input = container.querySelector<HTMLInputElement>(".lv-time-from")!;
+      input.value = fromInput;
+      input.dispatchEvent(new Event("change"));
+
+      expect(container.querySelectorAll(".lv-entry").length).toBe(1);
+      expect(
+        container.querySelector(".lv-entry .lv-msg")?.textContent,
+      ).toContain("test message");
+    });
+
+    it("filters entries until timeTo", async () => {
+      const toInput = "2030-06-15T12:00";
+      const toMs = new Date(toInput).getTime();
+      const earlyEntry = makeEntry({
+        ts: new Date(toMs - 3_600_000).toISOString(),
+      });
+      const lateEntry = makeEntry({
+        ts: new Date(toMs + 3_600_000).toISOString(),
+      });
+      mockLoadLogEntries.mockResolvedValue([earlyEntry, lateEntry]);
+
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      const input = container.querySelector<HTMLInputElement>(".lv-time-to")!;
+      input.value = toInput;
+      input.dispatchEvent(new Event("change"));
+
+      expect(container.querySelectorAll(".lv-entry").length).toBe(1);
+    });
+
+    it("applies both timeFrom and timeTo to narrow the range", async () => {
+      const fromInput = "2030-06-15T11:00";
+      const toInput = "2030-06-15T13:00";
+      const fromMs = new Date(fromInput).getTime();
+      const entries = [
+        makeEntry({ ts: new Date(fromMs - 3_600_000).toISOString() }), // 10:00 – before range
+        makeEntry({ ts: new Date(fromMs + 3_600_000).toISOString() }), // 12:00 – inside range
+        makeEntry({ ts: new Date(fromMs + 10_800_000).toISOString() }), // 14:00 – after range
+      ];
+      mockLoadLogEntries.mockResolvedValue(entries);
+
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      const timeFromInput =
+        container.querySelector<HTMLInputElement>(".lv-time-from")!;
+      timeFromInput.value = fromInput;
+      timeFromInput.dispatchEvent(new Event("change"));
+
+      const timeToInput =
+        container.querySelector<HTMLInputElement>(".lv-time-to")!;
+      timeToInput.value = toInput;
+      timeToInput.dispatchEvent(new Event("change"));
+
+      expect(container.querySelectorAll(".lv-entry").length).toBe(1);
+    });
+
+    it("shows all entries when timeFrom is cleared", async () => {
+      const fromInput = "2030-06-15T12:00";
+      const fromMs = new Date(fromInput).getTime();
+      mockLoadLogEntries.mockResolvedValue([
+        makeEntry({ ts: new Date(fromMs - 3_600_000).toISOString() }),
+        makeEntry({ ts: new Date(fromMs + 3_600_000).toISOString() }),
+      ]);
+
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      // Apply filter
+      const input = container.querySelector<HTMLInputElement>(".lv-time-from")!;
+      input.value = fromInput;
+      input.dispatchEvent(new Event("change"));
+      expect(container.querySelectorAll(".lv-entry").length).toBe(1);
+
+      // Clear filter
+      input.value = "";
+      input.dispatchEvent(new Event("change"));
+      expect(container.querySelectorAll(".lv-entry").length).toBe(2);
+    });
+  });
+
+  // ── Copy all button ─────────────────────────────────────────────────────
+
+  describe("copy all button", () => {
+    it("copies formatted log text to clipboard", async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+      });
+
+      mockLoadLogEntries.mockResolvedValue([
+        makeEntry({ msg: "clipboard log entry", level: "info" }),
+      ]);
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      container.querySelector<HTMLButtonElement>(".lv-copy-all-btn")!.click();
+
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
+      const text: string = writeText.mock.calls[0][0];
+      expect(text).toContain("clipboard log entry");
+      expect(text).toContain("[INFO]");
+    });
+
+    it("uses textarea fallback when clipboard API throws", async () => {
+      Object.defineProperty(navigator, "clipboard", {
+        value: {
+          writeText: vi
+            .fn()
+            .mockRejectedValue(new Error("Clipboard not available")),
+        },
+        configurable: true,
+      });
+
+      // happy-dom does not implement execCommand; define it before spying
+      const execCommandMock = vi.fn().mockReturnValue(true);
+      Object.defineProperty(document, "execCommand", {
+        value: execCommandMock,
+        configurable: true,
+        writable: true,
+      });
+
+      mockLoadLogEntries.mockResolvedValue([makeEntry()]);
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      container.querySelector<HTMLButtonElement>(".lv-copy-all-btn")!.click();
+
+      await vi.waitFor(() =>
+        expect(execCommandMock).toHaveBeenCalledWith("copy"),
+      );
+    });
+
+    it("copies only visible (filtered) entries", async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+      });
+
+      mockLoadLogEntries.mockResolvedValue(makeEntries()); // debug/info/warn/error
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      // Filter to error only
+      container
+        .querySelector<HTMLButtonElement>('.lv-filter-btn[data-level="error"]')!
+        .click();
+
+      container.querySelector<HTMLButtonElement>(".lv-copy-all-btn")!.click();
+
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
+      const text: string = writeText.mock.calls[0][0];
+      expect(text).toContain("error msg");
+      expect(text).not.toContain("debug msg");
+    });
+  });
+
+  // ── Per-entry copy button ───────────────────────────────────────────────
+
+  describe("per-entry copy button", () => {
+    it("copies a single entry text to clipboard", async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+      });
+
+      mockLoadLogEntries.mockResolvedValue([
+        makeEntry({ msg: "first entry", level: "info" }),
+        makeEntry({ msg: "second entry", level: "warn" }),
+      ]);
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      // Click the copy button for the first entry (index 0)
+      const copyBtns =
+        container.querySelectorAll<HTMLButtonElement>(".lv-copy-entry-btn");
+      expect(copyBtns.length).toBe(2);
+      copyBtns[0].click();
+
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
+      const text: string = writeText.mock.calls[0][0];
+      expect(text).toContain("first entry");
+      expect(text).not.toContain("second entry");
+    });
+
+    it("copies the correct entry by index", async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+      });
+
+      mockLoadLogEntries.mockResolvedValue([
+        makeEntry({ msg: "alpha", level: "info" }),
+        makeEntry({ msg: "beta", level: "warn" }),
+        makeEntry({ msg: "gamma", level: "error" }),
+      ]);
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      // Click second entry copy button
+      const copyBtns =
+        container.querySelectorAll<HTMLButtonElement>(".lv-copy-entry-btn");
+      copyBtns[1].click();
+
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalled());
+      const text: string = writeText.mock.calls[0][0];
+      expect(text).toContain("beta");
+      expect(text).not.toContain("alpha");
+      expect(text).not.toContain("gamma");
+    });
+  });
+
+  // ── Download JSON button ────────────────────────────────────────────────
+
+  describe("download JSON button", () => {
+    it("creates a download anchor and triggers click", async () => {
+      const createObjectURL = vi
+        .spyOn(URL, "createObjectURL")
+        .mockReturnValue("blob:mock-url");
+      const revokeObjectURL = vi
+        .spyOn(URL, "revokeObjectURL")
+        .mockImplementation(() => {});
+      const clickSpy = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(() => {});
+
+      mockLoadLogEntries.mockResolvedValue([
+        makeEntry({ msg: "json download test" }),
+      ]);
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      container
+        .querySelector<HTMLButtonElement>(".lv-download-json-btn")!
+        .click();
+
+      expect(createObjectURL).toHaveBeenCalled();
+      expect(clickSpy).toHaveBeenCalled();
+      expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+
+      createObjectURL.mockRestore();
+      revokeObjectURL.mockRestore();
+      clickSpy.mockRestore();
+    });
+
+    it("download filename includes ISO date stamp", async () => {
+      const createObjectURL = vi
+        .spyOn(URL, "createObjectURL")
+        .mockReturnValue("blob:url");
+      const revokeObjectURL = vi
+        .spyOn(URL, "revokeObjectURL")
+        .mockImplementation(() => {});
+
+      let downloadAttr = "";
+      const clickSpy = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(function (this: HTMLAnchorElement) {
+          downloadAttr = this.download;
+        });
+
+      mockLoadLogEntries.mockResolvedValue([makeEntry()]);
+      const viewer = createLogViewer({ container, variant: "panel" });
+      await viewer.refresh();
+
+      container
+        .querySelector<HTMLButtonElement>(".lv-download-json-btn")!
+        .click();
+
+      expect(downloadAttr).toMatch(/^fill-all-logs-\d{4}-\d{2}-\d{2}T/);
+
+      createObjectURL.mockRestore();
+      revokeObjectURL.mockRestore();
+      clickSpy.mockRestore();
+    });
+  });
 });
