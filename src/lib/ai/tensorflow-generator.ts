@@ -16,6 +16,7 @@ export {
   loadPretrainedModel,
   invalidateClassifier,
   reloadClassifier,
+  disposeTensorflowModel,
   classifyField,
   classifyByTfSoft,
 } from "@/lib/form/detectors/strategies";

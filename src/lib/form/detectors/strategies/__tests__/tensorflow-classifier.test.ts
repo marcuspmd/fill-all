@@ -11,7 +11,11 @@ const mockDataSync = vi.hoisted(() =>
 const mockPredict = vi.hoisted(() =>
   vi.fn().mockReturnValue({ dataSync: mockDataSync }),
 );
-const mockTfModel = vi.hoisted(() => ({ predict: mockPredict }));
+const mockDispose = vi.hoisted(() => vi.fn());
+const mockTfModel = vi.hoisted(() => ({
+  predict: mockPredict,
+  dispose: mockDispose,
+}));
 
 // ── Module mocks ──────────────────────────────────────────────────────────────
 

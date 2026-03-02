@@ -64,9 +64,28 @@ export async function isAvailable(): Promise<boolean> {
 /**
  * Returns an existing or freshly created `LanguageModel` session.
  * The session carries a system prompt tailored for form-value generation.
+ *
+ * Recycles automatically when the context window is ≥85% full to prevent
+ * the model from consuming gigabytes of memory across many form fills.
  * @returns A reusable AI session, or `null` when AI is unavailable
  */
 export async function getSession(): Promise<LanguageModelSession | null> {
+  if (session) {
+    // Recycle when context window is almost exhausted
+    const remaining = session.tokensRemaining;
+    const max = session.maxTokens;
+    if (remaining !== undefined && max !== undefined && max > 0) {
+      const usedRatio = (max - remaining) / max;
+      if (usedRatio >= 0.85) {
+        log.debug(
+          `Contexto da sessão quase cheio (${remaining}/${max} tokens restantes). Reciclando sessão...`,
+        );
+        session.destroy();
+        session = null;
+      }
+    }
+  }
+
   if (session) {
     log.debug("Reutilizando sessão existente.");
     return session;
@@ -129,7 +148,15 @@ export async function generateFieldValue(field: FormField): Promise<string> {
   log.debug("▶ Prompt completo:\n" + prompt);
   log.groupEnd();
 
-  const result = await aiSession.prompt(prompt);
+  let result: string;
+  try {
+    result = await aiSession.prompt(prompt);
+  } catch (err) {
+    log.warn("Erro ao gerar valor com Chrome AI — destruindo sessão:", err);
+    session?.destroy();
+    session = null;
+    return "";
+  }
 
   log.groupCollapsed(
     `Resposta ← campo: "${field.label ?? field.name ?? field.selector}"`,
@@ -159,7 +186,19 @@ export async function generateFieldValueFromInput(
   }
 
   const prompt = fieldValueGeneratorPrompt.buildPrompt(input);
-  const result = await aiSession.prompt(prompt);
+
+  let result: string;
+  try {
+    result = await aiSession.prompt(prompt);
+  } catch (err) {
+    log.warn(
+      "Erro ao gerar valor via input (Chrome AI) — destruindo sessão:",
+      err,
+    );
+    session?.destroy();
+    session = null;
+    return "";
+  }
 
   log.debug(`Resposta (input proxy): "${result.trim()}"`);
   return result.trim();

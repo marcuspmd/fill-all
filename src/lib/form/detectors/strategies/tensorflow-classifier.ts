@@ -194,10 +194,28 @@ export function invalidateClassifier(): void {
 }
 
 /**
+ * Disposes the TF.js model and all in-memory state, freeing GPU/WASM memory.
+ * Call when the classifier will no longer be used in this context
+ * (e.g., service worker suspending or extension unloading).
+ */
+export function disposeTensorflowModel(): void {
+  if (_pretrained) {
+    _pretrained.model.dispose();
+    _pretrained = null;
+    _pretrainedLoadPromise = null;
+    _learnedVectors = [];
+    log.debug("Modelo TF.js e memória associada liberados.");
+  }
+}
+
+/**
  * Reloads the entire classifier (model + vocab + learned vectors) from storage.
  * Call this after a new model has been trained via the options page.
  */
 export async function reloadClassifier(): Promise<void> {
+  if (_pretrained) {
+    _pretrained.model.dispose();
+  }
   _pretrained = null;
   _pretrainedLoadPromise = null;
   _learnedVectors = [];

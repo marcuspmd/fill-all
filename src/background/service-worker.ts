@@ -14,6 +14,10 @@ import {
 import { setupContextMenu, handleContextMenuClick } from "./context-menu";
 import { dispatchMessage } from "./handler-registry";
 import { initLogger, createLogger } from "@/lib/logger";
+import { destroySession } from "@/lib/ai/chrome-ai";
+import { destroyOptimizerSession } from "@/lib/ai/script-optimizer";
+import { destroyClassifierSession } from "./handlers/ai-handler";
+import { disposeTensorflowModel } from "@/lib/form/detectors/strategies";
 
 void initLogger();
 const log = createLogger("ServiceWorker");
@@ -110,4 +114,17 @@ chrome.commands?.onCommand?.addListener((command) => {
   if (command === "fill-all-fields") {
     void sendToActiveTab({ type: "FILL_ALL_FIELDS" }, { injectIfNeeded: true });
   }
+});
+
+// ── Memory cleanup on suspend ─────────────────────────────────────────────────
+// The service worker can be terminated by Chrome at any time after inactivity.
+// Destroy all AI sessions and TF.js model before that happens to prevent
+// GPU/renderer memory leaks that survive the service worker lifecycle.
+
+chrome.runtime.onSuspend.addListener(() => {
+  log.debug("Service worker suspendendo — liberando recursos AI.");
+  destroySession();
+  destroyOptimizerSession();
+  destroyClassifierSession();
+  disposeTensorflowModel();
 });

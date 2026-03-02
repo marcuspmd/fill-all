@@ -41,6 +41,22 @@ function getLanguageModelApi(): LanguageModelStatic | undefined {
 }
 
 async function getOrCreateClassifierSession(): Promise<LanguageModelSession | null> {
+  if (classifierSession) {
+    // Recycle when context window is almost exhausted
+    const remaining = classifierSession.tokensRemaining;
+    const max = classifierSession.maxTokens;
+    if (remaining !== undefined && max !== undefined && max > 0) {
+      const usedRatio = (max - remaining) / max;
+      if (usedRatio >= 0.85) {
+        log.debug(
+          `Contexto do classifier quase cheio (${remaining}/${max} tokens). Reciclando...`,
+        );
+        classifierSession.destroy();
+        classifierSession = null;
+      }
+    }
+  }
+
   if (classifierSession) return classifierSession;
 
   // Skip retry if session creation failed recently
@@ -102,6 +118,7 @@ async function classifyField(
     if (err instanceof Error && err.name === "AbortError") {
       log.warn(`Timeout (${CLASSIFY_TIMEOUT_MS}ms) na classificação.`);
     } else {
+      classifierSession?.destroy();
       classifierSession = null;
       log.warn("Erro na classificação:", (err as Error).message);
     }
@@ -160,3 +177,11 @@ export const aiHandler: MessageHandler = {
   supportedTypes: SUPPORTED,
   handle,
 };
+
+/** Destroys the background classifier session and releases Chrome AI resources. */
+export function destroyClassifierSession(): void {
+  if (classifierSession) {
+    classifierSession.destroy();
+    classifierSession = null;
+  }
+}

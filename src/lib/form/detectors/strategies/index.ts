@@ -21,6 +21,7 @@ export {
   loadPretrainedModel,
   invalidateClassifier,
   reloadClassifier,
+  disposeTensorflowModel,
   classifyField,
   classifyByTfSoft,
   TF_THRESHOLD,

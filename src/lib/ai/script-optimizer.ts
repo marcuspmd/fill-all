@@ -33,6 +33,22 @@ function getLanguageModelApi(): LanguageModelStatic | undefined {
 }
 
 async function getOrCreateSession(): Promise<LanguageModelSession | null> {
+  if (optimizerSession) {
+    // Recycle when context window is almost exhausted
+    const remaining = optimizerSession.tokensRemaining;
+    const max = optimizerSession.maxTokens;
+    if (remaining !== undefined && max !== undefined && max > 0) {
+      const usedRatio = (max - remaining) / max;
+      if (usedRatio >= 0.85) {
+        log.debug(
+          `Contexto do optimizer quase cheio (${remaining}/${max} tokens). Reciclando...`,
+        );
+        optimizerSession.destroy();
+        optimizerSession = null;
+      }
+    }
+  }
+
   if (optimizerSession) return optimizerSession;
 
   if (
@@ -127,6 +143,7 @@ export async function optimizeScript(
     if (err instanceof Error && err.name === "AbortError") {
       log.warn(`Timeout (${OPTIMIZE_TIMEOUT_MS}ms) na otimização do script.`);
     } else {
+      optimizerSession?.destroy();
       optimizerSession = null;
       log.warn("Erro na otimização:", (err as Error).message);
     }
