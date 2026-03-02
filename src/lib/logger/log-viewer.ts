@@ -10,9 +10,11 @@
  *   viewer.dispose();   // unsubscribe from updates
  */
 
+import { debounce } from "@/lib/shared/functions";
 import type { LogLevel, LogEntry } from "./index";
 import { loadLogEntries, clearLogEntries, onLogUpdate } from "./log-store";
 import { escapeHtml } from "@/lib/ui/html-utils";
+import { ac } from "node_modules/@faker-js/faker/dist/airline-Dz1uGqgJ";
 
 export type LogViewerVariant = "panel" | "devtools" | "options";
 
@@ -185,14 +187,22 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
 
     // Bind search input
     const searchInput = container.querySelector<HTMLInputElement>(".lv-search");
+    const actualLen = searchInput?.value.length ?? 0;
     if (searchInput) {
-      searchInput.addEventListener("input", () => {
-        searchQuery = searchInput.value;
-        render();
-      });
-      // Re-focus + restore caret position after re-render
-      const len = searchInput.value.length;
-      searchInput.setSelectionRange(len, len);
+      debounce(() => {
+        searchInput.addEventListener("input", () => {
+          searchQuery = searchInput.value;
+          render();
+        });
+      }, 500)();
+
+      const newInput = container.querySelector<HTMLInputElement>(".lv-search");
+      if (newInput) {
+        const len =
+          newInput.value.length > actualLen ? newInput.value.length : actualLen;
+        newInput.focus();
+        newInput.setSelectionRange(len, len);
+      }
     }
 
     // Bind time-range inputs

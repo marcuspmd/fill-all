@@ -219,91 +219,165 @@ async function selectOption(
   wrapper: HTMLElement,
   value: string,
 ): Promise<boolean> {
-  // Search input inside the select — supports both single and multiple DOM variants.
   const searchInput = wrapper.querySelector<HTMLInputElement>(
     ".ant-select-selection-search-input, .ant-select-input",
   );
 
-  // Only type into the search box when we have a real search value AND the input
-  // is not readonly. Readonly inputs indicate a non-searchable select — typing
-  // via native setter bypasses readonly but still fires React input events,
-  // which get interpreted as a search query and filter out all options.
-  if (searchInput && value && !searchInput.readOnly) {
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype,
-      "value",
-    )?.set;
+  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+    window.HTMLInputElement.prototype,
+    "value",
+  )?.set;
 
-    if (nativeInputValueSetter) {
-      nativeInputValueSetter.call(searchInput, value);
-      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      searchInput.dispatchEvent(new Event("change", { bubbles: true }));
+  // aria-controls on the combobox input points to the listbox ID managed by
+  // this specific <Select> instance. We use it to scope ALL dropdown queries
+  // to the correct portal element, preventing cross-contamination when another
+  // select's dropdown is still animating closed (race condition).
+  const listboxId = searchInput?.getAttribute("aria-controls") ?? null;
+
+  const OPTION_SELECTOR =
+    ".ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option";
+
+  /**
+   * Returns the dropdown portal that belongs to THIS select wrapper.
+   * Primary: resolves via aria-controls → listbox element → closest dropdown.
+   * Fallback: first visible dropdown (legacy / SSR builds that omit aria attrs).
+   */
+  function getOwnDropdown(): HTMLElement | null {
+    if (listboxId) {
+      const lb = document.getElementById(listboxId);
+      if (lb) {
+        const dd = lb.closest<HTMLElement>(".ant-select-dropdown");
+        if (dd && !dd.classList.contains("ant-select-dropdown-hidden"))
+          return dd;
+      }
     }
-  }
-
-  // Wait for options to appear. Handles both regular re-renders and AJAX/server-side
-  // selects that load options asynchronously after the search input event fires.
-  let hasOptions = await waitForElement(
-    ".ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option",
-    2000,
-  );
-
-  // If no options appeared after typing (AJAX returned no results or hasn't loaded
-  // yet), clear the search and wait again — many AJAX selects show their default
-  // list when the query is empty. Skip for readonly inputs (non-searchable selects).
-  if (!hasOptions && searchInput && !searchInput.readOnly) {
-    const clearSetter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype,
-      "value",
-    )?.set;
-    if (clearSetter) {
-      clearSetter.call(searchInput, "");
-      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-    hasOptions = await waitForElement(
-      ".ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option",
-      1500,
+    // Fallback: first visible dropdown
+    return document.querySelector<HTMLElement>(
+      ".ant-select-dropdown:not(.ant-select-dropdown-hidden)",
     );
   }
 
-  // Try to find and click the matching option from visible dropdowns
-  const dropdowns = document.querySelectorAll<HTMLElement>(
-    ".ant-select-dropdown:not(.ant-select-dropdown-hidden)",
-  );
-
-  for (const dropdown of dropdowns) {
-    const options = dropdown.querySelectorAll<HTMLElement>(
-      ".ant-select-item-option",
-    );
-
-    // Try exact match by title attribute
-    for (const opt of options) {
-      const title = opt.getAttribute("title") ?? opt.textContent?.trim() ?? "";
-      if (title.toLowerCase() === value.toLowerCase()) {
-        simulateClick(opt);
-        return true;
-      }
+  /**
+   * Waits until THIS select's dropdown is fully closed (or max ~600 ms).
+   * Prevents subsequent selects from picking options from a lingering portal.
+   */
+  async function waitForDropdownClose(): Promise<void> {
+    const deadline = Date.now() + 600;
+    while (Date.now() < deadline) {
+      const dd = listboxId
+        ? document
+            .getElementById(listboxId)
+            ?.closest<HTMLElement>(".ant-select-dropdown")
+        : null;
+      if (
+        !dd ||
+        dd.classList.contains("ant-select-dropdown-hidden") ||
+        !document.contains(dd)
+      )
+        return;
+      await new Promise((r) => setTimeout(r, 50));
     }
+  }
 
-    // Try partial match
-    for (const opt of options) {
-      const title = opt.getAttribute("title") ?? opt.textContent?.trim() ?? "";
-      if (title.toLowerCase().includes(value.toLowerCase())) {
-        simulateClick(opt);
-        return true;
-      }
-    }
-
-    // Fallback: pick the first non-disabled option
-    const firstValid = dropdown.querySelector<HTMLElement>(
-      ".ant-select-item-option:not(.ant-select-item-option-disabled)",
+  /**
+   * Try to find an option matching `val` in THIS wrapper's dropdown.
+   * Strategy: exact match first, then word-boundary prefix match.
+   * Word-boundary avoids false positives like "TO" matching "Mato Grosso".
+   */
+  function findMatchingOption(val: string): HTMLElement | null {
+    if (!val) return null;
+    const norm = val.toLowerCase();
+    const prefixRe = new RegExp(
+      `\\b${val.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`,
+      "i",
     );
-    if (firstValid) {
-      simulateClick(firstValid);
+    const dd = getOwnDropdown();
+    if (!dd) return null;
+    const options = dd.querySelectorAll<HTMLElement>(".ant-select-item-option");
+    for (const opt of options) {
+      const t = opt.getAttribute("title") ?? opt.textContent?.trim() ?? "";
+      if (t.toLowerCase() === norm) return opt;
+    }
+    for (const opt of options) {
+      const t = opt.getAttribute("title") ?? opt.textContent?.trim() ?? "";
+      if (prefixRe.test(t)) return opt;
+    }
+    return null;
+  }
+
+  /** Pick a random non-disabled option from THIS wrapper's dropdown. */
+  function pickRandomOption(): HTMLElement | null {
+    const dd = getOwnDropdown();
+    if (!dd) return null;
+    const options = Array.from(
+      dd.querySelectorAll<HTMLElement>(
+        ".ant-select-item-option:not(.ant-select-item-option-disabled)",
+      ),
+    );
+    if (options.length > 0) {
+      return options[Math.floor(Math.random() * options.length)];
+    }
+    return null;
+  }
+
+  /** Clear the search input so the full option list is restored. */
+  function clearSearchInput(): void {
+    if (searchInput && !searchInput.readOnly && nativeInputValueSetter) {
+      nativeInputValueSetter.call(searchInput, "");
+      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  }
+
+  // Phase 1 — Check options that are already visible right after the dropdown opens
+  // (static selects). waitForElement resolves immediately when the element exists,
+  // so this adds no delay for already-rendered dropdowns.
+  await waitForElement(OPTION_SELECTOR, 800);
+
+  const match1 = findMatchingOption(value);
+  if (match1) {
+    simulateClick(match1);
+    await waitForDropdownClose();
+    return true;
+  }
+
+  // Phase 2 — For AJAX / searchable selects: type the value to trigger server-side
+  // filtering or lazy-loading. Only done when Phase 1 found no match.
+  if (searchInput && value && !searchInput.readOnly && nativeInputValueSetter) {
+    nativeInputValueSetter.call(searchInput, value);
+    searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+    searchInput.dispatchEvent(new Event("change", { bubbles: true }));
+
+    await waitForElement(OPTION_SELECTOR, 2000);
+
+    const match2 = findMatchingOption(value);
+    if (match2) {
+      simulateClick(match2);
+      await waitForDropdownClose();
       return true;
     }
   }
 
+  // Phase 3 — No match found. Clear any typed search to restore the full option
+  // list, then pick a random valid option so the field always ends up with a
+  // legitimate value from the actual select options.
+  clearSearchInput();
+  await waitForElement(OPTION_SELECTOR, 1500);
+
+  const random = pickRandomOption();
+  if (random) {
+    const randomText =
+      random.getAttribute("title") ?? random.textContent?.trim() ?? "";
+    log.debug(
+      `Fase 3 — nenhuma opção correspondeu a "${value}"; selecionando aleatório: "${randomText}"`,
+    );
+    simulateClick(random);
+    await waitForDropdownClose();
+    return true;
+  }
+
+  log.warn(
+    `Fase 3 — dropdown aberto mas nenhuma opção encontrada (.ant-select-item-option)`,
+  );
   return false;
 }
 
