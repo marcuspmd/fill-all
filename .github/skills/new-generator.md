@@ -19,6 +19,8 @@ Guia passo a passo para criar um novo gerador de dados no projeto Fill All, segu
 
 ### 1. Criar o Arquivo do Gerador
 
+> **Nota**: Nos exemplos abaixo, `<nome>` e `<Nome>` são placeholders. Substitua pelo nome real do gerador (ex: `cpf`/`Cpf`, `email`/`Email`, `phone`/`Phone`).
+
 ```
 src/lib/generators/<nome>.ts
 ```

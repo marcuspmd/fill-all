@@ -49,10 +49,10 @@ npm run test:coverage
 | Type-check | Zero erros | `npm run type-check` |
 | Testes unitários | Todos passando | `npm test` |
 | Testes E2E | Todos passando | `npm run test:e2e` |
-| Coverage linhas | ≥ 85% | `npm run test:coverage` |
-| Coverage statements | ≥ 85% | `npm run test:coverage` |
-| Coverage funções | ≥ 85% | `npm run test:coverage` |
-| Coverage branches | ≥ 85% | `npm run test:coverage` |
+| Coverage linhas | ≥ 85% (configurado em `vitest.config.ts`) | `npm run test:coverage` |
+| Coverage statements | ≥ 85% (configurado em `vitest.config.ts`) | `npm run test:coverage` |
+| Coverage funções | ≥ 85% (configurado em `vitest.config.ts`) | `npm run test:coverage` |
+| Coverage branches | ≥ 85% (configurado em `vitest.config.ts`) | `npm run test:coverage` |
 | Build | Sem erros | `npm run build` |
 
 ## Checklist de Regressão por Tipo de Mudança

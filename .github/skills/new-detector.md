@@ -23,6 +23,8 @@ Guia passo a passo para criar um novo detector ou classificador de campos no pro
 
 ### 1. Criar o Classificador
 
+> **Nota**: Nos exemplos abaixo, `<nome>` é um placeholder. Substitua pelo nome real do classificador (ex: `keyword`, `tensorflow`, `chromeAi`, `pattern`).
+
 ```
 src/lib/form/detectors/strategies/<nome>-classifier.ts
 ```
