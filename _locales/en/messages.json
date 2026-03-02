@@ -225,10 +225,10 @@
     "message": "Cancel"
   },
   "btnApply": {
-    "message": "▶ Apply"
+    "message": "Apply"
   },
   "btnEdit": {
-    "message": "✎ Edit"
+    "message": "Edit"
   },
   "btnDelete": {
     "message": "Delete"

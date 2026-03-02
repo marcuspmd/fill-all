@@ -25,6 +25,7 @@ import type { FormField } from "@/types";
 /** Identifies which adapter produced a given FormField. */
 export type AdapterName =
   | "select2"
+  | "react-select"
   | "antd-select"
   | "antd-input"
   | "antd-datepicker"

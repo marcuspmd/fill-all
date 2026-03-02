@@ -21,6 +21,7 @@ import { createLogger } from "@/lib/logger";
 
 // ── Concrete Adapters ─────────────────────────────────────────────────────────
 import { select2Adapter } from "./select2";
+import { reactSelectAdapter } from "./react-select";
 import {
   antdAutoCompleteAdapter,
   antdCascaderAdapter,
@@ -49,6 +50,7 @@ const log = createLogger("AdapterRegistry");
  */
 const ADAPTER_REGISTRY: CustomComponentAdapter[] = [
   select2Adapter,
+  reactSelectAdapter,
   antdCascaderAdapter,
   antdTreeSelectAdapter,
   antdSelectAdapter,

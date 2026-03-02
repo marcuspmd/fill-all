@@ -10,6 +10,9 @@ export {
 // Select2
 export { select2Adapter } from "./select2";
 
+// React-Select
+export { reactSelectAdapter } from "./react-select";
+
 // Ant Design
 export {
   antdAutoCompleteAdapter,
