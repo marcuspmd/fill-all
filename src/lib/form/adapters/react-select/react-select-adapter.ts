@@ -165,6 +165,7 @@ export const reactSelectAdapter: CustomComponentAdapter = {
     }
 
     // Step 5: For searchable fields — type the value to filter options
+    // For async-loaded options (API calls), we need to poll until they appear.
     if (isSearchable && searchInput) {
       const nativeSetter = Object.getOwnPropertyDescriptor(
         window.HTMLInputElement.prototype,
@@ -176,8 +177,8 @@ export const reactSelectAdapter: CustomComponentAdapter = {
       searchInput.dispatchEvent(new Event("input", { bubbles: true }));
       searchInput.dispatchEvent(new Event("change", { bubbles: true }));
 
-      // Allow react-select to re-render filtered options
-      await new Promise<void>((r) => setTimeout(r, 300));
+      // Poll for options to appear (local or async-loaded)
+      await waitForAsyncOptions(menu, 2500);
     }
 
     let available = Array.from(
@@ -200,7 +201,9 @@ export const reactSelectAdapter: CustomComponentAdapter = {
         ? nativeSetter.call(searchInput, "")
         : (searchInput.value = "");
       searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-      await new Promise<void>((r) => setTimeout(r, 200));
+
+      // Wait for full list to re-populate (async or local)
+      await waitForAsyncOptions(menu, 1500);
 
       available = Array.from(
         menu.querySelectorAll<HTMLElement>(
@@ -315,4 +318,69 @@ function waitForReactSelectMenu(
       resolve(findInline() ?? findPortaled());
     }, timeoutMs);
   });
+}
+
+/**
+ * Waits for react-select options to appear after a search/filter.
+ *
+ * Handles both:
+ *   - Local filtering (quick, 50–100ms)
+ *   - Async-loaded options via API (slow, 500–2000ms)
+ *
+ * Polls for:
+ *   1. Actual `.react-select__option` elements to appear
+ *   2. Loading indicators (`.react-select__loading-message`) to disappear
+ *   3. No-options message appearing as final state
+ *
+ * Returns when options are ready OR timeout expires.
+ */
+async function waitForAsyncOptions(
+  menu: HTMLElement,
+  timeoutMs: number,
+): Promise<void> {
+  const startTime = Date.now();
+  const pollIntervalMs = 100;
+
+  const hasOptions = () =>
+    menu.querySelector<HTMLElement>(
+      ".react-select__option:not(.react-select__option--is-disabled)",
+    ) !== null;
+
+  const isLoading = () =>
+    menu.querySelector<HTMLElement>(".react-select__loading-message") !== null;
+
+  const hasNoOptions = () =>
+    menu.querySelector<HTMLElement>(".react-select__menu-notice") !== null;
+
+  // Quick check: are options already there?
+  if (hasOptions() || hasNoOptions()) {
+    log.debug("Opções já presentes no menu react-select");
+    return;
+  }
+
+  // Poll until options appear, loading completes, or timeout
+  while (Date.now() - startTime < timeoutMs) {
+    if (hasOptions() || hasNoOptions()) {
+      log.debug(
+        `Opções assincronamente carregadas após ${Date.now() - startTime}ms`,
+      );
+      return;
+    }
+
+    if (!isLoading()) {
+      // No longer loading but no options either — likely a "no results" state
+      // Give it a bit more time to render the notice
+      await new Promise<void>((r) => setTimeout(r, 100));
+      if (hasNoOptions() || hasOptions()) {
+        log.debug("Menu estabilizou (sem resultados ou com opções)");
+        return;
+      }
+    }
+
+    await new Promise<void>((r) => setTimeout(r, pollIntervalMs));
+  }
+
+  log.warn(
+    `Timeout aguardando opções assincronamente carregadas (${timeoutMs}ms)`,
+  );
 }
