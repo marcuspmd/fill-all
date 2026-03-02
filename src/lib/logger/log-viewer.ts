@@ -189,12 +189,13 @@ export function createLogViewer(options: LogViewerOptions): LogViewer {
     const searchInput = container.querySelector<HTMLInputElement>(".lv-search");
     const actualLen = searchInput?.value.length ?? 0;
     if (searchInput) {
-      debounce(() => {
-        searchInput.addEventListener("input", () => {
+      searchInput.addEventListener(
+        "input",
+        debounce(() => {
           searchQuery = searchInput.value;
           render();
-        });
-      }, 500)();
+        }, 300),
+      );
 
       const newInput = container.querySelector<HTMLInputElement>(".lv-search");
       if (newInput) {

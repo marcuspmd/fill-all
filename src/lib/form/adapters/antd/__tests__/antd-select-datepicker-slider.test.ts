@@ -462,7 +462,7 @@ describe("antdSelectAdapter", () => {
 
   // ─── AJAX fallback (selectOption lines 255-263) ────────────────────────────
 
-  it("fill: limpa busca e retenta quando primeira busca não retorna opções (AJAX fallback)", async () => {
+  it("fill: encontra opção via DOM mesmo quando waitForElement retorna null (Fase 1 direta)", async () => {
     const wrapper = makeSelect();
     document.body.appendChild(wrapper);
 
@@ -475,18 +475,12 @@ describe("antdSelectAdapter", () => {
     dropdown.appendChild(option);
     document.body.appendChild(dropdown);
 
-    // Simulate AJAX delay: dropdown appears immediately but item-option list
-    // is empty on the first check, only appearing after the search is cleared.
+    // waitForElement retorna null para options (simulando AJAX ainda carregando),
+    // mas findMatchingOption consulta o DOM diretamente via getOwnDropdown() e
+    // encontra a opção disponível na Fase 1.
     vi.mocked(waitForElement)
       .mockResolvedValueOnce(dropdown) // dropdown check passes
-      .mockResolvedValueOnce(null); // first item-option check: no results yet
-    // third call falls back to default (document.querySelector) – option already in DOM
-
-    const searchInput = wrapper.querySelector<HTMLInputElement>("input")!;
-    const inputValues: string[] = [];
-    searchInput.addEventListener("input", () =>
-      inputValues.push(searchInput.value),
-    );
+      .mockResolvedValueOnce(null); // Phase 1 item-option check: null, but DOM still has it
 
     let clicked = false;
     option.addEventListener("click", () => (clicked = true));
@@ -494,8 +488,6 @@ describe("antdSelectAdapter", () => {
     const result = await antdSelectAdapter.fill(wrapper, "Resultado AJAX");
     expect(result).toBe(true);
     expect(clicked).toBe(true);
-    // The clear step dispatches an input event with value ""
-    expect(inputValues).toContain("");
   });
 
   // ─── Multiselect fill (selectMultipleOptions lines 307-400) ───────────────

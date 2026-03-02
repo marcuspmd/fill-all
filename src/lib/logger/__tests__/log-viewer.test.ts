@@ -229,6 +229,14 @@ describe("log-viewer", () => {
   // ── Search ──────────────────────────────────────────────────────────────
 
   describe("search", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it("filters entries by search query (message)", async () => {
       mockLoadLogEntries.mockResolvedValue(makeEntries());
 
@@ -239,6 +247,7 @@ describe("log-viewer", () => {
         container.querySelector<HTMLInputElement>(".lv-search")!;
       searchInput.value = "warn";
       searchInput.dispatchEvent(new Event("input"));
+      vi.runAllTimers();
 
       const entries = container.querySelectorAll(".lv-entry");
       expect(entries.length).toBe(1);
@@ -255,6 +264,7 @@ describe("log-viewer", () => {
         container.querySelector<HTMLInputElement>(".lv-search")!;
       searchInput.value = "Error";
       searchInput.dispatchEvent(new Event("input"));
+      vi.runAllTimers();
 
       const entries = container.querySelectorAll(".lv-entry");
       // Should match both the namespace "[FillAll/Error]" and the msg "error msg"
@@ -273,6 +283,7 @@ describe("log-viewer", () => {
         container.querySelector<HTMLInputElement>(".lv-search")!;
       searchInput.value = "uppercase";
       searchInput.dispatchEvent(new Event("input"));
+      vi.runAllTimers();
 
       expect(container.querySelectorAll(".lv-entry").length).toBe(1);
     });
@@ -298,6 +309,7 @@ describe("log-viewer", () => {
         container.querySelector<HTMLInputElement>(".lv-search")!;
       searchInput.value = "user";
       searchInput.dispatchEvent(new Event("input"));
+      vi.runAllTimers();
 
       const entries = container.querySelectorAll(".lv-entry");
       expect(entries.length).toBe(1);

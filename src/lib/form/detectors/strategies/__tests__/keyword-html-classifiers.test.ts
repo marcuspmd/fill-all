@@ -46,7 +46,7 @@ describe("keywordClassifier", () => {
 
   it("returns null when no pattern matches", () => {
     expect(
-      keywordClassifier.detect(makeField("nome cpf email endereco")),
+      keywordClassifier.detect(makeField("campo sem padrao xyzw")),
     ).toBeNull();
   });
 

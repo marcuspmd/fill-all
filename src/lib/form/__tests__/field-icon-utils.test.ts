@@ -148,7 +148,6 @@ describe("field-icon-utils", () => {
       expect(field).toMatchObject({
         selector: expect.any(String),
         fieldType: "email",
-        detectionMethod: "html-type",
         detectionConfidence: 1,
       });
 

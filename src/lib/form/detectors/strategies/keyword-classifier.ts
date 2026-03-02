@@ -346,6 +346,32 @@ const KEYWORD_RULES: KeywordRule[] = [
     wholeWord: true,
   },
 
+  // ── Genérico (textos livres) — ANTES de autenticação para evitar falsos positivos
+  // Ex: "feedback do usuario" → text (não username)
+  // Ex: "comentarios usuarios" → text (não username)
+  {
+    patterns: [
+      "observacao",
+      "observacoes",
+      "descricao",
+      "mensagem",
+      "message",
+      "comentario",
+      "comentarios",
+      "anotacao",
+      "anotacoes",
+      "notas",
+      "sugestao",
+      "sugestoes",
+      "feedback",
+      "detalhe",
+      "detalhes",
+      "historico",
+    ],
+    type: "text",
+  },
+  { patterns: ["obs"], type: "text", wholeWord: true },
+
   // ── Autenticação ──────────────────────────────────────────────────────────
   { patterns: ["senha", "password"], type: "password" },
   {
@@ -376,30 +402,6 @@ const KEYWORD_RULES: KeywordRule[] = [
     type: "job-title",
   },
   { patterns: ["departamento", "setor", "department"], type: "department" },
-
-  // ── Genérico (textos livres) ──────────────────────────────────────────────
-  {
-    patterns: [
-      "observacao",
-      "observacoes",
-      "descricao",
-      "mensagem",
-      "message",
-      "comentario",
-      "comentarios",
-      "anotacao",
-      "anotacoes",
-      "notas",
-      "sugestao",
-      "sugestoes",
-      "feedback",
-      "detalhe",
-      "detalhes",
-      "historico",
-    ],
-    type: "text",
-  },
-  { patterns: ["obs"], type: "text", wholeWord: true },
 ];
 
 // ── Classifier ────────────────────────────────────────────────────────────────
