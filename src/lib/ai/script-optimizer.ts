@@ -138,7 +138,10 @@ export async function optimizeScript(
 
   let raw: string;
   try {
-    raw = await session.prompt(prompt, { signal: controller.signal });
+    raw = await session.prompt(prompt, {
+      signal: controller.signal,
+      outputLanguage: "en",
+    });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
       log.warn(`Timeout (${OPTIMIZE_TIMEOUT_MS}ms) na otimização do script.`);

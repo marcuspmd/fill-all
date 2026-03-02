@@ -202,6 +202,130 @@ describe("DetectionPipeline.runAsync", () => {
   });
 });
 
+// ── DetectionPipeline.runAsync — html-type + tensorflow cross-validation ──────
+
+describe("DetectionPipeline.runAsync — html-type/tensorflow cross-validation", () => {
+  it("returns html-type when tensorflow confirms the same type", async () => {
+    const htmlClassifier = makeClassifier("html-type", {
+      type: "email",
+      confidence: 1.0,
+    });
+    const tfClassifier = makeClassifier("tensorflow", {
+      type: "email",
+      confidence: 0.9,
+    });
+    const pipeline = new DetectionPipeline([htmlClassifier, tfClassifier]);
+
+    const result = await pipeline.runAsync(makeField());
+
+    expect(result.type).toBe("email");
+    expect(result.method).toBe("html-type");
+    expect(
+      result.decisionTrace.some((t) => t.includes("html-type confirmed")),
+    ).toBe(true);
+  });
+
+  it("returns html-type when tensorflow has low confidence for a different type", async () => {
+    const htmlClassifier = makeClassifier("html-type", {
+      type: "email",
+      confidence: 1.0,
+    });
+    // different type but confidence below threshold (0.3)
+    const tfClassifier = makeClassifier("tensorflow", {
+      type: "cpf",
+      confidence: 0.2,
+    });
+    const pipeline = new DetectionPipeline([htmlClassifier, tfClassifier]);
+
+    const result = await pipeline.runAsync(makeField());
+
+    expect(result.type).toBe("email");
+    expect(result.method).toBe("html-type");
+    expect(
+      result.decisionTrace.some((t) => t.includes("html-type confirmed")),
+    ).toBe(true);
+  });
+
+  it("returns html-type when tensorflow returns null after html-type", async () => {
+    const htmlClassifier = makeClassifier("html-type", {
+      type: "email",
+      confidence: 1.0,
+    });
+    const tfClassifier = makeClassifier("tensorflow", null);
+    const pipeline = new DetectionPipeline([htmlClassifier, tfClassifier]);
+
+    const result = await pipeline.runAsync(makeField());
+
+    expect(result.type).toBe("email");
+    expect(result.method).toBe("html-type");
+    expect(
+      result.decisionTrace.some((t) =>
+        t.includes("tensorflow skipped/unknown"),
+      ),
+    ).toBe(true);
+  });
+
+  it("returns html-type when tensorflow returns unknown after html-type", async () => {
+    const htmlClassifier = makeClassifier("html-type", {
+      type: "email",
+      confidence: 1.0,
+    });
+    const tfClassifier = makeClassifier("tensorflow", {
+      type: "unknown",
+      confidence: 0.1,
+    });
+    const pipeline = new DetectionPipeline([htmlClassifier, tfClassifier]);
+
+    const result = await pipeline.runAsync(makeField());
+
+    expect(result.type).toBe("email");
+    expect(result.method).toBe("html-type");
+    expect(
+      result.decisionTrace.some((t) =>
+        t.includes("tensorflow skipped/unknown"),
+      ),
+    ).toBe(true);
+  });
+
+  it("returns html-type at end of pipeline when tensorflow is absent", async () => {
+    const htmlClassifier = makeClassifier("html-type", {
+      type: "email",
+      confidence: 1.0,
+    });
+    const keywordClassifier = makeClassifier("keyword", null);
+    const pipeline = new DetectionPipeline([htmlClassifier, keywordClassifier]);
+
+    const result = await pipeline.runAsync(makeField());
+
+    expect(result.type).toBe("email");
+    expect(result.method).toBe("html-type");
+    expect(
+      result.decisionTrace.some((t) => t.includes("no tensorflow in pipeline")),
+    ).toBe(true);
+  });
+
+  it("tensorflow overrides html-type when confident about a different type", async () => {
+    const htmlClassifier = makeClassifier("html-type", {
+      type: "email",
+      confidence: 1.0,
+    });
+    // different type and confidence at/above threshold (0.3)
+    const tfClassifier = makeClassifier("tensorflow", {
+      type: "cpf",
+      confidence: 0.8,
+    });
+    const pipeline = new DetectionPipeline([htmlClassifier, tfClassifier]);
+
+    const result = await pipeline.runAsync(makeField());
+
+    expect(result.type).toBe("cpf");
+    expect(result.method).toBe("tensorflow");
+    expect(
+      result.decisionTrace.some((t) => t.includes("overrides html-type")),
+    ).toBe(true);
+  });
+});
+
 // ── Pipeline mutating operators ──────────────────────────────────────────────
 
 describe("DetectionPipeline.without", () => {

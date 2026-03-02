@@ -31,6 +31,7 @@ import {
   deleteFieldDetectionCacheForUrl,
   clearFieldDetectionCache,
 } from "@/lib/storage/storage";
+import { setDefaultForm } from "@/lib/storage/forms-storage";
 
 const mockGet = chrome.storage.local.get as ReturnType<typeof vi.fn>;
 const mockSet = chrome.storage.local.set as ReturnType<typeof vi.fn>;
@@ -138,6 +139,55 @@ describe("storage modules", () => {
     expect(matches[0].name).toBe("Cadastro atualizado");
     expect(all).toEqual([]);
     now.mockRestore();
+  });
+
+  it("forms: setDefaultForm marks one form as default and clears others", async () => {
+    // Arrange
+    const formA: SavedForm = {
+      id: "form-a",
+      name: "Form A",
+      urlPattern: "*example.com*",
+      fields: {},
+      createdAt: 0,
+      updatedAt: 0,
+    };
+    const formB: SavedForm = {
+      id: "form-b",
+      name: "Form B",
+      urlPattern: "*example.com*",
+      fields: {},
+      createdAt: 0,
+      updatedAt: 0,
+    };
+
+    // Act
+    await saveForm(formA);
+    await saveForm(formB);
+    await setDefaultForm("form-a");
+    const all = await getSavedForms();
+
+    // Assert
+    expect(all.find((f) => f.id === "form-a")?.isDefault).toBe(true);
+    expect(all.find((f) => f.id === "form-b")?.isDefault).toBeUndefined();
+  });
+
+  it("forms: getSavedFormsForUrl returns empty array when no pattern matches", async () => {
+    // Arrange
+    const form: SavedForm = {
+      id: "form-no-match",
+      name: "Other Form",
+      urlPattern: "*other.com*",
+      fields: {},
+      createdAt: 0,
+      updatedAt: 0,
+    };
+
+    // Act
+    await saveForm(form);
+    const matches = await getSavedFormsForUrl("https://example.com/checkout");
+
+    // Assert
+    expect(matches).toEqual([]);
   });
 
   it("settings: merges partial updates over defaults", async () => {

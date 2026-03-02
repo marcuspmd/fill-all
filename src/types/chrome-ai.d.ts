@@ -31,11 +31,16 @@ interface LanguageModelCreateOptions {
   monitor?: (monitor: EventTarget) => void;
 }
 
+interface LanguageModelPromptOptions {
+  signal?: AbortSignal;
+  outputLanguage?: string;
+}
+
 interface LanguageModelSession {
-  prompt(input: string, options?: { signal?: AbortSignal }): Promise<string>;
+  prompt(input: string, options?: LanguageModelPromptOptions): Promise<string>;
   promptStreaming(
     input: string,
-    options?: { signal?: AbortSignal },
+    options?: LanguageModelPromptOptions,
   ): ReadableStream<string>;
   clone(): Promise<LanguageModelSession>;
   destroy(): void;

@@ -150,7 +150,7 @@ export async function generateFieldValue(field: FormField): Promise<string> {
 
   let result: string;
   try {
-    result = await aiSession.prompt(prompt);
+    result = await aiSession.prompt(prompt, { outputLanguage: "en" });
   } catch (err) {
     log.warn("Erro ao gerar valor com Chrome AI — destruindo sessão:", err);
     session?.destroy();
@@ -189,7 +189,7 @@ export async function generateFieldValueFromInput(
 
   let result: string;
   try {
-    result = await aiSession.prompt(prompt);
+    result = await aiSession.prompt(prompt, { outputLanguage: "en" });
   } catch (err) {
     log.warn(
       "Erro ao gerar valor via input (Chrome AI) — destruindo sessão:",

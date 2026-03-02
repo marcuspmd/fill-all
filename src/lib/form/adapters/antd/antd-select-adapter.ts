@@ -179,8 +179,12 @@ export const antdSelectAdapter: CustomComponentAdapter = {
       }
     }
 
+    // Extract listboxId here (before passing to helpers) so both single and
+    // multiple paths can scope their dropdown queries to THIS wrapper's portal.
+    const listboxId = combobox?.getAttribute("aria-controls") ?? null;
+
     if (isMultiple) {
-      return await selectMultipleOptions(wrapper, value);
+      return await selectMultipleOptions(wrapper, value, listboxId);
     }
 
     return await selectOption(wrapper, value);
@@ -388,10 +392,16 @@ async function selectOption(
  * 1. If `value` contains comma-separated strings, try to match each one.
  * 2. Otherwise, pick 1–3 random non-selected options from the dropdown.
  * 3. Close the dropdown by pressing Escape after all selections.
+ *
+ * `listboxId` — the value of `aria-controls` on the combobox input. Used to
+ * scope ALL dropdown queries to THIS wrapper's portal so concurrent fills of
+ * multiple <Select multiple> fields don't accidentally click options in each
+ * other's dropdowns (race condition).
  */
 async function selectMultipleOptions(
   wrapper: HTMLElement,
   value: string,
+  listboxId: string | null = null,
 ): Promise<boolean> {
   // Wait for options to load before attempting to click — handles AJAX-loaded selects.
   await waitForElement(
@@ -399,21 +409,45 @@ async function selectMultipleOptions(
     2000,
   );
 
-  const dropdowns = document.querySelectorAll<HTMLElement>(
-    ".ant-select-dropdown:not(.ant-select-dropdown-hidden)",
+  /**
+   * Returns the dropdown portal that belongs to THIS wrapper.
+   * Primary: resolves via aria-controls → listbox element → closest dropdown.
+   * Fallback: first visible dropdown (legacy / SSR builds that omit aria attrs).
+   * Scoping here prevents the race condition where a previous select's dropdown
+   * is still animating closed when this fill begins.
+   */
+  function getOwnDropdown(): HTMLElement | null {
+    if (listboxId) {
+      const lb = document.getElementById(listboxId);
+      if (lb) {
+        const dd = lb.closest<HTMLElement>(".ant-select-dropdown");
+        if (dd && !dd.classList.contains("ant-select-dropdown-hidden"))
+          return dd;
+      }
+    }
+    return document.querySelector<HTMLElement>(
+      ".ant-select-dropdown:not(.ant-select-dropdown-hidden)",
+    );
+  }
+
+  const dropdown = getOwnDropdown();
+
+  if (!dropdown) {
+    log.warn(
+      `selectMultipleOptions — dropdown não encontrado para: ${getUniqueSelector(wrapper)}`,
+    );
+    return false;
+  }
+
+  const allOptions = Array.from(
+    dropdown.querySelectorAll<HTMLElement>(
+      ".ant-select-item-option:not(.ant-select-item-option-disabled)",
+    ),
   );
 
   let selected = false;
 
-  for (const dropdown of dropdowns) {
-    const allOptions = Array.from(
-      dropdown.querySelectorAll<HTMLElement>(
-        ".ant-select-item-option:not(.ant-select-item-option-disabled)",
-      ),
-    );
-
-    if (allOptions.length === 0) continue;
-
+  if (allOptions.length > 0) {
     // Collect desired values from comma-separated input (e.g. "Option A, Option B")
     const desiredValues = value
       ? value
@@ -453,8 +487,6 @@ async function selectMultipleOptions(
       simulateClick(opt);
       selected = true;
     }
-
-    break;
   }
 
   // Close the dropdown by pressing Escape on the search input
