@@ -1,6 +1,15 @@
 ---
-applyTo: '**'
+name: code-review
 description: 'Skill para realizar code reviews alinhados com as convenções e padrões de qualidade do projeto Fill All.'
+applyTo: '**'
+license: MIT
+compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
+metadata:
+  author: marcusp
+  version: "1.0"
+  project: fill-all
+  category: quality-assurance
+allowed-tools: Read Write Bash
 ---
 
 # Skill: Code Review

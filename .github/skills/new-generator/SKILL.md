@@ -1,6 +1,15 @@
 ---
-applyTo: 'src/lib/generators/**'
+name: new-generator
 description: 'Skill para criar novos geradores de dados seguindo as convenções do projeto Fill All.'
+applyTo: 'src/lib/generators/**'
+license: MIT
+compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
+metadata:
+  author: marcusp
+  version: "1.0"
+  project: fill-all
+  category: scaffolding
+allowed-tools: Read Write Bash
 ---
 
 # Skill: Criar Novo Gerador de Dados

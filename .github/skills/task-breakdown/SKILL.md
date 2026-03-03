@@ -1,6 +1,15 @@
 ---
-applyTo: '**'
+name: task-breakdown
 description: 'Skill principal para decompor qualquer tarefa em steps ordenados, executar cada step com scripts de validação e garantir progresso incremental.'
+applyTo: '**'
+license: MIT
+compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
+metadata:
+  author: marcusp
+  version: "1.0"
+  project: fill-all
+  category: development-workflow
+allowed-tools: Read Write Bash
 ---
 
 # Skill: Task Breakdown — Decomposição e Execução Step-by-Step
