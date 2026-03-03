@@ -92,7 +92,7 @@ Validação step-by-step com feedback colorido:
 |------|---------|-------|-------------|
 | `types` | `npm run type-check` | ~5s | Após cada mudança em .ts |
 | `unit` | `npm test` | ~10s | Após criar/alterar lógica |
-| `build` | `npm run build` | ~15s | Antes de testar E2E ou entregar |
+| `build` | `npm run build` | ~15s | Antes de testar E2E (build é pré-requisito) |
 | `e2e` | `npm run test:e2e` | ~60s | Após mudanças no DOM/content script |
 | `coverage` | `npm run test:coverage` | ~20s | Para verificar thresholds (≥ 85%) |
 

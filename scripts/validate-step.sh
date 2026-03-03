@@ -17,7 +17,7 @@
 #   all     — Todos os steps em ordem
 # =============================================================================
 
-set -euo pipefail
+set -uo pipefail
 
 # Cores
 RED='\033[0;31m'
