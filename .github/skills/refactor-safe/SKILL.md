@@ -47,7 +47,7 @@ Capturar estado completo do projeto ANTES de qualquer mudança:
 - Build OK
 - Coverage atual
 
-> ⚠️ **NÃO iniciar refatoração se a baseline já tem falhas.** Corrija os problemas primeiro usando a skill [Debug & Investigação](.github/skills/debug-investigation.md) ou rode `./scripts/validate-step.sh types unit build` para identificar as falhas.
+> ⚠️ **NÃO iniciar refatoração se a baseline já tem falhas.** Corrija os problemas primeiro usando a skill [Debug & Investigação](../debug-investigation/SKILL.md) ou rode `./scripts/validate-step.sh types unit build` para identificar as falhas.
 
 ---
 
