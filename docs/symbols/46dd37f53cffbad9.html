@@ -168,8 +168,8 @@
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
           <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs</span>
-            <a href="../docs/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a>
+            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
+            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
           </div>
           <div class="mt-1">
             <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
@@ -236,7 +236,7 @@
            
         </h1>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Last updated: 2026-02-24T19:46:21.793Z
+          Last updated: 2026-03-01T23:25:47.136Z
         </div>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -244,14 +244,14 @@
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
             <p class="mt-1 text-sm text-gray-900 dark:text-white min-w-0 overflow-hidden">
-              <a href="../files/src--options--cache-section.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/options/cache-section.ts:15-55">src/options/cache-section.ts:15-55</a>
+              <a href="../files/src--options--cache-section.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/options/cache-section.ts:16-55">src/options/cache-section.ts:16-55</a>
             </p>
           </div>
           
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Metrics</h3>
             <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-900 dark:text-white">
-              <span>LOC: 41</span>
+              <span>LOC: 40</span>
               <span>Complexity: <span class="">8</span></span>
               <span>Params: 0</span>
               
@@ -296,8 +296,7 @@
   list.innerHTML = &quot;&quot;;
 
   if (!Array.isArray(cache) || cache.length === 0) {
-    list.innerHTML =
-      '&lt;div class=&quot;empty&quot;&gt;Nenhum cache de campos detectados&lt;/div&gt;';
+    list.innerHTML = `&lt;div class=&quot;empty&quot;&gt;${t(&quot;noCacheEntries&quot;)}&lt;/div&gt;`;
     return;
   }
 
@@ -309,10 +308,10 @@
       &lt;div class=&quot;rule-info&quot;&gt;
         &lt;strong&gt;${escapeHtml(entry.hostname || entry.origin || entry.url)}&lt;/strong&gt;
         &lt;span class=&quot;rule-selector&quot;&gt;${escapeHtml(entry.path || entry.url)}&lt;/span&gt;
-        &lt;span class=&quot;badge&quot;&gt;${entry.count} campos&lt;/span&gt;
-        &lt;span class=&quot;rule-priority&quot;&gt;Atualizado: ${new Date(entry.updatedAt).toLocaleString(&quot;pt-BR&quot;)}&lt;/span&gt;
+        &lt;span class=&quot;badge&quot;&gt;${t(&quot;cacheFieldsCount&quot;, [String(entry.count)])}&lt;/span&gt;
+        &lt;span class=&quot;rule-priority&quot;&gt;${t(&quot;updatedAtLabel&quot;)}: ${new Date(entry.updatedAt).toLocaleString()}&lt;/span&gt;
       &lt;/div&gt;
-      &lt;button class=&quot;btn btn-sm btn-delete&quot; data-cache-url=&quot;${escapeHtml(entry.url)}&quot;&gt;Excluir&lt;/button&gt;
+      &lt;button class=&quot;btn btn-sm btn-delete&quot; data-cache-url=&quot;${escapeHtml(entry.url)}&quot;&gt;${t(&quot;btnDelete&quot;)}&lt;/button&gt;
     `;
 
     item.querySelector(&quot;.btn-delete&quot;)?.addEventListener(&quot;click&quot;, async () =&gt; {
@@ -321,7 +320,7 @@
         payload: entry.url,
       });
       await loadFieldCache();
-      showToast(&quot;Cache removido&quot;);
+      showToast(t(&quot;toastCacheEntryRemoved&quot;));
     });
 
     list.appendChild(item);

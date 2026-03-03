@@ -168,8 +168,8 @@
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
           <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs</span>
-            <a href="../docs/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a>
+            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
+            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
           </div>
           <div class="mt-1">
             <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
@@ -236,7 +236,7 @@
            
         </h1>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Last updated: 2026-02-24T19:46:21.799Z
+          Last updated: 2026-03-03T11:04:37.540Z
         </div>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -244,14 +244,14 @@
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
             <p class="mt-1 text-sm text-gray-900 dark:text-white min-w-0 overflow-hidden">
-              <a href="../files/src--popup--popup.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/popup/popup.ts:235-301">src/popup/popup.ts:235-301</a>
+              <a href="../files/src--popup--popup.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/popup/popup.ts:270-335">src/popup/popup.ts:270-335</a>
             </p>
           </div>
           
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Metrics</h3>
             <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-900 dark:text-white">
-              <span>LOC: 67</span>
+              <span>LOC: 66</span>
               <span>Complexity: <span class="text-red-600 dark:text-red-400 font-bold">20</span></span>
               <span>Params: 0</span>
               
@@ -298,8 +298,7 @@
   if (!list) return;
 
   if (detectedFields.length === 0) {
-    list.innerHTML =
-      '&lt;div class=&quot;empty&quot;&gt;Clique em &quot;Detectar&quot; para escanear os campos&lt;/div&gt;';
+    list.innerHTML = `&lt;div class=&quot;empty&quot;&gt;${t(&quot;clickToDetect&quot;)}&lt;/div&gt;`;
     return;
   }
 
@@ -309,12 +308,12 @@
         &lt;thead&gt;
           &lt;tr&gt;
             &lt;th&gt;#&lt;/th&gt;
-            &lt;th&gt;Tipo&lt;/th&gt;
-            &lt;th&gt;Método&lt;/th&gt;
-            &lt;th&gt;Conf.&lt;/th&gt;
-            &lt;th&gt;ID / Name&lt;/th&gt;
-            &lt;th&gt;Label&lt;/th&gt;
-            &lt;th&gt;Ações&lt;/th&gt;
+            &lt;th&gt;${t(&quot;columnType&quot;)}&lt;/th&gt;
+            &lt;th&gt;${t(&quot;columnMethod&quot;)}&lt;/th&gt;
+            &lt;th&gt;${t(&quot;columnConf&quot;)}&lt;/th&gt;
+            &lt;th&gt;${t(&quot;columnIdName&quot;)}&lt;/th&gt;
+            &lt;th&gt;${t(&quot;columnLabel&quot;)}&lt;/th&gt;
+            &lt;th&gt;${t(&quot;columnActions&quot;)}&lt;/th&gt;
           &lt;/tr&gt;
         &lt;/thead&gt;
         &lt;tbody&gt;
@@ -331,8 +330,8 @@
               &lt;td class=&quot;cell-mono&quot;&gt;${escapeHtml(f.id || f.name || &quot;-&quot;)}&lt;/td&gt;
               &lt;td&gt;${escapeHtml(f.label || &quot;-&quot;)}&lt;/td&gt;
               &lt;td class=&quot;cell-actions&quot;&gt;
-                &lt;button class=&quot;icon-btn&quot; data-action=&quot;fill&quot; data-selector=&quot;${escapeHtml(f.selector)}&quot; title=&quot;Preencher&quot;&gt;⚡&lt;/button&gt;
-                &lt;button class=&quot;icon-btn ${isIgnored ? &quot;icon-btn-off&quot; : &quot;&quot;}&quot; data-action=&quot;toggle-ignore&quot; data-selector=&quot;${escapeHtml(f.selector)}&quot; data-label=&quot;${escapeHtml(f.label || f.name || f.id || f.selector)}&quot; title=&quot;${isIgnored ? &quot;Reativar&quot; : &quot;Ignorar&quot;}&quot;&gt;
+                &lt;button class=&quot;icon-btn&quot; data-action=&quot;fill&quot; data-selector=&quot;${escapeHtml(f.selector)}&quot; title=&quot;${t(&quot;actionFill&quot;)}&quot;&gt;⚡&lt;/button&gt;
+                &lt;button class=&quot;icon-btn ${isIgnored ? &quot;icon-btn-off&quot; : &quot;&quot;}&quot; data-action=&quot;toggle-ignore&quot; data-selector=&quot;${escapeHtml(f.selector)}&quot; data-label=&quot;${escapeHtml(f.label || f.name || f.id || f.selector)}&quot; title=&quot;${isIgnored ? t(&quot;actionReactivate&quot;) : t(&quot;actionIgnore&quot;)}&quot;&gt;
                   ${isIgnored ? &quot;🚫&quot; : &quot;👁️&quot;}
                 &lt;/button&gt;
               &lt;/td&gt;

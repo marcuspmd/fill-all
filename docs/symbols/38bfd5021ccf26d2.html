@@ -168,8 +168,8 @@
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
           <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs</span>
-            <a href="../docs/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a>
+            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
+            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
           </div>
           <div class="mt-1">
             <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
@@ -236,7 +236,7 @@
            
         </h1>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Last updated: 2026-02-24T19:46:21.794Z
+          Last updated: 2026-03-01T23:25:47.137Z
         </div>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -244,14 +244,14 @@
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
             <p class="mt-1 text-sm text-gray-900 dark:text-white min-w-0 overflow-hidden">
-              <a href="../files/src--options--dataset-section.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/options/dataset-section.ts:58-131">src/options/dataset-section.ts:58-131</a>
+              <a href="../files/src--options--dataset-section.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/options/dataset-section.ts:58-137">src/options/dataset-section.ts:58-137</a>
             </p>
           </div>
           
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Metrics</h3>
             <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-900 dark:text-white">
-              <span>LOC: 74</span>
+              <span>LOC: 80</span>
               <span>Complexity: <span class="text-red-600 dark:text-red-400 font-bold">12</span></span>
               <span>Params: 1</span>
               
@@ -306,27 +306,30 @@
       )
     : _allDatasetEntries;
 
-  if (badge) badge.textContent = `${_allDatasetEntries.length} entradas`;
+  if (badge)
+    badge.textContent = t(&quot;datasetEntryCount&quot;, [
+      String(_allDatasetEntries.length),
+    ]);
 
   list.innerHTML = &quot;&quot;;
 
   if (entries.length === 0) {
-    list.innerHTML = '&lt;div class=&quot;empty&quot;&gt;Nenhuma entrada no dataset&lt;/div&gt;';
+    list.innerHTML = `&lt;div class=&quot;empty&quot;&gt;${t(&quot;noDatasetEntries&quot;)}&lt;/div&gt;`;
     return;
   }
 
   const visible = entries.slice(0, 200);
 
   const sourceLabel: Record&lt;string, string&gt; = {
-    manual: &quot;Manual&quot;,
-    auto: &quot;Auto&quot;,
-    imported: &quot;Importado&quot;,
-    builtin: &quot;Padrão&quot;,
+    manual: t(&quot;sourceManual&quot;),
+    auto: t(&quot;sourceAuto&quot;),
+    imported: t(&quot;sourceImported&quot;),
+    builtin: t(&quot;sourceBuiltin&quot;),
   };
   const diffLabel: Record&lt;string, string&gt; = {
-    easy: &quot;Fácil&quot;,
-    medium: &quot;Médio&quot;,
-    hard: &quot;Difícil&quot;,
+    easy: t(&quot;diffEasy&quot;),
+    medium: t(&quot;diffMedium&quot;),
+    hard: t(&quot;diffHard&quot;),
   };
 
   for (const entry of visible) {
@@ -339,7 +342,7 @@
         &lt;span class=&quot;rule-selector&quot; style=&quot;overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 480px;&quot; title=&quot;${escapeHtml(entry.signals)}&quot;&gt;${escapeHtml(entry.signals)}&lt;/span&gt;
         &lt;span class=&quot;rule-priority&quot; style=&quot;white-space: nowrap;&quot;&gt;${sourceLabel[entry.source] ?? entry.source} · ${diffLabel[entry.difficulty] ?? entry.difficulty}&lt;/span&gt;
       &lt;/div&gt;
-      &lt;button class=&quot;btn btn-sm btn-delete&quot; data-entry-id=&quot;${escapeHtml(entry.id)}&quot; title=&quot;Remover entrada&quot;&gt;✕&lt;/button&gt;
+      &lt;button class=&quot;btn btn-sm btn-delete&quot; data-entry-id=&quot;${escapeHtml(entry.id)}&quot; title=&quot;${t(&quot;removeEntryTitle&quot;)}&quot;&gt;✕&lt;/button&gt;
     `;
 
     item.querySelector(&quot;.btn-delete&quot;)?.addEventListener(&quot;click&quot;, async () =&gt; {
@@ -352,8 +355,11 @@
         &quot;dataset-filter&quot;,
       ) as HTMLInputElement | null;
       await loadDatasetList(filterInput?.value ?? &quot;&quot;);
-      if (badge) badge.textContent = `${_allDatasetEntries.length} entradas`;
-      showToast(&quot;Entrada removida&quot;);
+      if (badge)
+        badge.textContent = t(&quot;datasetEntryCount&quot;, [
+          String(_allDatasetEntries.length),
+        ]);
+      showToast(t(&quot;toastDatasetEntryRemoved&quot;));
     });
 
     list.appendChild(item);
@@ -363,7 +369,7 @@
     const note = document.createElement(&quot;div&quot;);
     note.className = &quot;empty&quot;;
     note.style.padding = &quot;8px 0&quot;;
-    note.textContent = `… e mais ${entries.length - 200} entradas (use o filtro para refinar)`;
+    note.textContent = t(&quot;moreEntriesNote&quot;, [String(entries.length - 200)]);
     list.appendChild(note);
   }
 }</code></pre>

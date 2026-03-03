@@ -41,7 +41,7 @@ export default {
   promptRules: [],
   coverage: {
     lcovPath: "coverage/lcov.info",
-    enabled: false,
+    enabled: true,
   },
   docs: [
     {

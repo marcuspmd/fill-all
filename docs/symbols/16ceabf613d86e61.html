@@ -168,8 +168,8 @@
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
           <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs</span>
-            <a href="../docs/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a>
+            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
+            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
           </div>
           <div class="mt-1">
             <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
@@ -236,7 +236,7 @@
            
         </h1>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Last updated: 2026-02-24T19:46:21.794Z
+          Last updated: 2026-03-02T00:53:26.056Z
         </div>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -244,7 +244,7 @@
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
             <p class="mt-1 text-sm text-gray-900 dark:text-white min-w-0 overflow-hidden">
-              <a href="../files/src--options--forms-section.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/options/forms-section.ts:133-187">src/options/forms-section.ts:133-187</a>
+              <a href="../files/src--options--forms-section.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/options/forms-section.ts:113-167">src/options/forms-section.ts:113-167</a>
             </p>
           </div>
           
@@ -302,30 +302,30 @@
   panel.id = &quot;form-create-panel&quot;;
   panel.className = &quot;edit-panel&quot;;
   panel.innerHTML = `
-    &lt;h3&gt;Criar Template&lt;/h3&gt;
+    &lt;h3&gt;${t(&quot;createTemplateHeader&quot;)}&lt;/h3&gt;
     &lt;div class=&quot;form-group&quot;&gt;
-      &lt;label&gt;Nome do template&lt;/label&gt;
-      &lt;input type=&quot;text&quot; id=&quot;create-form-name&quot; placeholder=&quot;Ex: Cadastro padrão&quot; /&gt;
+      &lt;label&gt;${t(&quot;templateNameLabel&quot;)}&lt;/label&gt;
+      &lt;input type=&quot;text&quot; id=&quot;create-form-name&quot; placeholder=&quot;${t(&quot;createTemplateNamePlaceholder&quot;)}&quot; /&gt;
     &lt;/div&gt;
     &lt;div class=&quot;form-group&quot;&gt;
-      &lt;label&gt;URL / Padrão&lt;/label&gt;
-      &lt;input type=&quot;text&quot; id=&quot;create-form-url&quot; placeholder=&quot;* = qualquer site  |  Ex: *.linkedin.com/*&quot; /&gt;
+      &lt;label&gt;${t(&quot;urlPatternLabel&quot;)}&lt;/label&gt;
+      &lt;input type=&quot;text&quot; id=&quot;create-form-url&quot; placeholder=&quot;${t(&quot;templateUrlPlaceholder&quot;)}&quot; /&gt;
       &lt;div class=&quot;description&quot; style=&quot;margin-top:4px;font-size:11px;color:var(--text-muted);&quot;&gt;
-        Deixe vazio ou use &lt;code&gt;*&lt;/code&gt; para funcionar em qualquer site.
+        ${t(&quot;templateUrlDesc&quot;)}
       &lt;/div&gt;
     &lt;/div&gt;
     &lt;div style=&quot;margin-bottom:8px;&quot;&gt;
-      &lt;strong style=&quot;font-size:13px;&quot;&gt;Campos&lt;/strong&gt;
+      &lt;strong style=&quot;font-size:13px;&quot;&gt;${t(&quot;fieldsTitle&quot;)}&lt;/strong&gt;
       &lt;div class=&quot;description&quot; style=&quot;font-size:11px;color:var(--text-muted);margin-top:2px;&quot;&gt;
-        Defina o tipo do campo detectado e o valor que será preenchido.
+        ${t(&quot;templateFieldsDesc&quot;)}
       &lt;/div&gt;
     &lt;/div&gt;
     &lt;table class=&quot;template-fields-table&quot; id=&quot;create-fields-table&quot;&gt;
       &lt;thead&gt;
         &lt;tr&gt;
-          &lt;th&gt;Tipo do campo detectado&lt;/th&gt;
-          &lt;th&gt;Modo&lt;/th&gt;
-          &lt;th&gt;Valor / Gerador&lt;/th&gt;
+          &lt;th&gt;${t(&quot;fieldDetectedTypeHeader&quot;)}&lt;/th&gt;
+          &lt;th&gt;${t(&quot;fieldModeHeader&quot;)}&lt;/th&gt;
+          &lt;th&gt;${t(&quot;fieldValueHeader&quot;)}&lt;/th&gt;
           &lt;th&gt;&lt;/th&gt;
         &lt;/tr&gt;
       &lt;/thead&gt;
@@ -337,8 +337,8 @@
       &lt;button class=&quot;btn btn-secondary btn-sm&quot; id=&quot;create-add-field-row&quot;&gt;+ Adicionar campo&lt;/button&gt;
     &lt;/div&gt;
     &lt;div class=&quot;edit-panel-actions&quot;&gt;
-      &lt;button class=&quot;btn btn-primary&quot; id=&quot;create-panel-save&quot;&gt;Salvar template&lt;/button&gt;
-      &lt;button class=&quot;btn btn-secondary&quot; id=&quot;create-panel-cancel&quot;&gt;Cancelar&lt;/button&gt;
+      &lt;button class=&quot;btn btn-primary&quot; id=&quot;create-panel-save&quot;&gt;${t(&quot;btnSaveTemplate&quot;)}&lt;/button&gt;
+      &lt;button class=&quot;btn btn-secondary&quot; id=&quot;create-panel-cancel&quot;&gt;${t(&quot;btnCancel&quot;)}&lt;/button&gt;
     &lt;/div&gt;
   `;
 

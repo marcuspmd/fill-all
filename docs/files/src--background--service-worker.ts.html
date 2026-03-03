@@ -168,8 +168,8 @@
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
           <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs</span>
-            <a href="../docs/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a>
+            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
+            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
           </div>
           <div class="mt-1">
             <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
@@ -217,7 +217,7 @@
       </div>
       <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Lines of Code</dt>
-        <dd class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">101</dd>
+        <dd class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">131</dd>
       </div>
       <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Avg Complexity</dt>
@@ -277,7 +277,7 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2 py-0.5 rounded text-xs font-medium border bg-yellow-50 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800">function</span></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm"></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">-</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">68-92</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">85-109</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400 text-xs"><code>handleMessage(message: ExtensionMessage): : Promise&lt;unknown&gt;</code></td>
             </tr>
             
@@ -305,9 +305,18 @@ import {
 import { setupContextMenu, handleContextMenuClick } from &quot;./context-menu&quot;;
 import { dispatchMessage } from &quot;./handler-registry&quot;;
 import { initLogger, createLogger } from &quot;@/lib/logger&quot;;
+import { destroySession } from &quot;@/lib/ai/chrome-ai&quot;;
+import { destroyOptimizerSession } from &quot;@/lib/ai/script-optimizer&quot;;
+import { destroyClassifierSession } from &quot;./handlers/ai-handler&quot;;
+import { disposeTensorflowModel } from &quot;@/lib/form/detectors/strategies&quot;;
 
 void initLogger();
 const log = createLogger(&quot;ServiceWorker&quot;);
+
+// Allow content scripts to access chrome.storage.session for shared log store
+chrome.storage.session.setAccessLevel({
+  accessLevel: &quot;TRUSTED_AND_UNTRUSTED_CONTEXTS&quot;,
+});
 
 // ── Context Menu ──────────────────────────────────────────────────────────────
 
@@ -334,6 +343,14 @@ const CONTENT_SCRIPT_MESSAGES = new Set([
   &quot;TOGGLE_PANEL&quot;,
   &quot;SHOW_PANEL&quot;,
   &quot;HIDE_PANEL&quot;,
+  &quot;EXPORT_E2E&quot;,
+  &quot;START_RECORDING&quot;,
+  &quot;STOP_RECORDING&quot;,
+  &quot;PAUSE_RECORDING&quot;,
+  &quot;RESUME_RECORDING&quot;,
+  &quot;GET_RECORDING_STATUS&quot;,
+  &quot;GET_RECORDING_STEPS&quot;,
+  &quot;EXPORT_RECORDING&quot;,
 ]);
 
 chrome.runtime.onMessage.addListener(
@@ -388,6 +405,19 @@ chrome.commands?.onCommand?.addListener((command) =&gt; {
   if (command === &quot;fill-all-fields&quot;) {
     void sendToActiveTab({ type: &quot;FILL_ALL_FIELDS&quot; }, { injectIfNeeded: true });
   }
+});
+
+// ── Memory cleanup on suspend ─────────────────────────────────────────────────
+// The service worker can be terminated by Chrome at any time after inactivity.
+// Destroy all AI sessions and TF.js model before that happens to prevent
+// GPU/renderer memory leaks that survive the service worker lifecycle.
+
+chrome.runtime.onSuspend.addListener(() =&gt; {
+  log.debug(&quot;Service worker suspendendo — liberando recursos AI.&quot;);
+  destroySession();
+  destroyOptimizerSession();
+  destroyClassifierSession();
+  disposeTensorflowModel();
 });
 </code></pre>
             </div>

@@ -168,8 +168,8 @@
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
           <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs</span>
-            <a href="../docs/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a>
+            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
+            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
           </div>
           <div class="mt-1">
             <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
@@ -236,7 +236,7 @@
            
         </h1>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Last updated: 2026-02-24T21:07:57.525Z
+          Last updated: 2026-03-03T11:48:01.512Z
         </div>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -244,14 +244,14 @@
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
             <p class="mt-1 text-sm text-gray-900 dark:text-white min-w-0 overflow-hidden">
-              <a href="../files/src--types--index.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/types/index.ts:368-381">src/types/index.ts:368-381</a>
+              <a href="../files/src--types--index.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/types/index.ts:372-387">src/types/index.ts:372-387</a>
             </p>
           </div>
           
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Metrics</h3>
             <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-900 dark:text-white">
-              <span>LOC: 14</span>
+              <span>LOC: 16</span>
               <span>Complexity: <span class="">1</span></span>
               <span>Params: 0</span>
               
@@ -304,6 +304,8 @@
   createdAt: number;
   /** When this template was last updated */
   updatedAt: number;
+  /** Whether this is the default form applied automatically */
+  isDefault?: boolean;
 }</code></pre>
             </div>
            </div>
@@ -323,19 +325,19 @@
           <div class="mb-8">
                   <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Impact (Incoming)</h2>
                   <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 border border-gray-200 dark:border-gray-700 overflow-x-auto">
-                    <div class="mermaid-expand-wrapper relative group" data-mermaid-src-base64="Z3JhcGggTFIKICBTYXZlZEZvcm1bIlNhdmVkRm9ybSJdCiAgRmlsbGFibGVFbGVtZW50WyJGaWxsYWJsZUVsZW1lbnQiXQogIFRhYklkWyJUYWJJZCJdCiAgZmllbGRUeXBlTGFiZWxbImZpZWxkVHlwZUxhYmVsIl0KICBmaWVsZENvdW50WyJmaWVsZENvdW50Il0KICBzZXROYXRpdmVWYWx1ZVsic2V0TmF0aXZlVmFsdWUiXQogIHBhcnNlSW5jb21pbmdNZXNzYWdlWyJwYXJzZUluY29taW5nTWVzc2FnZSJdCiAgZ2V0U2F2ZWRGb3Jtc1siZ2V0U2F2ZWRGb3JtcyJdCiAgcmVuZGVyVHlwZUJhZGdlWyJyZW5kZXJUeXBlQmFkZ2UiXQogIEZpbGxhYmxlRWxlbWVudCAtLT58dXNlc3wgU2F2ZWRGb3JtCiAgVGFiSWQgLS0+fHVzZXN8IFNhdmVkRm9ybQogIGZpZWxkVHlwZUxhYmVsIC0tPnx1c2VzfCBTYXZlZEZvcm0KICBmaWVsZENvdW50IC0tPnx1c2VzfCBTYXZlZEZvcm0KICBUYWJJZCAtLT58dXNlc3wgU2F2ZWRGb3JtCiAgc2V0TmF0aXZlVmFsdWUgLS0+fHVzZXN8IFNhdmVkRm9ybQogIHBhcnNlSW5jb21pbmdNZXNzYWdlIC0tPnx1c2VzfCBTYXZlZEZvcm0KICBwYXJzZUluY29taW5nTWVzc2FnZSAtLT58dXNlc3wgU2F2ZWRGb3JtCiAgZ2V0U2F2ZWRGb3JtcyAtLT58dXNlc3wgU2F2ZWRGb3JtCiAgcmVuZGVyVHlwZUJhZGdlIC0tPnx1c2VzfCBTYXZlZEZvcm0KICBzdHlsZSBTYXZlZEZvcm0gZmlsbDojZGJlYWZlLHN0cm9rZTojMjU2M2ViLHN0cm9rZS13aWR0aDoycHgKICBjbGljayBTYXZlZEZvcm0gImQwNDQ5MDk4YzM3YTY3YjkuaHRtbCIKICBjbGljayBGaWxsYWJsZUVsZW1lbnQgIjJlY2Y1YWFhYzNmNjY4YTguaHRtbCIKICBjbGljayBUYWJJZCAiNzhmODYyMzVjN2ZjNDhlNS5odG1sIgogIGNsaWNrIGZpZWxkVHlwZUxhYmVsICI4NjFhMGVjMTFiYzBiMjdiLmh0bWwiCiAgY2xpY2sgZmllbGRDb3VudCAiNzFhOWM0ODQ2NGYyNTU5OS5odG1sIgogIGNsaWNrIHNldE5hdGl2ZVZhbHVlICIzMzRiZDk5NjA5ZDdjMzdjLmh0bWwiCiAgY2xpY2sgcGFyc2VJbmNvbWluZ01lc3NhZ2UgIjQxNjM5NjM0OGQ3NDFlY2YuaHRtbCIKICBjbGljayBnZXRTYXZlZEZvcm1zICI5YTEzNTdiOTU2MThlZTVlLmh0bWwiCiAgY2xpY2sgcmVuZGVyVHlwZUJhZGdlICI5Yzk4ZmNiZjAzOWM5MmIzLmh0bWwi">
+                    <div class="mermaid-expand-wrapper relative group" data-mermaid-src-base64="Z3JhcGggTFIKICBTYXZlZEZvcm1bIlNhdmVkRm9ybSJdCiAgRmlsbGFibGVFbGVtZW50WyJGaWxsYWJsZUVsZW1lbnQiXQogIGZpZWxkVHlwZUxhYmVsWyJmaWVsZFR5cGVMYWJlbCJdCiAgZmllbGRDb3VudFsiZmllbGRDb3VudCJdCiAgVGFiSWRbIlRhYklkIl0KICBzZXROYXRpdmVWYWx1ZVsic2V0TmF0aXZlVmFsdWUiXQogIHBhcnNlSW5jb21pbmdNZXNzYWdlWyJwYXJzZUluY29taW5nTWVzc2FnZSJdCiAgZ2V0U2F2ZWRGb3Jtc1siZ2V0U2F2ZWRGb3JtcyJdCiAgcmVuZGVyVHlwZUJhZGdlWyJyZW5kZXJUeXBlQmFkZ2UiXQogIG1ha2VJbnB1dFsibWFrZUlucHV0Il0KICBGaWxsYWJsZUVsZW1lbnQgLS0+fHVzZXN8IFNhdmVkRm9ybQogIGZpZWxkVHlwZUxhYmVsIC0tPnx1c2VzfCBTYXZlZEZvcm0KICBmaWVsZENvdW50IC0tPnx1c2VzfCBTYXZlZEZvcm0KICBUYWJJZCAtLT58dXNlc3wgU2F2ZWRGb3JtCiAgc2V0TmF0aXZlVmFsdWUgLS0+fHVzZXN8IFNhdmVkRm9ybQogIHBhcnNlSW5jb21pbmdNZXNzYWdlIC0tPnx1c2VzfCBTYXZlZEZvcm0KICBwYXJzZUluY29taW5nTWVzc2FnZSAtLT58dXNlc3wgU2F2ZWRGb3JtCiAgZ2V0U2F2ZWRGb3JtcyAtLT58dXNlc3wgU2F2ZWRGb3JtCiAgcmVuZGVyVHlwZUJhZGdlIC0tPnx1c2VzfCBTYXZlZEZvcm0KICBtYWtlSW5wdXQgLS0+fHVzZXN8IFNhdmVkRm9ybQogIHN0eWxlIFNhdmVkRm9ybSBmaWxsOiNkYmVhZmUsc3Ryb2tlOiMyNTYzZWIsc3Ryb2tlLXdpZHRoOjJweAogIGNsaWNrIFNhdmVkRm9ybSAiZDA0NDkwOThjMzdhNjdiOS5odG1sIgogIGNsaWNrIEZpbGxhYmxlRWxlbWVudCAiMmVjZjVhYWFjM2Y2NjhhOC5odG1sIgogIGNsaWNrIGZpZWxkVHlwZUxhYmVsICI4NjFhMGVjMTFiYzBiMjdiLmh0bWwiCiAgY2xpY2sgZmllbGRDb3VudCAiNzFhOWM0ODQ2NGYyNTU5OS5odG1sIgogIGNsaWNrIFRhYklkICJkZjdhYjM2ZDc5Njc3NDg4Lmh0bWwiCiAgY2xpY2sgc2V0TmF0aXZlVmFsdWUgIjMzNGJkOTk2MDlkN2MzN2MuaHRtbCIKICBjbGljayBwYXJzZUluY29taW5nTWVzc2FnZSAiNDE2Mzk2MzQ4ZDc0MWVjZi5odG1sIgogIGNsaWNrIGdldFNhdmVkRm9ybXMgIjlhMTM1N2I5NTYxOGVlNWUuaHRtbCIKICBjbGljayByZW5kZXJUeXBlQmFkZ2UgIjljOThmY2JmMDM5YzkyYjMuaHRtbCIKICBjbGljayBtYWtlSW5wdXQgIjNiNDYzYzNjMzI5N2JiN2MuaHRtbCI=">
   <div class="mermaid">graph LR
   SavedForm["SavedForm"]
   FillableElement["FillableElement"]
-  TabId["TabId"]
   fieldTypeLabel["fieldTypeLabel"]
   fieldCount["fieldCount"]
+  TabId["TabId"]
   setNativeValue["setNativeValue"]
   parseIncomingMessage["parseIncomingMessage"]
   getSavedForms["getSavedForms"]
   renderTypeBadge["renderTypeBadge"]
+  makeInput["makeInput"]
   FillableElement -->|uses| SavedForm
-  TabId -->|uses| SavedForm
   fieldTypeLabel -->|uses| SavedForm
   fieldCount -->|uses| SavedForm
   TabId -->|uses| SavedForm
@@ -344,16 +346,18 @@
   parseIncomingMessage -->|uses| SavedForm
   getSavedForms -->|uses| SavedForm
   renderTypeBadge -->|uses| SavedForm
+  makeInput -->|uses| SavedForm
   style SavedForm fill:#dbeafe,stroke:#2563eb,stroke-width:2px
   click SavedForm "d0449098c37a67b9.html"
   click FillableElement "2ecf5aaac3f668a8.html"
-  click TabId "78f86235c7fc48e5.html"
   click fieldTypeLabel "861a0ec11bc0b27b.html"
   click fieldCount "71a9c48464f25599.html"
+  click TabId "df7ab36d79677488.html"
   click setNativeValue "334bd99609d7c37c.html"
   click parseIncomingMessage "416396348d741ecf.html"
   click getSavedForms "9a1357b95618ee5e.html"
-  click renderTypeBadge "9c98fcbf039c92b3.html"</div>
+  click renderTypeBadge "9c98fcbf039c92b3.html"
+  click makeInput "3b463c3c3297bb7c.html"</div>
   <button type="button" class="mermaid-expand-btn absolute top-2 right-2 z-10 px-2 py-1 text-xs font-medium rounded bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 shadow hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 opacity-70 group-hover:opacity-100 transition-opacity" title="Expand to fullscreen (zoom and pan)">Expand</button>
 </div>
                   </div>
@@ -367,9 +371,6 @@
                   <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     <tr>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="2ecf5aaac3f668a8.html" class="hover:underline">FillableElement</a></td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">uses</td>
-                    </tr><tr>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="78f86235c7fc48e5.html" class="hover:underline">TabId</a></td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">uses</td>
                     </tr><tr>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="861a0ec11bc0b27b.html" class="hover:underline">fieldTypeLabel</a></td>
@@ -394,6 +395,9 @@
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">uses</td>
                     </tr><tr>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="9c98fcbf039c92b3.html" class="hover:underline">renderTypeBadge</a></td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">uses</td>
+                    </tr><tr>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="3b463c3c3297bb7c.html" class="hover:underline">makeInput</a></td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">uses</td>
                     </tr>
                   </tbody>

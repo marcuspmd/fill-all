@@ -22,6 +22,30 @@ Fill All é uma extensão Chrome de código aberto que preenche formulários aut
 
 **Ideal para**: desenvolvedores, QAs, testers e qualquer pessoa que preenche formulários repetidamente.
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Popup
+![Popup](docs-md/images/popup.png)
+
+### Painel Flutuante (in-page)
+![Floating Panel](docs-md/images/floating_panel.png)
+
+### DevTools Panel
+![DevTools Panel](docs-md/images/painel_devtools_form.png)
+
+### Options Page
+
+| Configurações Gerais | Formulários Salvos | Dataset de Treinamento |
+|:---:|:---:|:---:|
+| ![Config Geral](docs-md/images/config_general.png) | ![Config Forms](docs-md/images/config_form.png) | ![Config Dataset](docs-md/images/config_dataset.png) |
+
+### Adicionar Regra
+![Adicionar Regra](docs-md/images/page_add_rules.png)
+
+</div>
+
 ## ✨ Funcionalidades
 
 ### Inteligência Artificial
@@ -185,6 +209,28 @@ Usuário aciona ──▶ Background roteia ──▶ Content Script detecta cam
 | `npm run import:rules` | Importa regras exportadas para o dataset |
 | `npm run clean` | Limpa a pasta `dist/` |
 
+### Testes
+
+| Comando | Descrição |
+|---------|----------|
+| `npm test` | Testes unitários (Vitest) |
+| `npm run test:watch` | Unitários em modo watch |
+| `npm run test:coverage` | Unitários + coverage → `.coverage/unit/` |
+| `npm run test:e2e` | Testes E2E com Playwright (Chrome real) |
+| `npm run test:e2e:ui` | Testes E2E com UI interativa do Playwright |
+| `npm run test:e2e:coverage` | Build + E2E + coleta de coverage → `.coverage/e2e/` |
+| `npm run test:all` | Unitários → E2E em sequência |
+| `npm run coverage:merge` | Merge coverage unit + E2E → `coverage/index.html` |
+| `npm run coverage:all` | Coverage completo (unit + E2E + merge) |
+
+Testes E2E que queiram ter coverage rastreado devem importar de:
+
+```typescript
+import { test, expect } from "@/__tests__/e2e/fixtures";
+```
+
+O fixture `_coverage` é `auto: true` — roda automaticamente para cada teste sem chamada explícita.
+
 ## 🛠️ Stack Tecnológica
 
 | Camada | Tecnologia | Propósito |
@@ -207,6 +253,7 @@ Usuário aciona ──▶ Background roteia ──▶ Content Script detecta cam
 | [Pipeline AI](docs/ai-pipeline.md) | Como funciona a classificação de campos e o treinamento de modelos |
 | [Geradores](docs/generators.md) | Todos os geradores de dados disponíveis e como criar novos |
 | [Contribuindo](docs/contributing.md) | Guia completo para contribuidores |
+| [Roadmap](docs-md/roadmap.md) | Funcionalidades planejadas e melhorias futuras |
 
 ## 🤝 Contribuindo
 
