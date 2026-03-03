@@ -34,8 +34,9 @@ fi
 echo ""
 
 echo "📋 Dependency summary:"
-DEPS=$(grep -c '"' package.json | head -1 || echo "?")
-echo "  package.json entries: $DEPS"
+PROD_DEPS=$(node -e "const p=require('./package.json'); console.log(Object.keys(p.dependencies||{}).length)" 2>/dev/null || echo "?")
+DEV_DEPS=$(node -e "const p=require('./package.json'); console.log(Object.keys(p.devDependencies||{}).length)" 2>/dev/null || echo "?")
+echo "  production: $PROD_DEPS, dev: $DEV_DEPS"
 echo "  node_modules size: $(du -sh node_modules 2>/dev/null | cut -f1 || echo 'N/A')"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
