@@ -1681,5 +1681,80 @@
   },
   "dateFormatUs": {
     "message": "MM/DD/YYYY (US)"
+  },
+  "aiContextModalTitle": {
+    "message": "AI Fill Context"
+  },
+  "aiContextModalHelp": {
+    "message": "Add context to help the AI generate more accurate values for this form."
+  },
+  "aiContextTextLabel": {
+    "message": "Description / Context"
+  },
+  "aiContextTextPlaceholder": {
+    "message": "e.g. This is a registration form for a 30-year-old Brazilian developer from São Paulo..."
+  },
+  "aiContextAudioLabel": {
+    "message": "Voice context"
+  },
+  "aiContextAudioRecord": {
+    "message": "Record"
+  },
+  "aiContextAudioStop": {
+    "message": "Stop recording"
+  },
+  "aiContextAudioListening": {
+    "message": "Listening..."
+  },
+  "aiContextAudioDone": {
+    "message": "Transcript ready"
+  },
+  "aiContextAudioEmpty": {
+    "message": "Nothing captured"
+  },
+  "aiContextAudioError": {
+    "message": "Recognition error"
+  },
+  "aiContextAudioTranslating": {
+    "message": "Translating to English..."
+  },
+  "aiContextAudioUnsupported": {
+    "message": "Voice not supported in this browser"
+  },
+  "aiContextCsvLabel": {
+    "message": "CSV data file"
+  },
+  "aiContextCsvPlaceholder": {
+    "message": "Click or drag a .csv file here"
+  },
+  "aiContextImageLabel": {
+    "message": "Reference image"
+  },
+  "aiContextImagePlaceholder": {
+    "message": "Click or drag an image here"
+  },
+  "aiContextPdfLabel": {
+    "message": "PDF document"
+  },
+  "aiContextPdfPlaceholder": {
+    "message": "Click or drag a .pdf file here"
+  },
+  "aiContextPdfExtracting": {
+    "message": "Extracting text from PDF..."
+  },
+  "aiContextPdfDone": {
+    "message": "Text extracted successfully"
+  },
+  "aiContextPdfError": {
+    "message": "Error reading the PDF"
+  },
+  "aiContextConfirm": {
+    "message": "Fill with AI"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "close": {
+    "message": "Close"
   }
 }

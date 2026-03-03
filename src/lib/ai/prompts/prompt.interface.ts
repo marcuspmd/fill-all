@@ -77,7 +77,7 @@ export interface StructuredPrompt<TInput, TOutput> {
   readonly examples?: readonly PromptExample[];
 
   /** Assembles the final prompt string from the given input context. */
-  buildPrompt(input: TInput): string;
+  buildPrompt(input: TInput, userContext?: string): string;
 
   /** Parses raw AI text into TOutput, returning null on failure. */
   parseResponse(raw: string): TOutput | null;

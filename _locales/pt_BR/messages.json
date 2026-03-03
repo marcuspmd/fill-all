@@ -1681,5 +1681,80 @@
   },
   "dateFormatUs": {
     "message": "MM/DD/YYYY (EUA)"
+  },
+  "aiContextModalTitle": {
+    "message": "Contexto para IA"
+  },
+  "aiContextModalHelp": {
+    "message": "Adicione contexto para ajudar a IA a gerar valores mais precisos para este formul\u00e1rio."
+  },
+  "aiContextTextLabel": {
+    "message": "Descri\u00e7\u00e3o / Contexto"
+  },
+  "aiContextTextPlaceholder": {
+    "message": "ex: Formul\u00e1rio de cadastro de um desenvolvedor brasileiro de 30 anos de S\u00e3o Paulo..."
+  },
+  "aiContextAudioLabel": {
+    "message": "Contexto por voz"
+  },
+  "aiContextAudioRecord": {
+    "message": "Gravar"
+  },
+  "aiContextAudioStop": {
+    "message": "Parar grava\u00e7\u00e3o"
+  },
+  "aiContextAudioListening": {
+    "message": "Ouvindo..."
+  },
+  "aiContextAudioDone": {
+    "message": "Transcri\u00e7\u00e3o pronta"
+  },
+  "aiContextAudioEmpty": {
+    "message": "Nada capturado"
+  },
+  "aiContextAudioError": {
+    "message": "Erro no reconhecimento"
+  },
+  "aiContextAudioTranslating": {
+    "message": "Traduzindo para ingl\u00eas..."
+  },
+  "aiContextAudioUnsupported": {
+    "message": "Voz n\u00e3o suportada neste navegador"
+  },
+  "aiContextCsvLabel": {
+    "message": "Arquivo CSV de dados"
+  },
+  "aiContextCsvPlaceholder": {
+    "message": "Clique ou arraste um arquivo .csv aqui"
+  },
+  "aiContextImageLabel": {
+    "message": "Imagem de refer\u00eancia"
+  },
+  "aiContextImagePlaceholder": {
+    "message": "Clique ou arraste uma imagem aqui"
+  },
+  "aiContextPdfLabel": {
+    "message": "Documento PDF"
+  },
+  "aiContextPdfPlaceholder": {
+    "message": "Clique ou arraste um arquivo .pdf aqui"
+  },
+  "aiContextPdfExtracting": {
+    "message": "Extraindo texto do PDF..."
+  },
+  "aiContextPdfDone": {
+    "message": "Texto extraído com sucesso"
+  },
+  "aiContextPdfError": {
+    "message": "Erro ao ler o PDF"
+  },
+  "aiContextConfirm": {
+    "message": "Preencher com IA"
+  },
+  "cancel": {
+    "message": "Cancelar"
+  },
+  "close": {
+    "message": "Fechar"
   }
 }

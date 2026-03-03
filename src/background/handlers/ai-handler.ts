@@ -178,12 +178,63 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
     }
 
     case "AI_GENERATE_FORM_CONTEXT": {
-      const fields = message.payload as FormContextFieldInput[] | undefined;
+      const raw = message.payload as
+        | {
+            fields?: FormContextFieldInput[];
+            userContext?: string;
+            imageDataUrl?: string;
+            pdfPageDataUrls?: string[];
+          }
+        | FormContextFieldInput[]
+        | undefined;
+
+      // Support both legacy array payload and new structured payload
+      const fields = Array.isArray(raw) ? raw : raw?.fields;
+      const userContext = Array.isArray(raw) ? undefined : raw?.userContext;
+      const imageDataUrl = Array.isArray(raw) ? undefined : raw?.imageDataUrl;
+      const pdfPageDataUrls = Array.isArray(raw)
+        ? undefined
+        : raw?.pdfPageDataUrls;
+
       if (!Array.isArray(fields) || fields.length === 0) {
         log.warn("AI_GENERATE_FORM_CONTEXT recebido sem campos.");
         return null;
       }
-      return generateFormContextValues(fields);
+
+      // Convert all data URLs to Blobs for multimodal input (works in service workers)
+      const imageBlobs: Blob[] = [];
+
+      if (imageDataUrl) {
+        try {
+          const blob = await fetch(imageDataUrl).then((r) => r.blob());
+          imageBlobs.push(blob);
+          log.debug(
+            `Imagem convertida para Blob: ${blob.type} (${blob.size} bytes)`,
+          );
+        } catch (err) {
+          log.warn("Falha ao converter imageDataUrl para Blob:", err);
+        }
+      }
+
+      if (pdfPageDataUrls && pdfPageDataUrls.length > 0) {
+        for (const url of pdfPageDataUrls) {
+          try {
+            const blob = await fetch(url).then((r) => r.blob());
+            imageBlobs.push(blob);
+            log.debug(
+              `Página PDF convertida para Blob: ${blob.type} (${blob.size} bytes)`,
+            );
+          } catch (err) {
+            log.warn("Falha ao converter página PDF para Blob:", err);
+          }
+        }
+      }
+
+      return generateFormContextValues(
+        fields,
+        userContext,
+        imageBlobs.length > 0 ? imageBlobs : undefined,
+      );
     }
 
     default:

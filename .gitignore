@@ -10,4 +10,6 @@ coverage/
 .coverage/
 playwright-report/
 test-results/
+.github/hooks/logs/
+.github/current-plan.md
 .env

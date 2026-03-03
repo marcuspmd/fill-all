@@ -3,6 +3,7 @@
  */
 
 import type {
+  AIContextPayload,
   DetectedFieldSummary,
   ExtensionMessage,
   FormField,
@@ -143,7 +144,8 @@ async function handleContentMessage(
     }
 
     case "FILL_CONTEXTUAL_AI": {
-      const results = await fillContextualAI();
+      const context = message.payload as AIContextPayload | undefined;
+      const results = await fillContextualAI(context);
       showNotification(
         `✓ ${results.length} campos preenchidos com IA contextual`,
       );

@@ -222,16 +222,22 @@ export function destroySession(): void {
  * Generates coherent values for ALL form fields at once using a single
  * Chrome AI call. All values belong to the same fictional person/entity.
  *
- * @param fields - Array of compact field descriptors (index, label, type, options)
+ * @param fields     - Array of compact field descriptors (index, label, type, options)
+ * @param userContext - Optional freeform context string to guide generation
+ * @param imageBlobs  - Optional image blobs (uploaded image + rendered PDF pages)
  * @returns A map of `"index" → "value"` or `null` when AI is unavailable/fails
  */
 export async function generateFormContextValues(
   fields: readonly FormContextFieldInput[],
+  userContext?: string,
+  imageBlobs?: Blob[],
 ): Promise<FormContextOutput | null> {
   if (fields.length === 0) return null;
 
   const batch = fields.slice(0, FORM_CONTEXT_MAX_FIELDS);
-  log.debug(`Gerando contexto para ${batch.length} campos com Chrome AI...`);
+  log.debug(
+    `Gerando contexto para ${batch.length} campos com Chrome AI... (imagens: ${imageBlobs?.length ?? 0})`,
+  );
 
   const aiSession = await getSession();
   if (!aiSession) {
@@ -239,20 +245,101 @@ export async function generateFormContextValues(
     return null;
   }
 
-  const prompt = formContextGeneratorPrompt.buildPrompt(batch);
+  const hasImages = imageBlobs !== undefined && imageBlobs.length > 0;
+
+  // When images are present, prepend a strict extraction instruction so the
+  // model reads values from the document instead of hallucinating them.
+  const imageInstruction = hasImages
+    ? "IMPORTANT: One or more document images are attached. Extract field values DIRECTLY from the images. " +
+      "Do NOT invent or guess values that are not visible in the images. " +
+      "Only use the generator rules for fields whose values are NOT present in the images.\n"
+    : undefined;
+
+  const textPrompt = formContextGeneratorPrompt.buildPrompt(
+    batch,
+    imageInstruction
+      ? [imageInstruction, userContext].filter(Boolean).join("\n")
+      : userContext,
+  );
+
+  // When images are present, a separate session must be created with
+  // expectedInputs: [{ type: "image" }] — the shared global session does not
+  // support images.
+  let promptSession: LanguageModelSession | null = aiSession;
+  let tempSession: LanguageModelSession | null = null;
+  if (hasImages) {
+    const api = getLanguageModelApi();
+    if (api) {
+      try {
+        log.debug("Criando sessão com suporte a imagens...");
+        tempSession = await api.create({
+          systemPrompt: renderSystemPrompt(fieldValueGeneratorPrompt),
+          outputLanguage: "en",
+          expectedInputs: [{ type: "image" }],
+          // Low temperature + topK=1: model must extract from the image,
+          // not hallucinate. When visual context is present, creativity
+          // is a bug, not a feature.
+          temperature: 0.2,
+          topK: 1,
+        });
+        promptSession = tempSession;
+        log.debug("Sessão com imagens criada.");
+      } catch (err) {
+        log.warn(
+          "Sessão com suporte a imagens indisponível — usando apenas texto:",
+          err,
+        );
+        // Fall back to text-only
+      }
+    }
+  }
+
+  // Build multimodal input.
+  // Chrome AI requires role-based messages when content includes images.
+  const promptInput: LanguageModelPromptInput =
+    hasImages && tempSession
+      ? [
+          {
+            role: "user" as const,
+            content: [
+              { type: "text" as const, value: textPrompt },
+              ...imageBlobs!.map(
+                (blob): LanguageModelImagePart => ({
+                  type: "image",
+                  value: blob,
+                }),
+              ),
+            ],
+          },
+        ]
+      : textPrompt;
 
   log.groupCollapsed("Prompt → form-context-generator");
-  log.debug("▶ Prompt:\n" + prompt);
+  log.debug("▶ Prompt:\n" + textPrompt);
+  if (hasImages)
+    log.debug(
+      `▶ Imagens (${imageBlobs!.length}): ` +
+        imageBlobs!.map((b) => `${b.type} (${b.size}b)`).join(", "),
+    );
   log.groupEnd();
 
   let raw: string;
   try {
-    raw = await aiSession.prompt(prompt, { outputLanguage: "en" });
+    raw = await promptSession!.prompt(promptInput, { outputLanguage: "en" });
   } catch (err) {
     log.warn("Erro ao gerar contexto de formulário — destruindo sessão:", err);
-    session?.destroy();
-    session = null;
+    if (tempSession) {
+      tempSession.destroy();
+    } else {
+      session?.destroy();
+      session = null;
+    }
     return null;
+  } finally {
+    // Always destroy the temporary image session after use
+    if (tempSession) {
+      tempSession.destroy();
+    }
   }
 
   log.groupCollapsed("Resposta ← form-context-generator");

@@ -1681,5 +1681,80 @@
   },
   "dateFormatUs": {
     "message": "MM/DD/YYYY (EE.UU.)"
+  },
+  "aiContextModalTitle": {
+    "message": "Contexto para IA"
+  },
+  "aiContextModalHelp": {
+    "message": "Agrega contexto para ayudar a la IA a generar valores m\u00e1s precisos para este formulario."
+  },
+  "aiContextTextLabel": {
+    "message": "Descripci\u00f3n / Contexto"
+  },
+  "aiContextTextPlaceholder": {
+    "message": "ej. Este es un formulario de registro para un desarrollador brasile\u00f1o de 30 a\u00f1os de S\u00e3o Paulo..."
+  },
+  "aiContextAudioLabel": {
+    "message": "Contexto por voz"
+  },
+  "aiContextAudioRecord": {
+    "message": "Grabar"
+  },
+  "aiContextAudioStop": {
+    "message": "Detener grabaci\u00f3n"
+  },
+  "aiContextAudioListening": {
+    "message": "Escuchando..."
+  },
+  "aiContextAudioDone": {
+    "message": "Transcripci\u00f3n lista"
+  },
+  "aiContextAudioEmpty": {
+    "message": "Nada capturado"
+  },
+  "aiContextAudioError": {
+    "message": "Error de reconocimiento"
+  },
+  "aiContextAudioTranslating": {
+    "message": "Traduciendo al ingl\u00e9s..."
+  },
+  "aiContextAudioUnsupported": {
+    "message": "Voz no compatible con este navegador"
+  },
+  "aiContextCsvLabel": {
+    "message": "Archivo CSV de datos"
+  },
+  "aiContextCsvPlaceholder": {
+    "message": "Haz clic o arrastra un archivo .csv aqu\u00ed"
+  },
+  "aiContextImageLabel": {
+    "message": "Imagen de referencia"
+  },
+  "aiContextImagePlaceholder": {
+    "message": "Haz clic o arrastra una imagen aqu\u00ed"
+  },
+  "aiContextPdfLabel": {
+    "message": "Documento PDF"
+  },
+  "aiContextPdfPlaceholder": {
+    "message": "Haz clic o arrastra un archivo .pdf aqu\u00ed"
+  },
+  "aiContextPdfExtracting": {
+    "message": "Extrayendo texto del PDF..."
+  },
+  "aiContextPdfDone": {
+    "message": "Texto extra\u00eddo con \u00e9xito"
+  },
+  "aiContextPdfError": {
+    "message": "Error al leer el PDF"
+  },
+  "aiContextConfirm": {
+    "message": "Rellenar con IA"
+  },
+  "cancel": {
+    "message": "Cancelar"
+  },
+  "close": {
+    "message": "Cerrar"
   }
 }

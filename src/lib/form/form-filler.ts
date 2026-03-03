@@ -8,6 +8,7 @@ import type {
   GenerationResult,
   SavedForm,
   Settings,
+  AIContextPayload,
 } from "@/types";
 import { detectAllFieldsAsync, streamAllFields } from "./form-detector";
 import { resolveFieldValue } from "@/lib/rules/rule-engine";
@@ -447,13 +448,38 @@ export async function fillSingleField(
 }
 
 /**
+ * Aggregates all parts of an AIContextPayload into a single plaintext
+ * string to be forwarded to the AI prompt.
+ */
+function buildUserContextString(
+  context?: AIContextPayload,
+): string | undefined {
+  if (!context) return undefined;
+
+  const parts: string[] = [];
+  if (context.text?.trim()) parts.push(context.text.trim());
+  if (context.audioTranscript?.trim())
+    parts.push(`Audio transcript: ${context.audioTranscript.trim()}`);
+  if (context.csvText?.trim())
+    parts.push(`CSV data:\n${context.csvText.trim()}`);
+  if (context.pdfText?.trim())
+    parts.push(`PDF document content:\n${context.pdfText.trim()}`);
+  // imageDataUrl is passed separately as multimodal input — not included in text
+
+  return parts.length > 0 ? parts.join("\n\n") : undefined;
+}
+
+/**
  * Fills all form fields on the page using Chrome AI contextual generation.
  * All values are generated in a single AI call, producing a cohesive fictional
  * identity (same person/company across every field).
  * Falls back to {@link fillAllFields} if AI is unavailable or returns no data.
+ * @param context - Optional user-provided context (text, CSV, audio, image) to guide AI
  * @returns Array of generation results for each filled field
  */
-export async function fillContextualAI(): Promise<GenerationResult[]> {
+export async function fillContextualAI(
+  context?: AIContextPayload,
+): Promise<GenerationResult[]> {
   setFillingInProgress(true);
   try {
     const { fields } = await detectAllFieldsAsync();
@@ -495,7 +521,12 @@ export async function fillContextualAI(): Promise<GenerationResult[]> {
       },
     );
 
-    const contextMap = await generateFormContextValuesViaProxy(contextInputs);
+    const contextMap = await generateFormContextValuesViaProxy(
+      contextInputs,
+      buildUserContextString(context),
+      context?.imageDataUrl,
+      context?.pdfPageDataUrls,
+    );
 
     if (!contextMap || Object.keys(contextMap).length === 0) {
       log.warn(

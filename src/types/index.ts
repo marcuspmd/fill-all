@@ -575,6 +575,28 @@ export interface GenerationResult {
   source: "fixed" | "rule" | "ai" | "tensorflow" | "generator";
 }
 
+/**
+ * Additional user-provided context for AI-driven form filling.
+ * Collected via the AI context modal in the popup.
+ */
+export interface AIContextPayload {
+  /** Free-form text describing the person, scenario or data to fill */
+  text?: string;
+  /** CSV content already parsed into a readable text representation */
+  csvText?: string;
+  /** Audio transcript (from Web Speech API; may already be translated) */
+  audioTranscript?: string;
+  /** Image file as a base64 data URL (e.g. "data:image/png;base64,...") */
+  imageDataUrl?: string;
+  /** Extracted text content from an uploaded PDF */
+  pdfText?: string;
+  /**
+   * PDF pages rendered to JPEG data URLs (up to 3 pages).
+   * Sent as image blobs to the Chrome AI multimodal prompt.
+   */
+  pdfPageDataUrls?: string[];
+}
+
 /** Default ordered detection pipeline used when the user hasn't customised it. */
 export const DEFAULT_DETECTION_PIPELINE: DetectionStrategyEntry[] = [
   { name: "html-type", enabled: true },

@@ -34,6 +34,7 @@ import {
 } from "./popup-messaging";
 import { initChromeAIStatus } from "./popup-chrome-ai";
 import { t, initI18n } from "@/lib/i18n";
+import { openAIContextModal } from "./popup-ai-context-modal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -190,10 +191,18 @@ async function handleFillAll(): Promise<void> {
 }
 
 async function handleFillContextualAI(): Promise<void> {
+  // Open context modal first — user can provide text/CSV/image/audio
+  const context = await openAIContextModal();
+  if (context === null) return; // User cancelled
+
   const btn = document.getElementById("btn-fill-contextual-ai");
   const label = btn?.querySelector(".card-label");
   if (label) label.textContent = "⏳...";
-  const result = await sendToActiveTab({ type: "FILL_CONTEXTUAL_AI" });
+
+  const result = await sendToActiveTab({
+    type: "FILL_CONTEXTUAL_AI",
+    payload: context,
+  });
   const res = result as { filled?: number } | null;
   if (label) {
     label.textContent =

@@ -21,6 +21,7 @@ import {
   renderMethodBadge,
   renderConfidenceBadge,
 } from "@/lib/ui";
+import { openAIContextModal } from "@/popup/popup-ai-context-modal";
 import { t, initI18n } from "@/lib/i18n";
 import {
   getFieldTypeGroupedOptions,
@@ -568,6 +569,9 @@ async function fillOnlyEmpty(): Promise<void> {
 }
 
 async function fillContextualAI(): Promise<void> {
+  const context = await openAIContextModal();
+  if (!context) return;
+
   addLog(t("fillContextualAI"));
   const btn = document.getElementById("btn-fill-contextual-ai");
   const label = btn?.querySelector(".card-label");
@@ -575,6 +579,7 @@ async function fillContextualAI(): Promise<void> {
   try {
     const result = (await sendToPage({
       type: "FILL_CONTEXTUAL_AI",
+      payload: context,
     })) as { filled?: number };
     addLog(`${result?.filled ?? 0} ${t("filled")}`, "success");
   } catch (err) {

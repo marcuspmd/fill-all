@@ -17,6 +17,10 @@ interface LanguageModelAvailabilityOptions {
   outputLanguage?: string;
 }
 
+interface LanguageModelExpectedInput {
+  type: "text" | "image" | "audio";
+}
+
 interface LanguageModelCreateOptions {
   model?: string;
   systemPrompt?: string;
@@ -29,6 +33,8 @@ interface LanguageModelCreateOptions {
   signal?: AbortSignal;
   outputLanguage?: string;
   monitor?: (monitor: EventTarget) => void;
+  /** Declare multimodal input types the session should support (e.g. image). */
+  expectedInputs?: LanguageModelExpectedInput[];
 }
 
 interface LanguageModelPromptOptions {
@@ -36,10 +42,40 @@ interface LanguageModelPromptOptions {
   outputLanguage?: string;
 }
 
+// ── Multimodal content parts (Chrome AI Prompt API) ───────────────────────────
+
+interface LanguageModelTextPart {
+  type: "text";
+  /** Text content of the part (Chrome AI Prompt API spec: `value`). */
+  value: string;
+}
+
+interface LanguageModelImagePart {
+  type: "image";
+  /** Accepts Blob, ImageBitmap, ImageData, HTMLImageElement, etc. */
+  value: ImageBitmapSource | ImageData;
+}
+
+type LanguageModelContentPart = LanguageModelTextPart | LanguageModelImagePart;
+
+/** A full message with role, required when passing multimodal content (Chrome AI Prompt API). */
+interface LanguageModelMessage {
+  role: "user" | "assistant" | "system";
+  content: LanguageModelContentPart[];
+}
+
+type LanguageModelPromptInput =
+  | string
+  | LanguageModelContentPart[]
+  | LanguageModelMessage[];
+
 interface LanguageModelSession {
-  prompt(input: string, options?: LanguageModelPromptOptions): Promise<string>;
+  prompt(
+    input: LanguageModelPromptInput,
+    options?: LanguageModelPromptOptions,
+  ): Promise<string>;
   promptStreaming(
-    input: string,
+    input: LanguageModelPromptInput,
     options?: LanguageModelPromptOptions,
   ): ReadableStream<string>;
   clone(): Promise<LanguageModelSession>;

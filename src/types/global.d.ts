@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 /**
  * Augment globalThis with Chrome AI types (new Prompt API)
  */

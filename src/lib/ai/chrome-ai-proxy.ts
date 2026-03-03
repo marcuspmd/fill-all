@@ -136,11 +136,14 @@ export async function optimizeScriptViaProxy(
  */
 export async function generateFormContextValuesViaProxy(
   fields: readonly FormContextFieldInput[],
+  userContext?: string,
+  imageDataUrl?: string,
+  pdfPageDataUrls?: string[],
 ): Promise<FormContextOutput | null> {
   try {
     const result = await chrome.runtime.sendMessage({
       type: "AI_GENERATE_FORM_CONTEXT",
-      payload: fields,
+      payload: { fields, userContext, imageDataUrl, pdfPageDataUrls },
     });
 
     if (result && typeof result === "object" && !Array.isArray(result)) {

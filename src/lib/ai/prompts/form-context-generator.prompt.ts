@@ -43,6 +43,18 @@ const MAX_OPTIONS_PER_FIELD = 6;
 
 // ── Prompt definition ─────────────────────────────────────────────────────────
 
+/**
+ * Builds the optional user-context block to inject into the prompt.
+ * Returns an empty string when no context is present.
+ */
+function buildUserContextBlock(userContext?: string): string {
+  if (!userContext || userContext.trim().length === 0) return "";
+  return (
+    `\nADDITIONAL CONTEXT PROVIDED BY THE USER (use this to guide the generated values):\n` +
+    `"""\n${userContext.trim()}\n"""\n`
+  );
+}
+
 export const formContextGeneratorPrompt: StructuredPrompt<
   FormContextInput,
   FormContextOutput
@@ -90,7 +102,7 @@ export const formContextGeneratorPrompt: StructuredPrompt<
     },
   ],
 
-  buildPrompt(input: FormContextInput): string {
+  buildPrompt(input: FormContextInput, userContext?: string): string {
     const fieldLines = input
       .slice(0, FORM_CONTEXT_MAX_FIELDS)
       .map((f) => {
@@ -111,6 +123,8 @@ export const formContextGeneratorPrompt: StructuredPrompt<
       })
       .join("\n");
 
+    const contextBlock = buildUserContextBlock(userContext);
+
     return (
       `You are a cohesive test-data generator for Brazilian web forms.\n` +
       `Generate realistic values for ALL fields below.\n` +
@@ -122,8 +136,9 @@ export const formContextGeneratorPrompt: StructuredPrompt<
       `- Use DD/MM/YYYY for dates unless the label says otherwise.\n` +
       `- For SELECT fields, pick exactly one value from the provided options.\n` +
       `- Respond ONLY with minified JSON: {"0":"value","1":"value",...}\n` +
-      `- Include ALL field indices listed below.\n\n` +
-      `Fields:\n${fieldLines}\n\n` +
+      `- Include ALL field indices listed below.\n` +
+      contextBlock +
+      `\nFields:\n${fieldLines}\n\n` +
       `JSON:`
     );
   },
