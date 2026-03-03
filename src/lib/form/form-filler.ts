@@ -494,10 +494,14 @@ export async function fillContextualAI(
       (f) => !ignoredSelectors.has(f.selector),
     );
 
-    if (eligibleFields.length === 0) return [];
+    const fillableFields = settings.fillEmptyOnly
+      ? eligibleFields.filter((f) => !fieldHasValue(f))
+      : eligibleFields;
+
+    if (fillableFields.length === 0) return [];
 
     // Build compact descriptors for the AI
-    const contextInputs: FormContextFieldInput[] = eligibleFields.map(
+    const contextInputs: FormContextFieldInput[] = fillableFields.map(
       (f, i) => {
         const input: FormContextFieldInput = {
           index: i,
@@ -537,8 +541,8 @@ export async function fillContextualAI(
 
     const results: GenerationResult[] = [];
 
-    for (let i = 0; i < eligibleFields.length; i++) {
-      const field = eligibleFields[i]!;
+    for (let i = 0; i < fillableFields.length; i++) {
+      const field = fillableFields[i]!;
       const value = contextMap[String(i)];
 
       if (!value) continue;

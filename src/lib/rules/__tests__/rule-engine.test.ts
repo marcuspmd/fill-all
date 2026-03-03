@@ -8,6 +8,8 @@ const mockGetRulesForUrl = vi.fn();
 const mockGenerate = vi.fn();
 const mockGenerateWithConstraints = vi.fn();
 const mockAdaptGeneratedValue = vi.fn();
+const mockDetectDateFormat = vi.fn();
+const mockReformatDate = vi.fn();
 
 vi.mock("@/lib/storage/storage", () => ({
   getRulesForUrl: (...args: unknown[]) => mockGetRulesForUrl(...args),
@@ -21,6 +23,11 @@ vi.mock("@/lib/generators/adaptive", () => ({
   generateWithConstraints: (...args: unknown[]) =>
     mockGenerateWithConstraints(...args),
   adaptGeneratedValue: (...args: unknown[]) => mockAdaptGeneratedValue(...args),
+}));
+
+vi.mock("@/lib/generators/date", () => ({
+  detectDateFormat: (...args: unknown[]) => mockDetectDateFormat(...args),
+  reformatDate: (...args: unknown[]) => mockReformatDate(...args),
 }));
 
 function createField(overrides: Partial<FormField> = {}): FormField {
@@ -65,6 +72,8 @@ describe("rule-engine/resolveFieldValue", () => {
     mockGenerate.mockReturnValue("generated-value");
     mockGenerateWithConstraints.mockImplementation((fn: () => string) => fn());
     mockAdaptGeneratedValue.mockImplementation((value: string) => value);
+    mockDetectDateFormat.mockReturnValue("iso");
+    mockReformatDate.mockImplementation((date: string) => date);
   });
 
   it("retorna fixedValue da regra quando disponível", async () => {
@@ -543,5 +552,62 @@ describe("rule-engine/resolveFieldValue", () => {
     await resolveFieldValue(field, "https://example.com");
 
     expect(mockGenerate).toHaveBeenCalledWith("cpf", undefined);
+  });
+
+  describe("campos de data (generateDateForField)", () => {
+    it("formata data via gerador padrão quando fieldType é date", async () => {
+      const field = createField({ fieldType: "date", inputType: "text" });
+      mockGetRulesForUrl.mockResolvedValue([]);
+      mockGenerate.mockReturnValue("2024-06-15");
+      mockDetectDateFormat.mockReturnValue("br");
+      mockReformatDate.mockReturnValue("15/06/2024");
+
+      const result = await resolveFieldValue(field, "https://example.com");
+
+      expect(mockDetectDateFormat).toHaveBeenCalled();
+      expect(mockReformatDate).toHaveBeenCalledWith("2024-06-15", "br");
+      expect(result).toEqual({
+        fieldSelector: "#email",
+        value: "15/06/2024",
+        source: "generator",
+      });
+    });
+
+    it("formata data via gerador padrão quando fieldType é birth-date", async () => {
+      const field = createField({ fieldType: "birth-date" });
+      mockGetRulesForUrl.mockResolvedValue([]);
+      mockGenerate.mockReturnValue("1990-03-21");
+      mockDetectDateFormat.mockReturnValue("iso");
+      mockReformatDate.mockReturnValue("1990-03-21");
+
+      const result = await resolveFieldValue(field, "https://example.com");
+
+      expect(mockDetectDateFormat).toHaveBeenCalled();
+      expect(result).toEqual({
+        fieldSelector: "#email",
+        value: "1990-03-21",
+        source: "generator",
+      });
+    });
+
+    it("formata data via regra quando rule.generator é um tipo de data", async () => {
+      const field = createField({ fieldType: "text" });
+      mockGetRulesForUrl.mockResolvedValue([
+        createRule({ fieldType: "text", generator: "date" }),
+      ]);
+      mockGenerate.mockReturnValue("2025-01-10");
+      mockDetectDateFormat.mockReturnValue("us");
+      mockReformatDate.mockReturnValue("01/10/2025");
+
+      const result = await resolveFieldValue(field, "https://example.com");
+
+      expect(mockDetectDateFormat).toHaveBeenCalled();
+      expect(mockReformatDate).toHaveBeenCalledWith("2025-01-10", "us");
+      expect(result).toEqual({
+        fieldSelector: "#email",
+        value: "01/10/2025",
+        source: "generator",
+      });
+    });
   });
 });

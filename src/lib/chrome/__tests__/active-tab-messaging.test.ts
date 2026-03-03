@@ -119,4 +119,56 @@ describe("active-tab-messaging", () => {
       error: "Content script not responding",
     });
   });
+
+  it("envia mensagem para tab ativa sem injeção (default)", async () => {
+    // Arrange
+    mockQuery.mockResolvedValue([{ id: 5, url: "https://site.com" }]);
+    mockSendMessage.mockResolvedValue({ ok: true });
+
+    // Act
+    const result = await sendToActiveTab(message);
+
+    // Assert
+    expect(mockSendMessage).toHaveBeenCalledWith(5, message);
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("retorna firstTry imediatamente quando sendToTabWithInjection não precisa injetar", async () => {
+    // Arrange - first attempt succeeds (returns non-error value)
+    mockSendMessage.mockResolvedValue({ immediate: true });
+
+    // Act
+    const result = await sendToTabWithInjection(
+      33,
+      "https://example.com",
+      message,
+    );
+
+    // Assert
+    expect(result).toEqual({ immediate: true });
+  });
+
+  it("sendToSpecificTab com injectIfNeeded: true usa sendToTabWithInjection", async () => {
+    // Arrange
+    const scripting = (
+      chrome as unknown as {
+        scripting: { executeScript: ReturnType<typeof vi.fn> };
+      }
+    ).scripting;
+    mockSendMessage
+      .mockRejectedValueOnce(new Error("not ready"))
+      .mockResolvedValueOnce({ injected: true });
+
+    // Act
+    const result = await sendToSpecificTab(77, "https://example.com", message, {
+      injectIfNeeded: true,
+    });
+
+    // Assert
+    expect(scripting.executeScript).toHaveBeenCalledWith({
+      target: { tabId: 77 },
+      files: ["content-script.js"],
+    });
+    expect(result).toEqual({ injected: true });
+  });
 });

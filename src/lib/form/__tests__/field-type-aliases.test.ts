@@ -163,9 +163,26 @@ describe("deriveFieldValueFromTemplate", () => {
       );
     });
 
+    it("derives whatsapp from phone when mobile is absent", () => {
+      const values = makeValues([["phone", "1133334444"]]);
+      expect(deriveFieldValueFromTemplate("whatsapp", values)).toBe(
+        "1133334444",
+      );
+    });
+
     it("returns null for phone when no related type exists", () => {
       const values = makeValues([["email", "test@example.com"]]);
       expect(deriveFieldValueFromTemplate("phone", values)).toBeNull();
+    });
+
+    it("returns null for mobile when no related type exists", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("mobile", values)).toBeNull();
+    });
+
+    it("returns null for whatsapp when no related type exists", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("whatsapp", values)).toBeNull();
     });
   });
 
@@ -197,6 +214,16 @@ describe("deriveFieldValueFromTemplate", () => {
       const values = makeValues([["zip-code", "01310-100"]]);
       expect(deriveFieldValueFromTemplate("cep", values)).toBe("01310-100");
     });
+
+    it("returns null for zip-code when cep is absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("zip-code", values)).toBeNull();
+    });
+
+    it("returns null for cep when zip-code is absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("cep", values)).toBeNull();
+    });
   });
 
   describe("financial group", () => {
@@ -210,9 +237,24 @@ describe("deriveFieldValueFromTemplate", () => {
       expect(deriveFieldValueFromTemplate("price", values)).toBe("150.00");
     });
 
+    it("returns null for price when money and amount are absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("price", values)).toBeNull();
+    });
+
     it("derives money from price", () => {
       const values = makeValues([["price", "49.99"]]);
       expect(deriveFieldValueFromTemplate("money", values)).toBe("49.99");
+    });
+
+    it("derives money from amount when price is absent", () => {
+      const values = makeValues([["amount", "300.00"]]);
+      expect(deriveFieldValueFromTemplate("money", values)).toBe("300.00");
+    });
+
+    it("returns null for money when price and amount are absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("money", values)).toBeNull();
     });
 
     it("derives amount from money", () => {
@@ -223,6 +265,11 @@ describe("deriveFieldValueFromTemplate", () => {
     it("derives amount from price when money is absent", () => {
       const values = makeValues([["price", "199.00"]]);
       expect(deriveFieldValueFromTemplate("amount", values)).toBe("199.00");
+    });
+
+    it("returns null for amount when money and price are absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("amount", values)).toBeNull();
     });
   });
 
@@ -255,9 +302,24 @@ describe("deriveFieldValueFromTemplate", () => {
       );
     });
 
-    it("returns null for date variants when date is absent", () => {
+    it("returns null for birth-date when date is absent", () => {
       const values = makeValues([["email", "test@example.com"]]);
       expect(deriveFieldValueFromTemplate("birth-date", values)).toBeNull();
+    });
+
+    it("returns null for start-date when date is absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("start-date", values)).toBeNull();
+    });
+
+    it("returns null for end-date when date is absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("end-date", values)).toBeNull();
+    });
+
+    it("returns null for due-date when date is absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("due-date", values)).toBeNull();
     });
   });
 
@@ -275,6 +337,16 @@ describe("deriveFieldValueFromTemplate", () => {
         "Notebook Pro",
       );
     });
+
+    it("returns null for product-name when product is absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("product-name", values)).toBeNull();
+    });
+
+    it("returns null for product when product-name is absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("product", values)).toBeNull();
+    });
   });
 
   describe("company group", () => {
@@ -290,6 +362,16 @@ describe("deriveFieldValueFromTemplate", () => {
       expect(deriveFieldValueFromTemplate("company", values)).toBe(
         "Distribuidora XYZ",
       );
+    });
+
+    it("returns null for supplier when company is absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("supplier", values)).toBeNull();
+    });
+
+    it("returns null for company when supplier is absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("company", values)).toBeNull();
     });
   });
 
@@ -316,6 +398,11 @@ describe("deriveFieldValueFromTemplate", () => {
       expect(deriveFieldValueFromTemplate("cpf-cnpj", values)).toBe(
         "123.456.789-09",
       );
+    });
+
+    it("returns null for cpf-cnpj when cpf and cnpj are absent", () => {
+      const values = makeValues([["email", "test@example.com"]]);
+      expect(deriveFieldValueFromTemplate("cpf-cnpj", values)).toBeNull();
     });
   });
 

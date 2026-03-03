@@ -117,6 +117,21 @@ describe("validateClassifier", () => {
     vi.mocked(checkDatasetHealth).mockReturnValue(mockHealth);
   });
 
+  it("usa thresholds padrão quando chamado sem argumentos", () => {
+    // Arrange
+    vi.mocked(evaluateClassifier).mockReturnValue({
+      ...mockEvalResult,
+      globalAccuracy: 0.9,
+    });
+
+    // Act — call without arguments to cover the default parameter branch
+    const report = validateClassifier();
+
+    // Assert
+    expect(report.globalAccuracy).toBe(0.9);
+    expect(report.passesGlobalThreshold).toBeDefined();
+  });
+
   it("retorna globalAccuracy correto quando acima do threshold", () => {
     // Arrange
     vi.mocked(evaluateClassifier).mockReturnValue({

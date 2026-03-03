@@ -10,6 +10,7 @@ const {
   mockResolveFieldValue,
   mockIsChromeAiAvailable,
   mockChromeAiGenerate,
+  mockGenerateFormContextValuesViaProxy,
   mockTensorFlowGenerate,
   mockGetSettings,
   mockGetIgnoredFieldsForUrl,
@@ -34,6 +35,7 @@ const {
     mockResolveFieldValue: vi.fn(),
     mockIsChromeAiAvailable: vi.fn().mockResolvedValue(false),
     mockChromeAiGenerate: vi.fn(),
+    mockGenerateFormContextValuesViaProxy: vi.fn().mockResolvedValue({}),
     mockTensorFlowGenerate: vi.fn(),
     mockGetSettings: vi.fn(),
     mockGetIgnoredFieldsForUrl: vi.fn().mockResolvedValue([]),
@@ -54,6 +56,7 @@ vi.mock("@/lib/rules/rule-engine", () => ({
 vi.mock("@/lib/ai/chrome-ai-proxy", () => ({
   isAvailableViaProxy: mockIsChromeAiAvailable,
   generateFieldValueViaProxy: mockChromeAiGenerate,
+  generateFormContextValuesViaProxy: mockGenerateFormContextValuesViaProxy,
 }));
 vi.mock("@/lib/ai/tensorflow-generator", () => ({
   generateWithTensorFlow: mockTensorFlowGenerate,
@@ -149,6 +152,7 @@ import {
   applyTemplate,
   captureFormValues,
   fillAllFields,
+  fillContextualAI,
   fillSingleField,
 } from "../form-filler";
 
@@ -551,6 +555,164 @@ describe("form-filler", () => {
       const { filled } = await applyTemplate(form);
 
       expect(filled).toBe(0);
+    });
+  });
+
+  // ── fillContextualAI ───────────────────────────────────────────────────────
+
+  describe("fillContextualAI", () => {
+    it("fills fields using values from contextMap", async () => {
+      const el = makeInput("text", "name-field");
+      const field = makeField(el, {
+        selector: "#name-field",
+        fieldType: "name",
+      });
+
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockGenerateFormContextValuesViaProxy.mockResolvedValue({
+        "0": "João Silva",
+      });
+
+      const results = await fillContextualAI();
+
+      expect(results).toHaveLength(1);
+      expect(results[0]!.value).toBe("João Silva");
+      expect(el.value).toBe("João Silva");
+    });
+
+    it("returns empty array when no fields detected", async () => {
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [] });
+
+      const results = await fillContextualAI();
+
+      expect(results).toHaveLength(0);
+      expect(mockGenerateFormContextValuesViaProxy).not.toHaveBeenCalled();
+    });
+
+    it("skips ignored fields", async () => {
+      const el1 = makeInput("text", "normal-field");
+      const el2 = makeInput("text", "ignored-field");
+      const field1 = makeField(el1, { selector: "#normal-field" });
+      const field2 = makeField(el2, { selector: "#ignored-field" });
+
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field1, field2] });
+      mockGetIgnoredFieldsForUrl.mockResolvedValue([
+        { selector: "#ignored-field", label: "Ignored", urlPattern: "*" },
+      ]);
+      mockGenerateFormContextValuesViaProxy.mockResolvedValue({ "0": "value" });
+
+      const results = await fillContextualAI();
+
+      // Only field1 should be in contextInputs (index 0)
+      expect(results).toHaveLength(1);
+      expect(results[0]!.fieldSelector).toBe("#normal-field");
+      expect(el2.value).toBe("");
+    });
+
+    it("returns empty when all fields are ignored", async () => {
+      const el = makeInput("text", "only-field");
+      const field = makeField(el, { selector: "#only-field" });
+
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockGetIgnoredFieldsForUrl.mockResolvedValue([
+        { selector: "#only-field", label: "Only", urlPattern: "*" },
+      ]);
+
+      const results = await fillContextualAI();
+
+      expect(results).toHaveLength(0);
+      expect(mockGenerateFormContextValuesViaProxy).not.toHaveBeenCalled();
+    });
+
+    it("skips fields with values when fillEmptyOnly=true", async () => {
+      const el1 = makeInput("text", "empty-field");
+      const el2 = makeInput("text", "filled-field");
+      el2.value = "already filled";
+      const field1 = makeField(el1, { selector: "#empty-field" });
+      const field2 = makeField(el2, { selector: "#filled-field" });
+
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field1, field2] });
+      mockGetSettings.mockResolvedValue({
+        ...DEFAULT_SETTINGS,
+        fillEmptyOnly: true,
+      });
+      mockGenerateFormContextValuesViaProxy.mockResolvedValue({
+        "0": "new value",
+      });
+
+      const results = await fillContextualAI();
+
+      // Only empty field1 should be filled (index 0)
+      expect(results).toHaveLength(1);
+      expect(results[0]!.fieldSelector).toBe("#empty-field");
+      expect(el2.value).toBe("already filled");
+      // AI receives only 1 field (the empty one)
+      expect(mockGenerateFormContextValuesViaProxy).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ index: 0 })]),
+        undefined,
+        undefined,
+        undefined,
+      );
+      expect(
+        mockGenerateFormContextValuesViaProxy.mock.calls[0]![0],
+      ).toHaveLength(1);
+    });
+
+    it("returns empty when all fields are pre-filled and fillEmptyOnly=true", async () => {
+      const el = makeInput("text", "pre-filled");
+      el.value = "has value";
+      const field = makeField(el, { selector: "#pre-filled" });
+
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockGetSettings.mockResolvedValue({
+        ...DEFAULT_SETTINGS,
+        fillEmptyOnly: true,
+      });
+
+      const results = await fillContextualAI();
+
+      expect(results).toHaveLength(0);
+      expect(mockGenerateFormContextValuesViaProxy).not.toHaveBeenCalled();
+    });
+
+    it("falls back to fillAllFields when AI returns empty contextMap", async () => {
+      const el = makeInput("text", "fallback-field");
+      const field = makeField(el, {
+        selector: "#fallback-field",
+        fieldType: "email",
+      });
+
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockGenerateFormContextValuesViaProxy.mockResolvedValue({});
+
+      // fillAllFields fallback uses streamAllFields
+      mockStreamAllFields.mockImplementation(async function* () {
+        yield field;
+      });
+      mockResolveFieldValue.mockResolvedValue({
+        fieldSelector: "#fallback-field",
+        value: "fallback@test.com",
+        source: "generator",
+      });
+
+      const results = await fillContextualAI();
+
+      expect(results).toHaveLength(1);
+      expect(results[0]!.source).toBe("generator");
+    });
+
+    it("always calls setFillingInProgress(false) even when AI throws", async () => {
+      const el = makeInput("text", "err-field-ai");
+      const field = makeField(el, { selector: "#err-field-ai" });
+
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockGenerateFormContextValuesViaProxy.mockRejectedValue(
+        new Error("AI unavailable"),
+      );
+
+      await expect(fillContextualAI()).rejects.toThrow("AI unavailable");
+
+      expect(mockSetFillingInProgress).toHaveBeenCalledWith(false);
     });
   });
 });

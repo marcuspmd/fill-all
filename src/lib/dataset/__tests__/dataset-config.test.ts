@@ -91,4 +91,40 @@ describe("dataset-config", () => {
       report.underrepresentedTypes.every((t) => typeof t === "string"),
     ).toBe(true);
   });
+
+  it("augmentTypo não altera palavras curtas (≤2 chars)", () => {
+    // Word "ab" has length 2, so the typo branch is skipped
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    const result = augmentTypo("ab");
+
+    expect(result).toBe("ab");
+
+    vi.restoreAllMocks();
+  });
+
+  it("augmentDrop retorna ao menos uma palavra quando todas são descartadas", () => {
+    // Math.random() = 0 → all words fail the 'Math.random() > dropRate' check
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    const result = augmentDrop("word1 word2 word3", 0.5);
+
+    // All dropped → fallback to words[0]
+    expect(result).toBe("word1");
+
+    vi.restoreAllMocks();
+  });
+
+  it("normalizeSignals ignora argumentos undefined no meio", () => {
+    const result = normalizeSignals(
+      undefined,
+      "myName",
+      undefined,
+      undefined,
+      "email",
+      undefined,
+    );
+
+    expect(result).toBe("myname email");
+  });
 });
