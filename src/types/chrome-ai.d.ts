@@ -12,13 +12,15 @@ type LanguageModelAvailability =
   | "downloading"
   | "unavailable";
 
-interface LanguageModelAvailabilityOptions {
-  model?: string;
-  outputLanguage?: string;
-}
-
 interface LanguageModelExpectedInput {
   type: "text" | "image" | "audio";
+  languages?: string[];
+}
+
+interface LanguageModelAvailabilityOptions {
+  model?: string;
+  expectedInputs?: LanguageModelExpectedInput[];
+  expectedOutputs?: LanguageModelExpectedInput[];
 }
 
 interface LanguageModelCreateOptions {
@@ -31,15 +33,17 @@ interface LanguageModelCreateOptions {
   topK?: number;
   temperature?: number;
   signal?: AbortSignal;
-  outputLanguage?: string;
   monitor?: (monitor: EventTarget) => void;
-  /** Declare multimodal input types the session should support (e.g. image). */
+  /** Declare input modalities and languages the session should support. */
   expectedInputs?: LanguageModelExpectedInput[];
+  /** Declare output modalities and languages the session should produce. */
+  expectedOutputs?: LanguageModelExpectedInput[];
 }
 
 interface LanguageModelPromptOptions {
   signal?: AbortSignal;
-  outputLanguage?: string;
+  responseConstraint?: object;
+  omitResponseConstraintInput?: boolean;
 }
 
 // ── Multimodal content parts (Chrome AI Prompt API) ───────────────────────────

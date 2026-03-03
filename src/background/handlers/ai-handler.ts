@@ -83,7 +83,10 @@ async function getOrCreateClassifierSession(): Promise<LanguageModelSession | nu
       return null;
     }
 
-    const avail = await api.availability({ outputLanguage: "en" });
+    const avail = await api.availability({
+      expectedInputs: [{ type: "text", languages: ["en"] }],
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
+    });
     if (avail === "unavailable") {
       log.warn(
         `Chrome AI indisponível para classificação (status: "${avail}").`,
@@ -93,7 +96,9 @@ async function getOrCreateClassifierSession(): Promise<LanguageModelSession | nu
     }
 
     log.debug(`Criando sessão de classificação (availability: "${avail}")...`);
-    classifierSession = await api.create({ outputLanguage: "en" });
+    classifierSession = await api.create({
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
+    });
     log.info("Sessão Chrome AI Classifier (background) criada com sucesso.");
     sessionFailedAt = null;
     return classifierSession;
@@ -121,7 +126,6 @@ async function classifyField(
   try {
     raw = await session.prompt(prompt, {
       signal: controller.signal,
-      outputLanguage: "en",
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {

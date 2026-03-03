@@ -66,7 +66,10 @@ async function getOrCreateSession(): Promise<LanguageModelSession | null> {
       return null;
     }
 
-    const avail = await api.availability({ outputLanguage: "en" });
+    const avail = await api.availability({
+      expectedInputs: [{ type: "text", languages: ["en"] }],
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
+    });
     if (avail === "unavailable") {
       log.warn(`Chrome AI indisponível (status: "${avail}").`);
       sessionFailedAt = Date.now();
@@ -81,7 +84,7 @@ async function getOrCreateSession(): Promise<LanguageModelSession | null> {
       systemPrompt,
       temperature: OPTIMIZER_TEMPERATURE,
       topK: 1,
-      outputLanguage: "en",
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
     });
 
     log.info("Sessão Chrome AI ScriptOptimizer criada com sucesso.");
@@ -140,7 +143,6 @@ export async function optimizeScript(
   try {
     raw = await session.prompt(prompt, {
       signal: controller.signal,
-      outputLanguage: "en",
     });
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {

@@ -282,7 +282,10 @@ async function checkChromeAiStatus(): Promise<void> {
   }
 
   try {
-    const result = await LanguageModel.availability?.({ outputLanguage: "en" });
+    const result = await LanguageModel.availability?.({
+      expectedInputs: [{ type: "text", languages: ["en"] }],
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
+    });
     if (result === "available") {
       statusText.innerHTML = `<strong style="color: var(--success)">✅ ${t("chromeAiReady")}</strong>`;
       if (downloadBtn) downloadBtn.style.display = "none";
@@ -459,11 +462,17 @@ function bindSettingsEvents(): void {
     ?.addEventListener("click", async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const LanguageModel = (globalThis as any).LanguageModel as
-        | { create?: (opts?: { outputLanguage?: string }) => Promise<unknown> }
+        | {
+            create?: (opts?: {
+              expectedOutputs?: { type: string; languages?: string[] }[];
+            }) => Promise<unknown>;
+          }
         | undefined;
       if (!LanguageModel?.create) return;
       try {
-        await LanguageModel.create({ outputLanguage: "en" });
+        await LanguageModel.create({
+          expectedOutputs: [{ type: "text", languages: ["en"] }],
+        });
         void checkChromeAiStatus();
         showToast(t("chromeAiDownloadStart"));
       } catch (err) {

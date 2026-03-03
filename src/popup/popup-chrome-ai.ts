@@ -43,7 +43,8 @@ export async function initChromeAIStatus(): Promise<void> {
     let availability: string;
     if (newApi) {
       availability = await newApi.availability({
-        outputLanguage: "en",
+        expectedInputs: [{ type: "text", languages: ["en"] }],
+        expectedOutputs: [{ type: "text", languages: ["en"] }],
       });
     } else {
       availability = "unavailable";
@@ -72,7 +73,9 @@ export async function initChromeAIStatus(): Promise<void> {
         downloadBtn.disabled = true;
         downloadBtn.textContent = t("chromeAiDownloadingBtn");
         try {
-          const session = await newApi!.create({ outputLanguage: "en" });
+          const session = await newApi!.create({
+            expectedOutputs: [{ type: "text", languages: ["en"] }],
+          });
           session.destroy();
           banner.className = "chrome-ai-banner chrome-ai-banner--ready";
           iconEl.textContent = "🤖";

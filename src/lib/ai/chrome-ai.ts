@@ -54,7 +54,10 @@ export async function isAvailable(): Promise<boolean> {
       );
       return false;
     }
-    const result = await api.availability({ outputLanguage: "en" });
+    const result = await api.availability({
+      expectedInputs: [{ type: "text", languages: ["en"] }],
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
+    });
     log.debug(`availability() retornou: "${result}"`);
     const available = result === "available" || result === "downloadable";
     if (!available) {
@@ -107,14 +110,20 @@ export async function getSession(): Promise<LanguageModelSession | null> {
     return null;
   }
 
-  const avail = await api.availability({ outputLanguage: "en" });
+  const avail = await api.availability({
+    expectedInputs: [{ type: "text", languages: ["en"] }],
+    expectedOutputs: [{ type: "text", languages: ["en"] }],
+  });
   if (avail === "unavailable") {
     log.warn(
       "Chrome AI indisponível (status: unavailable) — sessão não criada.",
     );
     return null;
   }
-  session = await api.create({ systemPrompt, outputLanguage: "en" });
+  session = await api.create({
+    systemPrompt,
+    expectedOutputs: [{ type: "text", languages: ["en"] }],
+  });
   log.debug("Sessão criada com sucesso.");
   return session!;
 }
@@ -156,7 +165,7 @@ export async function generateFieldValue(field: FormField): Promise<string> {
 
   let result: string;
   try {
-    result = await aiSession.prompt(prompt, { outputLanguage: "en" });
+    result = await aiSession.prompt(prompt);
   } catch (err) {
     log.warn("Erro ao gerar valor com Chrome AI — destruindo sessão:", err);
     session?.destroy();
@@ -195,7 +204,7 @@ export async function generateFieldValueFromInput(
 
   let result: string;
   try {
-    result = await aiSession.prompt(prompt, { outputLanguage: "en" });
+    result = await aiSession.prompt(prompt);
   } catch (err) {
     log.warn(
       "Erro ao gerar valor via input (Chrome AI) — destruindo sessão:",
@@ -274,8 +283,11 @@ export async function generateFormContextValues(
         log.debug("Criando sessão com suporte a imagens...");
         tempSession = await api.create({
           systemPrompt: renderSystemPrompt(fieldValueGeneratorPrompt),
-          outputLanguage: "en",
-          expectedInputs: [{ type: "image" }],
+          expectedInputs: [
+            { type: "text", languages: ["en"] },
+            { type: "image" },
+          ],
+          expectedOutputs: [{ type: "text", languages: ["en"] }],
           // Low temperature + topK=1: model must extract from the image,
           // not hallucinate. When visual context is present, creativity
           // is a bug, not a feature.
@@ -325,7 +337,7 @@ export async function generateFormContextValues(
 
   let raw: string;
   try {
-    raw = await promptSession!.prompt(promptInput, { outputLanguage: "en" });
+    raw = await promptSession!.prompt(promptInput);
   } catch (err) {
     log.warn("Erro ao gerar contexto de formulário — destruindo sessão:", err);
     if (tempSession) {
