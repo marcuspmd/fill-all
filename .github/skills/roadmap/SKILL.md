@@ -1,7 +1,6 @@
 ---
 name: roadmap
 description: 'Skill para planejamento de roadmap, gestão de features, milestones e priorização de tarefas do projeto Fill All.'
-applyTo: '**'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: planning
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Roadmap & Planejamento

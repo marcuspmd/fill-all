@@ -1,7 +1,6 @@
 ---
 name: security-audit
 description: 'Skill para auditoria de segurança em código de extensão Chrome — CSP, permissões, sanitização, storage e comunicação.'
-applyTo: '**'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: security
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Auditoria de Segurança

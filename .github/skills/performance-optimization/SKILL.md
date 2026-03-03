@@ -1,7 +1,6 @@
 ---
 name: performance-optimization
 description: 'Skill para otimização de performance em content scripts de extensão Chrome — hot paths, DOM, MutationObserver e memória.'
-applyTo: 'src/content/**'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: performance
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Otimização de Performance

@@ -1,7 +1,6 @@
 ---
 name: refactor-safe
 description: 'Skill para refatorações seguras com scripts de validação antes/depois — garantindo zero regressão.'
-applyTo: '**'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: development-workflow
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Refatoração Segura

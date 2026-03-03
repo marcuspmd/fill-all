@@ -1,7 +1,6 @@
 ---
 name: test-regression
 description: 'Skill para validação de regressão em testes — verificar que mudanças não quebraram funcionalidades existentes.'
-applyTo: '**'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: testing
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Validação de Regressão em Testes

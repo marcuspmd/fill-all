@@ -1,7 +1,6 @@
 ---
 name: debug-investigation
 description: 'Skill para investigação e debug sistemático de bugs — reproduzir, isolar, corrigir e validar com scripts.'
-applyTo: '**'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: debugging
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Debug & Investigação Sistemática

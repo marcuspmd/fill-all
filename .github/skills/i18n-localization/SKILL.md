@@ -1,7 +1,6 @@
 ---
 name: i18n-localization
 description: 'Skill para gerenciamento de internacionalização (i18n) — traduções, chaves de locale, chrome.i18n API e boas práticas.'
-applyTo: '_locales/**'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: localization
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Internacionalização (i18n)

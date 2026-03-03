@@ -1,7 +1,6 @@
 ---
 name: dependency-management
 description: 'Skill para gerenciamento seguro de dependências npm — auditoria, atualização, lock files e breaking changes.'
-applyTo: 'package.json'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: maintenance
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Gerenciamento de Dependências

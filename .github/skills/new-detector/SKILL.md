@@ -1,7 +1,6 @@
 ---
 name: new-detector
 description: 'Skill para criar novos detectores e classificadores de campo seguindo as convenções do projeto Fill All.'
-applyTo: 'src/lib/form/detectors/**'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: scaffolding
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Criar Novo Detector / Classificador

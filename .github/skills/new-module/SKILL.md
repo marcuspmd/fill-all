@@ -1,7 +1,6 @@
 ---
 name: new-module
 description: 'Skill para criar um novo módulo em src/lib/ do zero — scaffolding, estrutura, testes, barrel exports e validação.'
-applyTo: 'src/lib/**'
 license: MIT
 compatibility: 'Node.js 18+, TypeScript 5.x, Chrome Extension Manifest V3'
 metadata:
@@ -9,7 +8,6 @@ metadata:
   version: "1.0"
   project: fill-all
   category: scaffolding
-allowed-tools: Read Write Bash
 ---
 
 # Skill: Criar Novo Módulo
