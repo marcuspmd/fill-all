@@ -125,6 +125,11 @@ describe("generate<Nome>", () => {
 ### 5. Validar
 
 ```bash
+# Validação rápida com script do projeto
+./scripts/validate-step.sh types unit
+
+# Ou comandos individuais:
+
 # Verificar tipos
 npm run type-check
 

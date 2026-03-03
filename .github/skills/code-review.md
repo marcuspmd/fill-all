@@ -133,7 +133,14 @@ Sugestão: renomear para `processFieldData()` ou similar.
 3. **Revisar código** — seguir checklist acima
 4. **Testar localmente** (se necessário):
    ```bash
-   npm run type-check && npm test
+   # Validação rápida
+   ./scripts/validate-step.sh types unit
+
+   # Validação completa
+   ./scripts/validate-step.sh types unit build
+
+   # Comparar com baseline (se havia snapshot salvo)
+   ./scripts/snapshot-health.sh --compare
    ```
 5. **Deixar feedback** — usar template de comentário com severidade
 6. **Aprovar ou solicitar mudanças** — baseado na severidade encontrada

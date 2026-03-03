@@ -195,6 +195,11 @@ describe("<nome>Classifier", () => {
 ### 6. Validar
 
 ```bash
+# Validação rápida com script do projeto
+./scripts/validate-step.sh types unit
+
+# Ou comandos individuais:
+
 # Verificar tipos
 npm run type-check
 

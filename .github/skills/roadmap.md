@@ -108,6 +108,19 @@ Antes de considerar uma feature como "pronta":
 - **Build**: zero warnings (`npm run build`)
 - **Accuracy do classificador**: reportado por `evaluateClassifier()` no dataset
 
+### Scripts de Validação
+
+```bash
+# Validação step-by-step (selecione os steps necessários)
+./scripts/validate-step.sh types unit build
+
+# Capturar baseline antes de iniciar uma feature
+./scripts/snapshot-health.sh --save
+
+# Comparar após entregar a feature
+./scripts/snapshot-health.sh --compare
+```
+
 ### Revisão de Roadmap
 
 Revisar o roadmap periodicamente verificando:

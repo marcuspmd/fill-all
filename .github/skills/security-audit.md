@@ -143,6 +143,9 @@ Geradores produzem dados fictícios que podem ser sensíveis:
 ## Ferramentas de Verificação
 
 ```bash
+# Validação completa do projeto com script
+./scripts/validate-step.sh types unit build
+
 # Type-check encontra uso incorreto de tipos
 npm run type-check
 

@@ -192,6 +192,44 @@ open coverage/index.html
 
 ## Automação
 
+### Scripts de Validação do Projeto
+
+O projeto inclui scripts dedicados para automação de validações:
+
+```bash
+# ─── validate-step.sh ─── Validação step-by-step com feedback colorido
+
+# Validação rápida (após cada mudança)
+./scripts/validate-step.sh types
+
+# Validação média (antes de commit)
+./scripts/validate-step.sh types unit
+
+# Validação completa (antes de PR/merge)
+./scripts/validate-step.sh types unit build
+
+# Validação com E2E (mudanças DOM)
+./scripts/validate-step.sh types unit build e2e
+
+# ─── snapshot-health.sh ─── Captura e comparação de saúde do projeto
+
+# ANTES de fazer mudanças — salvar baseline
+./scripts/snapshot-health.sh --save
+
+# DEPOIS de fazer mudanças — comparar com baseline
+./scripts/snapshot-health.sh --compare
+```
+
+### npm scripts convenientes
+
+```bash
+npm run validate:quick    # types + unit
+npm run validate          # types + unit + build
+npm run validate:full     # types + unit + build + e2e
+npm run health:save       # Salvar baseline
+npm run health:compare    # Comparar com baseline
+```
+
 ### Script de Validação Completa
 
 ```bash
