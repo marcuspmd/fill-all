@@ -18,7 +18,13 @@
     "test:e2e:coverage": "VITE_COVERAGE=true npm run build && playwright test",
     "test:all": "vitest run && playwright test",
     "coverage:merge": "tsx --tsconfig tsconfig.json scripts/merge-coverage.ts",
-    "coverage:all": "npm run test:coverage && npm run test:e2e:coverage && npm run coverage:merge"
+    "coverage:all": "npm run test:coverage && npm run test:e2e:coverage && npm run coverage:merge",
+    "validate": "bash scripts/validate-step.sh types unit build",
+    "validate:quick": "bash scripts/validate-step.sh types unit",
+    "validate:full": "bash scripts/validate-step.sh types unit build e2e",
+    "health": "bash scripts/snapshot-health.sh",
+    "health:save": "bash scripts/snapshot-health.sh --save",
+    "health:compare": "bash scripts/snapshot-health.sh --compare"
   },
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
