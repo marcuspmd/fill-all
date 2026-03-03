@@ -7,7 +7,11 @@
 
 import type { MessageHandler } from "@/types/interfaces";
 import type { ExtensionMessage, MessageType } from "@/types";
-import { isAvailable, generateFieldValueFromInput } from "@/lib/ai/chrome-ai";
+import {
+  isAvailable,
+  generateFieldValueFromInput,
+  generateFormContextValues,
+} from "@/lib/ai/chrome-ai";
 import { optimizeScript } from "@/lib/ai/script-optimizer";
 import type { ScriptOptimizerInput } from "@/lib/ai/prompts/script-optimizer.prompt";
 import {
@@ -15,6 +19,7 @@ import {
   type FieldClassifierInput,
   type FieldClassifierOutput,
   type FieldValueInput,
+  type FormContextFieldInput,
 } from "@/lib/ai/prompts";
 import { createLogger } from "@/lib/logger";
 
@@ -25,6 +30,7 @@ const SUPPORTED: ReadonlyArray<MessageType> = [
   "AI_CLASSIFY_FIELD",
   "AI_GENERATE",
   "AI_OPTIMIZE_SCRIPT",
+  "AI_GENERATE_FORM_CONTEXT",
 ];
 
 // ── Classifier session management ─────────────────────────────────────────────
@@ -169,6 +175,15 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
         return null;
       }
       return optimizeScript(payload);
+    }
+
+    case "AI_GENERATE_FORM_CONTEXT": {
+      const fields = message.payload as FormContextFieldInput[] | undefined;
+      if (!Array.isArray(fields) || fields.length === 0) {
+        log.warn("AI_GENERATE_FORM_CONTEXT recebido sem campos.");
+        return null;
+      }
+      return generateFormContextValues(fields);
     }
 
     default:

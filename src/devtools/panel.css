@@ -186,6 +186,15 @@ body {
   border-color: var(--warning);
 }
 
+.action-card.ai {
+  background: rgba(129, 140, 248, 0.12);
+  border-color: #818cf8;
+}
+
+.action-card.ai:hover {
+  background: rgba(129, 140, 248, 0.22);
+}
+
 .card-icon {
   font-size: 20px;
 }

@@ -267,6 +267,15 @@ body {
   border-color: var(--warning);
 }
 
+.action-card.ai {
+  background: #f0f4ff;
+  border-color: #818cf8;
+}
+
+.action-card.ai:hover {
+  background: #e0e7ff;
+}
+
 .card-icon {
   font-size: 18px;
 }

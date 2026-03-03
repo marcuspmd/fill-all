@@ -14,7 +14,9 @@ import { resolveFieldValue } from "@/lib/rules/rule-engine";
 import {
   generateFieldValueViaProxy as chromeAiGenerate,
   isAvailableViaProxy as isChromeAiAvailable,
+  generateFormContextValuesViaProxy,
 } from "@/lib/ai/chrome-ai-proxy";
+import type { FormContextFieldInput } from "@/lib/ai/prompts";
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
 import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
@@ -441,6 +443,109 @@ export async function fillSingleField(
       error,
     );
     return null;
+  }
+}
+
+/**
+ * Fills all form fields on the page using Chrome AI contextual generation.
+ * All values are generated in a single AI call, producing a cohesive fictional
+ * identity (same person/company across every field).
+ * Falls back to {@link fillAllFields} if AI is unavailable or returns no data.
+ * @returns Array of generation results for each filled field
+ */
+export async function fillContextualAI(): Promise<GenerationResult[]> {
+  setFillingInProgress(true);
+  try {
+    const { fields } = await detectAllFieldsAsync();
+    if (fields.length === 0) return [];
+
+    const url = window.location.href;
+    const settings = await getSettings();
+    const ignoredFields = await getIgnoredFieldsForUrl(url);
+    const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
+
+    const eligibleFields = fields.filter(
+      (f) => !ignoredSelectors.has(f.selector),
+    );
+
+    if (eligibleFields.length === 0) return [];
+
+    // Build compact descriptors for the AI
+    const contextInputs: FormContextFieldInput[] = eligibleFields.map(
+      (f, i) => {
+        const input: FormContextFieldInput = {
+          index: i,
+          label: f.label ?? f.name ?? f.id ?? undefined,
+          fieldType: f.fieldType,
+          inputType:
+            f.element instanceof HTMLInputElement
+              ? f.element.type || "text"
+              : undefined,
+        };
+
+        if (f.element instanceof HTMLSelectElement) {
+          const opts = Array.from(f.element.options)
+            .filter((o) => o.value.trim().length > 0)
+            .map((o) => o.text.trim() || o.value)
+            .slice(0, 6);
+          if (opts.length > 0) return { ...input, options: opts };
+        }
+
+        return input;
+      },
+    );
+
+    const contextMap = await generateFormContextValuesViaProxy(contextInputs);
+
+    if (!contextMap || Object.keys(contextMap).length === 0) {
+      log.warn(
+        "fillContextualAI: AI não retornou valores, usando fallback fillAllFields",
+      );
+      return fillAllFields();
+    }
+
+    const results: GenerationResult[] = [];
+
+    for (let i = 0; i < eligibleFields.length; i++) {
+      const field = eligibleFields[i]!;
+      const value = contextMap[String(i)];
+
+      if (!value) continue;
+
+      try {
+        await applyValueToField(field, value);
+
+        logAuditFill({
+          selector: field.selector,
+          fieldType: field.fieldType,
+          source: "ai",
+          value,
+        });
+
+        if (settings.highlightFilled) {
+          highlightField(
+            field.element,
+            field.label ?? field.fieldType ?? undefined,
+          );
+        }
+
+        if (settings.showAiBadge) {
+          showAiFieldBadge(field.element);
+        }
+
+        results.push({
+          fieldSelector: field.selector,
+          value,
+          source: "ai",
+        });
+      } catch (err) {
+        log.warn(`fillContextualAI: falhou no campo ${field.selector}:`, err);
+      }
+    }
+
+    return results;
+  } finally {
+    setFillingInProgress(false);
   }
 }
 

@@ -149,6 +149,12 @@
   "fillAllDesc": {
     "message": "Preenche todos os campos detectados"
   },
+  "fillContextualAI": {
+    "message": "Preencher com IA"
+  },
+  "fillContextualAIDesc": {
+    "message": "Gera valores coerentes para todo o formulário de uma só vez"
+  },
   "fillOnlyEmpty": {
     "message": "Preencher Vazios"
   },

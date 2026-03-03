@@ -14,6 +14,8 @@ import type {
   FieldClassifierInput,
   FieldClassifierOutput,
   FieldValueInput,
+  FormContextFieldInput,
+  FormContextOutput,
 } from "@/lib/ai/prompts";
 import type { ScriptOptimizerInput } from "@/lib/ai/prompts/script-optimizer.prompt";
 import { createLogger } from "@/lib/logger";
@@ -124,6 +126,35 @@ export async function optimizeScriptViaProxy(
     return null;
   } catch (err) {
     log.warn("Erro ao otimizar script via proxy:", err);
+    return null;
+  }
+}
+
+/**
+ * Generates coherent values for all form fields at once by proxying to the
+ * background service worker. Returns a `"index" → "value"` map or `null`.
+ */
+export async function generateFormContextValuesViaProxy(
+  fields: readonly FormContextFieldInput[],
+): Promise<FormContextOutput | null> {
+  try {
+    const result = await chrome.runtime.sendMessage({
+      type: "AI_GENERATE_FORM_CONTEXT",
+      payload: fields,
+    });
+
+    if (result && typeof result === "object" && !Array.isArray(result)) {
+      const output = result as FormContextOutput;
+      log.debug(
+        `AI_GENERATE_FORM_CONTEXT → ${Object.keys(output).length} valores gerados`,
+      );
+      return output;
+    }
+
+    log.debug("AI_GENERATE_FORM_CONTEXT → null (sem resultado)");
+    return null;
+  } catch (err) {
+    log.warn("Erro ao gerar contexto de formulário via proxy:", err);
     return null;
   }
 }

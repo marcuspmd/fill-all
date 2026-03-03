@@ -48,3 +48,16 @@ export {
 } from "./script-optimizer.prompt";
 
 export type { ScriptOptimizerInput } from "./script-optimizer.prompt";
+
+// ── Form Context Generator Prompt ─────────────────────────────────────────────
+
+export {
+  formContextGeneratorPrompt,
+  FORM_CONTEXT_MAX_FIELDS,
+} from "./form-context-generator.prompt";
+
+export type {
+  FormContextFieldInput,
+  FormContextInput,
+  FormContextOutput,
+} from "./form-context-generator.prompt";

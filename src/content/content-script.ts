@@ -14,6 +14,7 @@ import {
   fillSingleField,
   captureFormValues,
   applyTemplate,
+  fillContextualAI,
 } from "@/lib/form/form-filler";
 import {
   detectAllFieldsAsync,
@@ -138,6 +139,14 @@ async function handleContentMessage(
           : undefined;
       const results = await fillAllFields(override);
       showNotification(`✓ ${results.length} campos preenchidos`);
+      return { success: true, filled: results.length };
+    }
+
+    case "FILL_CONTEXTUAL_AI": {
+      const results = await fillContextualAI();
+      showNotification(
+        `✓ ${results.length} campos preenchidos com IA contextual`,
+      );
       return { success: true, filled: results.length };
     }
 

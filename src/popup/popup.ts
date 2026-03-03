@@ -125,6 +125,11 @@ function renderActionsTab(): void {
         <span class="card-label">${t("fillAll")}</span>
         <span class="card-desc">${t("fillAllDesc")}</span>
       </button>
+      <button class="action-card ai" id="btn-fill-contextual-ai">
+        <span class="card-icon">🤖</span>
+        <span class="card-label">${t("fillContextualAI")}</span>
+        <span class="card-desc">${t("fillContextualAIDesc")}</span>
+      </button>
       <button class="action-card secondary" id="btn-save-form">
         <span class="card-icon">💾</span>
         <span class="card-label">${t("saveForm")}</span>
@@ -153,6 +158,9 @@ function renderActionsTab(): void {
     .getElementById("btn-fill-all")
     ?.addEventListener("click", handleFillAll);
   document
+    .getElementById("btn-fill-contextual-ai")
+    ?.addEventListener("click", handleFillContextualAI);
+  document
     .getElementById("btn-save-form")
     ?.addEventListener("click", handleSaveForm);
   document
@@ -178,6 +186,23 @@ async function handleFillAll(): Promise<void> {
     setTimeout(() => {
       label.textContent = t("fillAll");
     }, 2000);
+  }
+}
+
+async function handleFillContextualAI(): Promise<void> {
+  const btn = document.getElementById("btn-fill-contextual-ai");
+  const label = btn?.querySelector(".card-label");
+  if (label) label.textContent = "⏳...";
+  const result = await sendToActiveTab({ type: "FILL_CONTEXTUAL_AI" });
+  const res = result as { filled?: number } | null;
+  if (label) {
+    label.textContent =
+      result === null
+        ? t("notAvailable")
+        : `✓ ${res?.filled ?? 0} ${t("filled")}`;
+    setTimeout(() => {
+      label.textContent = t("fillContextualAI");
+    }, 2500);
   }
 }
 

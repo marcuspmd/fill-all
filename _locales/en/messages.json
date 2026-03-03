@@ -146,6 +146,12 @@
   "fillAll": {
     "message": "Fill All"
   },
+  "fillContextualAI": {
+    "message": "Fill with AI"
+  },
+  "fillContextualAIDesc": {
+    "message": "Generates coherent values for the entire form at once"
+  },
   "fillAllDesc": {
     "message": "Fills all detected fields"
   },

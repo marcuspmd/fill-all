@@ -47,14 +47,16 @@ Melhorar a experiência de criação de regras diretamente ao clicar no ícone d
 
 ## 🎛️ Customizar Parâmetros dos Geradores via Regras
 
-**Status**: 🔲 Planejado
+**Status**: ✅ Concluído
 
 Permitir que o usuário configure parâmetros específicos para cada gerador ao criar uma regra — por exemplo, definir faixa de datas, formato de telefone, tipo de CPF (formatado ou não), etc.
 
-- Interface de configuração de parâmetros por tipo de gerador
-- Parâmetros disponíveis de acordo com o gerador selecionado
-- Integração com o schema Zod de validação de regras
-- Suporte a parâmetros: `min`, `max`, `format`, `mask`, `locale` e outros por gerador
+- ✅ Interface de configuração de parâmetros por tipo de gerador (Options Page + field-icon popup)
+- ✅ Parâmetros disponíveis de acordo com o gerador selecionado (`GENERATOR_PARAM_DEFS`)
+- ✅ Integração com o schema Zod de validação de regras (`generatorParamsSchema`)
+- ✅ Suporte a parâmetros: `min`, `max`, `formatted`, `length`, `dateFormat`, `onlyLetters` e outros por gerador
+- ✅ Preview em tempo real com os parâmetros customizados no field-icon popup
+- ✅ Persistência via `FieldRule.generatorParams` no `chrome.storage.local`
 
 ---
 

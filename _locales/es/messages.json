@@ -146,6 +146,12 @@
   "fillAll": {
     "message": "Rellenar Todo"
   },
+  "fillContextualAI": {
+    "message": "Rellenar con IA"
+  },
+  "fillContextualAIDesc": {
+    "message": "Genera valores coherentes para todo el formulario de una vez"
+  },
   "fillAllDesc": {
     "message": "Rellena todos los campos detectados"
   },

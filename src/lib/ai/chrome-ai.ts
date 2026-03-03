@@ -8,9 +8,15 @@ import type { FormField } from "@/types";
 import { createLogger } from "@/lib/logger";
 import {
   fieldValueGeneratorPrompt,
+  formContextGeneratorPrompt,
   renderSystemPrompt,
 } from "@/lib/ai/prompts";
-import type { FieldValueInput } from "@/lib/ai/prompts";
+import type {
+  FieldValueInput,
+  FormContextFieldInput,
+  FormContextOutput,
+} from "@/lib/ai/prompts";
+import { FORM_CONTEXT_MAX_FIELDS } from "@/lib/ai/prompts";
 
 const log = createLogger("ChromeAI");
 
@@ -210,4 +216,57 @@ export function destroySession(): void {
     session.destroy();
     session = null;
   }
+}
+
+/**
+ * Generates coherent values for ALL form fields at once using a single
+ * Chrome AI call. All values belong to the same fictional person/entity.
+ *
+ * @param fields - Array of compact field descriptors (index, label, type, options)
+ * @returns A map of `"index" → "value"` or `null` when AI is unavailable/fails
+ */
+export async function generateFormContextValues(
+  fields: readonly FormContextFieldInput[],
+): Promise<FormContextOutput | null> {
+  if (fields.length === 0) return null;
+
+  const batch = fields.slice(0, FORM_CONTEXT_MAX_FIELDS);
+  log.debug(`Gerando contexto para ${batch.length} campos com Chrome AI...`);
+
+  const aiSession = await getSession();
+  if (!aiSession) {
+    log.warn("Sessão Chrome AI indisponível — contexto não gerado.");
+    return null;
+  }
+
+  const prompt = formContextGeneratorPrompt.buildPrompt(batch);
+
+  log.groupCollapsed("Prompt → form-context-generator");
+  log.debug("▶ Prompt:\n" + prompt);
+  log.groupEnd();
+
+  let raw: string;
+  try {
+    raw = await aiSession.prompt(prompt, { outputLanguage: "en" });
+  } catch (err) {
+    log.warn("Erro ao gerar contexto de formulário — destruindo sessão:", err);
+    session?.destroy();
+    session = null;
+    return null;
+  }
+
+  log.groupCollapsed("Resposta ← form-context-generator");
+  log.debug("◄ Resposta raw:\n" + raw);
+  log.groupEnd();
+
+  const result = formContextGeneratorPrompt.parseResponse(raw);
+  if (!result) {
+    log.warn("Falha ao parsear JSON da resposta contextual. Raw:\n" + raw);
+    return null;
+  }
+
+  log.info(
+    `Contexto gerado com sucesso: ${Object.keys(result).length} campos.`,
+  );
+  return result;
 }

@@ -567,6 +567,23 @@ async function fillOnlyEmpty(): Promise<void> {
   }
 }
 
+async function fillContextualAI(): Promise<void> {
+  addLog(t("fillContextualAI"));
+  const btn = document.getElementById("btn-fill-contextual-ai");
+  const label = btn?.querySelector(".card-label");
+  if (label) label.textContent = "⏳...";
+  try {
+    const result = (await sendToPage({
+      type: "FILL_CONTEXTUAL_AI",
+    })) as { filled?: number };
+    addLog(`${result?.filled ?? 0} ${t("filled")}`, "success");
+  } catch (err) {
+    addLog(`Erro ao preencher com IA: ${err}`, "error");
+  } finally {
+    if (label) label.textContent = t("fillContextualAI");
+  }
+}
+
 async function fillField(selector: string): Promise<void> {
   addLog(`Preenchendo: ${selector}`);
   try {
@@ -809,6 +826,11 @@ function renderActionsTab(): void {
         <span class="card-label">${t("fillOnlyEmpty")}</span>
         <span class="card-desc">${t("fillOnlyEmptyDesc")}</span>
       </button>
+      <button class="action-card ai" id="btn-fill-contextual-ai">
+        <span class="card-icon">🤖</span>
+        <span class="card-label">${t("fillContextualAI")}</span>
+        <span class="card-desc">${t("fillContextualAIDesc")}</span>
+      </button>
       <button class="action-card secondary" id="btn-save">
         <span class="card-icon">💾</span>
         <span class="card-label">${t("saveForm")}</span>
@@ -834,6 +856,9 @@ function renderActionsTab(): void {
   document
     .getElementById("btn-fill-empty")
     ?.addEventListener("click", fillOnlyEmpty);
+  document
+    .getElementById("btn-fill-contextual-ai")
+    ?.addEventListener("click", fillContextualAI);
   document
     .getElementById("btn-save")
     ?.addEventListener("click", saveCurrentForm);
