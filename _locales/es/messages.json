@@ -1010,7 +1010,7 @@
     "message": "Valor / Generador"
   },
   "btnAddField": {
-    "message": "+ Agregar campo"
+    "message": "Agregar campo"
   },
   "btnSaveTemplate": {
     "message": "Guardar plantilla"

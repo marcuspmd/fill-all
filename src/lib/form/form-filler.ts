@@ -767,7 +767,7 @@ export async function applyTemplate(
       if (tField.mode === "generator" && tField.generatorType) {
         templateValueMap.set(
           tField.matchByFieldType,
-          generate(tField.generatorType),
+          generate(tField.generatorType, tField.generatorParams ?? undefined),
         );
       } else if (tField.mode === "fixed" && tField.fixedValue) {
         templateValueMap.set(tField.matchByFieldType, tField.fixedValue);
@@ -813,7 +813,10 @@ export async function applyTemplate(
 
       let value: string;
       if (tField.mode === "generator" && tField.generatorType) {
-        value = generate(tField.generatorType);
+        value = generate(
+          tField.generatorType,
+          tField.generatorParams ?? undefined,
+        );
       } else {
         value = tField.fixedValue ?? "";
       }
