@@ -526,7 +526,7 @@ describe("form-filler", () => {
       const { filled } = await applyTemplate(form);
 
       expect(filled).toBe(1);
-      expect(mockGenerate).toHaveBeenCalledWith("email");
+      expect(mockGenerate).toHaveBeenCalledWith("email", undefined);
     });
 
     it("applies type-based template matching all fields of given type", async () => {

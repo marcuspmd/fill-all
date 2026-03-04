@@ -554,6 +554,64 @@ describe("rule-engine/resolveFieldValue", () => {
     expect(mockGenerate).toHaveBeenCalledWith("cpf", undefined);
   });
 
+  describe("generator=auto com fieldType explícito na regra", () => {
+    it("usa fieldType da regra quando generator=auto e fieldType difere do campo detectado", async () => {
+      // Regression: user edits field type to "cpf" in the DevTools editor but keeps
+      // generator as "auto". The rule has fieldType:"cpf" + generator:"auto".
+      // Bug was: system fell through to TF-detected type (text) instead of using "cpf".
+      const field = createField({ fieldType: "text" }); // TF detected "text"
+      mockGetRulesForUrl.mockResolvedValue([
+        createRule({ fieldType: "cpf", generator: "auto" }), // user chose "cpf"
+      ]);
+      mockGenerateWithConstraints.mockImplementation((fn: () => string) =>
+        fn(),
+      );
+      mockGenerate.mockReturnValue("111.111.111-11");
+
+      const result = await resolveFieldValue(field, "https://example.com");
+
+      // Must call generate with "cpf", NOT with "text"
+      expect(mockGenerate).toHaveBeenCalledWith("cpf", undefined);
+      expect(result.value).toBe("111.111.111-11");
+      expect(result.source).toBe("generator");
+    });
+
+    it("cai no gerador padrão do campo quando generator=auto e fieldType da regra é unknown", async () => {
+      // When the rule's fieldType is "unknown", fall through to the detected field type
+      const field = createField({ fieldType: "email" });
+      mockGetRulesForUrl.mockResolvedValue([
+        createRule({ fieldType: "unknown", generator: "auto" }),
+      ]);
+      mockGenerateWithConstraints.mockImplementation((fn: () => string) =>
+        fn(),
+      );
+      mockGenerate.mockReturnValue("gerado@email.com");
+
+      const result = await resolveFieldValue(field, "https://example.com");
+
+      // Falls through to detected "email" type
+      expect(mockGenerate).toHaveBeenCalledWith("email");
+      expect(result.source).toBe("generator");
+    });
+
+    it("generator=auto com fieldType da regra igual ao detectado usa o tipo do campo normalmente", async () => {
+      const field = createField({ fieldType: "cpf" });
+      mockGetRulesForUrl.mockResolvedValue([
+        createRule({ fieldType: "cpf", generator: "auto" }),
+      ]);
+      mockGenerateWithConstraints.mockImplementation((fn: () => string) =>
+        fn(),
+      );
+      mockGenerate.mockReturnValue("999.888.777-66");
+
+      const result = await resolveFieldValue(field, "https://example.com");
+
+      expect(mockGenerate).toHaveBeenCalledWith("cpf", undefined);
+      expect(result.value).toBe("999.888.777-66");
+      expect(result.source).toBe("generator");
+    });
+  });
+
   describe("campos de data (generateDateForField)", () => {
     it("formata data via gerador padrão quando fieldType é date", async () => {
       const field = createField({ fieldType: "date", inputType: "text" });

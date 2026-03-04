@@ -37,13 +37,32 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
     case "SAVE_RULE": {
       const rule = parseRulePayload(message.payload);
       if (!rule) return { error: "Invalid payload for SAVE_RULE" };
-      await saveRule(rule);
-      const signals = buildSignalsFromRule(rule);
+
+      // Upsert by selector + URL pattern: if a rule already exists for the same
+      // fieldSelector and matching URL pattern, re-use its ID so it gets updated
+      // instead of creating a duplicate with a different ID.
+      const allRules = await getRules();
+      const existing = allRules.find(
+        (r) =>
+          r.fieldSelector === rule.fieldSelector &&
+          r.urlPattern === rule.urlPattern,
+      );
+      const ruleToSave = existing
+        ? { ...rule, id: existing.id, createdAt: existing.createdAt }
+        : rule;
+
+      await saveRule(ruleToSave);
+      const signals = buildSignalsFromRule(ruleToSave);
       if (signals) {
-        await storeLearnedEntry(signals, rule.fieldType, undefined, "rule");
+        await storeLearnedEntry(
+          signals,
+          ruleToSave.fieldType,
+          undefined,
+          "rule",
+        );
         await addDatasetEntry({
           signals,
-          type: rule.fieldType,
+          type: ruleToSave.fieldType,
           source: "manual",
           difficulty: "easy",
         });

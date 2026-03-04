@@ -319,3 +319,96 @@ describe("SearchableSelect — destroy", () => {
     expect(cb).not.toHaveBeenCalled();
   });
 });
+
+describe("SearchableSelect — disabled", () => {
+  it("does not open when disabled", () => {
+    const container = buildContainer();
+    const ss = new SearchableSelect({ entries: FLAT_ENTRIES, disabled: true });
+    ss.mount(container);
+    getInput(container).dispatchEvent(new Event("focus"));
+    expect(getDropdown(container).hasAttribute("hidden")).toBe(true);
+  });
+});
+
+describe("SearchableSelect — edge branches", () => {
+  it("onInputChange opens the dropdown when it was closed", () => {
+    // fire input event without a prior focus/open — triggers the auto-open branch
+    const { container } = mount(FLAT_ENTRIES);
+    const input = getInput(container);
+    input.value = "email";
+    input.dispatchEvent(new Event("input"));
+    expect(getDropdown(container).hasAttribute("hidden")).toBe(false);
+  });
+
+  it("close() when already closed does nothing", () => {
+    // Ensure calling close on an already-closed component is safe
+    const { container } = mount(FLAT_ENTRIES);
+    // dropdown is already closed — pressing Escape should not throw
+    expect(() =>
+      getInput(container).dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      ),
+    ).not.toThrow();
+  });
+
+  it("Enter key without a highlighted option does nothing", () => {
+    const { ss, container } = mount(FLAT_ENTRIES);
+    const input = getInput(container);
+    input.dispatchEvent(new Event("focus")); // open
+    // _highlighted is -1 by default — Enter should be a no-op
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    expect(ss.getValue()).toBe(""); // unchanged
+  });
+
+  it("outside mousedown closes the dropdown", () => {
+    const { container } = mount(FLAT_ENTRIES);
+    getInput(container).dispatchEvent(new Event("focus")); // open
+    expect(getDropdown(container).hasAttribute("hidden")).toBe(false);
+
+    const outside = document.createElement("div");
+    document.body.appendChild(outside);
+    outside.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+
+    expect(getDropdown(container).hasAttribute("hidden")).toBe(true);
+    outside.remove();
+  });
+
+  it("inside mousedown on non-option target does not select anything", () => {
+    const { ss, container } = mount(FLAT_ENTRIES);
+    getInput(container).dispatchEvent(new Event("focus")); // open
+    // Click on the dropdown wrapper, not on a .fa-ss__opt li
+    getDropdown(container).dispatchEvent(
+      new MouseEvent("mousedown", { bubbles: true }),
+    );
+    expect(ss.getValue()).toBe(""); // unchanged
+  });
+
+  it("selectByValue with unknown value is a no-op", () => {
+    const { ss, container } = mount(FLAT_ENTRIES);
+    getInput(container).dispatchEvent(new Event("focus")); // open
+    // Simulate clicking an li whose data-value does not exist in flat entries
+    const li = document.createElement("li");
+    li.className = "fa-ss__opt";
+    li.dataset.value = "__nonexistent__";
+    getDropdown(container).appendChild(li);
+    li.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    expect(ss.getValue()).toBe(""); // unchanged
+  });
+
+  it("renders group header then flat options (mixed entries)", () => {
+    // Mixing grouped + flat entries to hit the FALSE branch of `if (opt.groupLabel)`
+    // when group label transitions back to undefined
+    const mixed: SelectEntry[] = [
+      { groupLabel: "Grupo A", options: [{ value: "a", label: "A" }] },
+      { value: "b", label: "B" }, // flat — groupLabel becomes undefined after group
+    ];
+    const container = buildContainer();
+    const ss = new SearchableSelect({ entries: mixed });
+    ss.mount(container);
+    getInput(container).dispatchEvent(new Event("focus"));
+    const opts = getOptions(container);
+    expect(opts.length).toBe(2);
+  });
+});

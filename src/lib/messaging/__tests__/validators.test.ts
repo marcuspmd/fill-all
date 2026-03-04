@@ -8,6 +8,9 @@ import {
   parseSavedFormPayload,
   parseStringPayload,
   parseStartWatchingPayload,
+  parseApplyTemplatePayload,
+  parseSaveFieldOverridePayload,
+  parseDeleteFieldOverridePayload,
 } from "@/lib/messaging/validators";
 
 const validRule = {
@@ -281,6 +284,89 @@ describe("parseStartWatchingPayload", () => {
   it("returns null for extra fields (strict schema)", () => {
     expect(
       parseStartWatchingPayload({ autoRefill: true, extra: "field" }),
+    ).toBeNull();
+  });
+});
+
+describe("parseApplyTemplatePayload", () => {
+  const validForm = {
+    id: "form-1",
+    name: "Test Form",
+    urlPattern: "*example.com*",
+    fields: { email: "user@example.com" },
+    createdAt: 1000,
+    updatedAt: 2000,
+  };
+
+  it("returns SavedForm for valid payload", () => {
+    const result = parseApplyTemplatePayload(validForm);
+    expect(result?.id).toBe("form-1");
+    expect(result?.fields.email).toBe("user@example.com");
+  });
+
+  it("returns null for invalid payload", () => {
+    expect(parseApplyTemplatePayload({ id: "form-1" })).toBeNull();
+  });
+});
+
+describe("parseSaveFieldOverridePayload", () => {
+  const validOverride = {
+    url: "https://example.com",
+    fieldSelector: "#email",
+    fieldType: "email",
+    generator: "auto",
+    generatorParams: undefined,
+  };
+
+  it("returns payload for valid input", () => {
+    const result = parseSaveFieldOverridePayload(validOverride);
+    expect(result?.url).toBe("https://example.com");
+    expect(result?.fieldSelector).toBe("#email");
+    expect(result?.fieldType).toBe("email");
+  });
+
+  it("returns null for missing required fields", () => {
+    expect(
+      parseSaveFieldOverridePayload({ url: "https://example.com" }),
+    ).toBeNull();
+  });
+
+  it("returns null for invalid fieldType", () => {
+    expect(
+      parseSaveFieldOverridePayload({ ...validOverride, fieldType: "invalid" }),
+    ).toBeNull();
+  });
+
+  it("returns null for extra fields (strict schema)", () => {
+    expect(
+      parseSaveFieldOverridePayload({ ...validOverride, extra: "field" }),
+    ).toBeNull();
+  });
+});
+
+describe("parseDeleteFieldOverridePayload", () => {
+  it("returns payload for valid input", () => {
+    const result = parseDeleteFieldOverridePayload({
+      url: "https://example.com",
+      fieldSelector: "#email",
+    });
+    expect(result?.url).toBe("https://example.com");
+    expect(result?.fieldSelector).toBe("#email");
+  });
+
+  it("returns null for missing required fields", () => {
+    expect(
+      parseDeleteFieldOverridePayload({ url: "https://example.com" }),
+    ).toBeNull();
+  });
+
+  it("returns null for extra fields (strict schema)", () => {
+    expect(
+      parseDeleteFieldOverridePayload({
+        url: "https://example.com",
+        fieldSelector: "#email",
+        extra: "field",
+      }),
     ).toBeNull();
   });
 });
