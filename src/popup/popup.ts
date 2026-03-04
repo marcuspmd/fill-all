@@ -31,12 +31,12 @@ function render(): void {
           ⚡ ${t("fillAll")}
         </button>
         <button id="btn-fill-ai" class="action-btn">
-          🤖 ${t("fillWithAI")}
+          🤖 ${t("fillContextualAI")}
         </button>
         <button id="btn-fill-empty" class="action-btn">
           🔍 ${t("fillOnlyEmpty")}
         </button>
-        <button id="btn-settings" class="action-btn secondary">
+        <button id="btn-settings" class="action-btn info">
           ⚙️ ${t("settings")}
         </button>
       </div>
