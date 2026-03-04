@@ -1670,6 +1670,15 @@
   "paramLength": {
     "message": "Comprimento"
   },
+  "paramWordCount": {
+    "message": "Quantidade de palavras"
+  },
+  "paramPattern": {
+    "message": "Padrão / Máscara"
+  },
+  "placeholderPattern": {
+    "message": "ex: ###-AAA-##"
+  },
   "paramDateFormat": {
     "message": "Formato da data"
   },

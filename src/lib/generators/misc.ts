@@ -171,3 +171,16 @@ const DOCUMENT_ISSUERS = [
 export function generateDocumentIssuer(): string {
   return faker.helpers.arrayElement(DOCUMENT_ISSUERS);
 }
+
+/**
+ * Generates a URL-friendly slug from random words.
+ * @param wordCount - Number of words in the slug (default: `3`)
+ * @returns Lowercase hyphen-separated slug, e.g. `"lorem-ipsum-dolor"`
+ */
+export function generateSlug(wordCount = 3): string {
+  const words = faker.lorem.words(wordCount);
+  return words
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}

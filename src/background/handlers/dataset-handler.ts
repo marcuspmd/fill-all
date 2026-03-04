@@ -18,6 +18,10 @@ import {
   getRuntimeModelMeta,
   deleteRuntimeModel,
 } from "@/lib/ai/runtime-trainer";
+import {
+  storeLearnedEntry,
+  removeLearnedEntryBySignals,
+} from "@/lib/ai/learning-store";
 import { parseStringPayload } from "@/lib/messaging/validators";
 import { broadcastToAllTabs } from "@/background/broadcast";
 
@@ -47,6 +51,8 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
       }
       const added = await addDatasetEntry(entry);
       if (!added) return { error: "Failed to add dataset entry" };
+      // Sync to learning store so the classifier learns immediately (no retrain needed)
+      await storeLearnedEntry(added.signals, added.type, undefined, "auto");
       void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
       return added;
     }
@@ -58,6 +64,7 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
       const entry = allEntries.find((e) => e.id === id);
       await removeDatasetEntry(id);
       if (entry) {
+        await removeLearnedEntryBySignals(entry.signals);
         void broadcastToAllTabs({ type: "INVALIDATE_CLASSIFIER" });
       }
       return { success: true };

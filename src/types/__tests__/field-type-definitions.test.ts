@@ -92,7 +92,7 @@ describe("GENERATOR_PARAM_DEFS", () => {
     for (const [, defs] of Object.entries(GENERATOR_PARAM_DEFS)) {
       for (const def of defs) {
         expect(def.key).toBeTruthy();
-        expect(["number", "boolean", "select"]).toContain(def.type);
+        expect(["number", "boolean", "select", "text"]).toContain(def.type);
         expect(def.labelKey).toBeTruthy();
         expect(def.defaultValue).toBeDefined();
       }

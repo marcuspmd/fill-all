@@ -145,6 +145,8 @@ export const FIELD_TYPES = [
   "website",
   "url",
   "number",
+  "slug",
+  "pattern",
 
   // Componentes
   "select",

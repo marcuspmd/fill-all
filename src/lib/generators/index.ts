@@ -62,7 +62,9 @@ import {
   generateNationalId,
   generateTaxId,
   generateDocumentIssuer,
+  generateSlug,
 } from "./misc";
+import { generateFromPattern } from "./pattern";
 
 /** Function signature for synchronous data generators. */
 export type GeneratorFn = () => string;
@@ -156,6 +158,10 @@ const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
   notes: () => generateNotes(),
   website: () => generateWebsite(),
 
+  // ── Genéricos extra ────────────────────────────────────────
+  slug: (p) => generateSlug(p?.length ?? 3),
+  pattern: (p) => generateFromPattern(p?.pattern ?? "########"),
+
   // ── Componentes ─────────────────────────────────────────────
   empty: () => "",
   boolean: () => "true",
@@ -211,6 +217,7 @@ export function generate(
   return factory(mergedParams);
 }
 
+export { generateFromPattern } from "./pattern";
 export {
   generateCpf,
   generateCnpj,
@@ -260,4 +267,5 @@ export {
   generateNationalId,
   generateTaxId,
   generateDocumentIssuer,
+  generateSlug,
 };

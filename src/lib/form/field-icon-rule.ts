@@ -276,6 +276,16 @@ function renderParamFields(paramDefs: readonly GeneratorParamDef[]): string {
             <span>${label}</span>
           </label>`;
       }
+      if (def.type === "text") {
+        const placeholder = def.placeholder
+          ? (chrome.i18n?.getMessage(def.placeholder) ?? def.placeholder)
+          : "";
+        return `
+          <div class="fa-rp-param-field">
+            <label class="fa-rp-param-label">${label}</label>
+            <input type="text" data-param-key="${def.key}" value="${def.defaultValue}" placeholder="${placeholder}" class="fa-rp-input fa-rp-param-input" />
+          </div>`;
+      }
       const min = def.min != null ? `min="${def.min}"` : "";
       const max = def.max != null ? `max="${def.max}"` : "";
       const step = def.step != null ? `step="${def.step}"` : "";
@@ -318,6 +328,11 @@ function collectParamsFromUI(): GeneratorParams | undefined {
       const val = parseFloat(input.value);
       if (!isNaN(val)) {
         params[key] = val;
+        hasAny = true;
+      }
+    } else if (input.type === "text") {
+      if (input.value !== "") {
+        params[key] = input.value;
         hasAny = true;
       }
     }

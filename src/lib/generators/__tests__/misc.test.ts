@@ -155,4 +155,29 @@ describe("misc", () => {
   it("generateDocumentIssuer", () => {
     expect(typeof misc.generateDocumentIssuer()).toBe("string");
   });
+
+  describe("generateSlug", () => {
+    it("returns a string", () => {
+      expect(typeof misc.generateSlug()).toBe("string");
+    });
+
+    it("contains only lowercase alphanumeric chars and hyphens", () => {
+      const slug = misc.generateSlug(3);
+      expect(slug).toMatch(/^[a-z0-9-]+$/);
+    });
+
+    it("uses hyphens as word separator", () => {
+      const slug = misc.generateSlug(3);
+      expect(slug).toContain("-");
+    });
+
+    it("custom word count changes result length", () => {
+      const slug2 = misc.generateSlug(2);
+      const slug4 = misc.generateSlug(4);
+      // A slug with more words has at least as many hyphens
+      const hyphens2 = (slug2.match(/-/g) ?? []).length;
+      const hyphens4 = (slug4.match(/-/g) ?? []).length;
+      expect(hyphens4).toBeGreaterThanOrEqual(hyphens2);
+    });
+  });
 });

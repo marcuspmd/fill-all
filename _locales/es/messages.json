@@ -1667,6 +1667,15 @@
   "paramMaxValue": {
     "message": "Valor máximo"
   },
+  "paramWordCount": {
+    "message": "Cantidad de palabras"
+  },
+  "paramPattern": {
+    "message": "Patrón / Máscara"
+  },
+  "placeholderPattern": {
+    "message": "ej: ###-AAA-##"
+  },
   "paramLength": {
     "message": "Longitud"
   },

@@ -475,6 +475,20 @@ export const FIELD_TYPE_DEFINITIONS: readonly FieldTypeDefinition[] = [
     generator: "number",
     params: { min: 1, max: 99_999 },
   },
+  {
+    type: "slug",
+    category: "generic",
+    description: "Slug URL-friendly (palavras separadas por hífen)",
+    generator: "slug",
+    params: { length: 3 },
+  },
+  {
+    type: "pattern",
+    category: "generic",
+    description: "Valor gerado pelo padrão customizado (máscara de padrão)",
+    generator: "pattern",
+    params: { pattern: "########" },
+  },
 
   // ── Componentes ─────────────────────────────────────────────
   {
@@ -573,12 +587,14 @@ export interface SelectOption {
 
 export interface GeneratorParamDef {
   readonly key: keyof GeneratorParams;
-  readonly type: "number" | "boolean" | "select";
+  readonly type: "number" | "boolean" | "select" | "text";
   readonly labelKey: string;
   readonly defaultValue: number | boolean | string;
   readonly min?: number;
   readonly max?: number;
   readonly step?: number;
+  /** Placeholder text shown in text inputs. */
+  readonly placeholder?: string;
   /** Available options when type is "select". */
   readonly selectOptions?: readonly SelectOption[];
 }
@@ -801,6 +817,28 @@ export const GENERATOR_PARAM_DEFS: Readonly<
       min: 4,
       max: 10,
       step: 1,
+    },
+  ],
+
+  // ── Texto / URL ─────────────────────────────────────────────
+  slug: [
+    {
+      key: "length",
+      type: "number",
+      labelKey: "paramWordCount",
+      defaultValue: 3,
+      min: 1,
+      max: 10,
+      step: 1,
+    },
+  ],
+  pattern: [
+    {
+      key: "pattern",
+      type: "text",
+      labelKey: "paramPattern",
+      defaultValue: "########",
+      placeholder: "placeholderPattern",
     },
   ],
 };

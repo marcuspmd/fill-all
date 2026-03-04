@@ -103,12 +103,10 @@ async function callAiWithTimeout(
 
 /**
  * Resolves the value for a single field, using this priority:
- * 1. (optional) AI first — when forceAIFirst is true
- * 2. Saved form with fixed data (exact match)
- * 3. Field-specific rule with fixed value
- * 4. Field-specific rule with generator
- * 5. Default generator based on detected field type
- * 6. AI as last resort (only when default generator returns empty, e.g. select fields)
+ * 1. Field-specific rule (always wins — even over forceAIFirst)
+ * 2. (optional) AI first — when forceAIFirst is true and no rule exists
+ * 3. Default generator based on detected field type
+ * 4. AI as last resort (only when default generator returns empty, e.g. select fields)
  */
 export async function resolveFieldValue(
   field: FormField,
@@ -124,33 +122,7 @@ export async function resolveFieldValue(
     `Resolvendo campo: ${fieldDesc}${forceAIFirst ? " [forceAIFirst=true]" : ""}`,
   );
 
-  // 1. AI first (when flag is enabled) — only for fields where AI genuinely helps
-  if (
-    forceAIFirst &&
-    aiGenerateFn &&
-    !GENERATOR_ONLY_TYPES.has(field.fieldType)
-  ) {
-    try {
-      const aiValue = await callAiWithTimeout(
-        aiGenerateFn,
-        field,
-        "forceAIFirst",
-        aiTimeoutMs,
-      );
-      const value = adaptGeneratedValue(aiValue, {
-        element: field.element,
-        requireValidity: true,
-      });
-      if (value) {
-        return { fieldSelector: selector, value, source: "ai" };
-      }
-    } catch (err) {
-      log.warn(`AI (forceAIFirst) falhou:`, err);
-      // Fall through to normal priority order
-    }
-  }
-
-  // 2. Check field rules (saved forms are only applied manually via APPLY_TEMPLATE)
+  // 1. Check field rules first — rules always take priority over AI/TF
   const rules = await getRulesForUrl(url);
   const matchingRule = findMatchingRule(rules, field);
 
@@ -227,9 +199,38 @@ export async function resolveFieldValue(
         log.warn(`AI (rule) falhou:`, err);
       }
     }
+    // generator === "auto" or "tensorflow": fall through to default generator.
+    // forceAIFirst is intentionally skipped — the rule's intent is the deterministic generator.
   }
 
-  // 5. Default generator based on detected field type
+  // 2. AI first — only when no matching rule exists and forceAIFirst is enabled
+  if (
+    forceAIFirst &&
+    !matchingRule &&
+    aiGenerateFn &&
+    !GENERATOR_ONLY_TYPES.has(field.fieldType)
+  ) {
+    try {
+      const aiValue = await callAiWithTimeout(
+        aiGenerateFn,
+        field,
+        "forceAIFirst",
+        aiTimeoutMs,
+      );
+      const value = adaptGeneratedValue(aiValue, {
+        element: field.element,
+        requireValidity: true,
+      });
+      if (value) {
+        return { fieldSelector: selector, value, source: "ai" };
+      }
+    } catch (err) {
+      log.warn(`AI (forceAIFirst) falhou:`, err);
+      // Fall through to default generator
+    }
+  }
+
+  // 3. Default generator based on detected field type
   const effectiveType = getEffectiveFieldType(field);
   if (DATE_FIELD_TYPES.has(effectiveType)) {
     const value = generateDateForField(effectiveType, field);
