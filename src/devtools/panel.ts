@@ -85,6 +85,7 @@ let recordedStepsPreview: Array<{
   waitMs?: number;
   url?: string;
   label?: string;
+  assertion?: Record<string, unknown>;
 }> = [];
 
 const STEP_ICONS: Record<string, string> = {
@@ -92,7 +93,9 @@ const STEP_ICONS: Record<string, string> = {
   click: "🖱️",
   select: "📋",
   check: "☑️",
+  uncheck: "🔲",
   submit: "🚀",
+  assert: "🌐",
   wait: "⏱️",
   navigate: "🔗",
   scroll: "📜",
@@ -1500,7 +1503,7 @@ function renderRecordStepsTable(): void {
         <td>${STEP_ICONS[step.type] ?? "❓"} ${escapeHtml(step.type)}</td>
         <td class="cell-mono">${escapeHtml(step.selector ?? step.url ?? "-")}</td>
         <td class="cell-value" data-step-index="${i}">
-          <span class="step-value-text" title="${t("actionEdit")}">${escapeHtml(step.value ?? (step.waitMs ? `${step.waitMs}ms` : "-"))}</span>
+          <span class="step-value-text" title="${t("actionEdit")}">${escapeHtml(step.value ?? step.label ?? (step.waitMs ? `${step.waitMs}ms` : "-"))}</span>
         </td>
         <td class="cell-actions">
           <button class="icon-btn" data-step-action="edit" data-step-index="${i}" title="${t("actionEdit")}">✏️</button>
@@ -1754,18 +1757,26 @@ chrome.runtime.onMessage.addListener(
   (message: { type?: string; payload?: Record<string, unknown> }, sender) => {
     if (sender.tab?.id !== inspectedTabId) return;
 
+    type StepPayload = {
+      type: string;
+      selector?: string;
+      value?: string;
+      url?: string;
+      label?: string;
+      assertion?: Record<string, unknown>;
+    };
+
+    if (message.type === "RECORDING_RESTORED") {
+      const p = message.payload as { steps?: StepPayload[] } | undefined;
+      if (Array.isArray(p?.steps)) {
+        recordedStepsPreview = p.steps;
+        renderRecordStepsTable();
+      }
+    }
+
     if (message.type === "RECORDING_STEP_ADDED") {
       const p = message.payload as
-        | {
-            step?: {
-              type: string;
-              selector?: string;
-              value?: string;
-              url?: string;
-              label?: string;
-            };
-            index?: number;
-          }
+        | { step?: StepPayload; index?: number }
         | undefined;
 
       if (p?.step) {
@@ -1776,16 +1787,7 @@ chrome.runtime.onMessage.addListener(
 
     if (message.type === "RECORDING_STEP_UPDATED") {
       const p = message.payload as
-        | {
-            step?: {
-              type: string;
-              selector?: string;
-              value?: string;
-              url?: string;
-              label?: string;
-            };
-            index?: number;
-          }
+        | { step?: StepPayload; index?: number }
         | undefined;
 
       if (
@@ -1805,8 +1807,10 @@ chrome.runtime.onMessage.addListener(
 chrome.devtools.network.onNavigated.addListener(() => {
   detectedFields = [];
   watcherActive = false;
-  // Preserve steps if recording is stopped (user hasn't cleared yet)
-  if (recordingState !== "stopped") {
+  // When recording is active, preserve recorded steps — RECORDING_RESTORED will
+  // arrive from the content script with the full list (including the new navigate
+  // step and any network assert). When stopped, clear so the panel is fresh.
+  if (recordingState === "stopped" || recordingState === "idle") {
     recordedStepsPreview = [];
   }
   if (

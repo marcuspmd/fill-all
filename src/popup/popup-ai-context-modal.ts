@@ -5,7 +5,6 @@
  *  - CSV file upload (read as text)
  *  - Image upload (stored as compressed JPEG data URL)
  *  - PDF file upload (pages rendered as images — the AI reads them visually)
- *  - Audio recording via Web Speech API (pt-BR → optional English translation)
  */
 
 import type { AIContextPayload } from "@/types";
@@ -14,79 +13,6 @@ import { createLogger } from "@/lib/logger";
 import { renderPdfToImageDataUrls } from "@/lib/ai/pdf-extractor";
 
 const log = createLogger("AIContextModal");
-
-// ── Web Speech API types ──────────────────────────────────────────────────────
-
-interface SpeechRecognitionEvent extends Event {
-  readonly results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionResultList {
-  readonly length: number;
-  item(index: number): SpeechRecognitionResult;
-  [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-  readonly isFinal: boolean;
-  readonly length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  readonly transcript: string;
-  readonly confidence: number;
-}
-
-interface SpeechRecognitionInstance extends EventTarget {
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  continuous: boolean;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: Event) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-  abort(): void;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SpeechRecognitionCtor: (new () => SpeechRecognitionInstance) | undefined =
-  (typeof window !== "undefined" &&
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ((window as any).SpeechRecognition ||
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).webkitSpeechRecognition)) ||
-  undefined;
-
-// ── Chrome AI Translator (optional) ──────────────────────────────────────────
-
-async function tryTranslateToEnglish(text: string): Promise<string> {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const TranslatorAPI = (globalThis as any).Translator as
-      | {
-          create(opts: {
-            sourceLanguage: string;
-            targetLanguage: string;
-          }): Promise<{ translate(text: string): Promise<string> }>;
-        }
-      | undefined;
-
-    if (!TranslatorAPI) return text;
-
-    const translator = await TranslatorAPI.create({
-      sourceLanguage: "pt",
-      targetLanguage: "en",
-    });
-    return await translator.translate(text);
-  } catch (err) {
-    log.warn("Translator API unavailable, using original transcript:", err);
-    return text;
-  }
-}
 
 // ── Modal DOM helpers ─────────────────────────────────────────────────────────
 
@@ -106,12 +32,9 @@ export function openAIContextModal(): Promise<AIContextPayload | null> {
     removeModal();
 
     // ── State ──────────────────────────────────────────────────────────────
-    let audioTranscript = "";
     let csvText = "";
     let imageDataUrl = "";
     let pdfPageDataUrls: string[] = [];
-    let isRecording = false;
-    let recognition: SpeechRecognitionInstance | null = null;
 
     // ── Overlay ────────────────────────────────────────────────────────────
     const overlay = document.createElement("div");
@@ -138,18 +61,6 @@ export function openAIContextModal(): Promise<AIContextPayload | null> {
               rows="3"
               placeholder="${t("aiContextTextPlaceholder")}"
             ></textarea>
-          </div>
-
-          <!-- Audio recording -->
-          <div class="form-group ai-ctx-audio-group">
-            <label>${t("aiContextAudioLabel")}</label>
-            <div class="ai-ctx-audio-row">
-              <button class="btn ai-ctx-record-btn" id="ai-ctx-record">
-                🎙️ ${t("aiContextAudioRecord")}
-              </button>
-              <span class="ai-ctx-audio-status" id="ai-ctx-audio-status"></span>
-            </div>
-            <div class="ai-ctx-transcript-box" id="ai-ctx-transcript" style="display:none"></div>
           </div>
 
           <!-- CSV upload -->
@@ -202,13 +113,6 @@ export function openAIContextModal(): Promise<AIContextPayload | null> {
       overlay.querySelector<HTMLButtonElement>("#ai-ctx-confirm")!;
     const textArea =
       overlay.querySelector<HTMLTextAreaElement>("#ai-ctx-text")!;
-    const recordBtn =
-      overlay.querySelector<HTMLButtonElement>("#ai-ctx-record")!;
-    const audioStatus = overlay.querySelector<HTMLSpanElement>(
-      "#ai-ctx-audio-status",
-    )!;
-    const transcriptBox =
-      overlay.querySelector<HTMLDivElement>("#ai-ctx-transcript")!;
     const csvInput = overlay.querySelector<HTMLInputElement>("#ai-ctx-csv")!;
     const csvName = overlay.querySelector<HTMLSpanElement>("#ai-ctx-csv-name")!;
     const csvZone = overlay.querySelector<HTMLDivElement>("#ai-ctx-csv-zone")!;
@@ -229,7 +133,6 @@ export function openAIContextModal(): Promise<AIContextPayload | null> {
 
     // ── Dismiss ─────────────────────────────────────────────────────────────
     const dismiss = (payload: AIContextPayload | null): void => {
-      recognition?.abort();
       removeModal();
       resolve(payload);
     };
@@ -238,76 +141,6 @@ export function openAIContextModal(): Promise<AIContextPayload | null> {
     cancelBtn.addEventListener("click", () => dismiss(null));
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) dismiss(null);
-    });
-
-    // ── Audio recording ──────────────────────────────────────────────────────
-    if (!SpeechRecognitionCtor) {
-      recordBtn.disabled = true;
-      recordBtn.title = t("aiContextAudioUnsupported");
-      audioStatus.textContent = t("aiContextAudioUnsupported");
-    }
-
-    recordBtn.addEventListener("click", () => {
-      if (!SpeechRecognitionCtor) return;
-
-      if (isRecording) {
-        recognition?.stop();
-        return;
-      }
-
-      recognition = new SpeechRecognitionCtor();
-      recognition.lang = "pt-BR";
-      recognition.interimResults = true;
-      recognition.continuous = false;
-      recognition.maxAlternatives = 1;
-      isRecording = true;
-      recordBtn.textContent = `⏹️ ${t("aiContextAudioStop")}`;
-      recordBtn.classList.add("recording");
-      audioStatus.textContent = t("aiContextAudioListening");
-
-      let finalTranscript = "";
-      let interimTranscript = "";
-
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        interimTranscript = "";
-        for (let i = 0; i < event.results.length; i++) {
-          const res = event.results[i];
-          if (res.isFinal) {
-            finalTranscript += res[0].transcript + " ";
-          } else {
-            interimTranscript += res[0].transcript;
-          }
-        }
-        transcriptBox.style.display = "block";
-        transcriptBox.textContent =
-          (finalTranscript + interimTranscript).trim() || "…";
-      };
-
-      recognition.onerror = (event: Event) => {
-        log.warn("Speech recognition error:", event);
-        audioStatus.textContent = t("aiContextAudioError");
-      };
-
-      recognition.onend = () => {
-        isRecording = false;
-        recordBtn.textContent = `🎙️ ${t("aiContextAudioRecord")}`;
-        recordBtn.classList.remove("recording");
-        audioStatus.textContent = finalTranscript.trim()
-          ? t("aiContextAudioDone")
-          : t("aiContextAudioEmpty");
-
-        void (async () => {
-          const raw = finalTranscript.trim();
-          if (!raw) return;
-          audioStatus.textContent = t("aiContextAudioTranslating");
-          const translated = await tryTranslateToEnglish(raw);
-          audioTranscript = translated;
-          transcriptBox.textContent = translated;
-          audioStatus.textContent = t("aiContextAudioDone");
-        })();
-      };
-
-      recognition.start();
     });
 
     // ── CSV upload ───────────────────────────────────────────────────────────
@@ -486,7 +319,6 @@ export function openAIContextModal(): Promise<AIContextPayload | null> {
       const payload: AIContextPayload = {};
 
       if (text) payload.text = text;
-      if (audioTranscript) payload.audioTranscript = audioTranscript;
       if (csvText) payload.csvText = csvText;
       if (imageDataUrl) payload.imageDataUrl = imageDataUrl;
       if (pdfPageDataUrls.length > 0) payload.pdfPageDataUrls = pdfPageDataUrls;

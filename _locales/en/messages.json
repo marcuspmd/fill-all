@@ -246,7 +246,7 @@
     "message": "Default"
   },
   "btnNewForm": {
-    "message": "+ New Form"
+    "message": "New Form"
   },
   "msgConfirmDeleteForm": {
     "message": "Delete this form permanently?"

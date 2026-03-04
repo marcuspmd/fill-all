@@ -400,6 +400,7 @@ async function handleContentMessage(
                 value: step.value,
                 url: step.url,
                 label: step.label,
+                assertion: step.assertion,
               },
               index,
             },
@@ -418,6 +419,7 @@ async function handleContentMessage(
                 value: step.value,
                 url: step.url,
                 label: step.label,
+                assertion: step.assertion,
               },
               index,
             },
@@ -666,6 +668,24 @@ async function initContentScript(): Promise<void> {
   // (non-AJAX GET/POST) caused a full page navigation.
   const restoredSession = tryRestoreRecordingSession();
   if (restoredSession) {
+    // Notify the devtools panel about the restored session (with all steps captured
+    // before and during the form submit) so it can repopulate the action list.
+    chrome.runtime
+      .sendMessage({
+        type: "RECORDING_RESTORED",
+        payload: {
+          steps: restoredSession.steps.map((step) => ({
+            type: step.type,
+            selector: step.selector,
+            value: step.value,
+            url: step.url,
+            label: step.label,
+            assertion: step.assertion,
+          })),
+        },
+      })
+      .catch(() => {});
+
     setOnStepAdded((step, index) => {
       chrome.runtime
         .sendMessage({
@@ -677,6 +697,7 @@ async function initContentScript(): Promise<void> {
               value: step.value,
               url: step.url,
               label: step.label,
+              assertion: step.assertion,
             },
             index,
           },
@@ -695,6 +716,7 @@ async function initContentScript(): Promise<void> {
               value: step.value,
               url: step.url,
               label: step.label,
+              assertion: step.assertion,
             },
             index,
           },
