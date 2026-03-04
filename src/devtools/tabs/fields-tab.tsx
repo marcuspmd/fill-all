@@ -13,6 +13,7 @@ import { h } from "preact";
 import type {
   DetectedFieldSummary,
   ExtensionMessage,
+  FieldRule,
   IgnoredField,
   StreamedFieldMessage,
 } from "@/types";
@@ -27,6 +28,10 @@ import {
 import { addLog, updateStatusBar } from "../panel-utils";
 import { renderTo } from "../components";
 import { FieldsTabView } from "@/lib/ui/components";
+import type {
+  FieldEditorSavePayload,
+  GeneratorOption,
+} from "@/lib/ui/components/field-editor-modal";
 
 // ── Fill Operations ───────────────────────────────────────────────────────────
 
@@ -322,6 +327,126 @@ export async function detectFields(): Promise<void> {
   await detectFieldsStreaming();
 }
 
+// ── Field Editor ──────────────────────────────────────────────────────────────
+
+export async function openFieldEditor(
+  field: DetectedFieldSummary,
+): Promise<void> {
+  panelState.editingField = field;
+  panelState.editingFieldExistingRule = null;
+
+  try {
+    const rules = (await sendToBackground({
+      type: "GET_RULES",
+    })) as FieldRule[] | null;
+    if (Array.isArray(rules)) {
+      const existing = rules.find((r) => r.fieldSelector === field.selector);
+      if (existing) {
+        panelState.editingFieldExistingRule = {
+          fieldType: existing.fieldType,
+          generator: (existing.generator as GeneratorOption) ?? "auto",
+          fixedValue: existing.fixedValue ?? "",
+          aiPrompt: existing.aiPrompt ?? "",
+          generatorParams: existing.generatorParams ?? {},
+        };
+      }
+    }
+  } catch {
+    // open editor with no pre-filled rule on failure
+  }
+
+  if (panelState.activeTab === "fields") renderFieldsTab();
+}
+
+export function closeFieldEditor(): void {
+  panelState.editingField = null;
+  panelState.editingFieldExistingRule = null;
+  if (panelState.activeTab === "fields") renderFieldsTab();
+}
+
+export async function saveFieldRule(
+  payload: FieldEditorSavePayload,
+): Promise<void> {
+  if (!panelState.editingField) return;
+
+  const field = panelState.editingField;
+  try {
+    const url = await getInspectedUrl();
+    await sendToBackground({
+      type: "SAVE_FIELD_OVERRIDE",
+      payload: {
+        url,
+        fieldSelector: field.selector,
+        fieldName: field.name || field.label || field.id || undefined,
+        fieldType: payload.fieldType,
+        generator: payload.generator,
+        fixedValue: payload.fixedValue || undefined,
+        aiPrompt: payload.aiPrompt || undefined,
+        generatorParams: payload.generatorParams,
+      },
+    });
+    addLog(`✓ Regra salva para: ${field.selector}`, "success");
+  } catch (err) {
+    addLog(`Erro ao salvar regra: ${err}`, "error");
+  }
+
+  closeFieldEditor();
+}
+
+export async function deleteFieldRule(): Promise<void> {
+  if (!panelState.editingField) return;
+
+  const field = panelState.editingField;
+  try {
+    const url = await getInspectedUrl();
+    await sendToBackground({
+      type: "DELETE_FIELD_OVERRIDE",
+      payload: { url, fieldSelector: field.selector },
+    });
+    addLog(`✓ Regra removida para: ${field.selector}`, "success");
+  } catch (err) {
+    addLog(`Erro ao remover regra: ${err}`, "error");
+  }
+
+  closeFieldEditor();
+}
+
+export async function redetectField(selector: string): Promise<void> {
+  addLog(`🔍 Re-detectando: ${selector}`);
+  try {
+    const result = (await sendToPage({
+      type: "RECLASSIFY_FIELD",
+      payload: selector,
+    })) as DetectedFieldSummary & { error?: string };
+
+    if (result?.error) {
+      addLog(`Erro ao re-detectar: ${result.error}`, "error");
+      return;
+    }
+
+    const idx = panelState.detectedFields.findIndex(
+      (f) => f.selector === selector,
+    );
+    if (idx !== -1) {
+      panelState.detectedFields[idx] = result;
+    }
+
+    // Update editingField so the modal reflects the new classification
+    if (panelState.editingField?.selector === selector) {
+      panelState.editingField = result;
+    }
+
+    addLog(
+      `✓ Campo re-detectado: ${result.fieldType} (${result.detectionMethod})`,
+      "success",
+    );
+  } catch (err) {
+    addLog(`Erro ao re-detectar: ${err}`, "error");
+  }
+
+  if (panelState.activeTab === "fields") renderFieldsTab();
+}
+
 // ── Render ────────────────────────────────────────────────────────────────────
 
 export function renderFieldsTab(): void {
@@ -340,6 +465,13 @@ export function renderFieldsTab(): void {
       onFillField={(sel) => void fillField(sel)}
       onInspectField={(sel) => inspectElement(sel)}
       onToggleIgnore={(sel, label) => void toggleIgnore(sel, label)}
+      onEditField={(field) => void openFieldEditor(field)}
+      editingField={panelState.editingField}
+      editingFieldExistingRule={panelState.editingFieldExistingRule}
+      onSaveFieldRule={(p: FieldEditorSavePayload) => void saveFieldRule(p)}
+      onDeleteFieldRule={() => void deleteFieldRule()}
+      onCloseEditor={closeFieldEditor}
+      onRedetectField={(sel) => redetectField(sel)}
     />,
   );
 }

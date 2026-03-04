@@ -170,6 +170,21 @@ export async function detectNativeFieldsAsync(): Promise<FormField[]> {
 }
 
 /**
+ * Reclassifies a single field element identified by its CSS selector.
+ * Runs the full async pipeline (including Chrome AI) on just that one element.
+ * Returns null if the element is not found in the DOM.
+ */
+export async function reclassifyFieldBySelector(
+  selector: string,
+): Promise<FormField | null> {
+  const element = document.querySelector<NativeElement>(selector);
+  if (!element) return null;
+  const field = buildNativeField(element);
+  const [classified] = await buildClassificationChain().runAsync([field]);
+  return classified ?? null;
+}
+
+/**
  * Streaming run — yields each FormField immediately after it is classified.
  * Enables real-time UI updates while classification is still in progress.
  */

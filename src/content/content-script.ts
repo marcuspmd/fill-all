@@ -21,6 +21,7 @@ import {
   detectAllFieldsAsync,
   detectFormFields,
   streamAllFields,
+  reclassifyFieldBySelector,
 } from "@/lib/form/form-detector";
 import {
   saveForm,
@@ -280,6 +281,34 @@ export async function handleContentMessage(
         showNotification(`✓ Campo "${field.label || selector}" preenchido`);
       }
       return result ?? { error: "Failed to fill field" };
+    }
+
+    case "RECLASSIFY_FIELD": {
+      const selector = parseStringPayload(message.payload);
+      if (!selector) return { error: "Invalid payload for RECLASSIFY_FIELD" };
+      const classified = await reclassifyFieldBySelector(selector);
+      if (!classified)
+        return { error: "Field not found or could not be classified" };
+      const summary: DetectedFieldSummary = {
+        selector: classified.selector,
+        fieldType: classified.fieldType,
+        label:
+          classified.label || classified.name || classified.id || "unknown",
+        name: classified.name,
+        id: classified.id,
+        placeholder: classified.placeholder,
+        required: classified.required,
+        contextualType: classified.contextualType,
+        detectionMethod: classified.detectionMethod,
+        detectionConfidence: classified.detectionConfidence,
+      };
+      if (classified.element instanceof HTMLSelectElement) {
+        summary.options = Array.from(classified.element.options).map((o) => ({
+          value: o.value,
+          text: o.text.trim(),
+        }));
+      }
+      return summary;
     }
 
     case "START_WATCHING": {

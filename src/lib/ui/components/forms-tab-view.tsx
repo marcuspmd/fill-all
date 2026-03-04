@@ -1,8 +1,12 @@
 /**
- * FormsTabView & EditFormScreen — Preact components for the Forms tab.
+ * FormsTabView, EditFormScreen & FieldRowModal — Preact components for the Forms tab.
  *
  * FormsTabView: saved forms list with load / new / apply / edit / delete.
- * EditFormScreen: full editor for a saved form's template fields.
+ *   When editing, renders EditFormScreen inline (replacing the list).
+ * EditFormScreen: full inline editor for a saved form — shows compact field rows.
+ *   Clicking edit on a row opens FieldRowModal (modal overlay for one field).
+ * FieldRowModal: modal overlay for editing a single FormTemplateField,
+ *   following the same visual pattern as FieldEditorModal (fields tab).
  */
 
 import { h } from "preact";
@@ -24,9 +28,8 @@ import {
 
 export interface FormsTabViewCallbacks {
   onLoad: () => void;
-  onNewForm: () => void;
   onApply: (form: SavedForm) => void;
-  onEdit: (form: SavedForm) => void;
+  onSave: (form: SavedForm, isNew: boolean) => Promise<void>;
   onSetDefault: (form: SavedForm) => void;
   onDelete: (form: SavedForm) => void;
 }
@@ -40,19 +43,55 @@ export function FormsTabView({
   savedForms,
   formsLoaded,
   onLoad,
-  onNewForm,
   onApply,
-  onEdit,
+  onSave,
   onSetDefault,
   onDelete,
 }: FormsTabViewProps) {
+  const [editingForm, setEditingForm] = useState<SavedForm | null>(null);
+  const [isNew, setIsNew] = useState(false);
+
+  function openNewForm() {
+    setEditingForm({
+      id: crypto.randomUUID(),
+      name: t("newFormTitle"),
+      urlPattern: "*",
+      fields: {},
+      templateFields: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    setIsNew(true);
+  }
+
+  function openEditForm(form: SavedForm) {
+    setEditingForm(form);
+    setIsNew(false);
+  }
+
+  async function handleSave(updated: SavedForm) {
+    await onSave(updated, isNew);
+    setEditingForm(null);
+  }
+
+  if (editingForm) {
+    return (
+      <EditFormScreen
+        form={editingForm}
+        isNew={isNew}
+        onSave={handleSave}
+        onClose={() => setEditingForm(null)}
+      />
+    );
+  }
+
   return (
     <div>
       <div class="fields-toolbar">
         <button class="btn" onClick={onLoad}>
           🔄 {t("btnLoadForms")}
         </button>
-        <button class="btn btn-success" onClick={onNewForm}>
+        <button class="btn btn-success" onClick={openNewForm}>
           + {t("btnNewForm")}
         </button>
         <span class="fields-count">
@@ -88,7 +127,7 @@ export function FormsTabView({
                 </button>
                 <button
                   class="btn btn-sm btn-warning"
-                  onClick={() => onEdit(form)}
+                  onClick={() => openEditForm(form)}
                 >
                   ✏️ {t("btnEdit")}
                 </button>
@@ -115,14 +154,7 @@ export function FormsTabView({
   );
 }
 
-// ── EditFormScreen ────────────────────────────────────────────────────────────
-
-export interface EditFormScreenProps {
-  form: SavedForm;
-  isNew?: boolean;
-  onSave: (updated: SavedForm) => void;
-  onCancel: () => void;
-}
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 function normaliseFields(form: SavedForm): FormTemplateField[] {
   if (form.templateFields && form.templateFields.length > 0) {
@@ -136,120 +168,62 @@ function normaliseFields(form: SavedForm): FormTemplateField[] {
   }));
 }
 
-interface FieldRowEditorProps {
-  field: FormTemplateField;
-  index: number;
-  onChange: (index: number, updated: Partial<FormTemplateField>) => void;
-  onRemove: (index: number) => void;
+function fieldRowLabel(field: FormTemplateField, index: number): string {
+  return (field.matchByFieldType ?? field.key) || `field_${index + 1}`;
 }
 
-function FieldRowEditor({
-  field,
-  index,
-  onChange,
-  onRemove,
-}: FieldRowEditorProps) {
-  const fieldTypeEntries = useMemo(() => buildFieldTypeSelectEntries(), []);
-  const generatorEntries = useMemo(() => buildGeneratorSelectEntries(), []);
+function fieldRowValue(field: FormTemplateField): string {
+  if (field.mode === "fixed") return field.fixedValue ?? "";
+  return field.generatorType ?? "auto";
+}
 
-  return (
-    <div class="edit-field-row" data-field-index={index}>
-      <div class="edit-field-match-wrap">
-        <SearchableSelectPreact
-          entries={fieldTypeEntries}
-          value={field.matchByFieldType ?? ""}
-          onChange={(v) =>
-            onChange(index, {
-              matchByFieldType: v ? (v as FieldType) : undefined,
-            })
-          }
-          placeholder={t("tooltipMatchByFieldType")}
-        />
-      </div>
-      <div class="edit-field-controls">
-        <select
-          class="edit-select"
-          value={field.mode}
-          onChange={(e) =>
-            onChange(index, {
-              mode: (e.target as HTMLSelectElement).value as FormFieldMode,
-            })
-          }
-        >
-          <option value="fixed">{t("fixedValue")}</option>
-          <option value="generator">{t("generatorMode")}</option>
-        </select>
-        {field.mode === "fixed" ? (
-          <input
-            type="text"
-            class="edit-field-value"
-            placeholder={t("placeholderFixedValue")}
-            value={field.fixedValue ?? ""}
-            onInput={(e) =>
-              onChange(index, {
-                fixedValue: (e.target as HTMLInputElement).value,
-              })
-            }
-          />
-        ) : (
-          <SearchableSelectPreact
-            entries={generatorEntries}
-            value={field.generatorType ?? "auto"}
-            onChange={(v) => onChange(index, { generatorType: v as FieldType })}
-            placeholder={t("generatorMode")}
-            className="edit-field-value"
-          />
-        )}
-      </div>
-      <button
-        class="btn btn-sm btn-danger edit-remove-field"
-        title={t("tooltipRemoveField")}
-        onClick={() => onRemove(index)}
-      >
-        🗑
-      </button>
-    </div>
-  );
+// ── EditFormScreen ────────────────────────────────────────────────────────────
+
+interface EditFormScreenProps {
+  form: SavedForm;
+  isNew?: boolean;
+  onSave: (updated: SavedForm) => Promise<void>;
+  onClose: () => void;
 }
 
 export function EditFormScreen({
   form,
   isNew = false,
   onSave,
-  onCancel,
+  onClose,
 }: EditFormScreenProps) {
   const [formName, setFormName] = useState(form.name);
   const [urlPattern, setUrlPattern] = useState(form.urlPattern);
   const [fields, setFields] = useState<FormTemplateField[]>(() =>
     normaliseFields(form),
   );
+  const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(
+    null,
+  );
+  const [saving, setSaving] = useState(false);
 
-  function handleFieldChange(
-    index: number,
-    patch: Partial<FormTemplateField>,
-  ): void {
-    setFields((prev) =>
-      prev.map((f, i) => (i === index ? { ...f, ...patch } : f)),
-    );
+  function handleAddField(): void {
+    const next: FormTemplateField[] = [
+      ...fields,
+      { key: "", label: "", mode: "fixed" as FormFieldMode, fixedValue: "" },
+    ];
+    setFields(next);
+    setEditingFieldIndex(next.length - 1);
   }
 
   function handleRemoveField(index: number): void {
     setFields((prev) => prev.filter((_, i) => i !== index));
+    if (editingFieldIndex === index) setEditingFieldIndex(null);
   }
 
-  function handleAddField(): void {
-    setFields((prev) => [
-      ...prev,
-      {
-        key: "",
-        label: "",
-        mode: "fixed" as FormFieldMode,
-        fixedValue: "",
-      },
-    ]);
+  function handleFieldSave(index: number, updated: FormTemplateField): void {
+    setFields((prev) => prev.map((f, i) => (i === index ? updated : f)));
+    setEditingFieldIndex(null);
   }
 
   function handleSave(): void {
+    if (saving) return;
+    setSaving(true);
     const updatedFields: FormTemplateField[] = fields.map((f, i) => {
       const resolvedKey = (f.matchByFieldType ?? f.key) || `field_${i + 1}`;
       return {
@@ -262,20 +236,29 @@ export function EditFormScreen({
       };
     });
 
-    onSave({
+    void onSave({
       ...form,
       name: formName.trim() || form.name,
       urlPattern: urlPattern.trim() || form.urlPattern,
       templateFields: updatedFields,
-    });
+    }).finally(() => setSaving(false));
   }
 
   return (
     <div class="edit-form-screen">
-      <div class="edit-form-title">
-        {isNew ? "➕" : "✏️"} {t(isNew ? "newFormTitle" : "editTemplate")}
+      <div class="fields-toolbar">
+        <button class="btn btn-secondary" onClick={onClose}>
+          ← {t("btnCancel")}
+        </button>
+        <span class="modal-title" style={{ flex: 1, marginLeft: 8 }}>
+          {isNew ? "➕" : "✏️"} {t(isNew ? "newFormTitle" : "editTemplate")}
+        </span>
+        <button class="btn btn-success" onClick={handleSave} disabled={saving}>
+          💾 {saving ? "..." : t("btnSave")}
+        </button>
       </div>
-      <div class="edit-meta-grid">
+
+      <div class="edit-meta-grid" style={{ padding: "8px 0" }}>
         <div class="edit-input-group">
           <label class="edit-label">{t("formName")}</label>
           <input
@@ -295,29 +278,162 @@ export function EditFormScreen({
           />
         </div>
       </div>
+
       <div class="edit-section-header">{t("editFieldsHeader")}</div>
+
       <div class="edit-fields-list">
+        {fields.length === 0 && (
+          <div class="empty" style={{ padding: "12px 0" }}>
+            {t("noFieldsYet")}
+          </div>
+        )}
         {fields.map((field, i) => (
-          <FieldRowEditor
-            key={i}
-            field={field}
-            index={i}
-            onChange={handleFieldChange}
-            onRemove={handleRemoveField}
-          />
+          <div key={i} class="field-row-compact">
+            <span class="field-row-type">{fieldRowLabel(field, i)}</span>
+            <span class="field-row-mode">{field.mode}</span>
+            <span class="field-row-value">{fieldRowValue(field)}</span>
+            <button
+              class="btn btn-sm btn-warning"
+              title={t("btnEdit")}
+              onClick={() => setEditingFieldIndex(i)}
+            >
+              ✏️
+            </button>
+            <button
+              class="btn btn-sm btn-danger"
+              title={t("tooltipRemoveField")}
+              onClick={() => handleRemoveField(i)}
+            >
+              🗑
+            </button>
+          </div>
         ))}
       </div>
-      <div class="edit-form-footer">
-        <button class="btn" onClick={onCancel}>
-          ✕ {t("btnCancel")}
-        </button>
+
+      <div style={{ padding: "8px 0" }}>
         <button class="btn btn-secondary" onClick={handleAddField}>
           + {t("btnAddField")}
         </button>
-        <button class="btn btn-success" onClick={handleSave}>
-          💾 {t("btnSave")}
-        </button>
+      </div>
+
+      {editingFieldIndex !== null && fields[editingFieldIndex] && (
+        <FieldRowModal
+          field={fields[editingFieldIndex]}
+          index={editingFieldIndex}
+          onSave={handleFieldSave}
+          onClose={() => setEditingFieldIndex(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── FieldRowModal ─────────────────────────────────────────────────────────────
+
+interface FieldRowModalProps {
+  field: FormTemplateField;
+  index: number;
+  onSave: (index: number, updated: FormTemplateField) => void;
+  onClose: () => void;
+}
+
+function FieldRowModal({ field, index, onSave, onClose }: FieldRowModalProps) {
+  const [draft, setDraft] = useState<FormTemplateField>({ ...field });
+  const fieldTypeEntries = useMemo(() => buildFieldTypeSelectEntries(), []);
+  const generatorEntries = useMemo(() => buildGeneratorSelectEntries(), []);
+
+  function patch(partial: Partial<FormTemplateField>) {
+    setDraft((prev) => ({ ...prev, ...partial }));
+  }
+
+  return (
+    <div class="modal-overlay" onClick={onClose}>
+      <div
+        class="modal-box modal-box--field"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div class="modal-header">
+          <span class="modal-title">✏️ {t("editField")}</span>
+          <button class="modal-close" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="edit-input-group">
+            <label class="edit-label">{t("tooltipMatchByFieldType")}</label>
+            <SearchableSelectPreact
+              entries={fieldTypeEntries}
+              value={draft.matchByFieldType ?? ""}
+              onChange={(v) =>
+                patch({ matchByFieldType: v ? (v as FieldType) : undefined })
+              }
+              placeholder={t("tooltipMatchByFieldType")}
+            />
+          </div>
+
+          <div class="edit-input-group" style={{ marginTop: 8 }}>
+            <label class="edit-label">{t("fieldModeHeader")}</label>
+            <select
+              class="edit-select"
+              value={draft.mode}
+              onChange={(e) =>
+                patch({
+                  mode: (e.target as HTMLSelectElement).value as FormFieldMode,
+                })
+              }
+            >
+              <option value="fixed">{t("fixedValue")}</option>
+              <option value="generator">{t("generatorMode")}</option>
+            </select>
+          </div>
+
+          <div class="edit-input-group" style={{ marginTop: 8 }}>
+            <label class="edit-label">
+              {draft.mode === "fixed" ? t("fixedValue") : t("generatorMode")}
+            </label>
+            {draft.mode === "fixed" ? (
+              <input
+                type="text"
+                class="edit-input"
+                placeholder={t("placeholderFixedValue")}
+                value={draft.fixedValue ?? ""}
+                onInput={(e) =>
+                  patch({ fixedValue: (e.target as HTMLInputElement).value })
+                }
+              />
+            ) : (
+              <SearchableSelectPreact
+                entries={generatorEntries}
+                value={draft.generatorType ?? "auto"}
+                onChange={(v) => patch({ generatorType: v as FieldType })}
+                placeholder={t("generatorMode")}
+              />
+            )}
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn" onClick={onClose}>
+            ✕ {t("btnCancel")}
+          </button>
+          <button class="btn btn-success" onClick={() => onSave(index, draft)}>
+            💾 {t("btnSave")}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
+// ── EditFormModal (kept for external consumers) ───────────────────────────────
+
+export interface EditFormModalProps {
+  form: SavedForm;
+  isNew?: boolean;
+  onSave: (updated: SavedForm) => Promise<void>;
+  onClose: () => void;
+}
+
+/** @deprecated Use EditFormScreen instead. */
+export const EditFormModal = EditFormScreen;

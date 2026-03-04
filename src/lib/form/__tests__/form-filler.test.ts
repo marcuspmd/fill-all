@@ -22,6 +22,8 @@ const {
 } = vi.hoisted(() => {
   const progressMock = {
     show: vi.fn(),
+    showAiGenerating: vi.fn(),
+    hideAiGenerating: vi.fn(),
     addDetecting: vi.fn(),
     updateDetected: vi.fn(),
     addFilling: vi.fn(),

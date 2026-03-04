@@ -6,6 +6,7 @@
  */
 
 import type { DetectedFieldSummary, SavedForm } from "@/types";
+import type { FieldEditorSavePayload } from "@/lib/ui/components/field-editor-modal";
 import type { LogViewer } from "@/lib/logger/log-viewer";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -51,4 +52,8 @@ export const panelState = {
 
   // Log viewer
   logViewerInstance: null as LogViewer | null,
+
+  // Field editor modal
+  editingField: null as DetectedFieldSummary | null,
+  editingFieldExistingRule: null as FieldEditorSavePayload | null,
 };

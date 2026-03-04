@@ -11,6 +11,7 @@
 
 import { h } from "preact";
 import "../lib/ui/searchable-select.css";
+import "../lib/ui/components/field-editor-modal.css";
 import { initI18n } from "@/lib/i18n";
 import { getLogViewerStyles } from "@/lib/logger/log-viewer";
 import type { TabId, RecordStep } from "./panel-state";

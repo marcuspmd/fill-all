@@ -9,6 +9,8 @@ import { h } from "preact";
 import { t } from "@/lib/i18n";
 import type { DetectedFieldSummary } from "@/types";
 import { TypeBadge, MethodBadge, ConfidenceBadge } from "./badges";
+import type { FieldEditorSavePayload } from "./field-editor-modal";
+import { FieldEditorModal } from "./field-editor-modal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -21,12 +23,19 @@ export interface FieldsTabCallbacks {
   onFillField: (selector: string) => void;
   onInspectField: (selector: string) => void;
   onToggleIgnore: (selector: string, label: string) => void;
+  onEditField: (field: DetectedFieldSummary) => void;
+  onSaveFieldRule: (payload: FieldEditorSavePayload) => void;
+  onDeleteFieldRule: () => void;
+  onCloseEditor: () => void;
+  onRedetectField?: (selector: string) => Promise<void>;
 }
 
 export interface FieldsTabViewProps extends FieldsTabCallbacks {
   fields: DetectedFieldSummary[];
   ignoredSelectors: Set<string>;
   detecting: boolean;
+  editingField: DetectedFieldSummary | null;
+  editingFieldExistingRule: FieldEditorSavePayload | null;
 }
 
 // ── FieldRow ──────────────────────────────────────────────────────────────────
@@ -38,6 +47,7 @@ interface FieldRowProps {
   onFill: (selector: string) => void;
   onInspect: (selector: string) => void;
   onToggleIgnore: (selector: string, label: string) => void;
+  onEdit: (field: DetectedFieldSummary) => void;
 }
 
 function FieldRow({
@@ -47,6 +57,7 @@ function FieldRow({
   onFill,
   onInspect,
   onToggleIgnore,
+  onEdit,
 }: FieldRowProps) {
   const displayType = field.contextualType || field.fieldType;
   const method = field.detectionMethod || "-";
@@ -82,6 +93,13 @@ function FieldRow({
           🔎
         </button>
         <button
+          class="icon-btn"
+          title={t("actionEditField")}
+          onClick={() => onEdit(field)}
+        >
+          ✏️
+        </button>
+        <button
           class={`icon-btn${ignored ? " icon-btn-off" : ""}`}
           title={ignored ? t("actionReactivate") : t("actionIgnore")}
           onClick={() => onToggleIgnore(field.selector, label)}
@@ -107,6 +125,13 @@ export function FieldsTabView({
   onFillField,
   onInspectField,
   onToggleIgnore,
+  onEditField,
+  editingField,
+  editingFieldExistingRule,
+  onSaveFieldRule,
+  onDeleteFieldRule,
+  onCloseEditor,
+  onRedetectField,
 }: FieldsTabViewProps) {
   const hasFields = fields.length > 0;
 
@@ -208,6 +233,7 @@ export function FieldsTabView({
                   onFill={onFillField}
                   onInspect={onInspectField}
                   onToggleIgnore={onToggleIgnore}
+                  onEdit={onEditField}
                 />
               ))}
               {detecting && (
@@ -224,6 +250,20 @@ export function FieldsTabView({
           </table>
         )}
       </div>
+      {editingField && (
+        <FieldEditorModal
+          field={editingField}
+          existingRule={editingFieldExistingRule}
+          onSave={onSaveFieldRule}
+          onDelete={onDeleteFieldRule}
+          onClose={onCloseEditor}
+          onRedetect={
+            onRedetectField
+              ? () => onRedetectField(editingField.selector)
+              : undefined
+          }
+        />
+      )}
     </div>
   );
 }

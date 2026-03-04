@@ -350,6 +350,9 @@
   "actionInspect": {
     "message": "Inspeccionar en Elementos"
   },
+  "actionEditField": {
+    "message": "Editar regla del campo"
+  },
   "actionIgnore": {
     "message": "Ignorar"
   },
@@ -1768,5 +1771,68 @@
   },
   "close": {
     "message": "Cerrar"
+  },
+  "editField": {
+    "message": "Editar Campo"
+  },
+  "fillMethod": {
+    "message": "Método de Relleno"
+  },
+  "methodAuto": {
+    "message": "Automático (tipo detectado)"
+  },
+  "methodGenerator": {
+    "message": "Generador Específico"
+  },
+  "methodFixed": {
+    "message": "Valor Fijo"
+  },
+  "methodAI": {
+    "message": "Chrome AI"
+  },
+  "aiPromptLabel": {
+    "message": "Prompt para Chrome AI"
+  },
+  "aiPromptPlaceholder": {
+    "message": "Ej: Ingresa un CNPJ válido..."
+  },
+  "clearRule": {
+    "message": "🗑️ Limpiar Regla"
+  },
+  "searchType": {
+    "message": "Buscar tipo..."
+  },
+  "editFieldRule": {
+    "message": "Editar Regla del Campo"
+  },
+  "editorGenerator": {
+    "message": "Generador"
+  },
+  "editorFixedValue": {
+    "message": "Valor Fijo"
+  },
+  "editorFixedValuePlaceholder": {
+    "message": "Dejar vacío para usar el generador"
+  },
+  "editorAiPrompt": {
+    "message": "Prompt de IA"
+  },
+  "editorAiPromptPlaceholder": {
+    "message": "Instrucción personalizada para la IA"
+  },
+  "editorDeleteRule": {
+    "message": "Eliminar Regla"
+  },
+  "editorRedetect": {
+    "message": "Detectar de Nuevo"
+  },
+  "editorRedetecting": {
+    "message": "Detectando..."
+  },
+  "editorCancel": {
+    "message": "Cancelar"
+  },
+  "editorSave": {
+    "message": "Guardar"
   }
 }

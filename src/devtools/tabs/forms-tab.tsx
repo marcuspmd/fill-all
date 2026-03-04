@@ -3,7 +3,7 @@
  *
  * Responsibilities:
  * - Load and display saved forms
- * - Edit and create form field entries
+ * - Edit and create form field entries (via modal in FormsTabView)
  * - Apply a saved form to the inspected page
  * - Set default form / delete form
  */
@@ -15,7 +15,7 @@ import { panelState } from "../panel-state";
 import { sendToPage, sendToBackground } from "../panel-messaging";
 import { addLog } from "../panel-utils";
 import { renderTo } from "../components";
-import { FormsTabView, EditFormScreen } from "@/lib/ui/components";
+import { FormsTabView } from "@/lib/ui/components";
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 
@@ -105,51 +105,6 @@ export async function setFormAsDefault(formId: string): Promise<void> {
   }
 }
 
-// ── New Form Screen ────────────────────────────────────────────────────────────
-
-export function showNewFormScreen(): void {
-  const blankForm: SavedForm = {
-    id: crypto.randomUUID(),
-    name: t("newFormTitle"),
-    urlPattern: "*",
-    fields: {},
-    templateFields: [],
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
-  showEditFormScreen(blankForm, true);
-}
-
-// ── Edit Form Screen ──────────────────────────────────────────────────────────
-
-export function showEditFormScreen(form: SavedForm, isNew = false): void {
-  const content = document.getElementById("content");
-  renderTo(
-    content,
-    <EditFormScreen
-      form={form}
-      isNew={isNew}
-      onCancel={() => renderFormsTab()}
-      onSave={(updated) => {
-        void (async () => {
-          await sendToBackground({ type: "UPDATE_FORM", payload: updated });
-          if (isNew) {
-            panelState.savedForms = [...panelState.savedForms, updated];
-            addLog(`${t("logFormSaved")}: ${updated.name}`, "success");
-          } else {
-            const idx = panelState.savedForms.findIndex(
-              (f) => f.id === form.id,
-            );
-            if (idx >= 0) panelState.savedForms[idx] = updated;
-            addLog(`${t("logTemplateUpdated")}: ${updated.name}`, "success");
-          }
-          renderFormsTab();
-        })();
-      }}
-    />,
-  );
-}
-
 // ── Render ────────────────────────────────────────────────────────────────────
 
 export function renderFormsTab(): void {
@@ -160,9 +115,21 @@ export function renderFormsTab(): void {
       savedForms={panelState.savedForms}
       formsLoaded={panelState.formsLoaded}
       onLoad={() => void loadForms()}
-      onNewForm={() => showNewFormScreen()}
       onApply={(form) => void applySavedForm(form)}
-      onEdit={(form) => showEditFormScreen(form)}
+      onSave={async (updated, isNew) => {
+        await sendToBackground({ type: "UPDATE_FORM", payload: updated });
+        if (isNew) {
+          panelState.savedForms = [...panelState.savedForms, updated];
+          addLog(`${t("logFormSaved")}: ${updated.name}`, "success");
+        } else {
+          const idx = panelState.savedForms.findIndex(
+            (f) => f.id === updated.id,
+          );
+          if (idx >= 0) panelState.savedForms[idx] = updated;
+          addLog(`${t("logTemplateUpdated")}: ${updated.name}`, "success");
+        }
+        renderFormsTab();
+      }}
       onSetDefault={(form) => void setFormAsDefault(form.id)}
       onDelete={(form) => {
         if (window.confirm(t("msgConfirmDeleteForm"))) {

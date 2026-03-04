@@ -253,3 +253,56 @@ export function parseStringPayload(input: unknown): string | null {
   const result = z.string().min(1).safeParse(input);
   return result.success ? result.data : null;
 }
+
+const saveFieldOverridePayloadSchema = z
+  .object({
+    url: z.string().min(1),
+    fieldSelector: z.string().min(1),
+    fieldName: z.string().optional(),
+    fieldType: z.enum(FIELD_TYPES),
+    generator: z.enum(["auto", "ai", "tensorflow", ...FIELD_TYPES]),
+    fixedValue: z.string().optional(),
+    aiPrompt: z.string().optional(),
+    generatorParams: generatorParamsSchema,
+    selectOptionIndex: z.number().optional(),
+  })
+  .strict();
+
+export type SaveFieldOverridePayload = z.infer<
+  typeof saveFieldOverridePayloadSchema
+>;
+
+/**
+ * Parses and validates a `SAVE_FIELD_OVERRIDE` payload.
+ * @param input - Raw payload
+ * @returns Validated payload or `null` if invalid
+ */
+export function parseSaveFieldOverridePayload(
+  input: unknown,
+): SaveFieldOverridePayload | null {
+  const result = saveFieldOverridePayloadSchema.safeParse(input);
+  return result.success ? result.data : null;
+}
+
+const deleteFieldOverridePayloadSchema = z
+  .object({
+    url: z.string().min(1),
+    fieldSelector: z.string().min(1),
+  })
+  .strict();
+
+export type DeleteFieldOverridePayload = z.infer<
+  typeof deleteFieldOverridePayloadSchema
+>;
+
+/**
+ * Parses and validates a `DELETE_FIELD_OVERRIDE` payload.
+ * @param input - Raw payload
+ * @returns Validated `{ url, fieldSelector }` or `null` if invalid
+ */
+export function parseDeleteFieldOverridePayload(
+  input: unknown,
+): DeleteFieldOverridePayload | null {
+  const result = deleteFieldOverridePayloadSchema.safeParse(input);
+  return result.success ? result.data : null;
+}
