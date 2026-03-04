@@ -16,11 +16,14 @@ const {
   mockGetIgnoredFieldsForUrl,
   mockSetFillingInProgress,
   mockFillCustomComponent,
+  mockExtractCustomComponentValue,
   mockGenerate,
   mockCreateProgressNotification,
 } = vi.hoisted(() => {
   const progressMock = {
     show: vi.fn(),
+    showAiGenerating: vi.fn(),
+    hideAiGenerating: vi.fn(),
     addDetecting: vi.fn(),
     updateDetected: vi.fn(),
     addFilling: vi.fn(),
@@ -41,6 +44,7 @@ const {
     mockGetIgnoredFieldsForUrl: vi.fn().mockResolvedValue([]),
     mockSetFillingInProgress: vi.fn(),
     mockFillCustomComponent: vi.fn().mockResolvedValue(false),
+    mockExtractCustomComponentValue: vi.fn().mockReturnValue(null),
     mockGenerate: vi.fn().mockReturnValue("generated-value"),
     mockCreateProgressNotification: vi.fn().mockReturnValue(progressMock),
   };
@@ -70,6 +74,7 @@ vi.mock("../dom-watcher", () => ({
 }));
 vi.mock("../adapters/adapter-registry", () => ({
   fillCustomComponent: mockFillCustomComponent,
+  extractCustomComponentValue: mockExtractCustomComponentValue,
 }));
 vi.mock("@/lib/generators", () => ({ generate: mockGenerate }));
 vi.mock("@/lib/logger", () => ({
@@ -413,6 +418,24 @@ describe("form-filler", () => {
 
       expect(values).toEqual({});
     });
+
+    it("captures value via custom adapter extractor when adapterName is set", async () => {
+      const wrapper = document.createElement("div");
+      wrapper.id = "custom";
+      // adapterName is arbitrary here, the mock will supply the result
+      const field = makeField(wrapper, {
+        id: "custom",
+        selector: "#custom",
+        adapterName: "antd-select",
+      });
+
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockExtractCustomComponentValue.mockReturnValue("from-adapter");
+
+      const values = await captureFormValues();
+      expect(values["custom"]).toBe("from-adapter");
+      expect(mockExtractCustomComponentValue).toHaveBeenCalledWith(field);
+    });
   });
 
   // ── applyTemplate ──────────────────────────────────────────────────────────
@@ -447,6 +470,32 @@ describe("form-filler", () => {
       expect(el.value).toBe("Alice");
     });
 
+    it("uses custom adapter filler when field.adapterName is present", async () => {
+      const wrapper = document.createElement("div");
+      wrapper.id = "a1";
+      const field = makeField(wrapper, {
+        selector: "#a1",
+        id: "a1",
+        adapterName: "antd-select",
+      });
+
+      mockDetectAllFieldsAsync.mockResolvedValue({ fields: [field] });
+      mockGetSettings.mockResolvedValue(DEFAULT_SETTINGS);
+
+      const form: SavedForm = {
+        id: "form-1",
+        name: "Test Form",
+        urlPattern: "*",
+        fields: { a1: "val" },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      const { filled } = await applyTemplate(form);
+      expect(mockFillCustomComponent).toHaveBeenCalledWith(field, "val");
+      expect(filled).toBe(1);
+    });
+
     it("applies generator-mode template by selector", async () => {
       const el = makeInput("text", "t-email");
       const field = makeField(el, {
@@ -477,7 +526,7 @@ describe("form-filler", () => {
       const { filled } = await applyTemplate(form);
 
       expect(filled).toBe(1);
-      expect(mockGenerate).toHaveBeenCalledWith("email");
+      expect(mockGenerate).toHaveBeenCalledWith("email", undefined);
     });
 
     it("applies type-based template matching all fields of given type", async () => {

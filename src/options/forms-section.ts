@@ -3,13 +3,14 @@
  */
 
 import type { SavedForm, FormTemplateField, FieldType } from "@/types";
-import { FIELD_TYPES } from "@/types";
 import { t } from "@/lib/i18n";
 import { escapeHtml, showToast } from "./shared";
+import { getFieldTypeLabel } from "@/lib/shared/field-type-catalog";
 import {
-  getFieldTypeGroupedOptions,
-  getFieldTypeLabel,
-} from "@/lib/shared/field-type-catalog";
+  SearchableSelect,
+  buildFieldTypeSelectEntries,
+  buildGeneratorSelectEntries,
+} from "@/lib/ui";
 
 function fieldTypeLabel(ft: FieldType): string {
   return getFieldTypeLabel(ft);
@@ -29,32 +30,39 @@ function fieldSummary(form: SavedForm): string {
   return `${Object.keys(form.fields || {}).length} campos`;
 }
 
-function buildFieldTypeOptions(selected?: string): string {
-  return getFieldTypeGroupedOptions(FIELD_TYPES)
-    .map(
-      (group) =>
-        `<optgroup label="${group.label}">${group.options
-          .map(
-            (entry) =>
-              `<option value="${entry.value}"${entry.value === selected ? " selected" : ""}>${entry.label} (${entry.value})</option>`,
-          )
-          .join("")}</optgroup>`,
-    )
-    .join("");
-}
+/**
+ * Mounts SearchableSelect components inside `.field-type-match-container` and
+ * `.field-generator-container` for a newly inserted template field row.
+ * Initial values are taken from `data-match-type` / `data-generator-type`
+ * attributes on the row element (set by `buildTemplateFieldRow`).
+ */
+function upgradeRowSearchableSelects(row: Element): void {
+  const tr = row as HTMLElement;
+  const matchType = tr.dataset.matchType ?? "";
+  const generatorType = tr.dataset.generatorType ?? "";
 
-function buildGeneratorOptions(selected?: string): string {
-  return getFieldTypeGroupedOptions(FIELD_TYPES)
-    .map(
-      (group) =>
-        `<optgroup label="${group.label}">${group.options
-          .map(
-            (entry) =>
-              `<option value="${entry.value}"${entry.value === selected ? " selected" : ""}>${entry.label} (${entry.value})</option>`,
-          )
-          .join("")}</optgroup>`,
-    )
-    .join("");
+  const typeContainer = row.querySelector<HTMLElement>(
+    ".field-type-match-container",
+  );
+  const genContainer = row.querySelector<HTMLElement>(
+    ".field-generator-container",
+  );
+
+  if (typeContainer && !typeContainer.querySelector(".fa-ss")) {
+    new SearchableSelect({
+      entries: buildFieldTypeSelectEntries(),
+      value: matchType,
+      placeholder: "Selecione o tipo…",
+    }).mount(typeContainer);
+  }
+
+  if (genContainer && !genContainer.querySelector(".fa-ss")) {
+    new SearchableSelect({
+      entries: buildGeneratorSelectEntries(),
+      value: generatorType || matchType,
+      placeholder: "Selecione o gerador…",
+    }).mount(genContainer);
+  }
 }
 
 function legacyFieldsToTemplate(
@@ -75,11 +83,11 @@ function buildTemplateFieldRow(field?: Partial<FormTemplateField>): string {
   const fixedValue = field?.fixedValue ?? "";
   const generatorType = field?.generatorType ?? "name";
   return `
-    <tr class="template-field-row">
+    <tr class="template-field-row"
+        data-match-type="${escapeHtml(matchType)}"
+        data-generator-type="${escapeHtml(generatorType)}">
       <td>
-        <select class="field-type-match-select">
-          ${buildFieldTypeOptions(matchType)}
-        </select>
+        <div class="field-type-match-container"></div>
       </td>
       <td>
         <select class="field-mode-select">
@@ -95,12 +103,10 @@ function buildTemplateFieldRow(field?: Partial<FormTemplateField>): string {
           value="${escapeHtml(fixedValue)}"
           style="display:${mode === "fixed" ? "inline-block" : "none"}"
         />
-        <select
-          class="field-generator-select"
+        <div
+          class="field-generator-container"
           style="display:${mode === "generator" ? "inline-block" : "none"}"
-        >
-          ${buildGeneratorOptions(generatorType)}
-        </select>
+        ></div>
       </td>
       <td>
         <button class="btn btn-sm btn-delete btn-remove-row" title="${t("removeFieldTitle")}">✕</button>
@@ -163,6 +169,9 @@ function openCreatePanel(): void {
 
   document.getElementById("saved-forms-list")?.before(panel);
   bindCreatePanelEvents(panel);
+  panel.querySelectorAll("tr.template-field-row").forEach((row) => {
+    upgradeRowSearchableSelects(row);
+  });
   panel.scrollIntoView({ behavior: "smooth" });
 }
 
@@ -176,7 +185,7 @@ function bindCreatePanelEvents(panel: HTMLElement): void {
     (row.querySelector(".field-fixed-value") as HTMLElement).style.display =
       isFixed ? "inline-block" : "none";
     (
-      row.querySelector(".field-generator-select") as HTMLElement
+      row.querySelector(".field-generator-container") as HTMLElement
     ).style.display = isFixed ? "none" : "inline-block";
   });
 
@@ -193,16 +202,13 @@ function bindCreatePanelEvents(panel: HTMLElement): void {
     ?.addEventListener("click", () => {
       const tbody = panel.querySelector("#create-fields-tbody");
       if (!tbody) return;
-      const tr = document.createElement("tr");
-      tr.className = "template-field-row";
-      tr.innerHTML = buildTemplateFieldRow()
-        .replace(/^<tr[^>]*>/, "")
-        .replace(/<\/tr>$/, "");
-      // Actually insert the full row via innerHTML on a wrapper
       const wrapper = document.createElement("tbody");
       wrapper.innerHTML = buildTemplateFieldRow();
       const newRow = wrapper.querySelector("tr");
-      if (newRow) tbody.appendChild(newRow);
+      if (newRow) {
+        tbody.appendChild(newRow);
+        upgradeRowSearchableSelects(newRow);
+      }
     });
 
   panel.querySelector("#create-panel-cancel")?.addEventListener("click", () => {
@@ -230,18 +236,24 @@ function bindCreatePanelEvents(panel: HTMLElement): void {
       const templateFields: FormTemplateField[] = [];
 
       panel.querySelectorAll("tr.template-field-row").forEach((row) => {
-        const matchType = (
-          row.querySelector(".field-type-match-select") as HTMLSelectElement
-        ).value as FieldType;
+        const matchType =
+          ((
+            row.querySelector(
+              ".field-type-match-container .fa-ss__value",
+            ) as HTMLInputElement
+          )?.value as FieldType) ?? ("name" as FieldType);
         const mode = (
           row.querySelector(".field-mode-select") as HTMLSelectElement
         ).value as "fixed" | "generator";
         const fixedValue = (
           row.querySelector(".field-fixed-value") as HTMLInputElement
         ).value;
-        const generatorType = (
-          row.querySelector(".field-generator-select") as HTMLSelectElement
-        ).value as FieldType;
+        const generatorType =
+          ((
+            row.querySelector(
+              ".field-generator-container .fa-ss__value",
+            ) as HTMLInputElement
+          )?.value as FieldType) ?? ("name" as FieldType);
 
         templateFields.push({
           key: matchType,
@@ -382,12 +394,11 @@ function openEditPanel(form: SavedForm): void {
                 value="${escapeHtml(field.fixedValue ?? "")}"
                 style="display:${field.mode === "fixed" ? "inline-block" : "none"}"
               />
-              <select
-                class="field-generator-select"
+              <div
+                class="field-generator-container"
+                data-generator-type="${escapeHtml(field.generatorType ?? "name")}"
                 style="display:${field.mode === "generator" ? "inline-block" : "none"}"
-              >
-                ${buildGeneratorOptions(field.generatorType)}
-              </select>
+              ></div>
             </td>
             <td>
               <button class="btn btn-sm btn-delete btn-remove-row" title="${t("removeFieldTitle")}">✕</button>
@@ -407,6 +418,11 @@ function openEditPanel(form: SavedForm): void {
     </div>
   `;
 
+  // Upgrade all type-based rows to SearchableSelect
+  panel.querySelectorAll("tr.template-field-row").forEach((row) => {
+    upgradeRowSearchableSelects(row);
+  });
+
   // Toggle fixed/generator visibility on change
   panel.addEventListener("change", (e) => {
     const target = e.target as HTMLSelectElement;
@@ -416,7 +432,7 @@ function openEditPanel(form: SavedForm): void {
     (row.querySelector(".field-fixed-value") as HTMLElement).style.display =
       isFixed ? "inline-block" : "none";
     (
-      row.querySelector(".field-generator-select") as HTMLElement
+      row.querySelector(".field-generator-container") as HTMLElement
     ).style.display = isFixed ? "none" : "inline-block";
   });
 
@@ -434,7 +450,10 @@ function openEditPanel(form: SavedForm): void {
     const wrapper = document.createElement("tbody");
     wrapper.innerHTML = buildTemplateFieldRow();
     const newRow = wrapper.querySelector("tr");
-    if (newRow) tbody.appendChild(newRow);
+    if (newRow) {
+      tbody.appendChild(newRow);
+      upgradeRowSearchableSelects(newRow);
+    }
   });
 
   panel.querySelector("#edit-panel-cancel")?.addEventListener("click", () => {
@@ -459,17 +478,20 @@ function openEditPanel(form: SavedForm): void {
         const fixedValue = (
           row.querySelector(".field-fixed-value") as HTMLInputElement
         ).value;
-        const generatorType = (
-          row.querySelector(".field-generator-select") as HTMLSelectElement
-        ).value as FieldType;
+        const generatorType =
+          ((
+            row.querySelector(
+              ".field-generator-container .fa-ss__value",
+            ) as HTMLInputElement
+          )?.value as FieldType) ?? ("name" as FieldType);
 
-        const typeMatchSelect = row.querySelector(
-          ".field-type-match-select",
-        ) as HTMLSelectElement | null;
+        const typeMatchInput = row.querySelector(
+          ".field-type-match-container .fa-ss__value",
+        ) as HTMLInputElement | null;
 
-        if (typeMatchSelect) {
+        if (typeMatchInput) {
           // Type-based row (template row with matchByFieldType)
-          const matchType = typeMatchSelect.value as FieldType;
+          const matchType = typeMatchInput.value as FieldType;
           updatedFields.push({
             key: matchType,
             label: fieldTypeLabel(matchType),

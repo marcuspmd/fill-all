@@ -76,7 +76,7 @@ const mockGet = vi.fn().mockResolvedValue({ key: "value" });
 
 | ✅ Testar | ❌ Não testar |
 |-----------|--------------|
-| Generators (`generateCpf`, `generateEmail`, ...) | Arquivos DOM-heavy (`form-filler.ts`, `floating-panel.ts`) |
+| Generators (`generateCpf`, `generateEmail`, ...) | Arquivos DOM-heavy (`form-filler.ts`) |
 | Parsers Zod (`parseRulePayload`, ...) | Arquivos de estilo (`field-icon-styles.ts`) |
 | Storage CRUD (`getRules`, `saveRule`, ...) | Runtime TensorFlow (`runtime-trainer.ts`) |
 | Rule Engine (`resolveRule`, ...) | Content Script completo |

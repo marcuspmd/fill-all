@@ -21,8 +21,13 @@ import {
   detectAllFieldsAsync,
   detectFormFields,
   streamAllFields,
+  reclassifyFieldBySelector,
 } from "@/lib/form/form-detector";
-import { saveForm, getSettings } from "@/lib/storage/storage";
+import {
+  saveForm,
+  getSettings,
+  getIgnoredFieldsForUrl,
+} from "@/lib/storage/storage";
 import { initI18n } from "@/lib/i18n";
 import {
   buildCapturedActions,
@@ -83,22 +88,25 @@ type FillableElement =
 
 let lastContextMenuElement: FillableElement | null = null;
 
-document.addEventListener(
-  "contextmenu",
-  (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const field = target.closest("input, select, textarea");
-    if (
-      field instanceof HTMLInputElement ||
-      field instanceof HTMLSelectElement ||
-      field instanceof HTMLTextAreaElement
-    ) {
-      lastContextMenuElement = field;
-    }
-  },
-  true,
-);
+// guard against test environment without DOM
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "contextmenu",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const field = target.closest("input, select, textarea");
+      if (
+        field instanceof HTMLInputElement ||
+        field instanceof HTMLSelectElement ||
+        field instanceof HTMLTextAreaElement
+      ) {
+        lastContextMenuElement = field;
+      }
+    },
+    true,
+  );
+}
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -124,7 +132,7 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
-async function handleContentMessage(
+export async function handleContentMessage(
   message: ExtensionMessage,
 ): Promise<unknown> {
   switch (message.type) {
@@ -172,37 +180,19 @@ async function handleContentMessage(
     case "LOAD_SAVED_FORM": {
       const form = parseSavedFormPayload(message.payload);
       if (!form) return { error: "Invalid payload for LOAD_SAVED_FORM" };
-      const fields = detectFormFields();
 
-      let filled = 0;
-      for (const field of fields) {
-        const key = field.id || field.name || field.selector;
-        const value = form.fields[key];
-        if (value === undefined) continue;
-
-        if (
-          field.element instanceof HTMLInputElement &&
-          (field.element.type === "checkbox" || field.element.type === "radio")
-        ) {
-          field.element.checked = value === "true";
-        } else {
-          const nativeValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype,
-            "value",
-          )?.set;
-
-          if (field.element instanceof HTMLInputElement && nativeValueSetter) {
-            nativeValueSetter.call(field.element, value);
-          } else {
-            (field.element as HTMLInputElement).value = value;
-          }
-        }
-
-        field.element.dispatchEvent(new Event("input", { bubbles: true }));
-        field.element.dispatchEvent(new Event("change", { bubbles: true }));
-        filled++;
+      // filter out ignored selectors so applyTemplate won't touch them
+      const ignoredFields = await getIgnoredFieldsForUrl(window.location.href);
+      const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
+      const sanitizedFields: typeof form.fields = {};
+      for (const [key, value] of Object.entries(form.fields)) {
+        // we only know selector-level ignores; if a key equals a selector, drop it
+        if (ignoredSelectors.has(key)) continue;
+        sanitizedFields[key] = value;
       }
+      const sanitizedForm: SavedForm = { ...form, fields: sanitizedFields };
 
+      const { filled } = await applyTemplate(sanitizedForm);
       showNotification(`✓ ${filled} campos carregados do template`);
       return { success: true, filled };
     }
@@ -291,6 +281,34 @@ async function handleContentMessage(
         showNotification(`✓ Campo "${field.label || selector}" preenchido`);
       }
       return result ?? { error: "Failed to fill field" };
+    }
+
+    case "RECLASSIFY_FIELD": {
+      const selector = parseStringPayload(message.payload);
+      if (!selector) return { error: "Invalid payload for RECLASSIFY_FIELD" };
+      const classified = await reclassifyFieldBySelector(selector);
+      if (!classified)
+        return { error: "Field not found or could not be classified" };
+      const summary: DetectedFieldSummary = {
+        selector: classified.selector,
+        fieldType: classified.fieldType,
+        label:
+          classified.label || classified.name || classified.id || "unknown",
+        name: classified.name,
+        id: classified.id,
+        placeholder: classified.placeholder,
+        required: classified.required,
+        contextualType: classified.contextualType,
+        detectionMethod: classified.detectionMethod,
+        detectionConfidence: classified.detectionConfidence,
+      };
+      if (classified.element instanceof HTMLSelectElement) {
+        summary.options = Array.from(classified.element.options).map((o) => ({
+          value: o.value,
+          text: o.text.trim(),
+        }));
+      }
+      return summary;
     }
 
     case "START_WATCHING": {
@@ -730,7 +748,11 @@ async function initContentScript(): Promise<void> {
   }
 }
 
-void initContentScript();
+// Only automatically initialize when running in a real browser context.
+// In unit tests we import this module directly, so avoid side effects.
+if (typeof document !== "undefined" && typeof chrome !== "undefined") {
+  void initContentScript();
+}
 
 /**
  * Handle streaming detection via Port-based communication.

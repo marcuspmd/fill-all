@@ -32,6 +32,7 @@ import {
   findAntId,
   isAntRequired,
   simulateClick,
+  getAntdSelector,
   getUniqueSelector,
   waitForElement,
 } from "./antd-utils";
@@ -55,7 +56,7 @@ export const antdCascaderAdapter: CustomComponentAdapter = {
   buildField(wrapper: HTMLElement): FormField {
     const field: FormField = {
       element: wrapper,
-      selector: getUniqueSelector(wrapper),
+      selector: getAntdSelector(wrapper),
       category: "unknown",
       fieldType: "select",
       adapterName: "antd-cascader",

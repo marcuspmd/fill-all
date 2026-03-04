@@ -264,7 +264,6 @@ export function injectStyles(): void {
       width: 280px;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       font-size: 12px;
-      overflow: hidden;
       display: none;
       background: #fff;
       border-radius: 10px;
@@ -279,6 +278,7 @@ export function injectStyles(): void {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      border-radius: 10px 10px 0 0;
     }
     #${RULE_POPUP_ID} .fa-rp-body {
       padding: 10px;
@@ -483,6 +483,105 @@ export function injectStyles(): void {
       padding-top: 2px;
       letter-spacing: 0.2px;
     }
+    /* ── SearchableSelect — scoped to rule popup ─────────────────── */
+    #${RULE_POPUP_ID} .fa-ss {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      width: 100%;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+    #${RULE_POPUP_ID} .fa-ss--disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    #${RULE_POPUP_ID} .fa-ss__input-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #f8fafc;
+      padding: 4px 8px;
+      cursor: pointer;
+      gap: 4px;
+      transition: border-color 0.15s;
+    }
+    #${RULE_POPUP_ID} .fa-ss__input-wrap:focus-within {
+      border-color: #6366f1;
+      background: #fff;
+    }
+    #${RULE_POPUP_ID} .fa-ss__input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 12px;
+      font-family: inherit;
+      color: #1e293b;
+      padding: 0;
+    }
+    #${RULE_POPUP_ID} .fa-ss__input::placeholder {
+      color: #94a3b8;
+    }
+    #${RULE_POPUP_ID} .fa-ss__arrow {
+      flex-shrink: 0;
+      color: #94a3b8;
+      font-size: 10px;
+      line-height: 1;
+      pointer-events: none;
+    }
+    #${RULE_POPUP_ID} .fa-ss__dropdown {
+      position: absolute;
+      top: calc(100% + 3px);
+      left: 0;
+      right: 0;
+      z-index: 2147483647;
+      max-height: 180px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      padding: 2px 0;
+      margin: 0;
+      list-style: none;
+    }
+    #${RULE_POPUP_ID} .fa-ss__dropdown[hidden] { display: none; }
+    #${RULE_POPUP_ID} .fa-ss__group {
+      padding: 4px 8px 2px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    #${RULE_POPUP_ID} .fa-ss__opt {
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 1px 3px;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 12px;
+    }
+    #${RULE_POPUP_ID} .fa-ss__opt:hover,
+    #${RULE_POPUP_ID} .fa-ss__opt--highlighted {
+      background: #ede9fe;
+      color: #3730a3;
+    }
+    #${RULE_POPUP_ID} .fa-ss__empty {
+      padding: 6px 8px;
+      color: #94a3b8;
+      font-style: italic;
+      font-size: 11px;
+      list-style: none;
+    }
+    #${RULE_POPUP_ID} .fa-ss__value { display: none; }
   `;
   document.head.appendChild(style);
 }

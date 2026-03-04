@@ -5,6 +5,7 @@
 
 import { detectAllFields, detectAllFieldsAsync } from "./form-detector";
 import { fillSingleField } from "./form-filler";
+import { getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("DomWatcher");
@@ -234,8 +235,20 @@ async function refillNewFields(previousSignature: string): Promise<void> {
       return;
     }
 
-    log.info(`Filling ${newFields.length} new field(s) only`);
-    for (const field of newFields) {
+    const url = window.location.href;
+    const ignoredFields = await getIgnoredFieldsForUrl(url);
+    const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
+    const fieldsToFill = newFields.filter(
+      (f) => !ignoredSelectors.has(f.selector),
+    );
+
+    if (fieldsToFill.length === 0) {
+      log.debug("Todos os novos campos são ignorados — skip");
+      return;
+    }
+
+    log.info(`Filling ${fieldsToFill.length} new field(s) only`);
+    for (const field of fieldsToFill) {
       await fillSingleField(field);
     }
 

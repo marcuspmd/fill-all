@@ -368,6 +368,8 @@ export interface FormTemplateField {
    * Allows templates to be site-agnostic (works on any form that has a field of this type).
    */
   matchByFieldType?: FieldType;
+  /** Generator params (min/max, formatted, etc.) — only used when mode === 'generator' */
+  generatorParams?: import("./field-type-definitions").GeneratorParams;
 }
 
 /** A saved form template with fixed data */
@@ -511,6 +513,7 @@ export type MessageType =
   | "AI_GENERATE_FORM_CONTEXT"
   | "FILL_CONTEXTUAL_AI"
   | "DETECT_FIELDS"
+  | "RECLASSIFY_FIELD"
   | "START_WATCHING"
   | "STOP_WATCHING"
   | "GET_WATCHER_STATUS"
@@ -554,7 +557,9 @@ export type MessageType =
   | "RECORDING_STEP_UPDATED"
   | "RECORDING_RESTORED"
   | "CLEAR_FORM"
-  | "DEVTOOLS_RELAY";
+  | "DEVTOOLS_RELAY"
+  | "SAVE_FIELD_OVERRIDE"
+  | "DELETE_FIELD_OVERRIDE";
 
 /** Payload for any message exchanged between extension contexts. */
 export interface ExtensionMessage {

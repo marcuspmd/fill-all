@@ -7,7 +7,8 @@ import {
   escapeHtml,
   generateId,
   showToast,
-  syncFieldTypeOptionsInOptionsPage,
+  ruleTypeSelect,
+  ruleGeneratorSelect,
 } from "./shared";
 import { t } from "@/lib/i18n";
 import {
@@ -82,14 +83,10 @@ function editRule(rule: FieldRule): void {
     rule.priority,
   );
 
-  // Sincronizar dropdowns e depois setar valores
-  syncFieldTypeOptionsInOptionsPage();
-
+  // Setar os valores nos SearchableSelects
+  ruleTypeSelect?.setValue(rule.fieldType);
+  ruleGeneratorSelect?.setValue(rule.generator);
   setTimeout(() => {
-    (document.getElementById("rule-type") as HTMLSelectElement).value =
-      rule.fieldType;
-    (document.getElementById("rule-generator") as HTMLSelectElement).value =
-      rule.generator;
     updateRuleParamsSection(rule.generatorParams);
   }, 0);
 
@@ -118,8 +115,8 @@ function cancelEditRule(): void {
   (document.getElementById("rule-field-name") as HTMLInputElement).value = "";
   (document.getElementById("rule-fixed") as HTMLInputElement).value = "";
   (document.getElementById("rule-priority") as HTMLInputElement).value = "10";
-  (document.getElementById("rule-type") as HTMLSelectElement).value = "";
-  (document.getElementById("rule-generator") as HTMLSelectElement).value = "";
+  ruleTypeSelect?.setValue("");
+  ruleGeneratorSelect?.setValue("");
   updateRuleParamsSection();
 
   // Reset button state
@@ -139,9 +136,7 @@ function updateRuleParamsSection(existingParams?: GeneratorParams): void {
   const fieldsDiv = document.getElementById("rule-params-fields");
   if (!container || !fieldsDiv) return;
 
-  const generatorValue = (
-    document.getElementById("rule-generator") as HTMLSelectElement
-  ).value;
+  const generatorValue = ruleGeneratorSelect?.getValue() ?? "";
 
   if (
     !generatorValue ||
@@ -268,9 +263,7 @@ function bindRulesEvents(): void {
         return;
       }
 
-      const fieldTypeValue = (
-        document.getElementById("rule-type") as HTMLSelectElement
-      ).value.trim();
+      const fieldTypeValue = ruleTypeSelect?.getValue().trim() ?? "";
       if (!fieldTypeValue) {
         showToast(t("errorSelectFieldType"), "error");
         return;
@@ -286,9 +279,8 @@ function bindRulesEvents(): void {
             document.getElementById("rule-field-name") as HTMLInputElement
           ).value.trim() || undefined,
         fieldType: fieldTypeValue as FieldType,
-        generator: (
-          document.getElementById("rule-generator") as HTMLSelectElement
-        ).value as FieldRule["generator"],
+        generator: (ruleGeneratorSelect?.getValue() ??
+          "auto") as FieldRule["generator"],
         generatorParams: collectRuleParams(),
         fixedValue:
           (
@@ -323,7 +315,7 @@ function bindRulesEvents(): void {
     showToast(t("toastEditCancelled"));
   });
 
-  document.getElementById("rule-generator")?.addEventListener("change", () => {
+  ruleGeneratorSelect?.on("change", () => {
     updateRuleParamsSection();
   });
 }

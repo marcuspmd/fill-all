@@ -199,8 +199,30 @@ export async function resolveFieldValue(
         log.warn(`AI (rule) falhou:`, err);
       }
     }
-    // generator === "auto" or "tensorflow": fall through to default generator.
-    // forceAIFirst is intentionally skipped — the rule's intent is the deterministic generator.
+
+    // generator === "auto": respect the fieldType the user explicitly set in the rule.
+    // This is the fix for when the user changes the field type in the editor but keeps
+    // "auto" as the generator — the rule's fieldType must drive generation, not the
+    // TF-detected field.fieldType.
+    if (
+      matchingRule.generator === "auto" &&
+      matchingRule.fieldType !== "unknown"
+    ) {
+      const ruleType = matchingRule.fieldType;
+      if (DATE_FIELD_TYPES.has(ruleType)) {
+        const value = generateDateForField(ruleType, field);
+        return { fieldSelector: selector, value, source: "generator" };
+      }
+      const value = generateWithConstraints(
+        () => generate(ruleType, matchingRule.generatorParams),
+        { element: field.element, requireValidity: false },
+      );
+      if (value) {
+        return { fieldSelector: selector, value, source: "generator" };
+      }
+    }
+    // generator === "tensorflow": fall through — TF already classified the field,
+    // field.fieldType reflects that result. forceAIFirst is intentionally skipped.
   }
 
   // 2. AI first — only when no matching rule exists and forceAIFirst is enabled

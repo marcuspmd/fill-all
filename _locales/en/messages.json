@@ -350,6 +350,9 @@
   "actionInspect": {
     "message": "Inspect in Elements"
   },
+  "actionEditField": {
+    "message": "Edit field rule"
+  },
   "actionIgnore": {
     "message": "Ignore"
   },
@@ -1007,7 +1010,7 @@
     "message": "Value / Generator"
   },
   "btnAddField": {
-    "message": "+ Add field"
+    "message": "Add field"
   },
   "btnSaveTemplate": {
     "message": "Save template"
@@ -1617,6 +1620,9 @@
   "fpEditTimeout": {
     "message": "Edit timeout (ms)"
   },
+  "progressAiGenerating": {
+    "message": "✨ AI generating coherent values…"
+  },
   "progressHeaderProcessing": {
     "message": "🔄 Fill All — Processing"
   },
@@ -1765,5 +1771,68 @@
   },
   "close": {
     "message": "Close"
+  },
+  "editField": {
+    "message": "Edit Field"
+  },
+  "fillMethod": {
+    "message": "Fill Method"
+  },
+  "methodAuto": {
+    "message": "Automatic (detected type)"
+  },
+  "methodGenerator": {
+    "message": "Specific Generator"
+  },
+  "methodFixed": {
+    "message": "Fixed Value"
+  },
+  "methodAI": {
+    "message": "Chrome AI"
+  },
+  "aiPromptLabel": {
+    "message": "Chrome AI Prompt"
+  },
+  "aiPromptPlaceholder": {
+    "message": "E.g.: Insert a valid CNPJ..."
+  },
+  "clearRule": {
+    "message": "🗑️ Clear Rule"
+  },
+  "searchType": {
+    "message": "Search type..."
+  },
+  "editFieldRule": {
+    "message": "Edit Field Rule"
+  },
+  "editorGenerator": {
+    "message": "Generator"
+  },
+  "editorFixedValue": {
+    "message": "Fixed Value"
+  },
+  "editorFixedValuePlaceholder": {
+    "message": "Leave empty to use generator"
+  },
+  "editorAiPrompt": {
+    "message": "AI Prompt"
+  },
+  "editorAiPromptPlaceholder": {
+    "message": "Custom guide for AI generation"
+  },
+  "editorDeleteRule": {
+    "message": "Delete Rule"
+  },
+  "editorRedetect": {
+    "message": "Re-detect Field"
+  },
+  "editorRedetecting": {
+    "message": "Detecting..."
+  },
+  "editorCancel": {
+    "message": "Cancel"
+  },
+  "editorSave": {
+    "message": "Save"
   }
 }

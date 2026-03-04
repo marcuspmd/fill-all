@@ -28,9 +28,4 @@ export async function getActivePageUrl(): Promise<string> {
   return tab?.url ?? "";
 }
 
-export function escapeHtml(text: string | undefined | null): string {
-  if (!text) return "";
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
+export { escapeHtml } from "@/lib/ui";

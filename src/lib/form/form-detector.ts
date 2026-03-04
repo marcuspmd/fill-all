@@ -23,8 +23,13 @@ import {
   streamNativeFieldsAsync,
   classifyCustomFieldsSync,
   classifyCustomFieldsAsync,
+  reclassifyFieldBySelector,
 } from "./detectors/classifiers";
-export { DEFAULT_PIPELINE, DEFAULT_COLLECTION_PIPELINE };
+export {
+  DEFAULT_PIPELINE,
+  DEFAULT_COLLECTION_PIPELINE,
+  reclassifyFieldBySelector,
+};
 import { detectCustomComponents } from "./adapters/adapter-registry";
 import { createLogger } from "@/lib/logger";
 

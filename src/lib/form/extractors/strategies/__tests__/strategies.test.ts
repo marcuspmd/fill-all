@@ -211,6 +211,17 @@ describe("Extractors Strategies", () => {
       const input = document.querySelector("input")!;
       expect(prevLabelStrategy.find(input)).toBeNull();
     });
+
+    it("returns null when previous label has empty text", () => {
+      document.body.innerHTML = `
+        <div>
+          <label>   </label>
+          <input type="text" />
+        </div>
+      `;
+      const input = document.querySelector("input")!;
+      expect(prevLabelStrategy.find(input)).toBeNull();
+    });
   });
 
   // ── titleStrategy ─────────────────────────────────────────────────────
@@ -335,6 +346,17 @@ describe("Extractors Strategies", () => {
 
     it("returns null when not inside a form group", () => {
       document.body.innerHTML = `<div><input type="text" /></div>`;
+      const input = document.querySelector("input")!;
+      expect(formGroupLabelStrategy.find(input)).toBeNull();
+    });
+
+    it("returns null when form group has an empty label", () => {
+      document.body.innerHTML = `
+        <div class="form-group">
+          <label>   </label>
+          <input type="text" />
+        </div>
+      `;
       const input = document.querySelector("input")!;
       expect(formGroupLabelStrategy.find(input)).toBeNull();
     });

@@ -350,6 +350,9 @@
   "actionInspect": {
     "message": "Inspecionar no Elements"
   },
+  "actionEditField": {
+    "message": "Editar regra do campo"
+  },
   "actionIgnore": {
     "message": "Ignorar"
   },
@@ -1007,7 +1010,7 @@
     "message": "Valor / Gerador"
   },
   "btnAddField": {
-    "message": "+ Adicionar campo"
+    "message": "Adicionar campo"
   },
   "btnSaveTemplate": {
     "message": "Salvar template"
@@ -1617,6 +1620,9 @@
   "fpEditTimeout": {
     "message": "Editar timeout (ms)"
   },
+  "progressAiGenerating": {
+    "message": "✨ IA gerando valores coerentes…"
+  },
   "progressHeaderProcessing": {
     "message": "🔄 Fill All — Processando"
   },
@@ -1765,5 +1771,68 @@
   },
   "close": {
     "message": "Fechar"
+  },
+  "editField": {
+    "message": "Editar Campo"
+  },
+  "fillMethod": {
+    "message": "Método de Preenchimento"
+  },
+  "methodAuto": {
+    "message": "Automático (tipo detectado)"
+  },
+  "methodGenerator": {
+    "message": "Gerador Específico"
+  },
+  "methodFixed": {
+    "message": "Valor Fixo"
+  },
+  "methodAI": {
+    "message": "Chrome AI"
+  },
+  "aiPromptLabel": {
+    "message": "Prompt para Chrome AI"
+  },
+  "aiPromptPlaceholder": {
+    "message": "Ex: Insira um CNPJ válido..."
+  },
+  "clearRule": {
+    "message": "🗑️ Limpar Regra"
+  },
+  "searchType": {
+    "message": "Buscar tipo..."
+  },
+  "editFieldRule": {
+    "message": "Editar Regra do Campo"
+  },
+  "editorGenerator": {
+    "message": "Gerador"
+  },
+  "editorFixedValue": {
+    "message": "Valor Fixo"
+  },
+  "editorFixedValuePlaceholder": {
+    "message": "Deixe vazio para usar o gerador"
+  },
+  "editorAiPrompt": {
+    "message": "Prompt de AI"
+  },
+  "editorAiPromptPlaceholder": {
+    "message": "Instrução personalizada para a AI"
+  },
+  "editorDeleteRule": {
+    "message": "Excluir Regra"
+  },
+  "editorRedetect": {
+    "message": "Detectar Novamente"
+  },
+  "editorRedetecting": {
+    "message": "Detectando..."
+  },
+  "editorCancel": {
+    "message": "Cancelar"
+  },
+  "editorSave": {
+    "message": "Salvar"
   }
 }

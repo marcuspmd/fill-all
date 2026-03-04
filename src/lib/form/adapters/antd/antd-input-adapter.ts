@@ -21,7 +21,7 @@ import {
   findAntName,
   isAntRequired,
   setReactInputValue,
-  getUniqueSelector,
+  getAntdSelector,
 } from "./antd-utils";
 import { buildSignals } from "../../extractors";
 
@@ -76,7 +76,7 @@ export const antdInputAdapter: CustomComponentAdapter = {
 
     const field: FormField = {
       element: wrapper,
-      selector: getUniqueSelector(wrapper),
+      selector: getAntdSelector(wrapper),
       category: "unknown",
       fieldType: resolvedFieldType,
       adapterName: "antd-input",
@@ -109,5 +109,12 @@ export const antdInputAdapter: CustomComponentAdapter = {
 
     setReactInputValue(input, value);
     return true;
+  },
+
+  extractValue(wrapper: HTMLElement): string | null {
+    const input = wrapper.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      "input, textarea",
+    );
+    return input ? input.value : null;
   },
 };

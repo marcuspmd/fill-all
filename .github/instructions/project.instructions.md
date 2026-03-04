@@ -146,7 +146,7 @@ src/
 | Tipo | Sufixo | Ferramenta | Quando usar |
 |------|--------|-----------|-------------|
 | Unitário | `.test.ts` | Vitest | Lógica pura, generators, parsers, storage, classifiers |
-| E2E | `.test.e2e.ts` | Playwright | DOM, form-filler, floating-panel, extensão no Chrome real |
+| E2E | `.test.e2e.ts` | Playwright | DOM, form-filler, extensão no Chrome real |
 
 - **Nunca misturar**: Vitest exclui `*.test.e2e.ts`; Playwright só pega `*.test.e2e.ts`
 - E2E pages HTML ficam em `e2e/pages/` e são servidas pelo `e2e/server.js` na porta 8765

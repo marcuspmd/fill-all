@@ -166,3 +166,47 @@ export async function fillCustomComponent(
     return false;
   }
 }
+
+/**
+ * Attempts to extract a string value from a custom component field.
+ * Returns `null` if the adapter does not provide an extractor or if
+ * extraction failed.
+ */
+export function extractCustomComponentValue(field: FormField): string | null {
+  const adapterName = field.adapterName as AdapterName | undefined;
+  if (!adapterName) return null;
+
+  const adapter = getAdapter(adapterName);
+  if (!adapter) return null;
+
+  // Try adapter-provided extractor first
+  if (typeof adapter.extractValue === "function") {
+    try {
+      const result = adapter.extractValue(field.element as HTMLElement);
+      if (result !== null && result !== undefined) return result;
+    } catch (err) {
+      log.warn(
+        `[${adapter.name}] Erro ao extrair valor do campo ${field.selector}:`,
+        err,
+      );
+      // fallthrough to generic fallback
+    }
+  }
+
+  // Generic fallback: look for a native input/select/textarea inside the wrapper.
+  const native = field.element.querySelector<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >("input,textarea,select");
+  if (native) {
+    if (native instanceof HTMLSelectElement) return native.value;
+    if (native instanceof HTMLInputElement) {
+      if (native.type === "checkbox" || native.type === "radio") {
+        return native.checked ? "true" : "false";
+      }
+      return native.value;
+    }
+    return native.value;
+  }
+
+  return null;
+}

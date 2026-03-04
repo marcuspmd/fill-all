@@ -1,0 +1,236 @@
+/* ── Shared Modal Overlay & Chrome ── */
+
+.modal-overlay {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 12px 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body .form-group {
+  margin-bottom: 10px;
+}
+
+.modal-body .form-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Field Editor Modal ── */
+
+.modal-box {
+  width: 440px;
+  max-width: 95vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-box--form {
+  width: 580px;
+  max-height: 88vh;
+}
+
+.modal-box--field {
+  width: 520px;
+  max-height: 88vh;
+}
+
+/* ── Compact field row (EditFormScreen) ── */
+
+.field-row-compact {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 11px;
+}
+
+.field-row-type {
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.field-row-mode {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field-row-value {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.modal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 8px 0;
+}
+
+.editor-field-info {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.editor-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.editor-label {
+  flex-shrink: 0;
+  width: 100px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.editor-value {
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.editor-mono {
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.editor-select,
+.editor-input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+/* SearchableSelectPreact renders a div root; re-apply input styles to inner elements */
+.editor-select.fa-ss {
+  padding: 0;
+  overflow: visible;
+}
+
+.editor-select.fa-ss .fa-ss__input-wrap {
+  border-radius: 5px;
+}
+
+.editor-select:focus,
+.editor-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.editor-row--checkbox {
+  gap: 8px;
+  cursor: pointer;
+}
+
+.editor-input--number {
+  max-width: 100px;
+  flex: unset;
+}
+
+.editor-params-section {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.editor-params-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}

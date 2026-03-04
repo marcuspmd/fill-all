@@ -40,6 +40,30 @@ export function findAntId(wrapper: HTMLElement): string | undefined {
 }
 
 /**
+ * Returns a stable CSS selector for an Ant Design wrapper element.
+ *
+ * Prefers anchoring on a stable inner input id (e.g. "rc_select_0") over
+ * a positional CSS path. In React/antd apps, re-renders can change sibling
+ * order and invalidate nth-of-type selectors, causing ignored-field checks
+ * to silently fail. Using the inner input's id avoids this problem.
+ *
+ * Priority:
+ *   1. wrapper.id         → `#wrapperId`
+ *   2. inner input/control id → `#innerId`
+ *   3. CSS path          → getUniqueSelector(wrapper) (fallback)
+ */
+export function getAntdSelector(wrapper: HTMLElement): string {
+  if (wrapper.id) return `#${CSS.escape(wrapper.id)}`;
+
+  const inner = wrapper.querySelector<HTMLElement>(
+    "input[id], textarea[id], [role='combobox'][id], [role='listbox'][id]",
+  );
+  if (inner?.id) return `#${CSS.escape(inner.id)}`;
+
+  return getUniqueSelector(wrapper);
+}
+
+/**
  * Extracts the name from Ant Design's inner control.
  */
 export function findAntName(wrapper: HTMLElement): string | undefined {

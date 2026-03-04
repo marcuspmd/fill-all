@@ -1,6 +1,5 @@
 /**
- * Shared constants for UI rendering across all three surfaces
- * (popup, devtools panel, floating panel).
+ * Shared constants for UI rendering across popup and devtools panel.
  */
 
 /** Color map for field type badges (dark theme) */

@@ -21,7 +21,10 @@ import type { FormContextFieldInput } from "@/lib/ai/prompts";
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
 import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
-import { fillCustomComponent } from "./adapters/adapter-registry";
+import {
+  fillCustomComponent,
+  extractCustomComponentValue,
+} from "./adapters/adapter-registry";
 import { generate } from "@/lib/generators";
 import { deriveFieldValueFromTemplate } from "@/lib/form/field-type-aliases";
 import { createLogger, logAuditFill } from "@/lib/logger";
@@ -404,6 +407,12 @@ export async function fillSingleField(
   field: FormField,
 ): Promise<GenerationResult | null> {
   const url = window.location.href;
+  const ignoredFields = await getIgnoredFieldsForUrl(url);
+  const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
+  if (ignoredSelectors.has(field.selector)) {
+    log.debug(`Campo ignorado — skip: ${field.selector}`);
+    return null;
+  }
   const settings = await getSettings();
   const aiGenerateFn = await getAiFunction(settings);
   const fieldLabel =
@@ -481,9 +490,14 @@ export async function fillContextualAI(
   context?: AIContextPayload,
 ): Promise<GenerationResult[]> {
   setFillingInProgress(true);
+  const progress = createProgressNotification();
+  progress.show();
   try {
     const { fields } = await detectAllFieldsAsync();
-    if (fields.length === 0) return [];
+    if (fields.length === 0) {
+      progress.destroy();
+      return [];
+    }
 
     const url = window.location.href;
     const settings = await getSettings();
@@ -498,7 +512,10 @@ export async function fillContextualAI(
       ? eligibleFields.filter((f) => !fieldHasValue(f))
       : eligibleFields;
 
-    if (fillableFields.length === 0) return [];
+    if (fillableFields.length === 0) {
+      progress.destroy();
+      return [];
+    }
 
     // Build compact descriptors for the AI
     const contextInputs: FormContextFieldInput[] = fillableFields.map(
@@ -525,6 +542,9 @@ export async function fillContextualAI(
       },
     );
 
+    // Show spinner while the single batch AI call is in-flight
+    progress.showAiGenerating();
+
     const contextMap = await generateFormContextValuesViaProxy(
       contextInputs,
       buildUserContextString(context),
@@ -532,10 +552,13 @@ export async function fillContextualAI(
       context?.pdfPageDataUrls,
     );
 
+    progress.hideAiGenerating();
+
     if (!contextMap || Object.keys(contextMap).length === 0) {
       log.warn(
         "fillContextualAI: AI não retornou valores, usando fallback fillAllFields",
       );
+      progress.destroy();
       return fillAllFields();
     }
 
@@ -546,6 +569,8 @@ export async function fillContextualAI(
       const value = contextMap[String(i)];
 
       if (!value) continue;
+
+      progress.addFilling(field);
 
       try {
         await applyValueToField(field, value);
@@ -568,16 +593,23 @@ export async function fillContextualAI(
           showAiFieldBadge(field.element);
         }
 
-        results.push({
+        const result: GenerationResult = {
           fieldSelector: field.selector,
           value,
           source: "ai",
-        });
+        };
+        progress.updateFilled(field, result);
+        results.push(result);
       } catch (err) {
         log.warn(`fillContextualAI: falhou no campo ${field.selector}:`, err);
+        progress.updateError(
+          field,
+          err instanceof Error ? err.message : "falhou",
+        );
       }
     }
 
+    progress.done(results.length, fillableFields.length);
     return results;
   } finally {
     setFillingInProgress(false);
@@ -679,6 +711,15 @@ export async function captureFormValues(): Promise<Record<string, string>> {
     const el = field.element;
     const key = field.id || field.name || field.selector;
 
+    // if this field came from a custom adapter try to extract its value
+    if (field.adapterName) {
+      const custom = extractCustomComponentValue(field);
+      if (custom !== null) {
+        values[key] = custom;
+        continue;
+      }
+    }
+
     if (el instanceof HTMLSelectElement) {
       values[key] = el.value;
     } else if (el instanceof HTMLInputElement) {
@@ -703,8 +744,17 @@ export async function captureFormValues(): Promise<Record<string, string>> {
 export async function applyTemplate(
   form: SavedForm,
 ): Promise<{ filled: number }> {
-  const { fields: detectedFields } = await detectAllFieldsAsync();
+  const { fields: allDetectedFields } = await detectAllFieldsAsync();
   const settings = await getSettings();
+  const url = window.location.href;
+
+  // Skip fields the user has marked as ignored
+  const ignoredFields = await getIgnoredFieldsForUrl(url);
+  const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
+  const detectedFields = allDetectedFields.filter(
+    (f) => !ignoredSelectors.has(f.selector),
+  );
+
   let filled = 0;
 
   if (form.templateFields && form.templateFields.length > 0) {
@@ -717,7 +767,7 @@ export async function applyTemplate(
       if (tField.mode === "generator" && tField.generatorType) {
         templateValueMap.set(
           tField.matchByFieldType,
-          generate(tField.generatorType),
+          generate(tField.generatorType, tField.generatorParams ?? undefined),
         );
       } else if (tField.mode === "fixed" && tField.fixedValue) {
         templateValueMap.set(tField.matchByFieldType, tField.fixedValue);
@@ -763,7 +813,10 @@ export async function applyTemplate(
 
       let value: string;
       if (tField.mode === "generator" && tField.generatorType) {
-        value = generate(tField.generatorType);
+        value = generate(
+          tField.generatorType,
+          tField.generatorParams ?? undefined,
+        );
       } else {
         value = tField.fixedValue ?? "";
       }

@@ -103,6 +103,27 @@ export const reactSelectAdapter: CustomComponentAdapter = {
     return field;
   },
 
+  extractValue(wrapper: HTMLElement): string | null {
+    // hidden input usually holds the real value(s)
+    const hidden = wrapper.querySelector<HTMLInputElement>(
+      ":scope > input[type='hidden'], :scope > div > input[type='hidden']",
+    );
+    if (hidden && hidden.value) return hidden.value;
+
+    // multi-select labels
+    const tags = wrapper.querySelectorAll<HTMLElement>(
+      ".react-select__multi-value__label",
+    );
+    if (tags.length > 0) {
+      return Array.from(tags)
+        .map((t) => t.textContent?.trim() ?? "")
+        .filter((t) => t)
+        .join(",");
+    }
+
+    return null;
+  },
+
   async fill(wrapper: HTMLElement, value: string): Promise<boolean> {
     const wrapperSelector = getUniqueSelector(wrapper);
 

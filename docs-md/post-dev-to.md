@@ -80,10 +80,6 @@ User triggers fill → Background routes → Content Script detects fields
 
 ![Popup](https://raw.githubusercontent.com/marcuspmd/fill-all/master/docs-md/images/popup.png)
 
-### Floating Panel — In-Page Controls
-
-![Floating Panel](https://raw.githubusercontent.com/marcuspmd/fill-all/master/docs-md/images/floating_panel.png)
-
 ### DevTools Panel — Real-Time Field Inspection
 
 ![DevTools](https://raw.githubusercontent.com/marcuspmd/fill-all/master/docs-md/images/painel_devtools_form.png)

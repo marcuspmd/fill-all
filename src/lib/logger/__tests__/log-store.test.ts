@@ -6,6 +6,7 @@ let clearLogEntries: (typeof import("@/lib/logger/log-store"))["clearLogEntries"
 let loadLogEntries: (typeof import("@/lib/logger/log-store"))["loadLogEntries"];
 let onLogUpdate: (typeof import("@/lib/logger/log-store"))["onLogUpdate"];
 let initLogStore: (typeof import("@/lib/logger/log-store"))["initLogStore"];
+let configureLogStore: (typeof import("@/lib/logger/log-store"))["configureLogStore"];
 
 function makeEntry(
   overrides: Partial<import("@/lib/logger/log-store").LogEntry> = {},
@@ -48,6 +49,7 @@ describe("log-store", () => {
     loadLogEntries = store.loadLogEntries;
     onLogUpdate = store.onLogUpdate;
     initLogStore = store.initLogStore;
+    configureLogStore = store.configureLogStore;
   });
 
   afterEach(() => {
@@ -456,6 +458,91 @@ describe("log-store", () => {
 
       expect(listener1).toHaveBeenCalledTimes(1);
       expect(listener2).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ── configureLogStore ───────────────────────────────────────────────────
+
+  describe("configureLogStore", () => {
+    it("updates maxEntries when provided", () => {
+      configureLogStore({ maxEntries: 100 });
+      // Fill beyond new limit to verify eviction respects it
+      for (let i = 0; i < 105; i++) {
+        addLogEntry(makeEntry({ msg: `entry-${i}` }));
+      }
+      expect(getLogEntries().length).toBeLessThanOrEqual(100);
+    });
+
+    it("clamps maxEntries to minimum of 50", () => {
+      configureLogStore({ maxEntries: 10 });
+      for (let i = 0; i < 60; i++) {
+        addLogEntry(makeEntry({ msg: `entry-${i}` }));
+      }
+      expect(getLogEntries().length).toBeLessThanOrEqual(50);
+    });
+
+    it("does not change maxEntries when undefined is passed", () => {
+      configureLogStore({});
+      // Default 1000 limit should still apply — add 1005 entries
+      for (let i = 0; i < 1005; i++) {
+        addLogEntry(makeEntry({ msg: `entry-${i}` }));
+      }
+      expect(getLogEntries().length).toBeLessThanOrEqual(1000);
+    });
+  });
+
+  // ── clearLogEntries (extra branches) ────────────────────────────────────
+
+  describe("clearLogEntries (edge cases)", () => {
+    it("clears without crashing when no flush timer is active", async () => {
+      // Never called addLogEntry, so flushTimer is null
+      await expect(clearLogEntries()).resolves.not.toThrow();
+      expect(getLogEntries()).toHaveLength(0);
+    });
+
+    it("skips storage write when session storage is unavailable", async () => {
+      vi.stubGlobal("chrome", {
+        storage: { onChanged: { addListener: vi.fn() } },
+      });
+      vi.resetModules();
+      const store = await import("@/lib/logger/log-store");
+
+      await expect(store.clearLogEntries()).resolves.not.toThrow();
+    });
+  });
+
+  // ── loadLogEntries (edge cases) ─────────────────────────────────────────
+
+  describe("loadLogEntries (edge cases)", () => {
+    it("does not update localEntries when stored value is not an array", async () => {
+      await initLogStore();
+      addLogEntry(makeEntry({ msg: "in-memory" }));
+
+      (
+        chrome.storage.session.get as ReturnType<typeof vi.fn>
+      ).mockResolvedValueOnce({
+        fill_all_log_entries: "not-an-array",
+      });
+
+      const entries = await loadLogEntries();
+      // Local entry should be preserved since stored value was ignored
+      expect(entries.some((e) => e.msg === "in-memory")).toBe(true);
+    });
+  });
+
+  // ── flushToStorage (edge cases) ─────────────────────────────────────────
+
+  describe("flushToStorage (edge cases)", () => {
+    it("skips storage write when session storage becomes unavailable before flush", async () => {
+      await initLogStore();
+      addLogEntry(makeEntry({ msg: "queued" }));
+
+      // Make session storage unavailable before flush fires
+      vi.stubGlobal("chrome", { storage: {} });
+
+      await vi.advanceTimersByTimeAsync(600);
+      // Should not throw and entry should still be in local memory
+      expect(getLogEntries().some((e) => e.msg === "queued")).toBe(true);
     });
   });
 });

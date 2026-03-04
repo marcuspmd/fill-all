@@ -22,7 +22,7 @@ import {
   findAntLabel,
   findAntId,
   isAntRequired,
-  getUniqueSelector,
+  getAntdSelector,
 } from "./antd-utils";
 import { buildSignals } from "../../extractors";
 
@@ -44,7 +44,7 @@ export const antdSliderAdapter: CustomComponentAdapter = {
 
     const field: FormField = {
       element: wrapper,
-      selector: getUniqueSelector(wrapper),
+      selector: getAntdSelector(wrapper),
       category: "unknown",
       fieldType: "number",
       adapterName: "antd-slider",

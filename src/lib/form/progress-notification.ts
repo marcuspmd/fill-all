@@ -46,6 +46,10 @@ const SOURCE_ICON: Record<string, string> = {
 
 export interface ProgressNotification {
   show(): void;
+  /** Show a spinner row indicating the AI is generating values (batch mode) */
+  showAiGenerating(): void;
+  /** Remove the AI generating spinner row */
+  hideAiGenerating(): void;
   /** Add field — shows spinner while detecting */
   addDetecting(field: FormField): void;
   /** Update field — detection done, shows type badge */
@@ -218,6 +222,7 @@ export function createProgressNotification(): ProgressNotification {
 
   const fieldItems = new Map<string, HTMLElement>();
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
+  let aiGeneratingItem: HTMLElement | undefined;
 
   function getOrCreateItem(field: FormField): HTMLElement {
     const key = field.selector;
@@ -238,6 +243,24 @@ export function createProgressNotification(): ProgressNotification {
       requestAnimationFrame(() => {
         container.classList.add("fa-progress-visible");
       });
+    },
+
+    showAiGenerating() {
+      if (aiGeneratingItem) return;
+      aiGeneratingItem = document.createElement("div");
+      aiGeneratingItem.className = "fa-progress-item filling";
+      aiGeneratingItem.innerHTML = `
+        <span class="fa-progress-icon"><span class="fa-spinner ai"></span></span>
+        <span class="fa-progress-label">${escapeTextContent(t("progressAiGenerating"))}</span>
+        <span class="fa-progress-badge">AI</span>
+      `;
+      list.appendChild(aiGeneratingItem);
+      container.scrollTop = container.scrollHeight;
+    },
+
+    hideAiGenerating() {
+      aiGeneratingItem?.remove();
+      aiGeneratingItem = undefined;
     },
 
     addDetecting(field: FormField) {

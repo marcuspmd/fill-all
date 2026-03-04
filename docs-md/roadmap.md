@@ -10,7 +10,7 @@ Este documento lista as funcionalidades planejadas e melhorias futuras para o **
 
 **Status**: ✅ Concluído
 
-Suporte a múltiplos idiomas na interface da extensão (Popup, Options Page, DevTools Panel e Floating Panel).
+Suporte a múltiplos idiomas na interface da extensão (Popup, Options Page e DevTools Panel).
 
 - ✅ Separar todas as strings de UI em arquivos de localização
 - ✅ Suporte a: Português (BR), English, Español
@@ -87,7 +87,7 @@ Evoluir o sistema de logging centralizado para facilitar o diagnóstico de probl
 - ✅ Filtros por namespace e nível (toolbar com botões All/Debug/Info/Warn/Error + busca por texto)
 - ✅ Exportar logs como texto (copiar para clipboard via botão no viewer)
 - ✅ Rotação de buffer com FIFO eviction (max 1000 entradas, persistência via `chrome.storage.session`)
-- ✅ Componente `log-viewer` reutilizável nos contextos DevTools, Options e Floating Panel
+- ✅ Componente `log-viewer` reutilizável nos contextos DevTools e Options
 - ✅ Filtro por intervalo de tempo (date/time range picker no toolbar)
 - ✅ Exportar logs como JSON (download de arquivo `.json` com todos os campos)
 - ✅ Tamanho máximo do buffer configurável via Settings (padrão 1000, range 100–10000)
@@ -120,7 +120,7 @@ Cobertura de testes unitários e E2E implementada com Vitest + Playwright, garan
 - ✅ Playwright configurado para E2E com Chrome real (`.coverage/e2e/`)
 - ✅ Chrome APIs mockadas (`chrome.storage`, `chrome.runtime`, `chrome.tabs`)
 - ✅ 70+ arquivos de teste cobrindo: geradores, parsers Zod, rule engine, pipeline de detecção, storage, adapters Ant Design/Select2, extractors, i18n, logger, UI
-- ✅ Testes E2E para: form-filler, form-detector, dom-watcher, field-icon, floating-panel
+- ✅ Testes E2E para: form-filler, form-detector, dom-watcher, field-icon
 - ✅ Coverage merge combinando unitários + E2E (`npm run coverage:all`)
 - ✅ Scripts: `npm test`, `npm run test:e2e`, `npm run test:coverage`, `npm run coverage:all`
 

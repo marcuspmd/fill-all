@@ -2,6 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { keywordClassifier } from "../keyword-classifier";
 import { detectBasicType, htmlTypeDetector } from "../../html-type-detector";
+import { htmlFallbackClassifier } from "../html-fallback-classifier";
+import { htmlTypeClassifier } from "../html-type-classifier";
 import type { FormField } from "@/types";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -314,5 +316,63 @@ describe("htmlTypeDetector", () => {
     el.type = "email";
     const r = htmlTypeDetector.detect(el);
     expect(r.type).toBe("email");
+  });
+});
+
+// ── htmlTypeClassifier ────────────────────────────────────────────────────────
+
+describe("htmlTypeClassifier", () => {
+  it("has name html-type", () => {
+    expect(htmlTypeClassifier.name).toBe("html-type");
+  });
+
+  it("returns null for a non-native element (div)", () => {
+    const el = document.createElement("div");
+    const field = makeField("", { element: el });
+    expect(htmlTypeClassifier.detect(field)).toBeNull();
+  });
+
+  it("returns null for input[type=text] (ambiguous / unknown)", () => {
+    const field = makeField("");
+    expect(htmlTypeClassifier.detect(field)).toBeNull();
+  });
+
+  it("returns confidence 1 for input[type=email]", () => {
+    const el = document.createElement("input");
+    el.type = "email";
+    const field = makeField("", { element: el });
+    const result = htmlTypeClassifier.detect(field);
+    expect(result).not.toBeNull();
+    expect(result!.type).toBe("email");
+    expect(result!.confidence).toBe(1.0);
+  });
+});
+
+// ── htmlFallbackClassifier ────────────────────────────────────────────────────
+
+describe("htmlFallbackClassifier", () => {
+  it("has name html-fallback", () => {
+    expect(htmlFallbackClassifier.name).toBe("html-fallback");
+  });
+
+  it("maps input[type=email] to email", () => {
+    const el = document.createElement("input");
+    el.type = "email";
+    const field = makeField("", { element: el });
+    const result = htmlFallbackClassifier.detect(field)!;
+    expect(result.type).toBe("email");
+  });
+
+  it("returns unknown for input[type=text] (not in fallback map)", () => {
+    const field = makeField("");
+    const result = htmlFallbackClassifier.detect(field)!;
+    expect(result.type).toBe("unknown");
+  });
+
+  it("returns unknown for a non-input element (no type attribute)", () => {
+    const el = document.createElement("div");
+    const field = makeField("", { element: el });
+    const result = htmlFallbackClassifier.detect(field)!;
+    expect(result.type).toBe("unknown");
   });
 });

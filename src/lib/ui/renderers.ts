@@ -1,8 +1,8 @@
 /**
- * Shared HTML renderers used across popup, devtools panel, and floating panel.
+ * Shared HTML renderers used across popup and devtools panel.
  *
  * All functions return HTML strings. Each accepts an optional `prefix` parameter
- * for CSS class scoping (e.g. "fa-" for the floating panel injected into page DOM).
+ * for CSS class scoping.
  */
 
 import type { DetectedFieldSummary, SavedForm } from "@/types";
