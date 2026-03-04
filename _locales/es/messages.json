@@ -1617,6 +1617,9 @@
   "fpEditTimeout": {
     "message": "Editar timeout (ms)"
   },
+  "progressAiGenerating": {
+    "message": "✨ IA generando valores coherentes…"
+  },
   "progressHeaderProcessing": {
     "message": "🔄 Fill All — Procesando"
   },

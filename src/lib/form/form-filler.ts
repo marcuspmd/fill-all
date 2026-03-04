@@ -490,9 +490,14 @@ export async function fillContextualAI(
   context?: AIContextPayload,
 ): Promise<GenerationResult[]> {
   setFillingInProgress(true);
+  const progress = createProgressNotification();
+  progress.show();
   try {
     const { fields } = await detectAllFieldsAsync();
-    if (fields.length === 0) return [];
+    if (fields.length === 0) {
+      progress.destroy();
+      return [];
+    }
 
     const url = window.location.href;
     const settings = await getSettings();
@@ -507,7 +512,10 @@ export async function fillContextualAI(
       ? eligibleFields.filter((f) => !fieldHasValue(f))
       : eligibleFields;
 
-    if (fillableFields.length === 0) return [];
+    if (fillableFields.length === 0) {
+      progress.destroy();
+      return [];
+    }
 
     // Build compact descriptors for the AI
     const contextInputs: FormContextFieldInput[] = fillableFields.map(
@@ -534,6 +542,9 @@ export async function fillContextualAI(
       },
     );
 
+    // Show spinner while the single batch AI call is in-flight
+    progress.showAiGenerating();
+
     const contextMap = await generateFormContextValuesViaProxy(
       contextInputs,
       buildUserContextString(context),
@@ -541,10 +552,13 @@ export async function fillContextualAI(
       context?.pdfPageDataUrls,
     );
 
+    progress.hideAiGenerating();
+
     if (!contextMap || Object.keys(contextMap).length === 0) {
       log.warn(
         "fillContextualAI: AI não retornou valores, usando fallback fillAllFields",
       );
+      progress.destroy();
       return fillAllFields();
     }
 
@@ -555,6 +569,8 @@ export async function fillContextualAI(
       const value = contextMap[String(i)];
 
       if (!value) continue;
+
+      progress.addFilling(field);
 
       try {
         await applyValueToField(field, value);
@@ -577,16 +593,23 @@ export async function fillContextualAI(
           showAiFieldBadge(field.element);
         }
 
-        results.push({
+        const result: GenerationResult = {
           fieldSelector: field.selector,
           value,
           source: "ai",
-        });
+        };
+        progress.updateFilled(field, result);
+        results.push(result);
       } catch (err) {
         log.warn(`fillContextualAI: falhou no campo ${field.selector}:`, err);
+        progress.updateError(
+          field,
+          err instanceof Error ? err.message : "falhou",
+        );
       }
     }
 
+    progress.done(results.length, fillableFields.length);
     return results;
   } finally {
     setFillingInProgress(false);
