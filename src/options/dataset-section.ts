@@ -11,7 +11,7 @@ import type {
 } from "@/lib/ai/runtime-trainer";
 import { trainModelFromDataset } from "@/lib/ai/runtime-trainer";
 import { t } from "@/lib/i18n";
-import { escapeHtml, showToast } from "./shared";
+import { escapeHtml, showToast, datasetTypeSelect } from "./shared";
 
 let _allDatasetEntries: DatasetEntry[] = [];
 
@@ -197,9 +197,7 @@ function bindDatasetEvents(): void {
       const signals = (
         document.getElementById("dataset-signals") as HTMLInputElement
       ).value.trim();
-      const type = (
-        document.getElementById("dataset-type") as HTMLSelectElement
-      ).value as FieldType;
+      const type = (datasetTypeSelect?.getValue() ?? "") as FieldType;
       const difficulty = (
         document.getElementById("dataset-difficulty") as HTMLSelectElement
       ).value as "easy" | "medium" | "hard";

@@ -9,7 +9,6 @@ import type {
   FieldType,
   IgnoredField,
 } from "@/types";
-import { FIELD_TYPES } from "@/types";
 import { matchUrlPattern } from "@/lib/url/match-url-pattern";
 import { t } from "@/lib/i18n";
 import {
@@ -19,7 +18,7 @@ import {
   escapeHtml,
 } from "./popup-messaging";
 import { loadIgnoredFields } from "./popup-ignored";
-import { getFieldTypeGroupedOptions } from "@/lib/shared/field-type-catalog";
+import { SearchableSelect, buildFieldTypeSelectEntries } from "@/lib/ui";
 
 type DetectFieldItem = DetectedFieldSummary;
 
@@ -127,20 +126,6 @@ function buildFieldItem(
   item.className = "list-item field-detect-item";
   if (existingRule?.id) item.dataset.ruleId = existingRule.id;
 
-  const typeOptions = getFieldTypeGroupedOptions(FIELD_TYPES)
-    .map(
-      (group) =>
-        `<optgroup label="${group.label}">${group.options
-          .map(
-            (entry) =>
-              `<option value="${escapeHtml(entry.value)}"${
-                entry.value === effectiveType ? " selected" : ""
-              }>${escapeHtml(entry.label)}</option>`,
-          )
-          .join("")}</optgroup>`,
-    )
-    .join("");
-
   const isMoney = effectiveType === "money";
   const isNumber = effectiveType === "number";
   const isSelect = effectiveType === "select";
@@ -181,7 +166,7 @@ function buildFieldItem(
   item.innerHTML = `
     <div class="field-header">
       <span class="field-label">${escapeHtml(field.label)}</span>
-      <select class="field-type-select" title="${t("fieldTypeTitle")}">${typeOptions}</select>
+      <div class="field-type-container" title="${t("fieldTypeTitle")}"></div>
       <div class="field-actions">
         <button class="btn btn-sm btn-fill-field" title="${t("actionFill")}" ${
           isIgnored ? "disabled" : ""
@@ -251,7 +236,16 @@ function buildFieldItem(
     </div>
   `;
 
-  bindFieldItemEvents(item, field, pageUrl, existingRule);
+  const typeContainer = item.querySelector<HTMLElement>(
+    ".field-type-container",
+  )!;
+  const ss = new SearchableSelect({
+    entries: buildFieldTypeSelectEntries(),
+    value: effectiveType,
+    placeholder: "Buscar tipo…",
+  }).mount(typeContainer);
+
+  bindFieldItemEvents(item, field, pageUrl, existingRule, ss);
   return item;
 }
 
@@ -260,12 +254,10 @@ function bindFieldItemEvents(
   field: DetectFieldItem,
   pageUrl: string,
   existingRule: FieldRule | undefined,
+  ss: SearchableSelect,
 ): void {
-  const typeSelect =
-    item.querySelector<HTMLSelectElement>(".field-type-select");
-
   const saveFieldRule = async (silent = false): Promise<void> => {
-    const selectedType = (typeSelect?.value ?? field.fieldType) as FieldType;
+    const selectedType = (ss.getValue() || field.fieldType) as FieldType;
     const fixedValue =
       item.querySelector<HTMLInputElement>(".rule-fixed-value")?.value.trim() ||
       undefined;
@@ -317,8 +309,7 @@ function bindFieldItemEvents(
     }
   };
 
-  typeSelect?.addEventListener("change", () => {
-    const selectedVal = typeSelect.value;
+  ss.on("change", (selectedVal) => {
     const moneyRange = item.querySelector<HTMLElement>(".rule-money-range");
     const numberRange = item.querySelector<HTMLElement>(".rule-number-range");
     const selectOptionRow = item.querySelector<HTMLElement>(
@@ -406,7 +397,7 @@ function bindFieldItemEvents(
       sendToBackground({ type: "DELETE_RULE", payload: ruleId });
       item.removeAttribute("data-rule-id");
       item.querySelector(".btn-delete-rule")?.remove();
-      if (typeSelect) typeSelect.value = field.fieldType;
+      ss.setValue(field.fieldType);
     }
   };
 

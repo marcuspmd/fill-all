@@ -365,6 +365,17 @@ body {
   border-radius: 6px;
 }
 
+.edit-field-match-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-field-match-wrap .fa-ss {
+  flex: 1;
+  font-size: 11px;
+}
+
 .edit-field-key-wrap {
   display: flex;
   align-items: center;

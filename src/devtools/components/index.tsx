@@ -13,11 +13,11 @@
 import { render, h } from "preact";
 import type { VNode } from "preact";
 
-export { ActionCard } from "./action-card";
-export type { ActionCardProps } from "./action-card";
+export { ActionCard } from "@/lib/ui/components";
+export type { ActionCardProps } from "@/lib/ui/components";
 
-export { StatusBar } from "./status-bar";
-export type { StatusBarProps } from "./status-bar";
+export { StatusBar } from "@/lib/ui/components";
+export type { StatusBarProps } from "@/lib/ui/components";
 
 /**
  * Monta um componente Preact num elemento do DOM.

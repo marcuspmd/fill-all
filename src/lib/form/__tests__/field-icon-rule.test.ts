@@ -161,9 +161,9 @@ describe("field-icon-rule", () => {
       handleRuleButtonClick(target, mockOnDismiss);
 
       const fixedInput = document.getElementById("fa-rp-fixed");
-      const genSelect = document.getElementById("fa-rp-generator");
+      const genWrap = document.getElementById("fa-rp-generator-wrap");
       expect(fixedInput).not.toBeNull();
-      expect(genSelect).not.toBeNull();
+      expect(genWrap).not.toBeNull();
     });
 
     it("resets fixed input to empty on each invocation", () => {
@@ -193,17 +193,19 @@ describe("field-icon-rule", () => {
 
       handleRuleButtonClick(target, mockOnDismiss);
 
-      const genSelect =
-        document.querySelector<HTMLSelectElement>("#fa-rp-generator")!;
-      expect(genSelect.value).toBe("email");
+      const genValue = document.querySelector<HTMLInputElement>(
+        "#fa-rp-generator-wrap .fa-ss__value",
+      )!;
+      expect(genValue.value).toBe("email");
     });
 
     it("falls back to 'auto' when HTML type is unknown and keyword returns null", () => {
       handleRuleButtonClick(target, mockOnDismiss);
 
-      const genSelect =
-        document.querySelector<HTMLSelectElement>("#fa-rp-generator")!;
-      expect(genSelect.value).toBe("auto");
+      const genValue = document.querySelector<HTMLInputElement>(
+        "#fa-rp-generator-wrap .fa-ss__value",
+      )!;
+      expect(genValue.value).toBe("auto");
     });
 
     it("uses keyword classifier result when HTML type is unknown", () => {
@@ -219,9 +221,10 @@ describe("field-icon-rule", () => {
 
       handleRuleButtonClick(target, mockOnDismiss);
 
-      const genSelect =
-        document.querySelector<HTMLSelectElement>("#fa-rp-generator")!;
-      expect(genSelect.value).toBe("cpf");
+      const genValue = document.querySelector<HTMLInputElement>(
+        "#fa-rp-generator-wrap .fa-ss__value",
+      )!;
+      expect(genValue.value).toBe("cpf");
     });
 
     it("shows suggestion badge when a type is detected", () => {
@@ -280,10 +283,15 @@ describe("field-icon-rule", () => {
       mockGenerate.mockReturnValueOnce("initial").mockReturnValue("novo-cpf");
       handleRuleButtonClick(target, mockOnDismiss);
 
-      const genSelect =
-        document.querySelector<HTMLSelectElement>("#fa-rp-generator")!;
-      genSelect.value = "cpf";
-      genSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      // Open dropdown and click the cpf option to trigger the SearchableSelect change handler
+      const ssInput = document.querySelector<HTMLInputElement>(
+        "#fa-rp-generator-wrap .fa-ss__input",
+      )!;
+      ssInput.dispatchEvent(new Event("focus"));
+      const cpfOpt = document.querySelector<HTMLElement>(
+        "#fa-rp-generator-wrap .fa-ss__opt[data-value='cpf']",
+      )!;
+      cpfOpt.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
 
       const previewValue = document.getElementById("fa-rp-preview-value")!;
       expect(previewValue.textContent).toBe("novo-cpf");

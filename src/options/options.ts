@@ -3,7 +3,8 @@
  */
 
 import "./options.css";
-import { initTabs, syncFieldTypeOptionsInOptionsPage } from "./shared";
+import "../lib/ui/searchable-select.css";
+import { initTabs, initSearchableSelects } from "./shared";
 import { initSettingsTab } from "./settings-section";
 import { initRulesTab } from "./rules-section";
 import { initFormsTab } from "./forms-section";
@@ -21,7 +22,7 @@ async function main(): Promise<void> {
   localizeHTML();
 
   initTabs();
-  syncFieldTypeOptionsInOptionsPage();
+  initSearchableSelects();
   initSettingsTab();
   initRulesTab();
   initFormsTab();

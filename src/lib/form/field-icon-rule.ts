@@ -10,10 +10,9 @@
 import type { FieldRule, FieldType, FormField, GeneratorParams } from "@/types";
 import { RULE_POPUP_ID } from "./field-icon-styles";
 import { getUniqueSelector, findLabel, buildSignals } from "./extractors";
-import {
-  getFieldTypeOptions,
-  getFieldTypeGroupedOptions,
-} from "@/lib/shared/field-type-catalog";
+import { getFieldTypeOptions } from "@/lib/shared/field-type-catalog";
+import { SearchableSelect } from "@/lib/ui/searchable-select";
+import { buildGeneratorSelectEntries } from "@/lib/ui/select-builders";
 import { generate } from "@/lib/generators";
 import { detectBasicType } from "./detectors/html-type-detector";
 import { keywordClassifier } from "./detectors/strategies/keyword-classifier";
@@ -24,6 +23,7 @@ import {
 } from "@/types/field-type-definitions";
 
 let rulePopupElement: HTMLElement | null = null;
+let genSearchableSelect: SearchableSelect | null = null;
 let currentOnDismiss: (() => void) | null = null;
 let currentSuggestedType: FieldType | undefined;
 let currentRuleField: {
@@ -103,6 +103,24 @@ function showRulePopup(anchor: HTMLElement, onDismiss: () => void): void {
     setupPopupListeners();
   }
 
+  if (!genSearchableSelect) {
+    const wrap = rulePopupElement.querySelector<HTMLElement>(
+      "#fa-rp-generator-wrap",
+    );
+    if (wrap) {
+      genSearchableSelect = new SearchableSelect({
+        entries: buildGeneratorSelectEntries(),
+        value: "auto",
+        placeholder: "Pesquisar tipo…",
+      });
+      genSearchableSelect.mount(wrap);
+      genSearchableSelect.on("change", () => {
+        updateParamsSection();
+        updatePreview();
+      });
+    }
+  }
+
   const nameEl =
     rulePopupElement.querySelector<HTMLElement>("#fa-rp-field-name");
   if (nameEl) nameEl.textContent = currentRuleField?.label || "";
@@ -111,8 +129,6 @@ function showRulePopup(anchor: HTMLElement, onDismiss: () => void): void {
     rulePopupElement.querySelector<HTMLInputElement>("#fa-rp-fixed");
   if (fixedInput) fixedInput.value = "";
 
-  const genSelect =
-    rulePopupElement.querySelector<HTMLSelectElement>("#fa-rp-generator");
   const suggestionEl =
     rulePopupElement.querySelector<HTMLElement>("#fa-rp-suggestion");
   const suggestionTypeEl = rulePopupElement.querySelector<HTMLElement>(
@@ -126,16 +142,7 @@ function showRulePopup(anchor: HTMLElement, onDismiss: () => void): void {
     saveBtn.disabled = false;
   }
 
-  if (genSelect) {
-    if (currentSuggestedType) {
-      const hasOption = Array.from(genSelect.options).some(
-        (o) => o.value === currentSuggestedType,
-      );
-      genSelect.value = hasOption ? currentSuggestedType : "auto";
-    } else {
-      genSelect.value = "auto";
-    }
-  }
+  genSearchableSelect?.setValue(currentSuggestedType ?? "auto");
 
   if (suggestionEl && suggestionTypeEl) {
     if (currentSuggestedType) {
@@ -181,13 +188,6 @@ function setupPopupListeners(): void {
     });
 
   rulePopupElement
-    .querySelector("#fa-rp-generator")
-    ?.addEventListener("change", () => {
-      updateParamsSection();
-      updatePreview();
-    });
-
-  rulePopupElement
     .querySelector("#fa-rp-preview-refresh")
     ?.addEventListener("mousedown", (e) => {
       e.preventDefault();
@@ -216,9 +216,7 @@ function updateParamsSection(): void {
     rulePopupElement.querySelector<HTMLElement>("#fa-rp-params");
   if (!container) return;
 
-  const genSelect =
-    rulePopupElement.querySelector<HTMLSelectElement>("#fa-rp-generator");
-  const selectedType = genSelect?.value ?? "auto";
+  const selectedType = genSearchableSelect?.getValue() ?? "auto";
 
   if (
     selectedType === "auto" ||
@@ -354,8 +352,6 @@ function updatePreview(): void {
 
   const fixedInput =
     rulePopupElement.querySelector<HTMLInputElement>("#fa-rp-fixed");
-  const genSelect =
-    rulePopupElement.querySelector<HTMLSelectElement>("#fa-rp-generator");
   const previewValueEl = rulePopupElement.querySelector<HTMLElement>(
     "#fa-rp-preview-value",
   );
@@ -363,7 +359,7 @@ function updatePreview(): void {
     "#fa-rp-preview-refresh",
   );
 
-  if (!fixedInput || !genSelect || !previewValueEl) return;
+  if (!fixedInput || !previewValueEl) return;
 
   const fixedVal = fixedInput.value.trim();
 
@@ -372,7 +368,7 @@ function updatePreview(): void {
     previewValueEl.className = "fa-rp-preview-fixed";
     if (refreshBtn) refreshBtn.style.display = "none";
   } else {
-    const selectedType = genSelect.value;
+    const selectedType = genSearchableSelect?.getValue() ?? "auto";
     const typeToGenerate: FieldType =
       selectedType === "auto"
         ? (currentSuggestedType ?? "text")
@@ -399,6 +395,8 @@ export function hideRulePopup(): void {
 
 export function destroyRulePopup(): void {
   document.removeEventListener("keydown", handlePopupKeyDown);
+  genSearchableSelect?.destroy();
+  genSearchableSelect = null;
   rulePopupElement?.remove();
   rulePopupElement = null;
   currentRuleField = null;
@@ -430,14 +428,6 @@ function positionRulePopup(anchor: HTMLElement): void {
 }
 
 function getRulePopupHTML(): string {
-  const groups = getFieldTypeGroupedOptions();
-  const generatorTypeOptions = groups
-    .map(
-      (group) =>
-        `<optgroup label="${group.label}">${group.options.map((o) => `<option value="${o.value}">${o.label}</option>`).join("")}</optgroup>`,
-    )
-    .join("");
-
   return `
     <div class="fa-rp-header">📌 Regra — <span id="fa-rp-field-name"></span></div>
     <div class="fa-rp-body">
@@ -450,10 +440,7 @@ function getRulePopupHTML(): string {
       </div>
       <div class="fa-rp-group">
         <label class="fa-rp-label">Gerador automático</label>
-        <select id="fa-rp-generator" class="fa-rp-select">
-          <option value="auto">Auto (detectar)</option>
-          ${generatorTypeOptions}
-        </select>
+        <div id="fa-rp-generator-wrap"></div>
       </div>
       <div id="fa-rp-params" class="fa-rp-params" style="display:none"></div>
       <div class="fa-rp-preview">
@@ -478,7 +465,8 @@ async function saveFieldRule(): Promise<void> {
   const genSelect =
     rulePopupElement?.querySelector<HTMLSelectElement>("#fa-rp-generator");
   const fixedValue = fixedInput?.value.trim() || undefined;
-  const generator = (genSelect?.value || "auto") as FieldRule["generator"];
+  const generator = (genSearchableSelect?.getValue() ||
+    "auto") as FieldRule["generator"];
 
   const rule: FieldRule = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,

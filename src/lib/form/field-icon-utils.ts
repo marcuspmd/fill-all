@@ -29,13 +29,7 @@ export function isFillableField(el: HTMLElement): boolean {
   return false;
 }
 
-export function escHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+export { escHtml } from "@/lib/ui";
 
 /**
  * Builds a FormField from a DOM element, classifying it via the detection pipeline.

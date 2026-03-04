@@ -10,6 +10,18 @@ export function escapeHtml(text: string | undefined | null): string {
   return div.innerHTML;
 }
 
+/**
+ * Escapes HTML entities using regex — safe for attribute values and innerHTML.
+ * Escapes &, <, >, and " (but not '). Use in content scripts (no DOM required).
+ */
+export function escHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 /** Escapes characters for use inside HTML attribute values. */
 export function escapeAttr(text: string): string {
   return text

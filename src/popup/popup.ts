@@ -6,6 +6,7 @@
  */
 
 import "./popup.css";
+import "../lib/ui/searchable-select.css";
 
 import type {
   DetectedFieldSummary,

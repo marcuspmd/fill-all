@@ -5,8 +5,8 @@
  * EditFormScreen: full editor for a saved form's template fields.
  */
 
-import { h, Fragment } from "preact";
-import { useState } from "preact/hooks";
+import { h } from "preact";
+import { useState, useMemo } from "preact/hooks";
 import type {
   SavedForm,
   FormTemplateField,
@@ -14,32 +14,11 @@ import type {
   FieldType,
 } from "@/types";
 import { t } from "@/lib/i18n";
-import { getFieldTypeGroupedOptions } from "@/lib/shared/field-type-catalog";
-import { FIELD_TYPES } from "@/types";
-
-// ── Grouped options ───────────────────────────────────────────────────────────
-
-function FieldTypeOptions({ selected }: { selected?: string }) {
-  const groups = getFieldTypeGroupedOptions(FIELD_TYPES);
-  return (
-    <Fragment>
-      <option value="">--</option>
-      {groups.map((group) => (
-        <optgroup key={group.label} label={group.label}>
-          {group.options.map((entry) => (
-            <option
-              key={entry.value}
-              value={entry.value}
-              selected={entry.value === selected}
-            >
-              {entry.label} ({entry.value})
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </Fragment>
-  );
-}
+import { SearchableSelectPreact } from "@/lib/ui/searchable-select-preact";
+import {
+  buildFieldTypeSelectEntries,
+  buildGeneratorSelectEntries,
+} from "@/lib/ui/select-builders";
 
 // ── FormsTabView ──────────────────────────────────────────────────────────────
 
@@ -170,42 +149,22 @@ function FieldRowEditor({
   onChange,
   onRemove,
 }: FieldRowEditorProps) {
+  const fieldTypeEntries = useMemo(() => buildFieldTypeSelectEntries(), []);
+  const generatorEntries = useMemo(() => buildGeneratorSelectEntries(), []);
+
   return (
     <div class="edit-field-row" data-field-index={index}>
-      <div class="edit-field-key-wrap">
-        <input
-          type="text"
-          class="edit-input edit-field-key-input"
-          placeholder="Seletor / nome"
-          value={field.key}
-          onInput={(e) =>
-            onChange(index, { key: (e.target as HTMLInputElement).value })
-          }
-        />
-        <input
-          type="text"
-          class="edit-input edit-field-label-input"
-          placeholder={t("formName")}
-          value={field.label || field.key}
-          onInput={(e) =>
-            onChange(index, { label: (e.target as HTMLInputElement).value })
-          }
-        />
-        <select
-          class="edit-select edit-field-match-type"
-          title={t("tooltipMatchByFieldType")}
+      <div class="edit-field-match-wrap">
+        <SearchableSelectPreact
+          entries={fieldTypeEntries}
           value={field.matchByFieldType ?? ""}
-          onChange={(e) =>
+          onChange={(v) =>
             onChange(index, {
-              matchByFieldType: (e.target as HTMLSelectElement).value
-                ? ((e.target as HTMLSelectElement).value as FieldType)
-                : undefined,
+              matchByFieldType: v ? (v as FieldType) : undefined,
             })
           }
-        >
-          <option value="">{t("matchBySelectorOption")}</option>
-          <FieldTypeOptions selected={field.matchByFieldType} />
-        </select>
+          placeholder={t("tooltipMatchByFieldType")}
+        />
       </div>
       <div class="edit-field-controls">
         <select
@@ -233,18 +192,13 @@ function FieldRowEditor({
             }
           />
         ) : (
-          <select
-            class="edit-select edit-field-value"
-            value={field.generatorType ?? ""}
-            onChange={(e) =>
-              onChange(index, {
-                generatorType: (e.target as HTMLSelectElement)
-                  .value as FieldType,
-              })
-            }
-          >
-            <FieldTypeOptions selected={field.generatorType} />
-          </select>
+          <SearchableSelectPreact
+            entries={generatorEntries}
+            value={field.generatorType ?? "auto"}
+            onChange={(v) => onChange(index, { generatorType: v as FieldType })}
+            placeholder={t("generatorMode")}
+            className="edit-field-value"
+          />
         )}
       </div>
       <button
@@ -287,7 +241,7 @@ export function EditFormScreen({
     setFields((prev) => [
       ...prev,
       {
-        key: `field_${prev.length + 1}`,
+        key: "",
         label: "",
         mode: "fixed" as FormFieldMode,
         fixedValue: "",
@@ -296,14 +250,17 @@ export function EditFormScreen({
   }
 
   function handleSave(): void {
-    const updatedFields: FormTemplateField[] = fields.map((f) => ({
-      key: f.matchByFieldType ?? f.key,
-      label: f.label || f.key,
-      mode: f.mode,
-      matchByFieldType: f.matchByFieldType,
-      fixedValue: f.mode === "fixed" ? f.fixedValue : undefined,
-      generatorType: f.mode === "generator" ? f.generatorType : undefined,
-    }));
+    const updatedFields: FormTemplateField[] = fields.map((f, i) => {
+      const resolvedKey = (f.matchByFieldType ?? f.key) || `field_${i + 1}`;
+      return {
+        key: resolvedKey,
+        label: resolvedKey,
+        mode: f.mode,
+        matchByFieldType: f.matchByFieldType,
+        fixedValue: f.mode === "fixed" ? f.fixedValue : undefined,
+        generatorType: f.mode === "generator" ? f.generatorType : undefined,
+      };
+    });
 
     onSave({
       ...form,

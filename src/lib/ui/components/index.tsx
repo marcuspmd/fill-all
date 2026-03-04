@@ -9,3 +9,4 @@ export * from "./actions-tab-view";
 export * from "./forms-tab-view";
 export * from "./record-tab-view";
 export * from "./log-tab-view";
+export * from "./devtools";

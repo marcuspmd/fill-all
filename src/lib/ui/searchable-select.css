@@ -1,0 +1,139 @@
+/* SearchableSelect — vanilla dropdown with search */
+
+.fa-ss {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  width: 100%;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.fa-ss--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ── Trigger ─────────────────────────────────────────────── */
+
+.fa-ss__input-wrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 6px;
+  background: var(--bg-input, #fff);
+  padding: 3px 6px;
+  cursor: pointer;
+  gap: 4px;
+  transition: border-color 0.15s;
+}
+
+.fa-ss__input-wrap:focus-within {
+  border-color: var(--primary, #4f46e5);
+  outline: 2px solid color-mix(in srgb, var(--primary, #4f46e5) 25%, transparent);
+}
+
+.fa-ss__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: inherit;
+  font-family: inherit;
+  color: var(--fg, #111827);
+  padding: 1px 0;
+}
+
+.fa-ss__input::placeholder {
+  color: var(--fg-muted, #9ca3af);
+}
+
+.fa-ss__arrow {
+  flex-shrink: 0;
+  color: var(--fg-muted, #9ca3af);
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+  transition: transform 0.15s;
+}
+
+.fa-ss[aria-expanded="true"] .fa-ss__arrow,
+.fa-ss__input[aria-expanded="true"] ~ .fa-ss__arrow {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown ─────────────────────────────────────────────── */
+
+.fa-ss__dropdown {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  z-index: 2147483647;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--bg-dropdown, #fff);
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 2px 0;
+  margin: 0;
+  list-style: none;
+  scroll-behavior: smooth;
+}
+
+.fa-ss__dropdown[hidden] {
+  display: none;
+}
+
+/* ── Options ──────────────────────────────────────────────── */
+
+.fa-ss__group {
+  padding: 4px 8px 2px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted, #9ca3af);
+  pointer-events: none;
+  user-select: none;
+}
+
+.fa-ss__opt {
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 1px 3px;
+  color: var(--fg, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.08s;
+}
+
+.fa-ss__opt:hover,
+.fa-ss__opt--highlighted {
+  background: var(--primary-subtle, #ede9fe);
+  color: var(--primary-dark, #3730a3);
+}
+
+.fa-ss__opt[data-disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Empty State ─────────────────────────────────────────── */
+
+.fa-ss__empty {
+  padding: 8px 10px;
+  color: var(--fg-muted, #9ca3af);
+  font-style: italic;
+  list-style: none;
+}
+
+/* ── Hidden value input (do not show) ───────────────────── */
+
+.fa-ss__value {
+  display: none;
+}
