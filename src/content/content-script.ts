@@ -87,22 +87,25 @@ type FillableElement =
 
 let lastContextMenuElement: FillableElement | null = null;
 
-document.addEventListener(
-  "contextmenu",
-  (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const field = target.closest("input, select, textarea");
-    if (
-      field instanceof HTMLInputElement ||
-      field instanceof HTMLSelectElement ||
-      field instanceof HTMLTextAreaElement
-    ) {
-      lastContextMenuElement = field;
-    }
-  },
-  true,
-);
+// guard against test environment without DOM
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "contextmenu",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const field = target.closest("input, select, textarea");
+      if (
+        field instanceof HTMLInputElement ||
+        field instanceof HTMLSelectElement ||
+        field instanceof HTMLTextAreaElement
+      ) {
+        lastContextMenuElement = field;
+      }
+    },
+    true,
+  );
+}
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -128,7 +131,7 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
-async function handleContentMessage(
+export async function handleContentMessage(
   message: ExtensionMessage,
 ): Promise<unknown> {
   switch (message.type) {
@@ -176,41 +179,19 @@ async function handleContentMessage(
     case "LOAD_SAVED_FORM": {
       const form = parseSavedFormPayload(message.payload);
       if (!form) return { error: "Invalid payload for LOAD_SAVED_FORM" };
-      const fields = detectFormFields();
 
+      // filter out ignored selectors so applyTemplate won't touch them
       const ignoredFields = await getIgnoredFieldsForUrl(window.location.href);
       const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
-
-      let filled = 0;
-      for (const field of fields) {
-        if (ignoredSelectors.has(field.selector)) continue;
-        const key = field.id || field.name || field.selector;
-        const value = form.fields[key];
-        if (value === undefined) continue;
-
-        if (
-          field.element instanceof HTMLInputElement &&
-          (field.element.type === "checkbox" || field.element.type === "radio")
-        ) {
-          field.element.checked = value === "true";
-        } else {
-          const nativeValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype,
-            "value",
-          )?.set;
-
-          if (field.element instanceof HTMLInputElement && nativeValueSetter) {
-            nativeValueSetter.call(field.element, value);
-          } else {
-            (field.element as HTMLInputElement).value = value;
-          }
-        }
-
-        field.element.dispatchEvent(new Event("input", { bubbles: true }));
-        field.element.dispatchEvent(new Event("change", { bubbles: true }));
-        filled++;
+      const sanitizedFields: typeof form.fields = {};
+      for (const [key, value] of Object.entries(form.fields)) {
+        // we only know selector-level ignores; if a key equals a selector, drop it
+        if (ignoredSelectors.has(key)) continue;
+        sanitizedFields[key] = value;
       }
+      const sanitizedForm: SavedForm = { ...form, fields: sanitizedFields };
 
+      const { filled } = await applyTemplate(sanitizedForm);
       showNotification(`✓ ${filled} campos carregados do template`);
       return { success: true, filled };
     }
@@ -738,7 +719,11 @@ async function initContentScript(): Promise<void> {
   }
 }
 
-void initContentScript();
+// Only automatically initialize when running in a real browser context.
+// In unit tests we import this module directly, so avoid side effects.
+if (typeof document !== "undefined" && typeof chrome !== "undefined") {
+  void initContentScript();
+}
 
 /**
  * Handle streaming detection via Port-based communication.

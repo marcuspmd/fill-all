@@ -21,7 +21,10 @@ import type { FormContextFieldInput } from "@/lib/ai/prompts";
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
 import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
-import { fillCustomComponent } from "./adapters/adapter-registry";
+import {
+  fillCustomComponent,
+  extractCustomComponentValue,
+} from "./adapters/adapter-registry";
 import { generate } from "@/lib/generators";
 import { deriveFieldValueFromTemplate } from "@/lib/form/field-type-aliases";
 import { createLogger, logAuditFill } from "@/lib/logger";
@@ -684,6 +687,15 @@ export async function captureFormValues(): Promise<Record<string, string>> {
   for (const field of fields) {
     const el = field.element;
     const key = field.id || field.name || field.selector;
+
+    // if this field came from a custom adapter try to extract its value
+    if (field.adapterName) {
+      const custom = extractCustomComponentValue(field);
+      if (custom !== null) {
+        values[key] = custom;
+        continue;
+      }
+    }
 
     if (el instanceof HTMLSelectElement) {
       values[key] = el.value;

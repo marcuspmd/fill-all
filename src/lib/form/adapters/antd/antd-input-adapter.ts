@@ -110,4 +110,11 @@ export const antdInputAdapter: CustomComponentAdapter = {
     setReactInputValue(input, value);
     return true;
   },
+
+  extractValue(wrapper: HTMLElement): string | null {
+    const input = wrapper.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      "input, textarea",
+    );
+    return input ? input.value : null;
+  },
 };

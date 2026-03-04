@@ -77,4 +77,12 @@ export interface CustomComponentAdapter {
    * May be async for components that need to wait for dropdowns/panels to render.
    */
   fill(wrapper: HTMLElement, value: string): boolean | Promise<boolean>;
+
+  /**
+   * (Optional) Reads the current value from the custom component wrapper.
+   * This is used when the user requests "Save form" so we can capture the
+   * actual value instead of treating the wrapper as a generic <div>.
+   * Returning `null` indicates the adapter cannot extract a value.
+   */
+  extractValue?(wrapper: HTMLElement): string | null;
 }

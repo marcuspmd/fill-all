@@ -19,6 +19,9 @@ vi.stubGlobal("chrome", {
       addListener: vi.fn(),
       removeListener: vi.fn(),
     },
+    onConnect: {
+      addListener: vi.fn(),
+    },
     lastError: undefined,
   },
   tabs: {

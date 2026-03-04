@@ -101,6 +101,26 @@ export const antdSelectAdapter: CustomComponentAdapter = {
     return field;
   },
 
+  extractValue(wrapper: HTMLElement): string | null {
+    // prefer displayed selection(s)
+    const items = wrapper.querySelectorAll<HTMLElement>(
+      ".ant-select-selection-item, .ant-select-selection-item-content",
+    );
+    if (items.length > 0) {
+      return Array.from(items)
+        .map((i) => i.textContent?.trim() ?? "")
+        .filter((t) => t)
+        .join(",");
+    }
+
+    // fall back to combobox input value
+    const input = wrapper.querySelector<HTMLInputElement>(
+      "input[role='combobox'], .ant-select-selection-search-input, .ant-select-input",
+    );
+    if (input) return input.value;
+    return null;
+  },
+
   async fill(wrapper: HTMLElement, value: string): Promise<boolean> {
     const isMultiple = wrapper.classList.contains("ant-select-multiple");
     const wrapperSelector = getUniqueSelector(wrapper);
