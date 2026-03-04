@@ -404,6 +404,12 @@ export async function fillSingleField(
   field: FormField,
 ): Promise<GenerationResult | null> {
   const url = window.location.href;
+  const ignoredFields = await getIgnoredFieldsForUrl(url);
+  const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
+  if (ignoredSelectors.has(field.selector)) {
+    log.debug(`Campo ignorado — skip: ${field.selector}`);
+    return null;
+  }
   const settings = await getSettings();
   const aiGenerateFn = await getAiFunction(settings);
   const fieldLabel =

@@ -22,7 +22,11 @@ import {
   detectFormFields,
   streamAllFields,
 } from "@/lib/form/form-detector";
-import { saveForm, getSettings } from "@/lib/storage/storage";
+import {
+  saveForm,
+  getSettings,
+  getIgnoredFieldsForUrl,
+} from "@/lib/storage/storage";
 import { initI18n } from "@/lib/i18n";
 import {
   buildCapturedActions,
@@ -174,8 +178,12 @@ async function handleContentMessage(
       if (!form) return { error: "Invalid payload for LOAD_SAVED_FORM" };
       const fields = detectFormFields();
 
+      const ignoredFields = await getIgnoredFieldsForUrl(window.location.href);
+      const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
+
       let filled = 0;
       for (const field of fields) {
+        if (ignoredSelectors.has(field.selector)) continue;
         const key = field.id || field.name || field.selector;
         const value = form.fields[key];
         if (value === undefined) continue;
