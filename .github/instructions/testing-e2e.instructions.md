@@ -112,7 +112,6 @@ O fixture `_coverage` é `auto: true` — roda automaticamente para **todo** tes
 | ✅ Testar | ❌ Não testar |
 |-----------|--------------|
 | Preenchimento de formulários HTML reais | Lógica pura de generators |
-| Floating panel (abrir, fechar, redimensionar) | Parsers Zod |
 | Field icons e overlays no DOM | Storage CRUD isolado |
 | MutationObserver e auto-refill | Classifiers sem DOM |
 | Context menu da extensão | |

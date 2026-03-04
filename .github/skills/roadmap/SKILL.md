@@ -51,7 +51,7 @@ Resumo claro do que a feature faz e qual problema resolve.
 | 🧠 AI & ML | Chrome AI, TensorFlow.js, learning store | Novo classificador, fine-tuning, accuracy |
 | 📝 Formulários | Detecção, preenchimento, adapters | Novo adapter UI, novo tipo de campo |
 | 🔧 Geradores | Dados brasileiros, internacionais | Novo gerador, validação de dados |
-| 🎨 UI/UX | Popup, options, floating panel, DevTools | Nova aba, melhorias visuais |
+| 🎨 UI/UX | Popup, options, DevTools | Nova aba, melhorias visuais |
 | ⚙️ Infraestrutura | Build, testes, CI/CD, storage | Pipeline, coverage, performance |
 | 🔒 Segurança | CSP, permissões, sanitização | Audit, correções |
 | 📖 Documentação | Instructions, skills, AGENTS.md | Novas convenções, guias |

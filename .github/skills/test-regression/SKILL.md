@@ -128,7 +128,6 @@ npx playwright test src/lib/form/__tests__/e2e/
 - [ ] Form filling preenche campos corretamente
 - [ ] Eventos `input`/`change`/`blur` são disparados
 - [ ] DOM watcher detecta novos campos
-- [ ] Floating panel abre/fecha/minimiza
 
 ### Mudança em Background/Handlers
 

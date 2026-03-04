@@ -1,5 +1,5 @@
 /**
- * Shared HTML utility functions used across popup, devtools panel, and floating panel.
+ * Shared HTML utility functions used across popup and devtools panel.
  */
 
 /** Escapes HTML entities to prevent XSS when inserting user-supplied text. */

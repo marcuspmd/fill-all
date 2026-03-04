@@ -56,7 +56,7 @@ src/
 - Coverage E2E: Playwright CDP → `.coverage/e2e/` (um JSON por teste)
 - Coverage combinado: merge Istanbul → `coverage/` (HTML + LCOV + text)
 - Arquivos DOM-heavy excluídos do coverage unitário (cobertos pelos E2E):
-  - `dom-watcher.ts`, `form-filler.ts`, `floating-panel.ts`, `field-icon.ts`
+  - `dom-watcher.ts`, `form-filler.ts`, `field-icon.ts`
 
 ```bash
 npm run test:coverage          # Unitários + coverage → .coverage/unit/
@@ -163,7 +163,7 @@ O fixture `_coverage` é `auto: true` — roda automaticamente para cada teste q
 ### 2. Content Script (`src/content/content-script.ts`)
 - Opera dentro das páginas web
 - Detecta campos, preenche formulários, salva dados
-- Gerencia DOM watcher, floating panel, field icons
+- Gerencia DOM watcher, field icons
 - Recebe mensagens: `FILL_ALL_FIELDS`, `SAVE_FORM`, `DETECT_FIELDS`, `TOGGLE_PANEL`, etc.
 
 ### 3. Popup UI (`src/popup/`)
@@ -199,7 +199,6 @@ O fixture `_coverage` é `auto: true` — roda automaticamente para cada teste q
 | `form-detector.ts` | Entry point: `detectAllFields()`, `detectAllFieldsAsync()` |
 | `form-filler.ts` | Orquestrador: `fillAllFields()`, `captureFormValues()`, `applyTemplate()` |
 | `dom-watcher.ts` | MutationObserver debounced (600ms) com auto-refill |
-| `floating-panel.ts` | Painel flutuante in-page (abas, resize, minimize) |
 | `field-icon.ts` | Ícones/badges em campos com detalhes de classificação |
 | `field-overlay.ts` | Overlays visuais em campos |
 | `field-icon-rule.ts` | Popup de regra para configurar campo |

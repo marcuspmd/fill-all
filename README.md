@@ -29,9 +29,6 @@ Fill All é uma extensão Chrome de código aberto que preenche formulários aut
 ### Popup
 ![Popup](docs-md/images/popup.png)
 
-### Painel Flutuante (in-page)
-![Floating Panel](docs-md/images/floating_panel.png)
-
 ### DevTools Panel
 ![DevTools Panel](docs-md/images/painel_devtools_form.png)
 
@@ -73,7 +70,6 @@ Fill All é uma extensão Chrome de código aberto que preenche formulários aut
 - **Popup** — controle rápido com um clique
 - **Options Page** — configuração completa (regras, dataset, treinamento)
 - **DevTools Panel** — inspeção em tempo real para desenvolvedores
-- **Floating Panel** — controles in-page com abas
 - **Atalho**: `Alt+Shift+F` (Mac: `Cmd+Shift+F`)
 - **Menu de contexto**: clique direito → "Fill All"
 
