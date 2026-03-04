@@ -36,7 +36,7 @@ import {
   findAntId,
   isAntRequired,
   simulateClick,
-  getUniqueSelector,
+  getAntdSelector,
 } from "./antd-utils";
 import { buildSignals } from "../../extractors";
 
@@ -56,7 +56,7 @@ export const antdTransferAdapter: CustomComponentAdapter = {
 
     const field: FormField = {
       element: wrapper,
-      selector: getUniqueSelector(wrapper),
+      selector: getAntdSelector(wrapper),
       category: "unknown",
       fieldType: "select",
       adapterName: "antd-transfer",

@@ -721,8 +721,17 @@ export async function captureFormValues(): Promise<Record<string, string>> {
 export async function applyTemplate(
   form: SavedForm,
 ): Promise<{ filled: number }> {
-  const { fields: detectedFields } = await detectAllFieldsAsync();
+  const { fields: allDetectedFields } = await detectAllFieldsAsync();
   const settings = await getSettings();
+  const url = window.location.href;
+
+  // Skip fields the user has marked as ignored
+  const ignoredFields = await getIgnoredFieldsForUrl(url);
+  const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
+  const detectedFields = allDetectedFields.filter(
+    (f) => !ignoredSelectors.has(f.selector),
+  );
+
   let filled = 0;
 
   if (form.templateFields && form.templateFields.length > 0) {

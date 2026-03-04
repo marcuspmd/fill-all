@@ -22,7 +22,7 @@ import {
   findAntId,
   isAntRequired,
   simulateClick,
-  getUniqueSelector,
+  getAntdSelector,
 } from "./antd-utils";
 import { buildSignals } from "../../extractors";
 
@@ -40,7 +40,7 @@ export const antdSwitchAdapter: CustomComponentAdapter = {
   buildField(wrapper: HTMLElement): FormField {
     const field: FormField = {
       element: wrapper,
-      selector: getUniqueSelector(wrapper),
+      selector: getAntdSelector(wrapper),
       category: "unknown",
       fieldType: "checkbox",
       adapterName: "antd-switch",
