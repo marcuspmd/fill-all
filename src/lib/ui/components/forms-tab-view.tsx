@@ -239,6 +239,10 @@ export function EditFormScreen({
         matchByFieldType: f.matchByFieldType,
         fixedValue: f.mode === "fixed" ? f.fixedValue : undefined,
         generatorType: f.mode === "generator" ? f.generatorType : undefined,
+        generatorParams:
+          f.mode === "generator" && f.generatorParams
+            ? f.generatorParams
+            : undefined,
       };
     });
 
@@ -378,7 +382,7 @@ function FieldRowModal({ field, index, onSave, onClose }: FieldRowModalProps) {
   return (
     <div class="modal-overlay" onClick={onClose}>
       <div
-        class="modal-box modal-box--field"
+        class="modal-box modal-box--form"
         onClick={(e) => e.stopPropagation()}
       >
         <div class="modal-header">
