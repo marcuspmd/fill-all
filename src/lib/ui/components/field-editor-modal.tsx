@@ -51,14 +51,16 @@ export interface FieldEditorModalProps {
 const SPECIAL_GENERATORS = new Set(["auto", "ai", "tensorflow"]);
 
 /** Returns the param defs for a given generator option. */
-function resolveParamDefs(gen: GeneratorOption): readonly GeneratorParamDef[] {
+export function resolveParamDefs(
+  gen: GeneratorOption,
+): readonly GeneratorParamDef[] {
   if (SPECIAL_GENERATORS.has(gen)) return [];
   const key = getGeneratorKey(gen as FieldType) ?? gen;
   return getGeneratorParamDefs(key);
 }
 
 /** Builds initial params from param defs, merging existing values. */
-function buildInitialParams(
+export function buildInitialParams(
   defs: readonly GeneratorParamDef[],
   existing: GeneratorParams,
 ): GeneratorParams {
@@ -72,13 +74,13 @@ function buildInitialParams(
 
 // ── Sub-Component: Generator Params ──────────────────────────────────────────
 
-interface GeneratorParamsSectionProps {
+export interface GeneratorParamsSectionProps {
   defs: readonly GeneratorParamDef[];
   params: GeneratorParams;
   onChange: (params: GeneratorParams) => void;
 }
 
-function GeneratorParamsSection({
+export function GeneratorParamsSection({
   defs,
   params,
   onChange,

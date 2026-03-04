@@ -17,12 +17,18 @@ import type {
   FormFieldMode,
   FieldType,
 } from "@/types";
+import type { GeneratorParams } from "@/types/field-type-definitions";
 import { t } from "@/lib/i18n";
 import { SearchableSelectPreact } from "@/lib/ui/searchable-select-preact";
 import {
   buildFieldTypeSelectEntries,
   buildGeneratorSelectEntries,
 } from "@/lib/ui/select-builders";
+import {
+  GeneratorParamsSection,
+  resolveParamDefs,
+  buildInitialParams,
+} from "./field-editor-modal";
 
 // ── FormsTabView ──────────────────────────────────────────────────────────────
 
@@ -342,8 +348,31 @@ function FieldRowModal({ field, index, onSave, onClose }: FieldRowModalProps) {
   const fieldTypeEntries = useMemo(() => buildFieldTypeSelectEntries(), []);
   const generatorEntries = useMemo(() => buildGeneratorSelectEntries(), []);
 
+  const paramDefs = useMemo(
+    () =>
+      draft.mode === "generator" && draft.generatorType
+        ? resolveParamDefs(draft.generatorType)
+        : [],
+    [draft.mode, draft.generatorType],
+  );
+
+  const [generatorParams, setGeneratorParams] = useState<GeneratorParams>(() =>
+    buildInitialParams(paramDefs, field.generatorParams ?? {}),
+  );
+
   function patch(partial: Partial<FormTemplateField>) {
     setDraft((prev) => ({ ...prev, ...partial }));
+  }
+
+  function handleGeneratorTypeChange(v: string) {
+    const newType = v as FieldType;
+    const newDefs = resolveParamDefs(newType);
+    patch({ generatorType: newType });
+    setGeneratorParams(buildInitialParams(newDefs, generatorParams));
+  }
+
+  function handleSave() {
+    onSave(index, { ...draft, generatorParams });
   }
 
   return (
@@ -406,18 +435,26 @@ function FieldRowModal({ field, index, onSave, onClose }: FieldRowModalProps) {
               <SearchableSelectPreact
                 entries={generatorEntries}
                 value={draft.generatorType ?? "auto"}
-                onChange={(v) => patch({ generatorType: v as FieldType })}
+                onChange={handleGeneratorTypeChange}
                 placeholder={t("generatorMode")}
               />
             )}
           </div>
+
+          {draft.mode === "generator" && paramDefs.length > 0 && (
+            <GeneratorParamsSection
+              defs={paramDefs}
+              params={generatorParams}
+              onChange={setGeneratorParams}
+            />
+          )}
         </div>
 
         <div class="modal-footer">
           <button class="btn" onClick={onClose}>
             ✕ {t("btnCancel")}
           </button>
-          <button class="btn btn-success" onClick={() => onSave(index, draft)}>
+          <button class="btn btn-success" onClick={handleSave}>
             💾 {t("btnSave")}
           </button>
         </div>

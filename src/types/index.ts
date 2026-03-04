@@ -368,6 +368,8 @@ export interface FormTemplateField {
    * Allows templates to be site-agnostic (works on any form that has a field of this type).
    */
   matchByFieldType?: FieldType;
+  /** Generator params (min/max, formatted, etc.) — only used when mode === 'generator' */
+  generatorParams?: import("./field-type-definitions").GeneratorParams;
 }
 
 /** A saved form template with fixed data */
