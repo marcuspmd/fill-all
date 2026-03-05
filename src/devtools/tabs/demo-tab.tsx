@@ -580,49 +580,36 @@ async function startVideoAndReplay(flow: FlowScript): Promise<void> {
 
 /**
  * Obtain a MediaStream capturing the given tab.
- * Tries chrome.tabCapture.getMediaStreamId first, falls back to getDisplayMedia.
+ * Requests a tabCapture streamId from the background service worker
+ * (only background can call chrome.tabCapture in DevTools context),
+ * then uses getUserMedia locally with that id.
  */
 async function captureTabStream(tabId: number): Promise<MediaStream | null> {
-  // Attempt 1: tabCapture API (no picker, requires tabCapture permission)
-  if (typeof chrome.tabCapture?.getMediaStreamId === "function") {
-    const streamId = await new Promise<string | null>((resolve) => {
-      chrome.tabCapture.getMediaStreamId(
-        { targetTabId: tabId },
-        (id: string) => {
-          if (chrome.runtime.lastError || !id) {
-            resolve(null);
-          } else {
-            resolve(id);
-          }
-        },
-      );
-    });
+  const response = (await sendToBackground({
+    type: "DEMO_GET_STREAM_ID",
+    payload: { tabId },
+  })) as { streamId?: string; error?: string } | undefined;
 
-    if (streamId) {
-      try {
-        const constraints: MediaStreamConstraints = {
-          audio: false,
-          video: {
-            mandatory: {
-              chromeMediaSource: "tab",
-              chromeMediaSourceId: streamId,
-            },
-          } as MediaTrackConstraints,
-        };
-        return await navigator.mediaDevices.getUserMedia(constraints);
-      } catch {
-        // fall through to getDisplayMedia
-      }
-    }
+  const streamId = response?.streamId;
+  if (!streamId) {
+    addLog(
+      `${t("demoVideoErrorStream")}: ${response?.error ?? "no streamId returned from background"}`,
+      "error",
+    );
+    return null;
   }
 
-  // Attempt 2: getDisplayMedia (shows system screen picker)
   try {
-    addLog("tabCapture indisponível — usando seleção de tela", "warn");
-    return await navigator.mediaDevices.getDisplayMedia({
-      video: true,
+    const constraints: MediaStreamConstraints = {
       audio: false,
-    });
+      video: {
+        mandatory: {
+          chromeMediaSource: "tab",
+          chromeMediaSourceId: streamId,
+        },
+      } as MediaTrackConstraints,
+    };
+    return await navigator.mediaDevices.getUserMedia(constraints);
   } catch (err) {
     addLog(`${t("demoVideoErrorStream")}: ${err}`, "error");
     return null;

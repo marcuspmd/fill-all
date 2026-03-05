@@ -346,3 +346,21 @@ export function parseDemoRecordScreenStartPayload(
   const result = demoRecordScreenStartPayloadSchema.safeParse(input);
   return result.success ? result.data : null;
 }
+
+const demoGetStreamIdPayloadSchema = z
+  .object({
+    tabId: z.number().int().positive(),
+  })
+  .strict();
+
+export type DemoGetStreamIdPayload = z.infer<
+  typeof demoGetStreamIdPayloadSchema
+>;
+
+/** Parses payload for `DEMO_GET_STREAM_ID`. */
+export function parseDemoGetStreamIdPayload(
+  input: unknown,
+): DemoGetStreamIdPayload | null {
+  const result = demoGetStreamIdPayloadSchema.safeParse(input);
+  return result.success ? result.data : null;
+}
