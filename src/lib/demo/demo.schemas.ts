@@ -66,41 +66,48 @@ const labelEffectSchema = z.object({
   text: z.string(),
   duration: z.number().min(0).optional(),
   position: z.enum(["above", "below", "left", "right"]).optional(),
+  timing: z.enum(["before", "during", "after"]).optional(),
 });
 
 const growEffectSchema = z.object({
   kind: z.literal("grow"),
   scale: z.number().positive().optional(),
   duration: z.number().min(0).optional(),
+  timing: z.enum(["before", "during", "after"]).optional(),
 });
 
 const zoomEffectSchema = z.object({
   kind: z.literal("zoom"),
   scale: z.number().positive().optional(),
   duration: z.number().min(0).optional(),
+  timing: z.enum(["before", "during", "after"]).optional(),
 });
 
 const pinEffectSchema = z.object({
   kind: z.literal("pin"),
   note: z.string().optional(),
   duration: z.number().min(0).optional(),
+  timing: z.enum(["before", "during", "after"]).optional(),
 });
 
 const shakeEffectSchema = z.object({
   kind: z.literal("shake"),
   intensity: z.number().positive().optional(),
   duration: z.number().min(0).optional(),
+  timing: z.enum(["before", "during", "after"]).optional(),
 });
 
 const confettiEffectSchema = z.object({
   kind: z.literal("confetti"),
   count: z.number().int().positive().optional(),
+  timing: z.enum(["before", "during", "after"]).optional(),
 });
 
 const spotlightEffectSchema = z.object({
   kind: z.literal("spotlight"),
   opacity: z.number().min(0).max(1).optional(),
   duration: z.number().min(0).optional(),
+  timing: z.enum(["before", "during", "after"]).optional(),
 });
 
 const stepEffectSchema: z.ZodType<StepEffect> = z.discriminatedUnion("kind", [

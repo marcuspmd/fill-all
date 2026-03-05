@@ -140,6 +140,14 @@ export function moveCursorTo(
 }
 
 /**
+ * Returns the current viewport centre of the synthetic cursor, or null if not injected.
+ */
+export function getCursorPosition(): { x: number; y: number } | null {
+  if (!cursorEl) return null;
+  return { x: currentX + CURSOR_SIZE / 2, y: currentY + CURSOR_SIZE / 2 };
+}
+
+/**
  * Teleport the cursor to (x, y) immediately (no animation).
  */
 export function setCursorPosition(x: number, y: number): void {

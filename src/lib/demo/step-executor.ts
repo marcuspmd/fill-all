@@ -16,6 +16,8 @@ import type {
   ExecuteStepPayload,
 } from "./demo.types";
 import { applyStepEffects, showCaption } from "./effects";
+import { DEFAULT_EFFECT_TIMING } from "./effects/effect.types";
+import type { StepEffect } from "./effects/effect.types";
 
 const log = createLogger("StepExecutor");
 
@@ -33,6 +35,28 @@ export async function executeStep(
 
   try {
     let result: StepResult;
+
+    const selector =
+      step.smartSelectors?.[0]?.value ?? step.selector ?? undefined;
+
+    // Partition effects by timing (respecting per-kind defaults)
+    const allEffects: StepEffect[] = step.effects ?? [];
+    const byTiming = (t: "before" | "during" | "after") =>
+      allEffects.filter(
+        (e) => (e.timing ?? DEFAULT_EFFECT_TIMING[e.kind]) === t,
+      );
+
+    const beforeEffects = byTiming("before");
+    const duringEffects = byTiming("during");
+    const afterEffects = byTiming("after");
+
+    // 1. "before" effects complete fully before the action starts
+    if (beforeEffects.length) await applyStepEffects(beforeEffects, selector);
+
+    // 2. "during" effects start concurrently with the action
+    const duringPromise = duringEffects.length
+      ? applyStepEffects(duringEffects, selector)
+      : Promise.resolve();
 
     switch (step.action) {
       case "navigate":
@@ -75,11 +99,12 @@ export async function executeStep(
         return { status: "skipped", reason: `Unknown action: ${step.action}` };
     }
 
-    // Apply modular effects after the action succeeds
-    if (result.status === "success" && step.effects?.length) {
-      const selector =
-        step.smartSelectors?.[0]?.value ?? step.selector ?? undefined;
-      await applyStepEffects(step.effects, selector);
+    // Wait for "during" effects (they run in parallel with the action)
+    await duringPromise;
+
+    // 3. "after" effects run once the action has finished successfully
+    if (result.status === "success" && afterEffects.length) {
+      await applyStepEffects(afterEffects, selector);
     }
 
     return result;

@@ -74,6 +74,7 @@ export const panelState = {
   demoReplaySpeed: "normal" as ReplaySpeed,
   demoShowCursor: true,
   demoEditingFlowId: null as string | null,
+  demoEditingStepIdx: null as number | null,
   // Video recording state (managed entirely in DevTools panel)
   videoRecording: false,
   videoMediaRecorder: null as MediaRecorder | null,

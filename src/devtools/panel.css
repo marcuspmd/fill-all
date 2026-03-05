@@ -1397,6 +1397,25 @@ body {
   max-width: 90px;
 }
 
+.demo-step-select-xs {
+  max-width: 64px;
+}
+
+.demo-effect-timing-select {
+  font-size: 10px;
+  padding: 0 2px;
+  height: 18px;
+  opacity: 0.75;
+  color: inherit;
+  background: #1e1e2e;
+  border-color: currentColor;
+}
+
+.demo-effect-timing-select:hover,
+.demo-effect-timing-select:focus {
+  opacity: 1;
+}
+
 /* ── btn-xs variant for compact row buttons ── */
 .btn-xs {
   padding: 1px 5px;
@@ -1444,6 +1463,212 @@ body {
   display: flex;
   gap: 6px;
   align-items: center;
+}
+
+/* ── Step card list ── */
+.demo-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.demo-step-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--bg-tertiary, #181825);
+  border: 1px solid var(--border, #45475a);
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.demo-step-card:hover {
+  border-color: var(--accent, #cba6f7);
+}
+
+.demo-step-card-idx {
+  color: var(--text-muted, #6c7086);
+  font-variant-numeric: tabular-nums;
+  min-width: 18px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.demo-step-card-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.demo-step-card-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary, #cdd6f4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.demo-step-card-preview {
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-muted, #6c7086);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.demo-step-card-effects {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.demo-step-card-actions {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* ── Step Edit Modal ── */
+.demo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.demo-modal {
+  background: var(--bg-secondary, #1e1e2e);
+  border: 1px solid var(--border, #45475a);
+  border-radius: 8px;
+  width: min(560px, 94vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+}
+
+.demo-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border, #45475a);
+  flex-shrink: 0;
+}
+
+.demo-modal-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #cdd6f4);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.demo-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted, #6c7086);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.demo-modal-close:hover {
+  color: var(--text-primary, #cdd6f4);
+  background: var(--bg-tertiary, #181825);
+}
+
+.demo-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.demo-modal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-tertiary, #181825);
+  border: 1px solid var(--border, #45475a);
+  border-radius: 5px;
+}
+
+.demo-modal-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #6c7086);
+  margin: 0 0 2px;
+}
+
+.demo-modal-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.demo-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 120px;
+}
+
+.demo-modal-field-grow {
+  flex: 1;
+}
+
+.demo-modal-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #6c7086);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.demo-modal-label-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-transform: none;
+  font-size: 11px;
+  color: var(--text-secondary, #a6adc8);
+}
+
+.demo-modal-input-full {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.demo-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border, #45475a);
+  flex-shrink: 0;
 }
 
 .demo-replay-options {

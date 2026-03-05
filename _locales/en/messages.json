@@ -1958,6 +1958,12 @@
   "demoEditSteps": {
     "message": "Edit Steps"
   },
+  "demoEditStep": {
+    "message": "Edit step"
+  },
+  "demoNoSteps": {
+    "message": "No steps yet. Add one below."
+  },
   "demoColAction": {
     "message": "Action"
   },
@@ -1996,6 +2002,18 @@
   },
   "demoEffectNone": {
     "message": "none"
+  },
+  "demoEffectTiming": {
+    "message": "When to run this effect"
+  },
+  "demoEffectTimingBefore": {
+    "message": "before"
+  },
+  "demoEffectTimingDuring": {
+    "message": "during"
+  },
+  "demoEffectTimingAfter": {
+    "message": "after"
   },
   "demoLabelText": {
     "message": "Label text"

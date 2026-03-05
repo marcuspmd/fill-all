@@ -18,7 +18,9 @@ export type {
   StepEffect,
   CaptionConfig,
   EffectKind,
+  EffectTiming,
 } from "./effect.types";
 
 export { applyStepEffects } from "./effect-runner";
 export { showCaption, destroyCaption } from "./caption-overlay";
+export { DEFAULT_EFFECT_TIMING } from "./effect.types";

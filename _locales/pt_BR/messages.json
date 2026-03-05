@@ -1955,6 +1955,12 @@
   "demoShowCursor": {
     "message": "Mostrar cursor"
   },
+  "demoEditStep": {
+    "message": "Editar step"
+  },
+  "demoNoSteps": {
+    "message": "Nenhum step ainda. Adicione um abaixo."
+  },
   "demoEditSteps": {
     "message": "Editar Steps"
   },
@@ -1996,6 +2002,18 @@
   },
   "demoEffectNone": {
     "message": "nenhum"
+  },
+  "demoEffectTiming": {
+    "message": "Quando executar este efeito"
+  },
+  "demoEffectTimingBefore": {
+    "message": "antes"
+  },
+  "demoEffectTimingDuring": {
+    "message": "durante"
+  },
+  "demoEffectTimingAfter": {
+    "message": "depois"
   },
   "demoLabelText": {
     "message": "Texto do label"

@@ -28,7 +28,13 @@ export type {
   DemoMessageType,
 } from "./demo.types";
 
-export type { StepEffect, CaptionConfig, EffectKind } from "./effects";
+export type {
+  StepEffect,
+  CaptionConfig,
+  EffectKind,
+  EffectTiming,
+} from "./effects";
+export { DEFAULT_EFFECT_TIMING } from "./effects";
 
 export {
   DEFAULT_REPLAY_CONFIG,
@@ -71,6 +77,7 @@ export {
   hideCursor,
   moveCursorTo,
   setCursorPosition,
+  getCursorPosition,
   clickEffect,
 } from "./cursor-overlay";
 

@@ -1,9 +1,14 @@
 /**
- * Zoom effect — smoothly zooms the viewport towards the target element,
- * using CSS `transform: scale()` on `document.documentElement`.
+ * Zoom effect — smoothly zooms the viewport towards the target element
+ * (or the synthetic cursor position as fallback), using CSS `transform:
+ * scale()` on `document.documentElement`.
+ *
+ * `transform-origin` is set in **document coordinates** (viewport + scroll
+ * offset) because that is the coordinate system of `<html>`.
  */
 
 import type { ZoomEffect } from "./effect.types";
+import { getCursorPosition } from "../cursor-overlay";
 
 let zoomEl: HTMLDivElement | null = null;
 
@@ -31,19 +36,35 @@ export function applyZoomEffect(
   config: ZoomEffect,
 ): Promise<void> {
   return new Promise((resolve) => {
-    if (!target) {
-      resolve();
-      return;
-    }
-
     injectStyles();
 
     const scale = config.scale ?? 1.4;
     const duration = config.duration ?? 1200;
 
-    const rect = target.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
+    // ── Focal point in viewport coordinates ──────────────────────────────
+    // Primary: centre of the target element.
+    // Fallback: current position of the synthetic cursor overlay.
+    let vx: number;
+    let vy: number;
+
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      vx = rect.left + rect.width / 2;
+      vy = rect.top + rect.height / 2;
+    } else {
+      const cursor = getCursorPosition();
+      if (!cursor) {
+        resolve();
+        return;
+      }
+      vx = cursor.x;
+      vy = cursor.y;
+    }
+
+    // transform-origin on <html> uses document coordinates
+    // (viewport position + scroll offset).
+    const cx = vx + window.scrollX;
+    const cy = vy + window.scrollY;
 
     // Use CSS zoom on the html element (works well for demo replay)
     const root = document.documentElement as HTMLElement;

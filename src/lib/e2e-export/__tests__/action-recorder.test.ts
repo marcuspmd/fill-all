@@ -266,6 +266,36 @@ describe("action-recorder", () => {
       expect(clickSteps[0].label).toBe("Next");
     });
 
+    it("uses class-based selector for click on element with stable classes", () => {
+      startRecording();
+      const btn = makeButton("Go", {
+        type: "button",
+        class: "btn btn-primary",
+      });
+      fireClick(btn);
+
+      const session = getRecordingSession()!;
+      const clickStep = session.steps.find((s) => s.type === "click");
+      expect(clickStep).toBeDefined();
+      expect(clickStep!.selector).toBe("button.btn.btn-primary");
+    });
+
+    it("uses CSS path selector for click on plain element without id/class/type", () => {
+      startRecording();
+      const container = document.createElement("div");
+      document.body.appendChild(container);
+      const el = document.createElement("span");
+      container.appendChild(el);
+      el.dispatchEvent(new Event("click", { bubbles: true }));
+
+      const session = getRecordingSession()!;
+      const clickStep = session.steps.find((s) => s.type === "click");
+      expect(clickStep).toBeDefined();
+      // selector must not be the bare tag name "span"
+      expect(clickStep!.selector).not.toBe("span");
+      expect(clickStep!.selector).toContain("span");
+    });
+
     it("captures submit button click as submit step", () => {
       startRecording();
       const btn = makeButton("Submit", { type: "submit" });

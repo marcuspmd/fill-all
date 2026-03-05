@@ -22,8 +22,16 @@ import type {
   StepEffect,
   CaptionConfig,
   EffectKind,
+  EffectTiming,
+  AssertOperator,
+  FlowValueSource,
 } from "@/lib/demo";
-import { DEFAULT_REPLAY_CONFIG, SPEED_PRESETS } from "@/lib/demo";
+import type { FieldType } from "@/types";
+import {
+  DEFAULT_REPLAY_CONFIG,
+  SPEED_PRESETS,
+  DEFAULT_EFFECT_TIMING,
+} from "@/lib/demo";
 
 // ── Render entrypoint ─────────────────────────────────────────────────────────
 
@@ -366,12 +374,14 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
       return;
     }
     panelState.demoEditingFlowId = null;
+    panelState.demoEditingStepIdx = null;
     addLog(`Steps de "${flow.metadata.name}" salvos`, "success");
     renderDemoTab();
   }
 
   function cancelEdit() {
     panelState.demoEditingFlowId = null;
+    panelState.demoEditingStepIdx = null;
     void loadDemoFlows().then(() => renderDemoTab());
   }
 
@@ -392,11 +402,19 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
         : {}),
     } as FlowStep;
     flow.steps.push(newStep);
+    panelState.demoEditingStepIdx = flow.steps.length - 1;
     renderDemoTab();
   }
 
   function deleteStep(idx: number) {
     flow.steps.splice(idx, 1);
+    if (panelState.demoEditingStepIdx !== null) {
+      if (panelState.demoEditingStepIdx === idx) {
+        panelState.demoEditingStepIdx = null;
+      } else if (panelState.demoEditingStepIdx > idx) {
+        panelState.demoEditingStepIdx--;
+      }
+    }
     renderDemoTab();
   }
 
@@ -415,6 +433,9 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
     "caption",
   ];
 
+  const editingIdx = panelState.demoEditingStepIdx;
+  const editingStep = editingIdx !== null ? flow.steps[editingIdx] : null;
+
   return (
     <tr class="demo-row-edit-steps">
       <td colspan={4}>
@@ -422,32 +443,27 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
           <p class="demo-steps-editor-title">
             {t("demoEditSteps")}: <strong>{flow.metadata.name}</strong>
           </p>
-          <table class="demo-steps-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>{t("demoColAction")}</th>
-                <th>{t("demoColLabel")}</th>
-                <th>{t("demoColTarget")}</th>
-                <th>{t("demoColDelayBefore")}</th>
-                <th>{t("demoColDelayAfter")}</th>
-                <th>{t("demoColOptional")}</th>
-                <th>{t("demoColEffects")}</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {flow.steps.map((step, idx) => (
-                <DemoStepEditRow
-                  key={step.id}
-                  step={step}
-                  idx={idx}
-                  flow={flow}
-                  onDelete={() => deleteStep(idx)}
-                />
-              ))}
-            </tbody>
-          </table>
+
+          {/* Compact step card list */}
+          <div class="demo-step-list">
+            {flow.steps.map((step, idx) => (
+              <DemoStepCard
+                key={step.id}
+                step={step}
+                idx={idx}
+                onEdit={() => {
+                  panelState.demoEditingStepIdx = idx;
+                  renderDemoTab();
+                }}
+                onDelete={() => deleteStep(idx)}
+              />
+            ))}
+            {flow.steps.length === 0 && (
+              <p class="demo-hint">{t("demoNoSteps")}</p>
+            )}
+          </div>
+
+          {/* Add step bar */}
           <div class="demo-steps-add">
             <select id="demo-add-step-type" class="demo-step-select">
               {ALL_ACTIONS.map((a) => (
@@ -468,6 +484,8 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
               + {t("demoAddStep")}
             </button>
           </div>
+
+          {/* Save / Cancel */}
           <div class="demo-steps-actions">
             <button
               class="btn btn-sm btn-primary"
@@ -480,6 +498,19 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
             </button>
           </div>
         </div>
+
+        {/* Step edit modal — fixed overlay, rendered outside table layout */}
+        {editingStep !== null && editingIdx !== null && (
+          <StepEditModal
+            step={editingStep}
+            idx={editingIdx}
+            flow={flow}
+            onClose={() => {
+              panelState.demoEditingStepIdx = null;
+              renderDemoTab();
+            }}
+          />
+        )}
       </td>
     </tr>
   );
@@ -536,6 +567,13 @@ function EffectsEditor({
     onUpdate();
   }
 
+  function updateEffectTiming(idx: number, timing: EffectTiming) {
+    const next = [...effects];
+    next[idx] = { ...next[idx], timing } as unknown as StepEffect;
+    step.effects = next;
+    onUpdate();
+  }
+
   return (
     <div class="demo-effects-editor">
       <div class="demo-effects-list">
@@ -556,6 +594,21 @@ function EffectsEditor({
                 }
               />
             )}
+            <select
+              class="demo-step-select demo-step-select-xs demo-effect-timing-select"
+              title={t("demoEffectTiming")}
+              value={eff.timing ?? DEFAULT_EFFECT_TIMING[eff.kind]}
+              onChange={(e) =>
+                updateEffectTiming(
+                  i,
+                  (e.target as HTMLSelectElement).value as EffectTiming,
+                )
+              }
+            >
+              <option value="before">{t("demoEffectTimingBefore")}</option>
+              <option value="during">{t("demoEffectTimingDuring")}</option>
+              <option value="after">{t("demoEffectTimingAfter")}</option>
+            </select>
             <button
               class="demo-effect-remove"
               title={t("demoDeleteStep")}
@@ -652,126 +705,62 @@ function CaptionEditor({
   );
 }
 
-function DemoStepEditRow({
+// ── Compact step card (read-only summary row with edit/delete buttons) ────────
+
+function getStepPreview(step: FlowStep): string {
+  if (step.action === "navigate") return (step as { url?: string }).url ?? "—";
+  if (step.action === "caption") return step.caption?.text ?? "—";
+  if (step.action === "wait") return `${step.waitTimeout ?? 10000} ms`;
+  if (step.action === "press-key") return step.key ?? "—";
+  if (step.selector) {
+    const s = step.selector;
+    return s.length > 52 ? s.slice(0, 49) + "…" : s;
+  }
+  return "—";
+}
+
+function DemoStepCard({
   step,
   idx,
-  flow,
+  onEdit,
   onDelete,
 }: {
   step: FlowStep;
   idx: number;
-  flow: FlowScript;
+  onEdit: () => void;
   onDelete: () => void;
 }) {
-  function updateStep<K extends keyof FlowStep>(key: K, value: FlowStep[K]) {
-    (flow.steps[idx] as unknown as Record<string, unknown>)[key as string] =
-      value;
-  }
-
-  const isCaption = step.action === "caption";
-  const hasSelector =
-    !isCaption && step.action !== "navigate" && step.action !== "wait";
-  const hasUrl = step.action === "navigate";
+  const preview = getStepPreview(step);
+  const effects = step.effects ?? [];
 
   return (
-    <tr class="demo-step-edit-row">
-      <td class="demo-step-idx">{idx + 1}</td>
-      <td>
-        {isCaption ? (
-          <span class="demo-step-badge demo-step-badge-caption">caption</span>
-        ) : (
-          <span class={`demo-step-badge demo-step-badge-${step.action}`}>
-            {step.action}
-          </span>
-        )}
-      </td>
-      <td>
-        <input
-          type="text"
-          class="demo-step-input"
-          value={step.label ?? ""}
-          onInput={(e) => {
-            updateStep(
-              "label",
-              (e.target as HTMLInputElement).value || undefined,
-            );
-          }}
-        />
-      </td>
-      <td>
-        {isCaption && (
-          <CaptionEditor step={step} onUpdate={() => renderDemoTab()} />
-        )}
-        {hasSelector && (
-          <input
-            type="text"
-            class="demo-step-input demo-step-input-selector"
-            value={step.selector ?? ""}
-            onInput={(e) => {
-              updateStep(
-                "selector",
-                (e.target as HTMLInputElement).value || undefined,
-              );
-            }}
-          />
-        )}
-        {hasUrl && (
-          <input
-            type="text"
-            class="demo-step-input demo-step-input-selector"
-            value={(step as { url?: string }).url ?? ""}
-            onInput={(e) => {
-              updateStep(
-                "url" as keyof FlowStep,
-                ((e.target as HTMLInputElement).value || undefined) as never,
-              );
-            }}
-          />
-        )}
-      </td>
-      <td>
-        <input
-          type="number"
-          class="demo-step-input demo-step-input-delay"
-          value={step.delayBefore ?? 0}
-          min={0}
-          step={100}
-          onInput={(e) => {
-            updateStep(
-              "delayBefore",
-              Number((e.target as HTMLInputElement).value),
-            );
-          }}
-        />
-      </td>
-      <td>
-        <input
-          type="number"
-          class="demo-step-input demo-step-input-delay"
-          value={step.delayAfter ?? 0}
-          min={0}
-          step={100}
-          onInput={(e) => {
-            updateStep(
-              "delayAfter",
-              Number((e.target as HTMLInputElement).value),
-            );
-          }}
-        />
-      </td>
-      <td class="demo-step-optional">
-        <input
-          type="checkbox"
-          checked={step.optional ?? false}
-          onChange={(e) => {
-            updateStep("optional", (e.target as HTMLInputElement).checked);
-          }}
-        />
-      </td>
-      <td>
-        <EffectsEditor step={step} onUpdate={() => renderDemoTab()} />
-      </td>
-      <td>
+    <div class="demo-step-card">
+      <span class="demo-step-card-idx">{idx + 1}</span>
+      <span class={`demo-step-badge demo-step-badge-${step.action}`}>
+        {step.action}
+      </span>
+      <div class="demo-step-card-info">
+        {step.label && <span class="demo-step-card-label">{step.label}</span>}
+        <span class="demo-step-card-preview" title={preview}>
+          {preview}
+        </span>
+      </div>
+      {effects.length > 0 && (
+        <div class="demo-step-card-effects">
+          {effects.map((e, i) => (
+            <span
+              key={i}
+              class={`demo-effect-badge demo-effect-badge-${e.kind}`}
+            >
+              {e.kind}
+            </span>
+          ))}
+        </div>
+      )}
+      <div class="demo-step-card-actions">
+        <button class="btn btn-xs" title={t("demoEditStep")} onClick={onEdit}>
+          ✏️
+        </button>
         <button
           class="btn btn-xs btn-danger"
           title={t("demoDeleteStep")}
@@ -779,8 +768,499 @@ function DemoStepEditRow({
         >
           🗑
         </button>
-      </td>
-    </tr>
+      </div>
+    </div>
+  );
+}
+
+// ── Step edit modal ──────────────────────────────────────────────────────────
+
+const ALL_ASSERT_OPERATORS: AssertOperator[] = [
+  "equals",
+  "contains",
+  "visible",
+  "hidden",
+  "url-equals",
+  "url-contains",
+  "exists",
+];
+
+function StepEditModal({
+  step,
+  idx,
+  flow,
+  onClose,
+}: {
+  step: FlowStep;
+  idx: number;
+  flow: FlowScript;
+  onClose: () => void;
+}) {
+  function updateStep<K extends keyof FlowStep>(key: K, value: FlowStep[K]) {
+    (flow.steps[idx] as unknown as Record<string, unknown>)[key as string] =
+      value;
+    renderDemoTab();
+  }
+
+  const ALL_ACTIONS: FlowActionType[] = [
+    "click",
+    "fill",
+    "select",
+    "check",
+    "uncheck",
+    "clear",
+    "navigate",
+    "wait",
+    "scroll",
+    "press-key",
+    "assert",
+    "caption",
+  ];
+
+  const isCaption = step.action === "caption";
+  const isNavigate = step.action === "navigate";
+  const isWait = step.action === "wait";
+  const isPressKey = step.action === "press-key";
+  const isSelect = step.action === "select";
+  const isAssert = step.action === "assert";
+  const isScroll = step.action === "scroll";
+  const isFill = step.action === "fill";
+  const hasSelector = !isCaption && !isNavigate && !isWait;
+
+  const valueSource = step.valueSource as FlowValueSource | undefined;
+  const assertOp = step.assertion?.operator ?? "equals";
+  const assertNeedsExpected =
+    assertOp === "equals" ||
+    assertOp === "contains" ||
+    assertOp === "url-equals" ||
+    assertOp === "url-contains";
+
+  return (
+    <div
+      class="demo-modal-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div class="demo-modal">
+        {/* Header */}
+        <div class="demo-modal-header">
+          <h3 class="demo-modal-title">
+            <span class={`demo-step-badge demo-step-badge-${step.action}`}>
+              {step.action}
+            </span>
+            &nbsp;{t("demoEditStep")} #{idx + 1}
+          </h3>
+          <button class="demo-modal-close" title="Fechar" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+
+        {/* Body */}
+        <div class="demo-modal-body">
+          {/* ── General ── */}
+          <div class="demo-modal-section">
+            <h4 class="demo-modal-section-title">Geral</h4>
+            <div class="demo-modal-row">
+              <div class="demo-modal-field">
+                <label class="demo-modal-label">Ação</label>
+                <select
+                  class="demo-step-select"
+                  value={step.action}
+                  onChange={(e) => {
+                    updateStep(
+                      "action",
+                      (e.target as HTMLSelectElement).value as FlowActionType,
+                    );
+                  }}
+                >
+                  {ALL_ACTIONS.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div class="demo-modal-field demo-modal-field-grow">
+                <label class="demo-modal-label">Label</label>
+                <input
+                  type="text"
+                  class="demo-step-input"
+                  value={step.label ?? ""}
+                  placeholder="Descrição do step…"
+                  onInput={(e) => {
+                    updateStep(
+                      "label",
+                      (e.target as HTMLInputElement).value || undefined,
+                    );
+                  }}
+                />
+              </div>
+            </div>
+            <div class="demo-modal-field">
+              <label class="demo-modal-label demo-modal-label-inline">
+                <input
+                  type="checkbox"
+                  checked={step.optional ?? false}
+                  onChange={(e) => {
+                    updateStep(
+                      "optional",
+                      (e.target as HTMLInputElement).checked,
+                    );
+                  }}
+                />
+                Opcional (pular em caso de falha)
+              </label>
+            </div>
+          </div>
+
+          {/* ── Target selector ── */}
+          {hasSelector && (
+            <div class="demo-modal-section">
+              <h4 class="demo-modal-section-title">Alvo</h4>
+              <div class="demo-modal-field">
+                <label class="demo-modal-label">Seletor CSS</label>
+                <input
+                  type="text"
+                  class="demo-step-input demo-modal-input-full"
+                  value={step.selector ?? ""}
+                  placeholder="#id, .class, [name=campo]"
+                  onInput={(e) => {
+                    updateStep(
+                      "selector",
+                      (e.target as HTMLInputElement).value || undefined,
+                    );
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Navigate ── */}
+          {isNavigate && (
+            <div class="demo-modal-section">
+              <h4 class="demo-modal-section-title">Navegação</h4>
+              <div class="demo-modal-field">
+                <label class="demo-modal-label">URL</label>
+                <input
+                  type="text"
+                  class="demo-step-input demo-modal-input-full"
+                  value={(step as { url?: string }).url ?? ""}
+                  placeholder="https://…"
+                  onInput={(e) => {
+                    updateStep(
+                      "url" as keyof FlowStep,
+                      ((e.target as HTMLInputElement).value ||
+                        undefined) as never,
+                    );
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Fill value source ── */}
+          {isFill && (
+            <div class="demo-modal-section">
+              <h4 class="demo-modal-section-title">Valor</h4>
+              <div class="demo-modal-field">
+                <label class="demo-modal-label">Fonte do valor</label>
+                <select
+                  class="demo-step-select"
+                  value={valueSource?.type ?? "generator"}
+                  onChange={(e) => {
+                    const type = (e.target as HTMLSelectElement).value as
+                      | "generator"
+                      | "fixed";
+                    if (type === "fixed") {
+                      updateStep("valueSource", { type: "fixed", value: "" });
+                    } else {
+                      updateStep("valueSource", {
+                        type: "generator",
+                        fieldType: "text" as FieldType,
+                      });
+                    }
+                  }}
+                >
+                  <option value="generator">Gerador automático</option>
+                  <option value="fixed">Valor fixo</option>
+                </select>
+              </div>
+              {valueSource?.type === "fixed" && (
+                <div class="demo-modal-field">
+                  <label class="demo-modal-label">Valor fixo</label>
+                  <input
+                    type="text"
+                    class="demo-step-input demo-modal-input-full"
+                    value={
+                      (valueSource as { type: "fixed"; value: string }).value
+                    }
+                    placeholder="Valor a preencher"
+                    onInput={(e) => {
+                      updateStep("valueSource", {
+                        type: "fixed",
+                        value: (e.target as HTMLInputElement).value,
+                      });
+                    }}
+                  />
+                </div>
+              )}
+              {(valueSource?.type === "generator" || !valueSource) && (
+                <div class="demo-modal-field">
+                  <label class="demo-modal-label">Tipo de campo</label>
+                  <input
+                    type="text"
+                    class="demo-step-input"
+                    value={
+                      (
+                        valueSource as
+                          | { type: "generator"; fieldType: FieldType }
+                          | undefined
+                      )?.fieldType ?? ""
+                    }
+                    placeholder="text, email, cpf, phone…"
+                    onInput={(e) => {
+                      updateStep("valueSource", {
+                        type: "generator",
+                        fieldType: (e.target as HTMLInputElement)
+                          .value as FieldType,
+                      });
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Select options ── */}
+          {isSelect && (
+            <div class="demo-modal-section">
+              <h4 class="demo-modal-section-title">Seleção</h4>
+              <div class="demo-modal-row">
+                <div class="demo-modal-field">
+                  <label class="demo-modal-label">Índice (0-based)</label>
+                  <input
+                    type="number"
+                    class="demo-step-input demo-step-input-delay"
+                    value={step.selectIndex ?? 0}
+                    min={0}
+                    onInput={(e) => {
+                      updateStep(
+                        "selectIndex",
+                        Number((e.target as HTMLInputElement).value),
+                      );
+                    }}
+                  />
+                </div>
+                <div class="demo-modal-field demo-modal-field-grow">
+                  <label class="demo-modal-label">Texto da opção</label>
+                  <input
+                    type="text"
+                    class="demo-step-input"
+                    value={step.selectText ?? ""}
+                    placeholder="Texto a selecionar"
+                    onInput={(e) => {
+                      updateStep(
+                        "selectText",
+                        (e.target as HTMLInputElement).value || undefined,
+                      );
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Press key ── */}
+          {isPressKey && (
+            <div class="demo-modal-section">
+              <h4 class="demo-modal-section-title">Tecla</h4>
+              <div class="demo-modal-field">
+                <label class="demo-modal-label">Key</label>
+                <input
+                  type="text"
+                  class="demo-step-input"
+                  value={step.key ?? ""}
+                  placeholder="Enter, Tab, Escape, ArrowDown…"
+                  onInput={(e) => {
+                    updateStep(
+                      "key",
+                      (e.target as HTMLInputElement).value || undefined,
+                    );
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Wait timeout ── */}
+          {isWait && (
+            <div class="demo-modal-section">
+              <h4 class="demo-modal-section-title">Espera</h4>
+              <div class="demo-modal-field">
+                <label class="demo-modal-label">Timeout (ms)</label>
+                <input
+                  type="number"
+                  class="demo-step-input demo-step-input-delay"
+                  value={step.waitTimeout ?? 10000}
+                  min={100}
+                  step={500}
+                  onInput={(e) => {
+                    updateStep(
+                      "waitTimeout",
+                      Number((e.target as HTMLInputElement).value),
+                    );
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Scroll position ── */}
+          {isScroll && (
+            <div class="demo-modal-section">
+              <h4 class="demo-modal-section-title">Scroll</h4>
+              <div class="demo-modal-row">
+                <div class="demo-modal-field">
+                  <label class="demo-modal-label">X (px)</label>
+                  <input
+                    type="number"
+                    class="demo-step-input demo-step-input-delay"
+                    value={step.scrollPosition?.x ?? 0}
+                    onInput={(e) => {
+                      updateStep("scrollPosition", {
+                        x: Number((e.target as HTMLInputElement).value),
+                        y: step.scrollPosition?.y ?? 0,
+                      });
+                    }}
+                  />
+                </div>
+                <div class="demo-modal-field">
+                  <label class="demo-modal-label">Y (px)</label>
+                  <input
+                    type="number"
+                    class="demo-step-input demo-step-input-delay"
+                    value={step.scrollPosition?.y ?? 0}
+                    onInput={(e) => {
+                      updateStep("scrollPosition", {
+                        x: step.scrollPosition?.x ?? 0,
+                        y: Number((e.target as HTMLInputElement).value),
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Assert ── */}
+          {isAssert && (
+            <div class="demo-modal-section">
+              <h4 class="demo-modal-section-title">Asserção</h4>
+              <div class="demo-modal-field">
+                <label class="demo-modal-label">Operador</label>
+                <select
+                  class="demo-step-select"
+                  value={step.assertion?.operator ?? "equals"}
+                  onChange={(e) => {
+                    const op = (e.target as HTMLSelectElement)
+                      .value as AssertOperator;
+                    updateStep("assertion", {
+                      ...step.assertion,
+                      operator: op,
+                    });
+                  }}
+                >
+                  {ALL_ASSERT_OPERATORS.map((op) => (
+                    <option key={op} value={op}>
+                      {op}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {assertNeedsExpected && (
+                <div class="demo-modal-field">
+                  <label class="demo-modal-label">Valor esperado</label>
+                  <input
+                    type="text"
+                    class="demo-step-input demo-modal-input-full"
+                    value={step.assertion?.expected ?? ""}
+                    placeholder="Valor esperado…"
+                    onInput={(e) => {
+                      updateStep("assertion", {
+                        operator: step.assertion?.operator ?? "equals",
+                        expected:
+                          (e.target as HTMLInputElement).value || undefined,
+                      });
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Caption ── */}
+          {isCaption && (
+            <div class="demo-modal-section">
+              <h4 class="demo-modal-section-title">Legenda</h4>
+              <CaptionEditor step={step} onUpdate={() => renderDemoTab()} />
+            </div>
+          )}
+
+          {/* ── Timing ── */}
+          <div class="demo-modal-section">
+            <h4 class="demo-modal-section-title">Temporização</h4>
+            <div class="demo-modal-row">
+              <div class="demo-modal-field">
+                <label class="demo-modal-label">Delay antes (ms)</label>
+                <input
+                  type="number"
+                  class="demo-step-input demo-step-input-delay"
+                  value={step.delayBefore ?? 0}
+                  min={0}
+                  step={100}
+                  onInput={(e) => {
+                    updateStep(
+                      "delayBefore",
+                      Number((e.target as HTMLInputElement).value),
+                    );
+                  }}
+                />
+              </div>
+              <div class="demo-modal-field">
+                <label class="demo-modal-label">Delay depois (ms)</label>
+                <input
+                  type="number"
+                  class="demo-step-input demo-step-input-delay"
+                  value={step.delayAfter ?? 0}
+                  min={0}
+                  step={100}
+                  onInput={(e) => {
+                    updateStep(
+                      "delayAfter",
+                      Number((e.target as HTMLInputElement).value),
+                    );
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Effects ── */}
+          <div class="demo-modal-section">
+            <h4 class="demo-modal-section-title">Efeitos Visuais</h4>
+            <EffectsEditor step={step} onUpdate={() => renderDemoTab()} />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div class="demo-modal-footer">
+          <button class="btn btn-sm btn-primary" onClick={onClose}>
+            ✓ Fechar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

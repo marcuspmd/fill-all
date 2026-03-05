@@ -5,6 +5,32 @@
  * Effects run inside the content script via `applyStepEffects()`.
  */
 
+// ── Effect timing ─────────────────────────────────────────────────────────
+
+/**
+ * Controls *when* an effect runs relative to the step action:
+ *
+ * - `"before"` — effect runs and **completes** before the action starts.
+ *               Good for: grow (expand element, then fill it).
+ * - `"during"` — effect **starts** at the same time as the action and
+ *               runs concurrently (fire-and-start). Good for: zoom, spotlight,
+ *               label, pin (visible while the action is happening).
+ * - `"after"`  — effect runs **after** the action completes successfully.
+ *               Good for: confetti, shake (react to the completed action).
+ */
+export type EffectTiming = "before" | "during" | "after";
+
+/** Default timing per effect kind (used when `timing` is not set). */
+export const DEFAULT_EFFECT_TIMING: Record<EffectKind, EffectTiming> = {
+  grow: "before",
+  zoom: "during",
+  spotlight: "during",
+  label: "during",
+  pin: "during",
+  shake: "after",
+  confetti: "after",
+};
+
 // ── Effect kinds ──────────────────────────────────────────────────────────
 
 /** All supported visual effect kinds */
@@ -27,6 +53,8 @@ export interface LabelEffect {
   duration?: number;
   /** Position relative to element — default: "above" */
   position?: "above" | "below" | "left" | "right";
+  /** When to run relative to the action (default: "during") */
+  timing?: EffectTiming;
 }
 
 export interface GrowEffect {
@@ -35,6 +63,8 @@ export interface GrowEffect {
   scale?: number;
   /** Animation duration in ms (default: 400) */
   duration?: number;
+  /** When to run relative to the action (default: "before") */
+  timing?: EffectTiming;
 }
 
 export interface ZoomEffect {
@@ -43,6 +73,8 @@ export interface ZoomEffect {
   scale?: number;
   /** Hold zoom for this many ms (default: 1200) */
   duration?: number;
+  /** When to run relative to the action (default: "during") */
+  timing?: EffectTiming;
 }
 
 export interface PinEffect {
@@ -51,6 +83,8 @@ export interface PinEffect {
   note?: string;
   /** Duration in ms; 0 = keep until end of step (default: 2000) */
   duration?: number;
+  /** When to run relative to the action (default: "during") */
+  timing?: EffectTiming;
 }
 
 export interface ShakeEffect {
@@ -59,12 +93,16 @@ export interface ShakeEffect {
   intensity?: number;
   /** Animation duration in ms (default: 500) */
   duration?: number;
+  /** When to run relative to the action (default: "after") */
+  timing?: EffectTiming;
 }
 
 export interface ConfettiEffect {
   kind: "confetti";
   /** Number of confetti particles (default: 60) */
   count?: number;
+  /** When to run relative to the action (default: "after") */
+  timing?: EffectTiming;
 }
 
 export interface SpotlightEffect {
@@ -73,6 +111,8 @@ export interface SpotlightEffect {
   opacity?: number;
   /** Duration in ms; 0 = keep until end of step (default: 2000) */
   duration?: number;
+  /** When to run relative to the action (default: "during") */
+  timing?: EffectTiming;
 }
 
 /** Union of all concrete effect configs */

@@ -50,14 +50,36 @@ export function applySpotlightEffect(
     const rect = target.getBoundingClientRect();
     const padding = 8;
 
-    // Dark overlay
+    // Dark overlay with clip-path to create a hole
     const overlay = document.createElement("div");
     overlay.id = OVERLAY_ID;
     overlay.style.backgroundColor = `rgba(0,0,0,${opacity})`;
     overlay.style.opacity = "0";
+
+    // Create a clip-path polygon that covers everything except the target area
+    const x1 = rect.left - padding;
+    const y1 = rect.top - padding;
+    const x2 = rect.right + padding;
+    const y2 = rect.bottom + padding;
+    const vpWidth = window.innerWidth;
+    const vpHeight = window.innerHeight;
+
+    overlay.style.clipPath = `polygon(
+      0% 0%,
+      100% 0%,
+      100% 100%,
+      0% 100%,
+      0% 0%,
+      ${x1}px ${y1}px,
+      ${x1}px ${y2}px,
+      ${x2}px ${y2}px,
+      ${x2}px ${y1}px,
+      ${x1}px ${y1}px
+    )`;
+
     document.body.appendChild(overlay);
 
-    // Bright hole around the target
+    // Bright hole around the target for visual effect
     const hole = document.createElement("div");
     hole.id = HOLE_ID;
     hole.style.top = `${rect.top - padding}px`;
