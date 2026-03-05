@@ -2068,5 +2068,56 @@
   },
   "demoVideoRecordingActive": {
     "message": "Recording…"
+  },
+  "demoMoveStepUp": {
+    "message": "Move step up"
+  },
+  "demoMoveStepDown": {
+    "message": "Move step down"
+  },
+  "demoEffectText": {
+    "message": "Text"
+  },
+  "demoEffectPosition": {
+    "message": "Position"
+  },
+  "demoEffectDuration": {
+    "message": "Duration (ms)"
+  },
+  "demoEffectScale": {
+    "message": "Scale"
+  },
+  "demoEffectIntensity": {
+    "message": "Intensity"
+  },
+  "demoEffectCount": {
+    "message": "Count"
+  },
+  "demoEffectOpacity": {
+    "message": "Opacity (0–1)"
+  },
+  "demoEffectNote": {
+    "message": "Note"
+  },
+  "demoEffectNotePlaceholder": {
+    "message": "Optional annotation…"
+  },
+  "demoEffectPermanent": {
+    "message": "permanent"
+  },
+  "demoEffectKeep": {
+    "message": "keep"
+  },
+  "demoPositionAbove": {
+    "message": "above"
+  },
+  "demoPositionBelow": {
+    "message": "below"
+  },
+  "demoPositionLeft": {
+    "message": "left"
+  },
+  "demoPositionRight": {
+    "message": "right"
   }
 }

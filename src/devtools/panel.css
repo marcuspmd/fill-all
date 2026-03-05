@@ -1316,41 +1316,152 @@ body {
 .demo-step-badge-clear     { background: #9ca0b0; color: #fff; }
 .demo-step-badge-caption   { background: #fe640b; color: #fff; }
 
+/* ── Move step buttons ── */
+.demo-step-move-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.demo-step-move-btn {
+  font-size: 9px;
+  padding: 0 4px;
+  line-height: 1.4;
+  min-width: 18px;
+  background: var(--bg-tertiary, #181825);
+  border: 1px solid var(--border, #45475a);
+  color: var(--text-muted, #6c7086);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s;
+}
+
+.demo-step-move-btn:not(:disabled):hover {
+  color: var(--text-primary, #cdd6f4);
+  border-color: var(--accent, #cba6f7);
+}
+
+.demo-step-move-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
 /* ── Effect badges ── */
 .demo-effects-editor {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
-  min-width: 140px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.demo-effects-list {
+.demo-effects-cards {
   display: flex;
-  gap: 3px;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.demo-effect-card {
+  background: var(--bg-secondary, #1e1e2e);
+  border: 1px solid var(--border, #45475a);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.demo-effect-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--bg-tertiary, #181825);
+  border-bottom: 1px solid var(--border, #45475a);
+}
+
+.demo-effect-header-timing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.demo-effect-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted, #6c7086);
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.demo-effect-remove-btn:hover {
+  color: #f38ba8;
+  background: rgba(243, 139, 168, 0.1);
+}
+
+.demo-effect-card-body {
+  padding: 8px;
+}
+
+.demo-effects-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.demo-effect-fields {
+  display: flex;
   flex-wrap: wrap;
+  gap: 8px;
+}
+
+.demo-effect-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 80px;
+}
+
+.demo-effect-field-wide {
+  flex: 1 1 200px;
+}
+
+.demo-effect-label-txt {
+  font-size: 10px;
+  color: var(--text-muted, #6c7086);
+  font-weight: 500;
 }
 
 .demo-effect-badge {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 1px 4px;
+  gap: 3px;
+  padding: 1px 6px;
   border-radius: 3px;
   font-size: 10px;
   font-weight: 600;
   background: #313244;
   color: #cba6f7;
   border: 1px solid #45475a;
+  flex-shrink: 0;
 }
 
-.demo-effect-badge-label     { border-color: #89b4fa; color: #89b4fa; }
-.demo-effect-badge-grow      { border-color: #a6e3a1; color: #a6e3a1; }
-.demo-effect-badge-zoom      { border-color: #f9e2af; color: #f9e2af; }
-.demo-effect-badge-pin       { border-color: #f38ba8; color: #f38ba8; }
-.demo-effect-badge-shake     { border-color: #fab387; color: #fab387; }
-.demo-effect-badge-confetti  { border-color: #f2cdcd; color: #f2cdcd; }
-.demo-effect-badge-spotlight { border-color: #cba6f7; color: #cba6f7; }
+.demo-effect-badge-label     { border-color: #89b4fa; color: #89b4fa; background: #1e1e2e; }
+.demo-effect-badge-grow      { border-color: #a6e3a1; color: #a6e3a1; background: #1e1e2e; }
+.demo-effect-badge-zoom      { border-color: #f9e2af; color: #f9e2af; background: #1e1e2e; }
+.demo-effect-badge-pin       { border-color: #f38ba8; color: #f38ba8; background: #1e1e2e; }
+.demo-effect-badge-shake     { border-color: #fab387; color: #fab387; background: #1e1e2e; }
+.demo-effect-badge-confetti  { border-color: #f2cdcd; color: #f2cdcd; background: #1e1e2e; }
+.demo-effect-badge-spotlight { border-color: #cba6f7; color: #cba6f7; background: #1e1e2e; }
+
+.demo-effect-card-label     { border-left: 3px solid #89b4fa; }
+.demo-effect-card-grow      { border-left: 3px solid #a6e3a1; }
+.demo-effect-card-zoom      { border-left: 3px solid #f9e2af; }
+.demo-effect-card-pin       { border-left: 3px solid #f38ba8; }
+.demo-effect-card-shake     { border-left: 3px solid #fab387; }
+.demo-effect-card-confetti  { border-left: 3px solid #f2cdcd; }
+.demo-effect-card-spotlight { border-left: 3px solid #cba6f7; }
 
 .demo-effect-remove {
   background: none;

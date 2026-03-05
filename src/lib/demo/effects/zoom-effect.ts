@@ -16,26 +16,13 @@
 import type { ZoomEffect } from "./effect.types";
 import { getCursorPosition } from "../cursor-overlay";
 
-let zoomEl: HTMLDivElement | null = null;
+/**
+ * Generation counter — incremented each time a new zoom starts.
+ * Old cleanup callbacks check their captured generation against this value;
+ * if it differs, they are superseded and must NOT touch the DOM.
+ */
+let zoomGeneration = 0;
 let activeCancelFn: (() => void) | null = null;
-
-function injectStyles(): void {
-  if (document.getElementById("fill-all-effect-zoom-styles")) return;
-  const style = document.createElement("style");
-  style.id = "fill-all-effect-zoom-styles";
-  style.textContent = `
-    .fill-all-zoom-lens {
-      position: fixed;
-      inset: 0;
-      z-index: 2147483640;
-      pointer-events: none;
-      background: transparent;
-      transform-origin: center center;
-      transition: transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-  `;
-  document.head.appendChild(style);
-}
 
 /** Applies the zoom effect focused on the target element. */
 export function applyZoomEffect(
@@ -43,31 +30,32 @@ export function applyZoomEffect(
   config: ZoomEffect,
 ): Promise<void> {
   return new Promise((resolve) => {
-    injectStyles();
+    // ── Cancel any previous zoom BEFORE touching the DOM ─────────────────
+    // We must cancel first so the old cleanup does NOT overwrite our new
+    // transform values when its deferred setTimeout fires.
+    if (activeCancelFn) {
+      activeCancelFn();
+      activeCancelFn = null;
+    }
+
+    // Capture this zoom's generation AFTER cancelling the previous one.
+    const myGeneration = ++zoomGeneration;
 
     const scale = config.scale ?? 1.4;
     const duration = config.duration ?? 1200;
     const isIndefinite = duration === 0 || config.duration === Infinity;
 
-    // ── Focal point in viewport coordinates ──────────────────────────────
-    // For typing actions (indefinite zoom):
-    //   - Use TOP-LEFT corner of target element (beginning of the field)
-    // For other actions:
-    //   - Use center of target element
+    // ── Focal point: always anchor to the LEFT edge of the field ─────────
+    // Using left edge (beginning of field) rather than center keeps the
+    // cursor / typed text in view and avoids zooming to the page center.
     let vx: number;
     let vy: number;
 
     if (target) {
       const rect = target.getBoundingClientRect();
-      if (isIndefinite) {
-        // Top-left corner for typing actions
-        vx = rect.left;
-        vy = rect.top;
-      } else {
-        // Center for brief zoom actions
-        vx = rect.left + rect.width / 2;
-        vy = rect.top + rect.height / 2;
-      }
+      // Left edge, vertical center — "start of the field"
+      vx = rect.left;
+      vy = rect.top + rect.height / 2;
     } else {
       const cursor = getCursorPosition();
       if (!cursor) {
@@ -83,37 +71,41 @@ export function applyZoomEffect(
     const cx = vx + window.scrollX;
     const cy = vy + window.scrollY;
 
-    // Use CSS zoom on the html element (works well for demo replay)
+    // ── Apply zoom to <html> ──────────────────────────────────────────────
+    // Synchronously reset first (no transition) so previous residual state
+    // doesn't bleed into this zoom.
     const root = document.documentElement as HTMLElement;
-    const prevTransition = root.style.transition;
-    const prevTransform = root.style.transform;
-    const prevTransformOrigin = root.style.transformOrigin;
+    root.style.transition = "none";
+    root.style.transform = "";
+    root.style.transformOrigin = "";
+    void root.offsetHeight; // force reflow before re-applying
 
     root.style.transition =
       "transform 350ms cubic-bezier(0.4,0,0.2,1), transform-origin 0ms";
     root.style.transformOrigin = `${cx}px ${cy}px`;
     root.style.transform = `scale(${scale})`;
 
-    // Cleanup zoom element ref
-    if (zoomEl) {
-      zoomEl.remove();
-      zoomEl = null;
-    }
-
-    // Cancel any active zoom
-    if (activeCancelFn) {
-      activeCancelFn();
-    }
-
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const cleanup = () => {
       if (timer) clearTimeout(timer);
-      root.style.transform = prevTransform;
+
+      // Guard: if a newer zoom has already started, do NOT touch the DOM.
+      if (zoomGeneration !== myGeneration) {
+        resolve();
+        return;
+      }
+
+      root.style.transform = "";
 
       setTimeout(() => {
-        root.style.transition = prevTransition;
-        root.style.transformOrigin = prevTransformOrigin;
+        // Double-check generation inside the deferred callback as well.
+        if (zoomGeneration !== myGeneration) {
+          resolve();
+          return;
+        }
+        root.style.transition = "";
+        root.style.transformOrigin = "";
         resolve();
       }, 380);
     };
@@ -126,16 +118,12 @@ export function applyZoomEffect(
     activeCancelFn = cancel;
 
     if (isIndefinite) {
-      // For indefinite zoom (typing), set a very long timeout as safety
-      // but the zoom will typically be cancelled externally
-      timer = setTimeout(cleanup, 60_000); // 60 second safety timeout
+      // Safety timeout of 60 s — normally cancelled externally when the
+      // fill action completes.
+      timer = setTimeout(cleanup, 60_000);
     } else {
-      // For fixed-duration zoom, use the config duration
       timer = setTimeout(cleanup, duration);
     }
-
-    // Make cancel accessible externally (used by effect-runner)
-    (applyZoomEffect as unknown as { cancel?: () => void }).cancel = cancel;
   });
 }
 

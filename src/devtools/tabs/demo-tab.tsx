@@ -26,6 +26,15 @@ import type {
   AssertOperator,
   FlowValueSource,
 } from "@/lib/demo";
+import type {
+  LabelEffect,
+  GrowEffect,
+  ZoomEffect,
+  PinEffect,
+  ShakeEffect,
+  ConfettiEffect,
+  SpotlightEffect,
+} from "@/lib/demo/effects";
 import type { FieldType } from "@/types";
 import {
   DEFAULT_REPLAY_CONFIG,
@@ -418,6 +427,21 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
     renderDemoTab();
   }
 
+  function moveStep(idx: number, direction: "up" | "down") {
+    const newIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= flow.steps.length) return;
+    [flow.steps[idx], flow.steps[newIdx]] = [
+      flow.steps[newIdx],
+      flow.steps[idx],
+    ];
+    if (panelState.demoEditingStepIdx === idx) {
+      panelState.demoEditingStepIdx = newIdx;
+    } else if (panelState.demoEditingStepIdx === newIdx) {
+      panelState.demoEditingStepIdx = idx;
+    }
+    renderDemoTab();
+  }
+
   const ALL_ACTIONS: FlowActionType[] = [
     "click",
     "fill",
@@ -456,6 +480,12 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
                   renderDemoTab();
                 }}
                 onDelete={() => deleteStep(idx)}
+                onMoveUp={idx > 0 ? () => moveStep(idx, "up") : undefined}
+                onMoveDown={
+                  idx < flow.steps.length - 1
+                    ? () => moveStep(idx, "down")
+                    : undefined
+                }
               />
             ))}
             {flow.steps.length === 0 && (
@@ -535,6 +565,16 @@ const CAPTION_POSITIONS = ["top", "middle", "bottom"] as const;
 
 // ── Step effects inline editor ────────────────────────────────────────────────
 
+const EFFECT_ICONS: Record<EffectKind, string> = {
+  label: "🏷️",
+  grow: "📈",
+  zoom: "🔎",
+  pin: "📌",
+  shake: "💫",
+  confetti: "🎉",
+  spotlight: "🔦",
+};
+
 function EffectsEditor({
   step,
   onUpdate,
@@ -545,8 +585,7 @@ function EffectsEditor({
   const effects = step.effects ?? [];
 
   function addEffect(kind: EffectKind | "none") {
-    if (kind === "none") return; // placeholder — do not add any effect
-    // Provide required fields so Zod validation passes on save
+    if (kind === "none") return;
     const base: StepEffect =
       kind === "label" ? { kind: "label", text: "" } : ({ kind } as StepEffect);
     step.effects = [...effects, base];
@@ -560,89 +599,390 @@ function EffectsEditor({
     onUpdate();
   }
 
-  function updateEffectText(idx: number, text: string) {
+  function patchEffect(idx: number, patch: Partial<StepEffect>) {
     const next = [...effects];
-    next[idx] = { ...next[idx], text } as StepEffect;
-    step.effects = next;
-    onUpdate();
-  }
-
-  function updateEffectTiming(idx: number, timing: EffectTiming) {
-    const next = [...effects];
-    next[idx] = { ...next[idx], timing } as unknown as StepEffect;
+    next[idx] = { ...next[idx], ...patch } as StepEffect;
     step.effects = next;
     onUpdate();
   }
 
   return (
     <div class="demo-effects-editor">
-      <div class="demo-effects-list">
-        {effects.map((eff, i) => (
-          <span
-            key={i}
-            class={`demo-effect-badge demo-effect-badge-${eff.kind}`}
-          >
-            {eff.kind}
-            {eff.kind === "label" && (
-              <input
-                type="text"
-                class="demo-step-input demo-effect-label-input"
-                placeholder={t("demoLabelText")}
-                value={eff.text}
-                onInput={(e) =>
-                  updateEffectText(i, (e.target as HTMLInputElement).value)
-                }
-              />
-            )}
-            <select
-              class="demo-step-select demo-step-select-xs demo-effect-timing-select"
-              title={t("demoEffectTiming")}
-              value={eff.timing ?? DEFAULT_EFFECT_TIMING[eff.kind]}
-              onChange={(e) =>
-                updateEffectTiming(
-                  i,
-                  (e.target as HTMLSelectElement).value as EffectTiming,
-                )
-              }
+      {effects.length > 0 && (
+        <div class="demo-effects-cards">
+          {effects.map((eff, i) => (
+            <div
+              key={i}
+              class={`demo-effect-card demo-effect-card-${eff.kind}`}
             >
-              <option value="before">{t("demoEffectTimingBefore")}</option>
-              <option value="during">{t("demoEffectTimingDuring")}</option>
-              <option value="after">{t("demoEffectTimingAfter")}</option>
-            </select>
-            <button
-              class="demo-effect-remove"
-              title={t("demoDeleteStep")}
-              onClick={() => removeEffect(i)}
-            >
-              ×
-            </button>
-          </span>
-        ))}
+              <div class="demo-effect-card-header">
+                <span class={`demo-effect-badge demo-effect-badge-${eff.kind}`}>
+                  {EFFECT_ICONS[eff.kind]} {eff.kind}
+                </span>
+                <div class="demo-effect-header-timing">
+                  <label class="demo-effect-label-txt">
+                    {t("demoEffectTiming")}
+                  </label>
+                  <select
+                    class="demo-step-select demo-step-select-sm"
+                    value={eff.timing ?? DEFAULT_EFFECT_TIMING[eff.kind]}
+                    onChange={(e) =>
+                      patchEffect(i, {
+                        timing: (e.target as HTMLSelectElement)
+                          .value as EffectTiming,
+                      })
+                    }
+                  >
+                    <option value="before">
+                      ⏮ {t("demoEffectTimingBefore")}
+                    </option>
+                    <option value="during">
+                      ▶ {t("demoEffectTimingDuring")}
+                    </option>
+                    <option value="after">
+                      ⏭ {t("demoEffectTimingAfter")}
+                    </option>
+                  </select>
+                </div>
+                <button
+                  class="demo-effect-remove-btn"
+                  title={t("demoDeleteStep")}
+                  onClick={() => removeEffect(i)}
+                >
+                  ✕
+                </button>
+              </div>
+              <div class="demo-effect-card-body">
+                <EffectFieldsEditor
+                  effect={eff}
+                  onPatch={(patch) => patchEffect(i, patch)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div class="demo-effects-add-row">
+        <select
+          id={`demo-effect-kind-${step.id}`}
+          class="demo-step-select demo-step-select-sm"
+        >
+          {ALL_EFFECT_KINDS_WITH_NONE.map((k) => (
+            <option key={k} value={k}>
+              {k === "none"
+                ? `── ${t("demoEffectNone")} ──`
+                : `${EFFECT_ICONS[k as EffectKind] ?? ""} ${k}`}
+            </option>
+          ))}
+        </select>
+        <button
+          class="btn btn-xs btn-secondary"
+          onClick={() => {
+            const sel = document.getElementById(
+              `demo-effect-kind-${step.id}`,
+            ) as HTMLSelectElement;
+            addEffect(sel.value as EffectKind | "none");
+          }}
+        >
+          + {t("demoAddEffect")}
+        </button>
       </div>
-      <select
-        id={`demo-effect-kind-${step.id}`}
-        class="demo-step-select demo-step-select-sm"
-      >
-        {ALL_EFFECT_KINDS_WITH_NONE.map((k) => (
-          <option key={k} value={k}>
-            {k === "none" ? `── ${t("demoEffectNone")} ──` : k}
-          </option>
-        ))}
-      </select>
-      <button
-        class="btn btn-xs btn-secondary"
-        title={t("demoAddEffect")}
-        onClick={() => {
-          const sel = document.getElementById(
-            `demo-effect-kind-${step.id}`,
-          ) as HTMLSelectElement;
-          addEffect(sel.value as EffectKind | "none");
-        }}
-      >
-        +
-      </button>
     </div>
   );
+}
+
+function EffectFieldsEditor({
+  effect,
+  onPatch,
+}: {
+  effect: StepEffect;
+  onPatch: (patch: Partial<StepEffect>) => void;
+}) {
+  if (effect.kind === "label") {
+    return (
+      <div class="demo-effect-fields">
+        <div class="demo-effect-field demo-effect-field-wide">
+          <label class="demo-effect-label-txt">{t("demoEffectText")}</label>
+          <input
+            type="text"
+            class="demo-step-input"
+            placeholder={t("demoLabelText")}
+            value={effect.text}
+            onInput={(e) =>
+              onPatch({
+                text: (e.target as HTMLInputElement).value,
+              } as Partial<LabelEffect>)
+            }
+          />
+        </div>
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">{t("demoEffectPosition")}</label>
+          <select
+            class="demo-step-select demo-step-select-sm"
+            value={effect.position ?? "above"}
+            onChange={(e) =>
+              onPatch({
+                position: (e.target as HTMLSelectElement)
+                  .value as LabelEffect["position"],
+              } as Partial<LabelEffect>)
+            }
+          >
+            <option value="above">↑ {t("demoPositionAbove")}</option>
+            <option value="below">↓ {t("demoPositionBelow")}</option>
+            <option value="left">← {t("demoPositionLeft")}</option>
+            <option value="right">→ {t("demoPositionRight")}</option>
+          </select>
+        </div>
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">{t("demoEffectDuration")}</label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="2000"
+            value={effect.duration ?? 2000}
+            min={100}
+            step={100}
+            onInput={(e) =>
+              onPatch({
+                duration: Number((e.target as HTMLInputElement).value),
+              } as Partial<LabelEffect>)
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (effect.kind === "grow") {
+    return (
+      <div class="demo-effect-fields">
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">{t("demoEffectScale")}</label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="1.15"
+            value={effect.scale ?? 1.15}
+            min={1}
+            max={3}
+            step={0.05}
+            onInput={(e) =>
+              onPatch({
+                scale: Number((e.target as HTMLInputElement).value),
+              } as Partial<GrowEffect>)
+            }
+          />
+        </div>
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">{t("demoEffectDuration")}</label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="400"
+            value={effect.duration ?? 400}
+            min={50}
+            step={50}
+            onInput={(e) =>
+              onPatch({
+                duration: Number((e.target as HTMLInputElement).value),
+              } as Partial<GrowEffect>)
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (effect.kind === "zoom") {
+    return (
+      <div class="demo-effect-fields">
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">{t("demoEffectScale")}</label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="1.4"
+            value={effect.scale ?? 1.4}
+            min={1}
+            max={5}
+            step={0.1}
+            onInput={(e) =>
+              onPatch({
+                scale: Number((e.target as HTMLInputElement).value),
+              } as Partial<ZoomEffect>)
+            }
+          />
+        </div>
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">
+            {t("demoEffectDuration")} (0 = {t("demoEffectPermanent")})
+          </label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="1200"
+            value={effect.duration ?? 1200}
+            min={0}
+            step={100}
+            onInput={(e) =>
+              onPatch({
+                duration: Number((e.target as HTMLInputElement).value),
+              } as Partial<ZoomEffect>)
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (effect.kind === "pin") {
+    return (
+      <div class="demo-effect-fields">
+        <div class="demo-effect-field demo-effect-field-wide">
+          <label class="demo-effect-label-txt">{t("demoEffectNote")}</label>
+          <input
+            type="text"
+            class="demo-step-input"
+            placeholder={t("demoEffectNotePlaceholder")}
+            value={effect.note ?? ""}
+            onInput={(e) =>
+              onPatch({
+                note: (e.target as HTMLInputElement).value,
+              } as Partial<PinEffect>)
+            }
+          />
+        </div>
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">
+            {t("demoEffectDuration")} (0 = {t("demoEffectKeep")})
+          </label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="2000"
+            value={effect.duration ?? 2000}
+            min={0}
+            step={100}
+            onInput={(e) =>
+              onPatch({
+                duration: Number((e.target as HTMLInputElement).value),
+              } as Partial<PinEffect>)
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (effect.kind === "shake") {
+    return (
+      <div class="demo-effect-fields">
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">
+            {t("demoEffectIntensity")}
+          </label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="3"
+            value={effect.intensity ?? 3}
+            min={1}
+            max={10}
+            step={1}
+            onInput={(e) =>
+              onPatch({
+                intensity: Number((e.target as HTMLInputElement).value),
+              } as Partial<ShakeEffect>)
+            }
+          />
+        </div>
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">{t("demoEffectDuration")}</label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="500"
+            value={effect.duration ?? 500}
+            min={100}
+            step={100}
+            onInput={(e) =>
+              onPatch({
+                duration: Number((e.target as HTMLInputElement).value),
+              } as Partial<ShakeEffect>)
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (effect.kind === "confetti") {
+    return (
+      <div class="demo-effect-fields">
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">{t("demoEffectCount")}</label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="60"
+            value={effect.count ?? 60}
+            min={1}
+            max={200}
+            step={10}
+            onInput={(e) =>
+              onPatch({
+                count: Number((e.target as HTMLInputElement).value),
+              } as Partial<ConfettiEffect>)
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (effect.kind === "spotlight") {
+    return (
+      <div class="demo-effect-fields">
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">{t("demoEffectOpacity")}</label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="0.6"
+            value={effect.opacity ?? 0.6}
+            min={0}
+            max={1}
+            step={0.05}
+            onInput={(e) =>
+              onPatch({
+                opacity: Number((e.target as HTMLInputElement).value),
+              } as Partial<SpotlightEffect>)
+            }
+          />
+        </div>
+        <div class="demo-effect-field">
+          <label class="demo-effect-label-txt">
+            {t("demoEffectDuration")} (0 = {t("demoEffectKeep")})
+          </label>
+          <input
+            type="number"
+            class="demo-step-input demo-step-input-delay"
+            placeholder="2000"
+            value={effect.duration ?? 2000}
+            min={0}
+            step={100}
+            onInput={(e) =>
+              onPatch({
+                duration: Number((e.target as HTMLInputElement).value),
+              } as Partial<SpotlightEffect>)
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 // ── Caption editor ────────────────────────────────────────────────────────────
@@ -724,17 +1064,39 @@ function DemoStepCard({
   idx,
   onEdit,
   onDelete,
+  onMoveUp,
+  onMoveDown,
 }: {
   step: FlowStep;
   idx: number;
   onEdit: () => void;
   onDelete: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }) {
   const preview = getStepPreview(step);
   const effects = step.effects ?? [];
 
   return (
     <div class="demo-step-card">
+      <div class="demo-step-move-btns">
+        <button
+          class="btn btn-xs demo-step-move-btn"
+          disabled={!onMoveUp}
+          title={t("demoMoveStepUp")}
+          onClick={onMoveUp}
+        >
+          ▲
+        </button>
+        <button
+          class="btn btn-xs demo-step-move-btn"
+          disabled={!onMoveDown}
+          title={t("demoMoveStepDown")}
+          onClick={onMoveDown}
+        >
+          ▼
+        </button>
+      </div>
       <span class="demo-step-card-idx">{idx + 1}</span>
       <span class={`demo-step-badge demo-step-badge-${step.action}`}>
         {step.action}

@@ -2068,5 +2068,56 @@
   },
   "demoVideoRecordingActive": {
     "message": "Gravando…"
+  },
+  "demoMoveStepUp": {
+    "message": "Mover step para cima"
+  },
+  "demoMoveStepDown": {
+    "message": "Mover step para baixo"
+  },
+  "demoEffectText": {
+    "message": "Texto"
+  },
+  "demoEffectPosition": {
+    "message": "Posição"
+  },
+  "demoEffectDuration": {
+    "message": "Duração (ms)"
+  },
+  "demoEffectScale": {
+    "message": "Escala"
+  },
+  "demoEffectIntensity": {
+    "message": "Intensidade"
+  },
+  "demoEffectCount": {
+    "message": "Quantidade"
+  },
+  "demoEffectOpacity": {
+    "message": "Opacidade (0–1)"
+  },
+  "demoEffectNote": {
+    "message": "Nota"
+  },
+  "demoEffectNotePlaceholder": {
+    "message": "Anotação opcional…"
+  },
+  "demoEffectPermanent": {
+    "message": "permanente"
+  },
+  "demoEffectKeep": {
+    "message": "manter"
+  },
+  "demoPositionAbove": {
+    "message": "acima"
+  },
+  "demoPositionBelow": {
+    "message": "abaixo"
+  },
+  "demoPositionLeft": {
+    "message": "esquerda"
+  },
+  "demoPositionRight": {
+    "message": "direita"
   }
 }
