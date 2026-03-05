@@ -13,7 +13,7 @@ import { t } from "@/lib/i18n";
 import { panelState } from "../panel-state";
 import { sendToBackground } from "../panel-messaging";
 import { addLog } from "../panel-utils";
-import { renderTo } from "../components";
+import { renderTo } from "@/lib/ui/components";
 import type {
   FlowScript,
   FlowStep,

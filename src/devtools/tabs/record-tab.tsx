@@ -17,8 +17,7 @@ import {
   getInspectedPageInfo,
 } from "../panel-messaging";
 import { addLog } from "../panel-utils";
-import { renderTo } from "../components";
-import { RecordTabView } from "@/lib/ui/components";
+import { renderTo, RecordTabView } from "@/lib/ui/components";
 
 // ── Recording Controls ────────────────────────────────────────────────────────
 

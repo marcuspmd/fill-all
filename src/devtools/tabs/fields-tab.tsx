@@ -26,8 +26,7 @@ import {
   getInspectedUrl,
 } from "../panel-messaging";
 import { addLog, updateStatusBar } from "../panel-utils";
-import { renderTo } from "../components";
-import { FieldsTabView } from "@/lib/ui/components";
+import { renderTo, FieldsTabView } from "@/lib/ui/components";
 import type {
   FieldEditorSavePayload,
   GeneratorOption,

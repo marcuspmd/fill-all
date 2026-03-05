@@ -8,8 +8,7 @@
 
 import { h } from "preact";
 import { panelState } from "../panel-state";
-import { renderTo } from "../components";
-import { LogTabView } from "@/lib/ui/components";
+import { renderTo, LogTabView } from "@/lib/ui/components";
 
 // ── Render ────────────────────────────────────────────────────────────────────
 

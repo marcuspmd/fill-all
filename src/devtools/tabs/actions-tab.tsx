@@ -6,13 +6,11 @@
  * - Toggle DOM watcher state
  */
 
-import { h } from "preact";
 import { t } from "@/lib/i18n";
 import { panelState } from "../panel-state";
 import { sendToPage } from "../panel-messaging";
 import { addLog } from "../panel-utils";
-import { renderTo } from "../components";
-import { ActionsTabView } from "@/lib/ui/components";
+import { renderTo, ActionsTabView } from "@/lib/ui/components";
 import {
   detectFields,
   fillAll,
