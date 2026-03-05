@@ -1834,5 +1834,197 @@
   },
   "editorSave": {
     "message": "Salvar"
+  },
+  "tabDemo": {
+    "message": "Demo"
+  },
+  "demoTabLabel": {
+    "message": "Demo"
+  },
+  "demoConvertTitle": {
+    "message": "Converter Gravação em Demo"
+  },
+  "demoConvertHint": {
+    "message": "Grave uma interação na aba Record e converta em um demo reproduzível."
+  },
+  "demoConvertHintReady": {
+    "message": "Pronto! $1 passo(s) gravado(s). Dê um nome e salve."
+  },
+  "demoFlowName": {
+    "message": "Nome do Demo"
+  },
+  "demoFlowNamePlaceholder": {
+    "message": "Ex: cadastro-usuario"
+  },
+  "demoSeed": {
+    "message": "Seed (opcional)"
+  },
+  "demoSaveAsDemo": {
+    "message": "Salvar como Demo"
+  },
+  "demoLibraryTitle": {
+    "message": "Biblioteca de Demos"
+  },
+  "demoRefresh": {
+    "message": "Atualizar"
+  },
+  "demoLibraryLoading": {
+    "message": "Carregando demos…"
+  },
+  "demoLibraryEmpty": {
+    "message": "Nenhum demo salvo ainda."
+  },
+  "demoColName": {
+    "message": "Nome"
+  },
+  "demoColSteps": {
+    "message": "Passos"
+  },
+  "demoColCreated": {
+    "message": "Criado"
+  },
+  "demoColActions": {
+    "message": "Ações"
+  },
+  "demoReplay": {
+    "message": "Reproduzir"
+  },
+  "demoPause": {
+    "message": "Pausar"
+  },
+  "demoResume": {
+    "message": "Retomar"
+  },
+  "demoStop": {
+    "message": "Parar"
+  },
+  "demoExportJson": {
+    "message": "Exportar JSON"
+  },
+  "demoDelete": {
+    "message": "Excluir"
+  },
+  "demoReplayStatusTitle": {
+    "message": "Reproduzindo Demo"
+  },
+  "demoReplayStep": {
+    "message": "Passo $1 de $2"
+  },
+  "demoErrorLoad": {
+    "message": "Erro ao carregar demos"
+  },
+  "demoErrorNoName": {
+    "message": "Informe um nome para o demo"
+  },
+  "demoErrorNoSteps": {
+    "message": "Grave alguns passos antes de salvar"
+  },
+  "demoErrorSave": {
+    "message": "Erro ao salvar demo"
+  },
+  "demoSaveSuccess": {
+    "message": "Demo \"$1\" salvo com sucesso"
+  },
+  "demoErrorReplay": {
+    "message": "Erro ao reproduzir demo"
+  },
+  "demoReplayStarted": {
+    "message": "Reproduzindo demo \"$1\""
+  },
+  "demoDeleteSuccess": {
+    "message": "Demo excluído"
+  },
+  "demoErrorDelete": {
+    "message": "Erro ao excluir demo"
+  },
+  "demoExportSuccess": {
+    "message": "Demo \"$1\" exportado"
+  },
+  "demoReplayComplete": {
+    "message": "Demo concluído com sucesso"
+  },
+  "demoReplayFailed": {
+    "message": "Demo falhou"
+  },
+  "demoReplayOptionsTitle": {
+    "message": "Opções de Replay"
+  },
+  "demoReplaySpeed": {
+    "message": "Velocidade"
+  },
+  "demoShowCursor": {
+    "message": "Mostrar cursor"
+  },
+  "demoEditSteps": {
+    "message": "Editar Steps"
+  },
+  "demoColAction": {
+    "message": "Ação"
+  },
+  "demoColLabel": {
+    "message": "Label"
+  },
+  "demoColTarget": {
+    "message": "Seletor / URL"
+  },
+  "demoColDelayBefore": {
+    "message": "Antes (ms)"
+  },
+  "demoColDelayAfter": {
+    "message": "Depois (ms)"
+  },
+  "demoColOptional": {
+    "message": "Opcional"
+  },
+  "demoSaveSteps": {
+    "message": "Salvar Steps"
+  },
+  "demoCancelEdit": {
+    "message": "Cancelar"
+  },
+  "demoStepsSaved": {
+    "message": "Steps de \"$1\" salvos com sucesso"
+  },
+  "demoVideoTitle": {
+    "message": "Gravação de Vídeo"
+  },
+  "demoVideoHint": {
+    "message": "Grave o replay como vídeo WebM diretamente do painel DevTools."
+  },
+  "demoVideoStart": {
+    "message": "Iniciar Gravação"
+  },
+  "demoVideoStop": {
+    "message": "Parar Gravação"
+  },
+  "demoVideoDownload": {
+    "message": "Baixar Vídeo"
+  },
+  "demoVideoRecording": {
+    "message": "Gravando…"
+  },
+  "demoVideoStarted": {
+    "message": "Gravação de vídeo iniciada"
+  },
+  "demoVideoStopped": {
+    "message": "Gravação de vídeo concluída"
+  },
+  "demoVideoDownloaded": {
+    "message": "Vídeo baixado com sucesso"
+  },
+  "demoVideoErrorNoTab": {
+    "message": "Nenhuma aba inspecionada encontrada"
+  },
+  "demoVideoErrorStream": {
+    "message": "Falha ao obter stream de captura de tela"
+  },
+  "demoVideoRecord": {
+    "message": "Gravar Vídeo"
+  },
+  "demoVideoRecordAndReplay": {
+    "message": "Gravar vídeo enquanto reproduz"
+  },
+  "demoVideoRecordingActive": {
+    "message": "Gravando…"
   }
 }

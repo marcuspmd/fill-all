@@ -24,6 +24,7 @@ const TABS: TabDef[] = [
   { id: "fields", icon: "🔍", label: () => t("tabFields") },
   { id: "forms", icon: "📄", label: () => t("tabForms") },
   { id: "record", icon: "🔴", label: () => t("tabRecord") },
+  { id: "demo", icon: "🎬", label: () => t("tabDemo") },
   { id: "log", icon: "📋", label: () => t("tabLog") },
 ];
 

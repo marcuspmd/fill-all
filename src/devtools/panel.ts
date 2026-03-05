@@ -25,6 +25,13 @@ import { renderFieldsTab } from "./tabs/fields-tab";
 import { renderFormsTab, loadForms } from "./tabs/forms-tab";
 import { renderRecordTab, renderRecordStepsTable } from "./tabs/record-tab";
 import { renderLogTab } from "./tabs/log-tab";
+import {
+  renderDemoTab,
+  loadDemoFlows,
+  applyReplayProgress,
+  applyReplayComplete,
+} from "./tabs/demo-tab";
+import type { ReplayProgress } from "@/lib/demo";
 
 // ── App Shell ─────────────────────────────────────────────────────────────────
 
@@ -69,6 +76,10 @@ function renderActiveTab(): void {
     case "record":
       renderRecordTab();
       break;
+    case "demo":
+      renderDemoTab();
+      void loadDemoFlows();
+      break;
     case "log":
       renderLogTab();
       break;
@@ -109,6 +120,17 @@ chrome.runtime.onMessage.addListener(
         panelState.recordedStepsPreview[p.index] = p.step;
         renderRecordStepsTable();
       }
+    }
+
+    if (message.type === "DEMO_REPLAY_PROGRESS") {
+      applyReplayProgress(message.payload as unknown as ReplayProgress);
+    }
+
+    if (message.type === "DEMO_REPLAY_COMPLETE") {
+      const p = message.payload as
+        | { status?: "completed" | "failed" }
+        | undefined;
+      applyReplayComplete(p?.status ?? "completed");
     }
   },
 );

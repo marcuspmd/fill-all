@@ -306,3 +306,43 @@ export function parseDeleteFieldOverridePayload(
   const result = deleteFieldOverridePayloadSchema.safeParse(input);
   return result.success ? result.data : null;
 }
+
+// ── Demo message validators ──────────────────────────────────────────────
+
+const demoReplayStartPayloadSchema = z
+  .object({
+    flowId: z.string().min(1),
+    tabId: z.number().int().positive(),
+    config: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+
+export type DemoReplayStartPayload = z.infer<
+  typeof demoReplayStartPayloadSchema
+>;
+
+/** Parses payload for `DEMO_REPLAY_START`. */
+export function parseDemoReplayStartPayload(
+  input: unknown,
+): DemoReplayStartPayload | null {
+  const result = demoReplayStartPayloadSchema.safeParse(input);
+  return result.success ? result.data : null;
+}
+
+const demoRecordScreenStartPayloadSchema = z
+  .object({
+    tabId: z.number().int().positive(),
+  })
+  .strict();
+
+export type DemoRecordScreenStartPayload = z.infer<
+  typeof demoRecordScreenStartPayloadSchema
+>;
+
+/** Parses payload for `DEMO_RECORD_SCREEN_START`. */
+export function parseDemoRecordScreenStartPayload(
+  input: unknown,
+): DemoRecordScreenStartPayload | null {
+  const result = demoRecordScreenStartPayloadSchema.safeParse(input);
+  return result.success ? result.data : null;
+}

@@ -559,7 +559,29 @@ export type MessageType =
   | "CLEAR_FORM"
   | "DEVTOOLS_RELAY"
   | "SAVE_FIELD_OVERRIDE"
-  | "DELETE_FIELD_OVERRIDE";
+  | "DELETE_FIELD_OVERRIDE"
+  // Demo / replay
+  | "DEMO_SAVE_FLOW"
+  | "DEMO_CONVERT_RECORDING"
+  | "DEMO_GET_FLOWS"
+  | "DEMO_DELETE_FLOW"
+  | "DEMO_REPLAY_START"
+  | "DEMO_REPLAY_PAUSE"
+  | "DEMO_REPLAY_RESUME"
+  | "DEMO_REPLAY_STOP"
+  | "DEMO_REPLAY_STATUS"
+  | "DEMO_REPLAY_PROGRESS"
+  | "DEMO_REPLAY_COMPLETE"
+  | "DEMO_RECORD_SCREEN_START"
+  | "DEMO_RECORD_SCREEN_STOP"
+  | "DEMO_GET_STREAM_ID"
+  // Demo content-script messages (background → content)
+  | "DEMO_EXECUTE_STEP"
+  | "DEMO_CURSOR_MOVE"
+  | "DEMO_CURSOR_CLICK"
+  | "DEMO_CURSOR_DESTROY"
+  | "DEMO_HIGHLIGHT_ELEMENT"
+  | "PING";
 
 /** Payload for any message exchanged between extension contexts. */
 export interface ExtensionMessage {

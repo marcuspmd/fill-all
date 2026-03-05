@@ -80,6 +80,16 @@ import {
   parseExportRecordingPayload,
 } from "@/lib/messaging/light-validators";
 import { initLogger } from "@/lib/logger";
+import { executeStep, highlightElement } from "@/lib/demo/step-executor";
+import {
+  initCursorOverlay,
+  destroyCursorOverlay,
+  showCursor,
+  hideCursor,
+  moveCursorTo,
+  clickEffect,
+} from "@/lib/demo/cursor-overlay";
+import type { ExecuteStepPayload } from "@/lib/demo/demo.types";
 
 type FillableElement =
   | HTMLInputElement
@@ -580,6 +590,56 @@ export async function handleContentMessage(
       showNotification(`✓ ${cleared} campo(s) limpo(s)`);
       return { success: true, cleared };
     }
+
+    case "DEMO_EXECUTE_STEP": {
+      const payload = message.payload as ExecuteStepPayload | undefined;
+      if (!payload?.step) {
+        return { error: "Invalid payload for DEMO_EXECUTE_STEP" };
+      }
+      const result = await executeStep(payload);
+      return { result };
+    }
+
+    case "DEMO_CURSOR_MOVE": {
+      const cfg = message.payload as
+        | { selector?: string; durationMs?: number }
+        | undefined;
+      if (cfg?.selector) {
+        initCursorOverlay();
+        showCursor();
+        await moveCursorTo(cfg.selector, cfg.durationMs ?? 400);
+      }
+      return { success: true };
+    }
+
+    case "DEMO_CURSOR_CLICK": {
+      initCursorOverlay();
+      showCursor();
+      await clickEffect();
+      return { success: true };
+    }
+
+    case "DEMO_CURSOR_DESTROY": {
+      hideCursor();
+      destroyCursorOverlay();
+      return { success: true };
+    }
+
+    case "DEMO_HIGHLIGHT_ELEMENT": {
+      const hlPayload = message.payload as
+        | { step?: unknown; durationMs?: number }
+        | undefined;
+      if (hlPayload?.step) {
+        highlightElement(
+          hlPayload.step as Parameters<typeof highlightElement>[0],
+          hlPayload.durationMs ?? 300,
+        );
+      }
+      return { success: true };
+    }
+
+    case "PING":
+      return { pong: true };
 
     default:
       return { error: `Unknown message type: ${message.type}` };

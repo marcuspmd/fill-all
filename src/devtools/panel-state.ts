@@ -8,10 +8,16 @@
 import type { DetectedFieldSummary, SavedForm } from "@/types";
 import type { FieldEditorSavePayload } from "@/lib/ui/components/field-editor-modal";
 import type { LogViewer } from "@/lib/logger/log-viewer";
+import type {
+  FlowScript,
+  ReplayProgress,
+  ReplayStatus,
+  ReplaySpeed,
+} from "@/lib/demo";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type TabId = "actions" | "fields" | "forms" | "record" | "log";
+export type TabId = "actions" | "fields" | "forms" | "record" | "demo" | "log";
 
 export type RecordingState = "idle" | "recording" | "paused" | "stopped";
 
@@ -56,4 +62,24 @@ export const panelState = {
   // Field editor modal
   editingField: null as DetectedFieldSummary | null,
   editingFieldExistingRule: null as FieldEditorSavePayload | null,
+
+  // Demo
+  demoFlows: [] as FlowScript[],
+  demoFlowsLoaded: false,
+  demoReplayStatus: "idle" as ReplayStatus,
+  demoReplayProgress: null as ReplayProgress | null,
+  demoActiveFlowId: null as string | null,
+  demoNameInput: "",
+  demoSeedInput: "demo",
+  demoReplaySpeed: "normal" as ReplaySpeed,
+  demoShowCursor: true,
+  demoEditingFlowId: null as string | null,
+  // Video recording state (managed entirely in DevTools panel)
+  videoRecording: false,
+  videoMediaRecorder: null as MediaRecorder | null,
+  videoChunks: [] as Blob[],
+  videoBlob: null as Blob | null,
+  // Per-demo video tracking: which flow is being recorded / has a ready blob
+  videoRecordingForFlowId: null as string | null,
+  videoReadyForFlowId: null as string | null,
 };

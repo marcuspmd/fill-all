@@ -1064,4 +1064,316 @@ body {
   object-fit: contain;
 }
 
+/* ── Demo Tab ── */
+
+.demo-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.demo-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.demo-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--indigo);
+  margin: 0;
+}
+
+.demo-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.demo-form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.demo-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  min-width: 56px;
+  flex-shrink: 0;
+}
+
+.demo-input {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 11px;
+  padding: 4px 8px;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.demo-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.demo-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.demo-section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.demo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.demo-table th {
+  text-align: left;
+  padding: 4px 8px;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(69, 71, 90, 0.4);
+  vertical-align: middle;
+}
+
+.demo-table tr:last-child td {
+  border-bottom: none;
+}
+
+.demo-row-active td {
+  background: rgba(137, 180, 250, 0.06);
+}
+
+.demo-flow-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.demo-flow-desc {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.demo-col-center {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.demo-col-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.demo-col-actions .btn,
+.demo-col-actions .demo-video-actions {
+  margin-left: 3px;
+}
+
+.demo-col-actions .btn:first-child {
+  margin-left: 0;
+}
+
+.demo-progress-bar-wrap {
+  background: var(--bg-surface);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.demo-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+
+.demo-progress-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.demo-replay-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Camera / video record button — visible with label */
+.btn-video-record {
+  border-color: rgba(180, 190, 254, 0.3);
+  color: var(--indigo);
+}
+
+.btn-video-record:hover:not(:disabled) {
+  border-color: var(--indigo);
+  background: rgba(180, 190, 254, 0.1);
+}
+
+.btn-video-record:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Pulsing button while actively recording */
+.demo-video-recording-btn {
+  animation: pulse-recording 1.2s ease-in-out infinite;
+}
+
+/* Inline group for download + discard + re-record */
+.demo-video-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Step editor (inline, expands below flow row) ──────────────────────────── */
+
+.demo-row-edit-steps > td {
+  padding: 0;
+  background: var(--bg-secondary, #1e1e2e);
+  border-top: 1px solid var(--border, #45475a);
+}
+
+.demo-steps-editor {
+  padding: 8px 12px 12px;
+}
+
+.demo-steps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.demo-steps-table th {
+  padding: 4px 8px;
+  text-align: left;
+  color: var(--text-muted, #bac2de);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border, #45475a);
+  white-space: nowrap;
+}
+
+.demo-steps-table td {
+  padding: 3px 6px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-subtle, #313244);
+}
+
+.demo-steps-table tr:last-child td {
+  border-bottom: none;
+}
+
+.demo-step-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: var(--badge-bg, #45475a);
+  color: var(--text-primary, #cdd6f4);
+  white-space: nowrap;
+}
+
+.demo-step-badge-navigate  { background: #1e66f5; color: #fff; }
+.demo-step-badge-click     { background: #40a02b; color: #fff; }
+.demo-step-badge-fill      { background: #df8e1d; color: #fff; }
+.demo-step-badge-select    { background: #8839ef; color: #fff; }
+.demo-step-badge-check,
+.demo-step-badge-uncheck   { background: #179299; color: #fff; }
+.demo-step-badge-wait      { background: #d20f39; color: #fff; }
+.demo-step-badge-scroll    { background: #04a5e5; color: #fff; }
+.demo-step-badge-press-key { background: #e64553; color: #fff; }
+.demo-step-badge-assert    { background: #7287fd; color: #fff; }
+.demo-step-badge-clear     { background: #9ca0b0; color: #fff; }
+
+.demo-step-input {
+  width: 100%;
+  padding: 2px 5px;
+  background: var(--bg-tertiary, #181825);
+  border: 1px solid var(--border, #45475a);
+  border-radius: 3px;
+  color: var(--text-primary, #cdd6f4);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+}
+
+.demo-step-input:focus {
+  outline: none;
+  border-color: var(--accent, #cba6f7);
+}
+
+.demo-step-input-delay {
+  width: 70px;
+  text-align: right;
+  font-family: var(--font-mono, monospace);
+}
+
+.demo-step-input-selector {
+  min-width: 140px;
+  max-width: 240px;
+}
+
+.demo-steps-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.demo-replay-options {
+  padding: 8px 12px;
+}
+
+.demo-replay-options-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.demo-select {
+  padding: 3px 6px;
+  background: var(--bg-tertiary, #181825);
+  border: 1px solid var(--border, #45475a);
+  border-radius: 4px;
+  color: var(--text-primary, #cdd6f4);
+  font-size: 12px;
+}
+
+.demo-label-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
 

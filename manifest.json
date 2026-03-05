@@ -9,7 +9,9 @@
     "activeTab",
     "scripting",
     "contextMenus",
-    "tabs"
+    "tabs",
+    "tabCapture",
+    "webNavigation"
   ],
   "optional_permissions": [],
   "host_permissions": [
