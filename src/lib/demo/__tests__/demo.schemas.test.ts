@@ -28,6 +28,7 @@ function validReplayConfig(
     stepDelay: 400,
     useRecordedTimings: false,
     highlightDuration: 300,
+    showCursor: true,
     ...overrides,
   };
 }

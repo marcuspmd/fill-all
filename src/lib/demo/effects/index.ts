@@ -23,4 +23,5 @@ export type {
 
 export { applyStepEffects } from "./effect-runner";
 export { showCaption, destroyCaption } from "./caption-overlay";
+export { cancelActiveZoom } from "./zoom-effect";
 export { DEFAULT_EFFECT_TIMING } from "./effect.types";

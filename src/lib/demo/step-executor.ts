@@ -15,7 +15,7 @@ import type {
   ReplayConfig,
   ExecuteStepPayload,
 } from "./demo.types";
-import { applyStepEffects, showCaption } from "./effects";
+import { applyStepEffects, showCaption, cancelActiveZoom } from "./effects";
 import { DEFAULT_EFFECT_TIMING } from "./effects/effect.types";
 import type { StepEffect } from "./effects/effect.types";
 
@@ -101,6 +101,15 @@ export async function executeStep(
 
     // Wait for "during" effects (they run in parallel with the action)
     await duringPromise;
+
+    // Check if any "during" zoom effect was indefinite (duration 0 or Infinity)
+    // If so, cancel it now that the action is complete
+    const hasIndefiniteZoom = duringEffects.some(
+      (e) => e.kind === "zoom" && (e.duration === 0 || e.duration === Infinity),
+    );
+    if (hasIndefiniteZoom) {
+      cancelActiveZoom();
+    }
 
     // 3. "after" effects run once the action has finished successfully
     if (result.status === "success" && afterEffects.length) {

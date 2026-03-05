@@ -71,7 +71,9 @@ export interface ZoomEffect {
   kind: "zoom";
   /** How much to zoom the viewport towards the element (default: 1.4) */
   scale?: number;
-  /** Hold zoom for this many ms (default: 1200) */
+  /** Hold zoom for this many ms. Use 0 or Infinity for indefinite zoom (e.g., during typing).
+   * (default: 1200)
+   */
   duration?: number;
   /** When to run relative to the action (default: "during") */
   timing?: EffectTiming;
