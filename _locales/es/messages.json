@@ -1976,6 +1976,30 @@
   "demoColOptional": {
     "message": "Opcional"
   },
+  "demoAddStep": {
+    "message": "Agregar Paso"
+  },
+  "demoDeleteStep": {
+    "message": "Eliminar paso"
+  },
+  "demoColEffects": {
+    "message": "Efectos"
+  },
+  "demoCaptionText": {
+    "message": "Texto del subtítulo"
+  },
+  "demoCaptionPosition": {
+    "message": "Posición"
+  },
+  "demoAddEffect": {
+    "message": "Efecto"
+  },
+  "demoEffectNone": {
+    "message": "ninguno"
+  },
+  "demoLabelText": {
+    "message": "Texto del label"
+  },
   "demoSaveSteps": {
     "message": "Guardar Pasos"
   },

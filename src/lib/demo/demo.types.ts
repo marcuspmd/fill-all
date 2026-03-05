@@ -12,6 +12,7 @@ import type {
   SelectorStrategy,
   SmartSelector,
 } from "@/lib/e2e-export/e2e-export.types";
+import type { StepEffect, CaptionConfig } from "./effects";
 
 // ── Speed profiles ────────────────────────────────────────────────────────
 
@@ -67,7 +68,8 @@ export type FlowActionType =
   | "wait"
   | "scroll"
   | "press-key"
-  | "assert";
+  | "assert"
+  | "caption";
 
 /** Assertion operators for `assert` steps */
 export type AssertOperator =
@@ -141,6 +143,14 @@ export interface FlowStep {
   delayBefore?: number;
   /** Delay after executing this step (ms) */
   delayAfter?: number;
+
+  // ── Caption ───────────────────────────────────────────────────────────
+  /** Caption configuration for `caption` steps */
+  caption?: CaptionConfig;
+
+  // ── Effects ───────────────────────────────────────────────────────────
+  /** Visual effects applied to the target element during this step */
+  effects?: StepEffect[];
 
   // ── Metadata ──────────────────────────────────────────────────────────
   /** Human-readable label for display */

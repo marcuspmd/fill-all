@@ -1314,6 +1314,104 @@ body {
 .demo-step-badge-press-key { background: #e64553; color: #fff; }
 .demo-step-badge-assert    { background: #7287fd; color: #fff; }
 .demo-step-badge-clear     { background: #9ca0b0; color: #fff; }
+.demo-step-badge-caption   { background: #fe640b; color: #fff; }
+
+/* ── Effect badges ── */
+.demo-effects-editor {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 140px;
+}
+
+.demo-effects-list {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.demo-effect-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #313244;
+  color: #cba6f7;
+  border: 1px solid #45475a;
+}
+
+.demo-effect-badge-label     { border-color: #89b4fa; color: #89b4fa; }
+.demo-effect-badge-grow      { border-color: #a6e3a1; color: #a6e3a1; }
+.demo-effect-badge-zoom      { border-color: #f9e2af; color: #f9e2af; }
+.demo-effect-badge-pin       { border-color: #f38ba8; color: #f38ba8; }
+.demo-effect-badge-shake     { border-color: #fab387; color: #fab387; }
+.demo-effect-badge-confetti  { border-color: #f2cdcd; color: #f2cdcd; }
+.demo-effect-badge-spotlight { border-color: #cba6f7; color: #cba6f7; }
+
+.demo-effect-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 1px;
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.demo-effect-remove:hover {
+  opacity: 1;
+}
+
+/* ── Caption editor ── */
+.demo-caption-editor {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Add step bar ── */
+.demo-steps-add {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 0;
+  margin-bottom: 4px;
+}
+
+.demo-step-select {
+  padding: 2px 5px;
+  background: var(--bg-tertiary, #181825);
+  border: 1px solid var(--border, #45475a);
+  border-radius: 3px;
+  color: var(--text-primary, #cdd6f4);
+  font-size: 11px;
+}
+
+.demo-step-select-sm {
+  max-width: 90px;
+}
+
+/* ── btn-xs variant for compact row buttons ── */
+.btn-xs {
+  padding: 1px 5px;
+  font-size: 10px;
+}
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid #f38ba8;
+  color: #f38ba8;
+}
+
+.btn-danger:hover {
+  background: rgba(243,139,168,0.12);
+}
 
 .demo-step-input {
   width: 100%;

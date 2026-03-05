@@ -40,6 +40,8 @@ const CURSOR_STYLES = [
 let cursorEl: HTMLDivElement | null = null;
 let currentX = 0;
 let currentY = 0;
+/** True after the first positioning — subsequent moves animate instead of teleport */
+let isPositioned = false;
 
 // ── Public API ────────────────────────────────────────────────────────────
 
@@ -62,6 +64,7 @@ export function destroyCursorOverlay(): void {
 
   cursorEl.remove();
   cursorEl = null;
+  isPositioned = false;
   log.debug("Cursor overlay destroyed");
 }
 
@@ -107,11 +110,23 @@ export function moveCursorTo(
     const targetX = rect.left + rect.width / 2 - CURSOR_SIZE / 2;
     const targetY = rect.top + rect.height / 2 - CURSOR_SIZE / 2;
 
-    cursorEl.style.transitionDuration = `${durationMs}ms`;
+    // First call: teleport instantly so cursor appears at the correct position
+    // rather than animating from (0, 0) top-left corner.
+    const moveDuration = isPositioned ? durationMs : 0;
+    isPositioned = true;
+
+    cursorEl.style.transitionDuration = `${moveDuration}ms`;
     cursorEl.style.transform = `translate(${targetX}px, ${targetY}px)`;
 
     currentX = targetX;
     currentY = targetY;
+
+    // If teleporting (duration=0) resolve immediately after next frame;
+    // otherwise wait for the CSS transition to finish.
+    if (moveDuration === 0) {
+      requestAnimationFrame(() => resolve());
+      return;
+    }
 
     const onEnd = () => {
       cursorEl?.removeEventListener("transitionend", onEnd);

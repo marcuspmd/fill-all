@@ -28,6 +28,8 @@ export type {
   DemoMessageType,
 } from "./demo.types";
 
+export type { StepEffect, CaptionConfig, EffectKind } from "./effects";
+
 export {
   DEFAULT_REPLAY_CONFIG,
   DEFAULT_SCREEN_RECORD_OPTIONS,

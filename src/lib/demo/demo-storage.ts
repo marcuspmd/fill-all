@@ -16,7 +16,7 @@ import type { FlowScript } from "./demo.types";
 const log = createLogger("DemoStorage");
 
 const KEY = STORAGE_KEYS.DEMO_FLOWS;
-const MAX_FLOWS = 50;
+const MAX_FLOWS = 200;
 
 // ── Read ──────────────────────────────────────────────────────────────────
 

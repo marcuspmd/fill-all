@@ -14,7 +14,15 @@ import { panelState } from "../panel-state";
 import { sendToBackground } from "../panel-messaging";
 import { addLog } from "../panel-utils";
 import { renderTo } from "../components";
-import type { FlowScript, FlowStep, ReplayProgress } from "@/lib/demo";
+import type {
+  FlowScript,
+  FlowStep,
+  ReplayProgress,
+  FlowActionType,
+  StepEffect,
+  CaptionConfig,
+  EffectKind,
+} from "@/lib/demo";
 import { DEFAULT_REPLAY_CONFIG, SPEED_PRESETS } from "@/lib/demo";
 
 // ── Render entrypoint ─────────────────────────────────────────────────────────
@@ -347,7 +355,16 @@ function DemoFlowRow({ flow }: { flow: FlowScript }) {
 
 function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
   async function saveStepEdits() {
-    await sendToBackground({ type: "DEMO_SAVE_FLOW", payload: flow });
+    const res = (await sendToBackground({
+      type: "DEMO_SAVE_FLOW",
+      payload: flow,
+    })) as { success?: boolean; error?: string } | undefined;
+    if (res?.error) {
+      addLog(`Erro ao salvar: ${res.error}`, "error");
+      // eslint-disable-next-line no-alert
+      alert(`Erro ao salvar flow:\n\n${res.error}`);
+      return;
+    }
     panelState.demoEditingFlowId = null;
     addLog(`Steps de "${flow.metadata.name}" salvos`, "success");
     renderDemoTab();
@@ -357,6 +374,46 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
     panelState.demoEditingFlowId = null;
     void loadDemoFlows().then(() => renderDemoTab());
   }
+
+  function addStep(type: FlowActionType) {
+    const newStep: FlowStep = {
+      id: `step-${Date.now()}`,
+      action: type,
+      label: "",
+      selector:
+        type === "navigate" || type === "wait" || type === "caption"
+          ? undefined
+          : "",
+      delayBefore: 0,
+      delayAfter: 0,
+      optional: false,
+      ...(type === "caption"
+        ? { caption: { text: "", position: "bottom" } }
+        : {}),
+    } as FlowStep;
+    flow.steps.push(newStep);
+    renderDemoTab();
+  }
+
+  function deleteStep(idx: number) {
+    flow.steps.splice(idx, 1);
+    renderDemoTab();
+  }
+
+  const ALL_ACTIONS: FlowActionType[] = [
+    "click",
+    "fill",
+    "select",
+    "check",
+    "uncheck",
+    "clear",
+    "navigate",
+    "wait",
+    "scroll",
+    "press-key",
+    "assert",
+    "caption",
+  ];
 
   return (
     <tr class="demo-row-edit-steps">
@@ -375,6 +432,8 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
                 <th>{t("demoColDelayBefore")}</th>
                 <th>{t("demoColDelayAfter")}</th>
                 <th>{t("demoColOptional")}</th>
+                <th>{t("demoColEffects")}</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -384,10 +443,31 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
                   step={step}
                   idx={idx}
                   flow={flow}
+                  onDelete={() => deleteStep(idx)}
                 />
               ))}
             </tbody>
           </table>
+          <div class="demo-steps-add">
+            <select id="demo-add-step-type" class="demo-step-select">
+              {ALL_ACTIONS.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+            <button
+              class="btn btn-sm btn-secondary"
+              onClick={() => {
+                const sel = document.getElementById(
+                  "demo-add-step-type",
+                ) as HTMLSelectElement;
+                addStep(sel.value as FlowActionType);
+              }}
+            >
+              + {t("demoAddStep")}
+            </button>
+          </div>
           <div class="demo-steps-actions">
             <button
               class="btn btn-sm btn-primary"
@@ -405,30 +485,205 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
   );
 }
 
+// ── Effect constants ─────────────────────────────────────────────────────────
+
+const ALL_EFFECT_KINDS: EffectKind[] = [
+  "label",
+  "grow",
+  "zoom",
+  "pin",
+  "shake",
+  "confetti",
+  "spotlight",
+];
+
+/** Kinds shown in the dropdown — "none" is a placeholder meaning "no effect" */
+const ALL_EFFECT_KINDS_WITH_NONE = ["none", ...ALL_EFFECT_KINDS] as const;
+
+const CAPTION_POSITIONS = ["top", "middle", "bottom"] as const;
+
+// ── Step effects inline editor ────────────────────────────────────────────────
+
+function EffectsEditor({
+  step,
+  onUpdate,
+}: {
+  step: FlowStep;
+  onUpdate: () => void;
+}) {
+  const effects = step.effects ?? [];
+
+  function addEffect(kind: EffectKind | "none") {
+    if (kind === "none") return; // placeholder — do not add any effect
+    // Provide required fields so Zod validation passes on save
+    const base: StepEffect =
+      kind === "label" ? { kind: "label", text: "" } : ({ kind } as StepEffect);
+    step.effects = [...effects, base];
+    onUpdate();
+  }
+
+  function removeEffect(idx: number) {
+    const next = [...effects];
+    next.splice(idx, 1);
+    step.effects = next.length > 0 ? next : undefined;
+    onUpdate();
+  }
+
+  function updateEffectText(idx: number, text: string) {
+    const next = [...effects];
+    next[idx] = { ...next[idx], text } as StepEffect;
+    step.effects = next;
+    onUpdate();
+  }
+
+  return (
+    <div class="demo-effects-editor">
+      <div class="demo-effects-list">
+        {effects.map((eff, i) => (
+          <span
+            key={i}
+            class={`demo-effect-badge demo-effect-badge-${eff.kind}`}
+          >
+            {eff.kind}
+            {eff.kind === "label" && (
+              <input
+                type="text"
+                class="demo-step-input demo-effect-label-input"
+                placeholder={t("demoLabelText")}
+                value={eff.text}
+                onInput={(e) =>
+                  updateEffectText(i, (e.target as HTMLInputElement).value)
+                }
+              />
+            )}
+            <button
+              class="demo-effect-remove"
+              title={t("demoDeleteStep")}
+              onClick={() => removeEffect(i)}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <select
+        id={`demo-effect-kind-${step.id}`}
+        class="demo-step-select demo-step-select-sm"
+      >
+        {ALL_EFFECT_KINDS_WITH_NONE.map((k) => (
+          <option key={k} value={k}>
+            {k === "none" ? `── ${t("demoEffectNone")} ──` : k}
+          </option>
+        ))}
+      </select>
+      <button
+        class="btn btn-xs btn-secondary"
+        title={t("demoAddEffect")}
+        onClick={() => {
+          const sel = document.getElementById(
+            `demo-effect-kind-${step.id}`,
+          ) as HTMLSelectElement;
+          addEffect(sel.value as EffectKind | "none");
+        }}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+// ── Caption editor ────────────────────────────────────────────────────────────
+
+function CaptionEditor({
+  step,
+  onUpdate,
+}: {
+  step: FlowStep;
+  onUpdate: () => void;
+}) {
+  const cap: CaptionConfig = step.caption ?? { text: "", position: "bottom" };
+
+  function updateCaption(patch: Partial<CaptionConfig>) {
+    step.caption = { ...cap, ...patch };
+    onUpdate();
+  }
+
+  return (
+    <div class="demo-caption-editor">
+      <input
+        type="text"
+        class="demo-step-input"
+        placeholder={t("demoCaptionText")}
+        value={cap.text}
+        onInput={(e) => {
+          updateCaption({ text: (e.target as HTMLInputElement).value });
+        }}
+      />
+      <select
+        class="demo-step-select demo-step-select-sm"
+        value={cap.position ?? "bottom"}
+        onChange={(e) => {
+          updateCaption({
+            position: (e.target as HTMLSelectElement)
+              .value as CaptionConfig["position"],
+          });
+        }}
+      >
+        {CAPTION_POSITIONS.map((p) => (
+          <option key={p} value={p}>
+            {p}
+          </option>
+        ))}
+      </select>
+      <input
+        type="number"
+        class="demo-step-input demo-step-input-delay"
+        placeholder="ms"
+        value={cap.duration ?? 3000}
+        min={500}
+        step={500}
+        onInput={(e) => {
+          updateCaption({
+            duration: Number((e.target as HTMLInputElement).value),
+          });
+        }}
+      />
+    </div>
+  );
+}
+
 function DemoStepEditRow({
   step,
   idx,
   flow,
+  onDelete,
 }: {
   step: FlowStep;
   idx: number;
   flow: FlowScript;
+  onDelete: () => void;
 }) {
   function updateStep<K extends keyof FlowStep>(key: K, value: FlowStep[K]) {
     (flow.steps[idx] as unknown as Record<string, unknown>)[key as string] =
       value;
   }
 
-  const hasSelector = step.action !== "navigate" && step.action !== "wait";
+  const isCaption = step.action === "caption";
+  const hasSelector =
+    !isCaption && step.action !== "navigate" && step.action !== "wait";
   const hasUrl = step.action === "navigate";
 
   return (
     <tr class="demo-step-edit-row">
       <td class="demo-step-idx">{idx + 1}</td>
       <td>
-        <span class={`demo-step-badge demo-step-badge-${step.action}`}>
-          {step.action}
-        </span>
+        {isCaption ? (
+          <span class="demo-step-badge demo-step-badge-caption">caption</span>
+        ) : (
+          <span class={`demo-step-badge demo-step-badge-${step.action}`}>
+            {step.action}
+          </span>
+        )}
       </td>
       <td>
         <input
@@ -444,6 +699,9 @@ function DemoStepEditRow({
         />
       </td>
       <td>
+        {isCaption && (
+          <CaptionEditor step={step} onUpdate={() => renderDemoTab()} />
+        )}
         {hasSelector && (
           <input
             type="text"
@@ -465,7 +723,7 @@ function DemoStepEditRow({
             onInput={(e) => {
               updateStep(
                 "url" as keyof FlowStep,
-                (e.target as HTMLInputElement).value as never,
+                ((e.target as HTMLInputElement).value || undefined) as never,
               );
             }}
           />
@@ -509,6 +767,18 @@ function DemoStepEditRow({
             updateStep("optional", (e.target as HTMLInputElement).checked);
           }}
         />
+      </td>
+      <td>
+        <EffectsEditor step={step} onUpdate={() => renderDemoTab()} />
+      </td>
+      <td>
+        <button
+          class="btn btn-xs btn-danger"
+          title={t("demoDeleteStep")}
+          onClick={onDelete}
+        >
+          🗑
+        </button>
       </td>
     </tr>
   );

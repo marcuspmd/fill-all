@@ -10,7 +10,7 @@ import {
   saveDemoFlow,
   deleteDemoFlow,
 } from "@/lib/demo/demo-storage";
-import { parseFlowScript } from "@/lib/demo/demo.schemas";
+import { parseFlowScript, flowScriptSchema } from "@/lib/demo/demo.schemas";
 import {
   createReplayOrchestrator,
   type ReplayOrchestrator,
@@ -56,9 +56,15 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
       return getDemoFlows();
 
     case "DEMO_SAVE_FLOW": {
-      const flow = parseFlowScript(message.payload);
-      if (!flow) return { error: "Invalid FlowScript payload" };
-      await saveDemoFlow(flow);
+      const parsed = flowScriptSchema.safeParse(message.payload);
+      if (!parsed.success) {
+        const detail = parsed.error.issues
+          .map((i) => `${i.path.join(".")}: ${i.message}`)
+          .join("; ");
+        log.warn("DEMO_SAVE_FLOW validation failed:", detail);
+        return { error: `Payload inválido: ${detail}` };
+      }
+      await saveDemoFlow(parsed.data);
       return { success: true };
     }
 

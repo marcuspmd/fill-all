@@ -1976,6 +1976,30 @@
   "demoColOptional": {
     "message": "Optional"
   },
+  "demoAddStep": {
+    "message": "Add Step"
+  },
+  "demoDeleteStep": {
+    "message": "Remove step"
+  },
+  "demoColEffects": {
+    "message": "Effects"
+  },
+  "demoCaptionText": {
+    "message": "Caption text"
+  },
+  "demoCaptionPosition": {
+    "message": "Position"
+  },
+  "demoAddEffect": {
+    "message": "Effect"
+  },
+  "demoEffectNone": {
+    "message": "none"
+  },
+  "demoLabelText": {
+    "message": "Label text"
+  },
   "demoSaveSteps": {
     "message": "Save Steps"
   },

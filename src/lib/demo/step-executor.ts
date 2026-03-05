@@ -15,6 +15,7 @@ import type {
   ReplayConfig,
   ExecuteStepPayload,
 } from "./demo.types";
+import { applyStepEffects, showCaption } from "./effects";
 
 const log = createLogger("StepExecutor");
 
@@ -31,32 +32,57 @@ export async function executeStep(
   const { step, resolvedValue, replayConfig } = payload;
 
   try {
+    let result: StepResult;
+
     switch (step.action) {
       case "navigate":
-        return handleNavigate(step);
+        result = handleNavigate(step);
+        break;
       case "fill":
-        return await handleFill(step, resolvedValue, replayConfig);
+        result = await handleFill(step, resolvedValue, replayConfig);
+        break;
       case "click":
-        return handleClick(step);
+        result = handleClick(step);
+        break;
       case "select":
-        return handleSelect(step);
+        result = handleSelect(step);
+        break;
       case "check":
-        return handleCheck(step, true);
+        result = handleCheck(step, true);
+        break;
       case "uncheck":
-        return handleCheck(step, false);
+        result = handleCheck(step, false);
+        break;
       case "clear":
-        return handleClear(step);
+        result = handleClear(step);
+        break;
       case "wait":
-        return await handleWait(step);
+        result = await handleWait(step);
+        break;
       case "scroll":
-        return handleScroll(step);
+        result = handleScroll(step);
+        break;
       case "press-key":
-        return handlePressKey(step);
+        result = handlePressKey(step);
+        break;
       case "assert":
-        return handleAssert(step);
+        result = handleAssert(step);
+        break;
+      case "caption":
+        result = await handleCaption(step);
+        break;
       default:
         return { status: "skipped", reason: `Unknown action: ${step.action}` };
     }
+
+    // Apply modular effects after the action succeeds
+    if (result.status === "success" && step.effects?.length) {
+      const selector =
+        step.smartSelectors?.[0]?.value ?? step.selector ?? undefined;
+      await applyStepEffects(step.effects, selector);
+    }
+
+    return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     log.warn(`Step ${step.id} failed:`, message);
@@ -128,6 +154,14 @@ function handleNavigate(step: FlowStep): StepResult {
   }
   // Navigation handled by orchestrator via chrome.tabs.update — this is a no-op
   // when executed in content script context. Return success so orchestrator proceeds.
+  return { status: "success" };
+}
+
+async function handleCaption(step: FlowStep): Promise<StepResult> {
+  if (!step.caption) {
+    return { status: "skipped", reason: "Caption step missing caption config" };
+  }
+  await showCaption(step.caption);
   return { status: "success" };
 }
 

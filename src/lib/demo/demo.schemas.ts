@@ -16,6 +16,7 @@ import type {
   FlowValueSource,
   ScreenRecordOptions,
 } from "./demo.types";
+import type { StepEffect, CaptionConfig } from "./effects";
 
 // ── Primitives ────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ const flowActionTypeSchema = z.enum([
   "scroll",
   "press-key",
   "assert",
+  "caption",
 ]);
 
 const assertOperatorSchema = z.enum([
@@ -56,6 +58,66 @@ const selectorStrategySchema = z.enum([
   "placeholder",
   "css",
 ]);
+
+// ── Effects schemas ────────────────────────────────────────────────────────
+
+const labelEffectSchema = z.object({
+  kind: z.literal("label"),
+  text: z.string(),
+  duration: z.number().min(0).optional(),
+  position: z.enum(["above", "below", "left", "right"]).optional(),
+});
+
+const growEffectSchema = z.object({
+  kind: z.literal("grow"),
+  scale: z.number().positive().optional(),
+  duration: z.number().min(0).optional(),
+});
+
+const zoomEffectSchema = z.object({
+  kind: z.literal("zoom"),
+  scale: z.number().positive().optional(),
+  duration: z.number().min(0).optional(),
+});
+
+const pinEffectSchema = z.object({
+  kind: z.literal("pin"),
+  note: z.string().optional(),
+  duration: z.number().min(0).optional(),
+});
+
+const shakeEffectSchema = z.object({
+  kind: z.literal("shake"),
+  intensity: z.number().positive().optional(),
+  duration: z.number().min(0).optional(),
+});
+
+const confettiEffectSchema = z.object({
+  kind: z.literal("confetti"),
+  count: z.number().int().positive().optional(),
+});
+
+const spotlightEffectSchema = z.object({
+  kind: z.literal("spotlight"),
+  opacity: z.number().min(0).max(1).optional(),
+  duration: z.number().min(0).optional(),
+});
+
+const stepEffectSchema: z.ZodType<StepEffect> = z.discriminatedUnion("kind", [
+  labelEffectSchema,
+  growEffectSchema,
+  zoomEffectSchema,
+  pinEffectSchema,
+  shakeEffectSchema,
+  confettiEffectSchema,
+  spotlightEffectSchema,
+]);
+
+const captionConfigSchema: z.ZodType<CaptionConfig> = z.object({
+  text: z.string(),
+  position: z.enum(["top", "middle", "bottom"]).optional(),
+  duration: z.number().min(0).optional(),
+});
 
 // ── Composite schemas ─────────────────────────────────────────────────────
 
@@ -106,14 +168,17 @@ const flowStepSchema: z.ZodType<FlowStep> = z.object({
 
   valueSource: flowValueSourceSchema.optional(),
 
-  url: z.string().url().optional(),
+  url: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().url().optional(),
+  ),
 
   selectIndex: z.number().int().min(0).optional(),
   selectText: z.string().optional(),
 
   key: z.string().optional(),
 
-  waitTimeout: z.number().int().positive().optional(),
+  waitTimeout: z.number().int().min(0).optional(),
 
   scrollPosition: z.object({ x: z.number(), y: z.number() }).optional(),
 
@@ -121,6 +186,9 @@ const flowStepSchema: z.ZodType<FlowStep> = z.object({
 
   delayBefore: z.number().min(0).optional(),
   delayAfter: z.number().min(0).optional(),
+
+  caption: captionConfigSchema.optional(),
+  effects: z.array(stepEffectSchema).optional(),
 
   label: z.string().optional(),
   optional: z.boolean().optional(),
@@ -168,6 +236,14 @@ export const screenRecordOptionsSchema: z.ZodType<ScreenRecordOptions> =
  */
 export function parseFlowScript(input: unknown): FlowScript | null {
   const result = flowScriptSchema.safeParse(input);
+  if (!result.success) {
+    // Log structured error for debugging in background console
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[FlowScript] Validation failed:",
+      JSON.stringify(result.error.issues, null, 2),
+    );
+  }
   return result.success ? result.data : null;
 }
 
