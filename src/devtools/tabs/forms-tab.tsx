@@ -8,7 +8,6 @@
  * - Set default form / delete form
  */
 
-import { h } from "preact";
 import type { SavedForm } from "@/types";
 import { t } from "@/lib/i18n";
 import { panelState } from "../panel-state";

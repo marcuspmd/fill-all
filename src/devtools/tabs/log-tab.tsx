@@ -6,7 +6,6 @@
  * - Dispose previous instances to avoid memory leaks on tab switches
  */
 
-import { h } from "preact";
 import { panelState } from "../panel-state";
 import { renderTo, LogTabView } from "@/lib/ui/components";
 

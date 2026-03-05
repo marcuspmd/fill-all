@@ -8,7 +8,6 @@
  * - Export recorded script (Playwright, Cypress, Pest/Dusk) with optional AI optimisation
  */
 
-import { h } from "preact";
 import { t } from "@/lib/i18n";
 import { panelState } from "../panel-state";
 import {
