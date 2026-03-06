@@ -5,12 +5,13 @@
 **AI-powered Chrome extension for smart form filling, recording, and demo generation**
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install%20Extension-1a73e8?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/fill-all/djnkgmelgfdjpeacmolelikhgioendjh)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-34A853)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![TensorFlow.js](https://img.shields.io/badge/TensorFlow.js-4.22-FF6F00?logo=tensorflow&logoColor=white)](https://www.tensorflow.org/js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Features](#features) · [Getting started](#getting-started) · [Documentation](#documentation) · [Contributing](docs-md/contributing.md)
+[Chrome Web Store](https://chromewebstore.google.com/detail/fill-all/djnkgmelgfdjpeacmolelikhgioendjh) · [Features](#features) · [Getting started](#getting-started) · [Documentation](#documentation) · [Security](SECURITY.md) · [Contributing](docs-md/contributing.md)
 
 </div>
 
@@ -29,15 +30,19 @@ It is built for developers, QA engineers, automation teams, and anyone tired of 
 
 Everything runs **locally in the browser**. No external AI API is required for the built-in AI and machine-learning flows.
 
+Install from the Chrome Web Store:
+
+- https://chromewebstore.google.com/detail/fill-all/djnkgmelgfdjpeacmolelikhgioendjh
+
 ## Screenshots
 
 <div align="center">
 
-### Popup
-![Popup](docs-md/images/popup.png)
+### Settings
+![Settings](docs-md/images/settings.png)
 
 ### DevTools Panel
-![DevTools Panel](docs-md/images/painel_devtools_form.png)
+![DevTools Panel](docs-md/images/dev_tools.png)
 
 ### Options Page
 
@@ -177,18 +182,25 @@ Current behavior:
 
 ## Architecture at a glance
 
-```text
-Popup / Options / DevTools
-                    │
-                    ▼
-Background Service Worker
-                    │
-                    ▼
-Content Script
-                    │
- ┌────────┼────────┬───────────────┬────────────┐
- ▼        ▼        ▼               ▼            ▼
-Storage  Rules   AI modules   Form pipeline   Demo/recording
+```mermaid
+flowchart TD
+  UI["Popup / Options / DevTools"] --> BG["Background Service Worker"]
+  BG --> CS["Content Script"]
+
+  BG --> ST["Storage"]
+  BG --> RU["Rules Engine"]
+  BG --> AI["AI Modules"]
+  CS --> FP["Form Pipeline"]
+  CS --> DR["Demo & Recording"]
+
+  AI --> CAI["Chrome Built-in AI / Gemini Nano"]
+  AI --> TF["TensorFlow.js Classifier"]
+
+  FP --> GEN["Brazilian Data Generators"]
+  FP --> ADA["UI Adapters"]
+
+  ST -. persists .-> CFG["Settings, rules, forms, cache, dataset"]
+  RU -. resolves .-> FP
 ```
 
 For a deeper breakdown, see:
@@ -260,6 +272,7 @@ Host permissions currently include:
 | `docs-md/contributing.md` | Development workflow and project conventions |
 | `docs-md/roadmap.md` | Shipped work and likely next areas |
 | `docs-md/privacy.md` | Privacy policy |
+| `SECURITY.md` | Security reporting policy and disclosure guidance |
 
 ## Contributing
 
