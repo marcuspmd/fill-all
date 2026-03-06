@@ -1,249 +1,243 @@
-# Arquitetura — Fill All
+# Architecture — Fill All
 
-## Visão Geral
+## Overview
 
-Fill All segue a arquitetura padrão de extensões Chrome (Manifest V3), onde cada contexto de execução tem responsabilidades bem definidas e se comunica via **message passing**.
+Fill All follows the standard Chrome extension execution model for Manifest V3, with each runtime context handling a specific responsibility and communicating through message passing.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Chrome Browser                             │
 │                                                                     │
-│  ┌─────────────┐     ┌──────────────────┐     ┌──────────────────┐ │
-│  │  Popup UI   │────▶│    Background     │◀────│  Content Script  │ │
-│  │  (popup.ts) │     │  (Service Worker) │     │ (content-        │ │
-│  └─────────────┘     └────────┬─────────┘     │  script.ts)      │ │
-│                               │                └────────┬─────────┘ │
-│  ┌─────────────┐    ┌────────┼─────────┐     ┌─────────┼────────┐ │
-│  │  Options    │    │        │         │     │         │        │ │
-│  │   Page      │    ▼        ▼         ▼     ▼         ▼        │ │
-│  └─────────────┘  Storage  Rules     AI    Form      DOM       │ │
-│                     │      Engine   Modules Detector  Watcher   │ │
-│  ┌─────────────┐    │               │                          │ │
-│  │  DevTools   │    │      ┌────────┴────────┐                 │ │
-│  │   Panel     │    │      ▼                 ▼                 │ │
-│  └─────────────┘    │  Chrome AI      TensorFlow.js            │ │
-│                     │  (Gemini Nano)   (Classifier)            │ │
-│                     │      │                 │                 │ │
-│                     │      └──► Learning ◄───┘                 │ │
-│                     │           Store                          │ │
-│                     └──────────────────────────────────────────┘ │
+│  Popup / Options / DevTools                                         │
+│            │                                                        │
+│            ▼                                                        │
+│     Background Service Worker                                       │
+│            │                                                        │
+│            ▼                                                        │
+│       Content Script                                                │
+│            │                                                        │
+│   ┌────────┼────────┬───────────────┬──────────────┬─────────────┐  │
+│   ▼        ▼        ▼               ▼              ▼             ▼  │
+│ Storage   Rules   AI modules   Form pipeline   Recording       Demo │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Contextos de Execução
+## Runtime contexts
 
-### Background (Service Worker)
+### Background service worker
 
-O **Service Worker** é o hub central da extensão. Ele **nunca acessa DOM** de páginas e é responsável por:
+The background service worker is the central coordinator. It does **not** touch the DOM.
 
-- **Roteamento de mensagens** — recebe mensagens de todos os contextos e despacha para handlers de domínio
-- **Context menu** — setup e handling de itens no menu do botão direito
-- **Atalhos de teclado** — `Alt+Shift+F` (Mac: `Cmd+Shift+F`)
-- **Storage** — operações de leitura/escrita via handlers
-- **Broadcast** — enviar mensagens para todas as tabs
+Current responsibilities include:
 
-**Padrão de handlers:**
+- routing extension messages to domain handlers
+- registering context-menu actions
+- reacting to keyboard shortcuts
+- coordinating storage-backed operations
+- broadcasting messages when needed
+- handling demo-flow CRUD and replay orchestration
+- providing tab-capture stream identifiers for replay video recording
 
-```typescript
-interface MessageHandler {
-  supportedTypes: ReadonlyArray<MessageType>;
-  handle(message: ExtensionMessage): Promise<unknown>;
-}
+### Content script
+
+The content script runs inside the page and owns all DOM work.
+
+Responsibilities include:
+
+- detecting form fields and extracting metadata
+- classifying fields through the detection pipeline
+- filling values and dispatching native events
+- watching dynamic DOM changes in SPAs
+- rendering in-page feedback such as icons, overlays, and panels
+- recording page interactions for later export or replay
+- executing replay steps from the demo tooling
+
+This is a hot path, so performance-sensitive flows use lightweight validation instead of full Zod parsing.
+
+### Popup
+
+The popup is intentionally compact. It currently offers four actions:
+
+- Fill All
+- Fill Contextual AI
+- Fill Only Empty
+- Settings
+
+The contextual AI entry point can collect optional text, CSV, image, and PDF context before sending a fill request.
+
+### Options page
+
+The options page is the configuration hub. Current tabs:
+
+- settings
+- rules
+- forms
+- cache
+- dataset
+- log
+
+This is where users configure pipeline behavior, rules, saved forms, training data, and logging-related settings.
+
+### DevTools panel
+
+The DevTools panel is the advanced developer surface. Current tabs:
+
+- actions
+- fields
+- forms
+- record
+- demo
+- log
+
+The record and demo tabs are now a major part of the product surface, not side experiments.
+
+## Communication model
+
+All contexts communicate through Chrome extension messaging.
+
+```text
+Popup ── sendMessage ──▶ Background
+Options ── sendMessage ──▶ Background
+DevTools ── sendMessage ──▶ Background / inspected tab
+Background ── tabs.sendMessage ──▶ Content Script
+Content Script ── sendMessage ──▶ Background
 ```
 
-Cada handler de domínio (rules, storage, cache, learning, dataset) é registrado no `handler-registry.ts` e processa mensagens de forma isolada.
+### Typical fill flow
 
-### Content Script
-
-Opera **dentro das páginas web** e é responsável por toda interação com o DOM:
-
-- **Detecção de campos** via `form-detector` + adaptadores
-- **Classificação** via pipeline de detectores (HTML → Keyword → TensorFlow → Chrome AI)
-- **Preenchimento** de campos com disparo de eventos (`input`, `change`, `blur`)
-- **DOM Watcher** — MutationObserver debounced (600ms) para detectar novos campos em SPAs
-- **Floating Panel** — painel flutuante de controle in-page
-- **Field Icons** — badges visuais nos campos com informações de classificação
-
-> ⚡ **Performance é prioridade** no content script. Por isso, usa light-validators (typeof) em vez de Zod.
-
-### Popup UI
-
-Interface de controle rápido acessível pelo ícone da extensão:
-
-- **Abas**: Actions (preencher/salvar) e Generators (gerar dados manualmente)
-- Indicador de status do Chrome AI
-- Gerenciamento rápido de formulários salvos
-- Geradores de dados com parâmetros configuráveis
-
-### Options Page
-
-Configuração completa da extensão:
-
-- **Settings** — configurações globais (AI, pipeline, comportamento)
-- **Rules** — CRUD de regras por site (URL pattern + seletor CSS)
-- **Forms** — gerenciamento de formulários salvos
-- **Cache** — inspeção e limpeza de cache de detecção
-- **Dataset** — editor de dataset de treinamento + treinamento de modelos
-
-### DevTools Panel
-
-Painel "Fill All" no Chrome DevTools para desenvolvedores:
-
-- **Actions** — fill, watch, toggle panel
-- **Fields** — inspeção em tempo real de campos detectados com scoring
-- **Forms** — formulários salvos para a página atual
-- **Log** — log detalhado de operações
-
-## Comunicação entre Contextos
-
-Toda comunicação é feita via **message passing** do Chrome:
-
-```
-Popup ──chrome.runtime.sendMessage──▶ Background
-Background ──chrome.tabs.sendMessage──▶ Content Script
-Content Script ──chrome.runtime.sendMessage──▶ Background
+```text
+1. User triggers Fill All or Contextual AI
+2. Popup or DevTools sends a message
+3. Background routes it to the active tab
+4. Content script detects eligible fields
+5. Value resolution runs in priority order
+6. The content script fills fields and dispatches events
+7. Optional caches, logs, and learned entries are updated
 ```
 
-### Fluxo de uma ação típica
+## Value resolution order
 
-```
-1. Popup: usuário clica "Preencher Tudo"
-2. Popup → Background: sendMessage({ type: "FILL_ALL_FIELDS" })
-3. Background → Content Script: tabs.sendMessage(tabId, { type: "FILL_ALL_FIELDS" })
-4. Content Script: detecta campos, classifica, preenche
-5. Content Script → Background: sendMessage({ type: "SAVE_FIELD_CACHE", payload })
-6. Background: salva cache via handler
-```
+At runtime, Fill All resolves values using a priority stack.
 
-### Validação de Mensagens (Duas Camadas)
+1. ignored field → skip
+2. fixed rule value
+3. saved form/template value
+4. contextual AI or Chrome AI value when requested and available
+5. TensorFlow.js classification + generator
+6. default generator fallback
 
-| Camada | Local | Método | Quando usar |
-|--------|-------|--------|-------------|
-| **Full Zod** | `messaging/validators.ts` | Schema Zod + `safeParse()` | Background, options, caminhos críticos |
-| **Light** | `messaging/light-validators.ts` | Apenas `typeof` checks | Content script (hot paths de performance) |
+This ordering keeps deterministic user configuration above AI or ML-generated values.
 
-## Storage
+## Detection pipeline
 
-Toda persistência usa `chrome.storage.local` (nunca `sync`):
+The field-detection pipeline is immutable and composable. It can be reordered or customized without mutating the original pipeline instance.
 
-| Store | Descrição | Chave |
-|-------|-----------|-------|
-| **Rules** | Regras por site | `fill_all_rules` |
-| **Forms** | Formulários salvos | `fill_all_saved_forms` |
-| **Settings** | Configurações globais | `fill_all_settings` |
-| **Ignored** | Campos ignorados | `fill_all_ignored_fields` |
-| **Cache** | Cache de detecção | `fill_all_field_cache` |
-| **Learned** | Aprendizado contínuo | `fill_all_learned_entries` |
-| **Dataset** | Dataset de treino | `fill_all_dataset` |
-| **Runtime Model** | Modelo TF.js treinado | `fill_all_runtime_model` |
+Default stages include:
 
-### Operações Atômicas
+1. HTML/native type detection
+2. keyword-based classification
+3. TensorFlow.js classification
+4. Chrome AI classification
+5. HTML fallback classification
 
-Para evitar race conditions em escritas concorrentes:
+The pipeline returns both the chosen result and trace information about how the decision was made.
 
-```typescript
-updateStorageAtomically<T>(key, defaultValue, updater: (current: T) => T): Promise<T>
-```
+## Contextual AI filling
 
-Implementado via **fila sequencial por chave** — cada chave de storage tem sua própria queue de escritas.
+The contextual AI path differs from field-by-field generation.
 
-## Pipeline de Detecção
+Current behavior:
 
-O pipeline é o coração da classificação de campos. É **imutável** e **composável**:
+- gathers a batch of eligible fields
+- builds structured descriptors for the full form
+- accepts optional text, CSV, image, and PDF-derived image context
+- requests a cohesive set of values for the form as a whole
+- falls back to the classic `fillAllFields()` path if AI is unavailable or returns no usable result
 
-```typescript
-const pipeline = DEFAULT_PIPELINE
-  .withOrder(["html-type", "keyword", "tensorflow"])
-  .without("chrome-ai");
+This gives better cross-field consistency for identities, addresses, and related form data.
 
-const result = await pipeline.runAsync(field);
-```
+## Recording and demo architecture
 
-### Classificadores (em ordem de prioridade)
+Recording and demo tooling spans multiple layers.
 
-| # | Nome | Tipo | Descrição |
-|---|------|------|-----------|
-| 1 | `html-type` | Síncrono | Mapeamento nativo HTML → FieldType (confidence 1.0) |
-| 2 | `keyword` | Síncrono | Matching de keywords em português nos sinais |
-| 3 | `tensorflow` | Síncrono | MLP TensorFlow.js (classificação soft) |
-| 4 | `chrome-ai` | Assíncrono | Gemini Nano via Chrome Prompt API |
-| 5 | `html-fallback` | Síncrono | Last-resort baseado em `input[type]` |
+### Recording
 
-O pipeline para no **primeiro resultado com confidence suficiente** e retorna um `PipelineResult` com trace completo de decisão.
+- the content script observes and records user interactions
+- DevTools displays and edits recorded steps live
+- exported scripts are generated from normalized step data
+- optional AI optimization can refine exported output
 
-## Padrões de Design
+### Demo flows
 
-### Detectors como Objetos (não classes)
+- recordings can be converted into demo flows
+- demo flows are persisted and reloaded via storage-backed handlers
+- replay supports pause, resume, stop, speed presets, and progress reporting
+- steps can include captions, assertions, waits, and visual effects
+- replay videos are recorded locally using `chrome.tabCapture` and `MediaRecorder`
 
-```typescript
-// ✅ Correto — objeto imutável
-export const htmlTypeDetector: FieldClassifier = {
-  name: "html-type",
-  detect(field: FormField): ClassifierResult | null { /* ... */ }
-};
+## Storage model
 
-// ❌ Errado — não usar classes
-class HtmlTypeDetector implements FieldClassifier { /* ... */ }
-```
+Fill All stores its data in `chrome.storage.local`.
 
-### Geradores como Funções Puras
+Common storage categories include:
 
-```typescript
-// ✅ Correto — síncrono, sem side effects
-export function generateCpf(formatted = true): string { /* ... */ }
+- settings
+- rules
+- saved forms
+- ignored fields
+- detection cache
+- learned entries
+- runtime dataset and model metadata
+- demo flows and related replay artifacts
 
-// ❌ Errado — não usar async em geradores
-async function generateCpf(): Promise<string> { /* ... */ }
-```
+Concurrent updates should go through `updateStorageAtomically()` to avoid race conditions.
 
-### Pipelines Imutáveis
+## Validation strategy
 
-```typescript
-// ✅ Correto — cada operação retorna nova instância
-const custom = DEFAULT_PIPELINE.without("chrome-ai").with(myClassifier);
+The project uses a two-layer validation model.
 
-// ❌ Errado — nunca mutar pipeline existente
-DEFAULT_PIPELINE.classifiers.push(myClassifier);
-```
+| Layer | Used in | Approach |
+|---|---|---|
+| full validation | background, options, critical flows | Zod schemas + `safeParse()` |
+| light validation | content-script hot paths | `typeof`-style guards |
 
-### Error Handling
+This balances correctness with runtime cost.
 
-```typescript
-// ✅ Storage/Parsers — nunca throw, retornar fallback
-export function parseRulePayload(input: unknown): FieldRule | null {
-  const result = schema.safeParse(input);
-  return result.success ? result.data : null;
-}
+## Design conventions
 
-// ✅ Async — sempre try-catch com log contextual
-try {
-  await loadModel();
-} catch (err) {
-  log.warn("Failed to load model:", err);
-}
-```
+### Detectors and classifiers
 
-## Diagrama de Dependências
+- implemented as immutable objects, not classes
+- return `null` when confidence is insufficient
+- expose a `.name` and `.detect()` contract
 
-```
-types/ ◀──────────────────── (todos os módulos)
-  │
-  ├── lib/shared/ ◀───────── lib/form/, lib/dataset/, lib/ai/
-  │
-  ├── lib/storage/ ◀──────── background/handlers/, lib/form/, lib/ai/
-  │
-  ├── lib/generators/ ◀───── lib/form/form-filler.ts
-  │
-  ├── lib/rules/ ◀────────── lib/form/form-filler.ts, background/handlers/
-  │
-  ├── lib/form/
-  │   ├── detectors/ ◀────── form-detector.ts, form-filler.ts
-  │   ├── extractors/ ◀───── detectors/, form-detector.ts
-  │   └── adapters/ ◀─────── form-detector.ts
-  │
-  ├── lib/ai/ ◀───────────── lib/form/detectors/strategies/
-  │
-  ├── lib/dataset/ ◀──────── background/handlers/dataset-handler.ts
-  │
-  └── lib/messaging/ ◀────── background/, content/, popup/, options/
-```
+### Generators
+
+- pure synchronous functions
+- return strings
+- do not throw for normal validation problems
+
+### Logging
+
+- use `createLogger("Namespace")`
+- avoid direct `console.log` usage in repository code
+
+## Why the extra permissions exist
+
+The current permission set reflects real features in the codebase.
+
+- `tabCapture` supports replay video recording
+- `webNavigation` supports navigation-aware replay and recording behavior
+- `tabs`, `activeTab`, and `scripting` support cross-context coordination on the active page
+
+## Summary
+
+The architecture is intentionally layered:
+
+- **background** coordinates
+- **content** manipulates the page
+- **popup** triggers fast actions
+- **options** configures behavior
+- **DevTools** exposes advanced inspection, recording, export, and demo workflows
+
+That separation keeps the extension maintainable while allowing advanced developer workflows to grow without turning the popup into a tiny chaos machine.

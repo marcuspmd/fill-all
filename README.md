@@ -2,7 +2,7 @@
 
 # Fill All
 
-**Extensão Chrome para preenchimento automático inteligente de formulários**
+**AI-powered Chrome extension for smart form filling, recording, and demo generation**
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-34A853)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
@@ -10,19 +10,26 @@
 [![TensorFlow.js](https://img.shields.io/badge/TensorFlow.js-4.22-FF6F00?logo=tensorflow&logoColor=white)](https://www.tensorflow.org/js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Funcionalidades](#-funcionalidades) · [Instalação](#-instalação) · [Documentação](docs/) · [Contribuindo](docs/contributing.md)
+[Features](#features) · [Getting started](#getting-started) · [Documentation](#documentation) · [Contributing](docs-md/contributing.md)
 
 </div>
 
 ---
 
-## 📖 Sobre
+## Overview
 
-Fill All é uma extensão Chrome de código aberto que preenche formulários automaticamente usando **inteligência artificial** e **geradores de dados brasileiros válidos**. Combina Chrome Built-in AI (Gemini Nano), TensorFlow.js e um motor de regras configurável para classificar campos e gerar dados realistas — CPF, CNPJ, RG, CEP, telefone e muito mais.
+Fill All is an open-source Chrome extension that fills web forms using a layered pipeline of:
 
-**Ideal para**: desenvolvedores, QAs, testers e qualquer pessoa que preenche formulários repetidamente.
+- **rules and saved templates**
+- **built-in generators for valid Brazilian data**
+- **TensorFlow.js field classification**
+- **Chrome Built-in AI / Gemini Nano for contextual filling**
 
-## 📸 Screenshots
+It is built for developers, QA engineers, automation teams, and anyone tired of filling the same form repeatedly.
+
+Everything runs **locally in the browser**. No external AI API is required for the built-in AI and machine-learning flows.
+
+## Screenshots
 
 <div align="center">
 
@@ -34,232 +41,230 @@ Fill All é uma extensão Chrome de código aberto que preenche formulários aut
 
 ### Options Page
 
-| Configurações Gerais | Formulários Salvos | Dataset de Treinamento |
+| Settings | Saved Forms | Dataset |
 |:---:|:---:|:---:|
-| ![Config Geral](docs-md/images/config_general.png) | ![Config Forms](docs-md/images/config_form.png) | ![Config Dataset](docs-md/images/config_dataset.png) |
+| ![Settings](docs-md/images/config_general.png) | ![Forms](docs-md/images/config_form.png) | ![Dataset](docs-md/images/config_dataset.png) |
 
-### Adicionar Regra
-![Adicionar Regra](docs-md/images/page_add_rules.png)
+### Add Rule From a Field
+![Add Rule](docs-md/images/page_add_rules.png)
 
 </div>
 
-## ✨ Funcionalidades
+## Features
 
-### Inteligência Artificial
-- **Chrome Built-in AI** (Gemini Nano) — classificação nativa de campos via LLM local
-- **TensorFlow.js** — classificador MLP treinado com dataset de campos brasileiros
-- **Aprendizado contínuo** — predições do Chrome AI alimentam o modelo TensorFlow.js
-- **Treinamento no browser** — treine modelos customizados direto na Options Page
+### Smart filling pipeline
 
-### Dados Brasileiros Válidos
-- **CPF/CNPJ** com dígitos verificadores corretos
-- **RG, CNH, PIS, Passaporte**
-- **CEP, endereços, cidades e estados**
-- **Telefones** com DDDs válidos e formato brasileiro
-- **PIX keys, cartões de crédito**
-- **Nomes completos** em português
+- **Rule-first filling** with fixed values or generator-specific parameters
+- **Saved forms/templates** for repeatable fills per site or URL pattern
+- **Fill only empty fields** mode
+- **Ignored fields** support
+- **DOM watcher** for SPAs and dynamic forms
+- **Custom UI adapters** for components such as Ant Design and Select2
 
-### Automação Inteligente
-- **Pipeline de detecção** composável e imutável (HTML → Keyword → TensorFlow → Chrome AI)
-- **Regras por site** — configure comportamento específico por URL e seletor CSS
-- **Formulários salvos** — salve e reutilize dados entre sessões
-- **DOM Watcher** — detecta novos campos em SPAs em tempo real
-- **Adaptadores de UI** — suporte nativo a Ant Design, Select2 e componentes custom
+### AI and ML
 
-### Interface
-- **Popup** — controle rápido com um clique
-- **Options Page** — configuração completa (regras, dataset, treinamento)
-- **DevTools Panel** — inspeção em tempo real para desenvolvedores
-- **Atalho**: `Alt+Shift+F` (Mac: `Cmd+Shift+F`)
-- **Menu de contexto**: clique direito → "Fill All"
+- **Contextual AI fill** from the popup using:
+  - free-text context
+  - CSV uploads
+  - image uploads
+  - PDF uploads
+- **TensorFlow.js classifier** trained for field detection in-browser
+- **Chrome Built-in AI / Gemini Nano** integration when available
+- **Continuous learning loop** from user activity and rules
+- **Runtime retraining** from the options page
 
-## 🚀 Instalação
+### Brazilian data generators
 
-### Pré-requisitos
+- CPF and CNPJ with valid check digits
+- RG, CNH, PIS, passport, and related document helpers
+- names, company names, emails, phone numbers, PIX keys, addresses, ZIP codes, and more
+- adaptive generation that respects input constraints such as `maxlength`, `pattern`, and numeric ranges
+
+### Developer tooling
+
+- **DevTools panel** with tabs for `actions`, `fields`, `forms`, `record`, `demo`, and `log`
+- **Interaction recording** with start, pause, resume, stop, clear, and inline step editing
+- **E2E export** for Playwright, Cypress, and Pest/Dusk-style flows
+- **Optional AI optimization** for exported scripts
+- **Demo flow generation** from recordings
+- **Replay controls** with progress tracking, speed presets, captions, assertions, and visual effects
+- **Replay video recording** using Chrome tab capture and `MediaRecorder`
+
+### Privacy-first by design
+
+- local-only storage with `chrome.storage.local`
+- no analytics or telemetry built into the extension
+- on-device AI and browser-side ML flows
+
+## Getting started
+
+### Requirements
 
 - **Node.js** 18+
 - **npm** 9+
-- **Chrome** 128+ (para Chrome AI: Chrome 131+)
+- **Chrome** 128+
+- **Chrome 131+** recommended for Chrome Built-in AI features
 
-### Build
+### Install dependencies
 
 ```bash
 git clone https://github.com/marcuspmd/fill-all.git
 cd fill-all
 npm install
+```
+
+### Build the extension
+
+```bash
 npm run build
 ```
 
-### Carregar no Chrome
+### Load it in Chrome
 
-1. Abra `chrome://extensions/`
-2. Ative o **Modo de desenvolvedor**
-3. Clique em **Carregar sem compactação**
-4. Selecione a pasta `dist/`
+1. Open `chrome://extensions/`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select the generated `dist/` directory
 
-### Desenvolvimento
+## How to use
 
-```bash
-npm run dev          # Build com HMR (hot module replacement)
-npm run type-check   # Verificação de tipos
-npm run train:model  # Treinar modelo TensorFlow.js
+### Popup
+
+The popup intentionally stays small and fast. It currently exposes four primary actions:
+
+- **Fill All**
+- **Fill Contextual AI**
+- **Fill Only Empty**
+- **Settings**
+
+### Options page
+
+The options page is the configuration hub and includes:
+
+- settings
+- rules
+- forms
+- cache
+- dataset
+- log
+
+### DevTools panel
+
+The DevTools panel is where the heavier tooling lives:
+
+- inspect detected fields
+- manage recordings
+- export generated test scripts
+- create and replay demo flows
+- review logs and runtime behavior
+
+### Keyboard shortcut
+
+- **Windows/Linux**: `Alt+Shift+F`
+- **macOS**: `Command+Shift+F`
+
+## Contextual AI fill
+
+The contextual AI flow fills the form as a whole instead of generating each field in isolation.
+
+Current behavior:
+
+- gathers eligible fields from the page
+- builds a single batched request for the form
+- can include optional user context from text, CSV, image, or PDF input
+- keeps values cohesive across fields when AI is available
+- falls back to the standard filling pipeline when AI is unavailable or returns no usable result
+
+## Architecture at a glance
+
+```text
+Popup / Options / DevTools
+                    │
+                    ▼
+Background Service Worker
+                    │
+                    ▼
+Content Script
+                    │
+ ┌────────┼────────┬───────────────┬────────────┐
+ ▼        ▼        ▼               ▼            ▼
+Storage  Rules   AI modules   Form pipeline   Demo/recording
 ```
 
-### Chrome Built-in AI (Opcional)
+For a deeper breakdown, see:
 
-Para usar o Gemini Nano local (Chrome 131+):
+- `docs-md/architecture.md`
+- `docs-md/modules.md`
+- `docs-md/ai-pipeline.md`
 
-1. Abra `chrome://flags`
-2. Ative `#prompt-api-for-gemini-nano`
-3. Reinicie o Chrome
+## Available scripts
 
-> Sem essa flag, o fallback para TensorFlow.js será usado automaticamente.
+### Core development
 
-## 🏗️ Arquitetura
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the Vite development build |
+| `npm run build` | Create a production build in `dist/` |
+| `npm run clean` | Remove `dist/` |
+| `npm run type-check` | Run TypeScript without emitting files |
+| `npm run train:model` | Train the TensorFlow model from the project dataset |
+| `npm run import:rules` | Import exported rules into the runtime dataset |
 
-```
-┌─────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  Popup UI   │────▶│    Background     │◀────│  Content Script  │
-│             │     │  (Service Worker) │     │  (DOM + Forms)   │
-└─────────────┘     └────────┬─────────┘     └────────┬─────────┘
-                             │                        │
-┌─────────────┐    ┌─────────┼─────────┐    ┌─────────┼─────────┐
-│  Options    │    │         │         │    │         │         │
-│   Page      │    ▼         ▼         ▼    ▼         ▼         │
-└─────────────┘  Storage   Rules    AI    Form     DOM        │
-                   │       Engine  Modules Detector Watcher     │
-┌─────────────┐    │                │                           │
-│  DevTools   │    │       ┌────────┴────────┐                  │
-│   Panel     │    │       ▼                 ▼                  │
-└─────────────┘    │   Chrome AI      TensorFlow.js             │
-                   │  (Gemini Nano)    (Classifier)             │
-                   │                                            │
-                   └────────────────────────────────────────────┘
-```
+### Testing and validation
 
-> Documentação detalhada da arquitetura em [docs/architecture.md](docs/architecture.md)
+| Command | Description |
+|---|---|
+| `npm test` | Run unit tests with Vitest |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run test:coverage` | Run unit tests with coverage |
+| `npm run test:e2e` | Run Playwright end-to-end tests |
+| `npm run test:e2e:ui` | Run Playwright in UI mode |
+| `npm run test:e2e:coverage` | Build with coverage instrumentation and run E2E tests |
+| `npm run test:all` | Run unit tests and E2E tests sequentially |
+| `npm run coverage:merge` | Merge unit and E2E coverage |
+| `npm run coverage:all` | Run full coverage workflow |
+| `npm run validate` | Run the validation script for types, unit tests, and build |
+| `npm run validate:quick` | Run a quicker validation pass |
+| `npm run validate:full` | Run types, unit, build, and E2E validation |
+| `npm run health` | Snapshot repository health |
+| `npm run health:save` | Save a health baseline |
+| `npm run health:compare` | Compare against a saved health baseline |
 
-## 📂 Estrutura do Projeto
+## Permissions
 
-```
-fill-all/
-├── src/
-│   ├── background/          # Service Worker (message routing)
-│   │   └── handlers/        # Domain handlers (rules, cache, dataset, learning)
-│   ├── content/             # Content Script (DOM operations)
-│   ├── popup/               # Popup UI
-│   ├── options/             # Options Page (settings, rules, dataset, training)
-│   ├── devtools/            # Chrome DevTools Panel
-│   └── lib/
-│       ├── ai/              # Chrome AI + TensorFlow.js + Learning Store
-│       ├── form/            # Detecção, classificação e preenchimento
-│       │   ├── detectors/   # Pipeline imutável + classificadores
-│       │   ├── extractors/  # Extratores de sinais (label, selector, signals)
-│       │   └── adapters/    # Adaptadores de UI (Ant Design, Select2)
-│       ├── generators/      # Geradores de dados (CPF, CNPJ, etc.)
-│       ├── dataset/         # Dataset de treinamento + runtime dataset
-│       ├── storage/         # Chrome Storage (rules, forms, settings, cache)
-│       ├── rules/           # Motor de regras por URL
-│       ├── messaging/       # Validação de mensagens (Zod + light)
-│       ├── shared/          # Utilitários (signals, ngram, field catalog)
-│       ├── ui/              # Rendering helpers (badges, tables, colors)
-│       ├── url/             # URL pattern matching
-│       ├── chrome/          # Chrome API utilities
-│       └── logger/          # Sistema de logging centralizado
-├── scripts/                 # Scripts offline (train model, import rules)
-├── public/model/            # Modelo TF.js pré-treinado
-├── docs/                    # Documentação detalhada
-├── manifest.json            # Chrome Extension Manifest V3
-├── vite.config.ts           # Vite + @crxjs/vite-plugin
-└── tsconfig.json            # TypeScript strict
-```
+The extension currently requests these permissions:
 
-## 🔄 Fluxo de Preenchimento
+| Permission | Why it is used |
+|---|---|
+| `storage` | Persist settings, rules, forms, datasets, caches, and demo data locally |
+| `activeTab` | Act on the user’s current page |
+| `scripting` | Inject or coordinate page-side logic when needed |
+| `contextMenus` | Add right-click actions |
+| `tabs` | Route messages and inspect the active tab |
+| `tabCapture` | Record replay videos from demo flows |
+| `webNavigation` | Support navigation-aware replay and recording flows |
 
-```
-Usuário aciona ──▶ Background roteia ──▶ Content Script detecta campos
-                                              │
-                                    ┌─────────▼──────────┐
-                                    │  Para cada campo:   │
-                                    │                     │
-                                    │  1. Campo ignorado? │──▶ Skip
-                                    │  2. fixedValue?     │──▶ Valor fixo
-                                    │  3. Form salvo?     │──▶ Template
-                                    │  4. Chrome AI?      │──▶ Gemini Nano
-                                    │  5. TensorFlow.js?  │──▶ Classificar + Gerar
-                                    │  6. Fallback        │──▶ Gerador padrão
-                                    └─────────┬──────────┘
-                                              │
-                                    Preenche + dispara eventos
-                                    (input/change/blur)
-```
+Host permissions currently include:
 
-## 📋 Scripts Disponíveis
+- `https://*/*`
+- `http://*/*`
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Build com HMR para desenvolvimento |
-| `npm run build` | Build de produção → `dist/` |
-| `npm run type-check` | Verificação de tipos (`tsc --noEmit`) |
-| `npm run train:model` | Treina modelo TensorFlow.js com dataset |
-| `npm run import:rules` | Importa regras exportadas para o dataset |
-| `npm run clean` | Limpa a pasta `dist/` |
+## Documentation
 
-### Testes
+| Document | What it covers |
+|---|---|
+| `docs-md/architecture.md` | Runtime architecture, execution contexts, and messaging |
+| `docs-md/modules.md` | Module-by-module repository map |
+| `docs-md/ai-pipeline.md` | Detection, AI, and ML pipeline details |
+| `docs-md/generators.md` | Data generators and extension points |
+| `docs-md/contributing.md` | Development workflow and project conventions |
+| `docs-md/roadmap.md` | Shipped work and likely next areas |
+| `docs-md/privacy.md` | Privacy policy |
 
-| Comando | Descrição |
-|---------|----------|
-| `npm test` | Testes unitários (Vitest) |
-| `npm run test:watch` | Unitários em modo watch |
-| `npm run test:coverage` | Unitários + coverage → `.coverage/unit/` |
-| `npm run test:e2e` | Testes E2E com Playwright (Chrome real) |
-| `npm run test:e2e:ui` | Testes E2E com UI interativa do Playwright |
-| `npm run test:e2e:coverage` | Build + E2E + coleta de coverage → `.coverage/e2e/` |
-| `npm run test:all` | Unitários → E2E em sequência |
-| `npm run coverage:merge` | Merge coverage unit + E2E → `coverage/index.html` |
-| `npm run coverage:all` | Coverage completo (unit + E2E + merge) |
+## Contributing
 
-Testes E2E que queiram ter coverage rastreado devem importar de:
+Contributions are welcome. If you are adding new generators, detectors, adapters, or developer tooling, please start with `docs-md/contributing.md` and `AGENTS.md`.
 
-```typescript
-import { test, expect } from "@/__tests__/e2e/fixtures";
-```
+## License
 
-O fixture `_coverage` é `auto: true` — roda automaticamente para cada teste sem chamada explícita.
-
-## 🛠️ Stack Tecnológica
-
-| Camada | Tecnologia | Propósito |
-|--------|-----------|-----------|
-| **Build** | Vite 7.3 + @crxjs/vite-plugin | Bundling moderno com HMR |
-| **Linguagem** | TypeScript ES2022 (strict) | Type safety |
-| **AI Nativa** | Chrome Prompt API (Gemini Nano) | Classificação via LLM local |
-| **ML** | TensorFlow.js 4.22 | Classificação client-side |
-| **Validação** | Zod v4 | Schema validation |
-| **Dados** | @faker-js/faker | Geração de dados realistas |
-| **Storage** | Chrome Storage API (local) | Persistência local |
-| **Extensão** | Manifest V3 | Padrão moderno de extensões |
-
-## 📚 Documentação
-
-| Documento | Descrição |
-|-----------|-----------|
-| [Arquitetura](docs/architecture.md) | Visão geral da arquitetura, comunicação entre módulos e padrões |
-| [Módulos](docs/modules.md) | Referência completa de todos os módulos e suas APIs |
-| [Pipeline AI](docs/ai-pipeline.md) | Como funciona a classificação de campos e o treinamento de modelos |
-| [Geradores](docs/generators.md) | Todos os geradores de dados disponíveis e como criar novos |
-| [Contribuindo](docs/contributing.md) | Guia completo para contribuidores |
-| [Roadmap](docs-md/roadmap.md) | Funcionalidades planejadas e melhorias futuras |
-
-## 🤝 Contribuindo
-
-Contribuições são muito bem-vindas! Veja o [Guia de Contribuição](docs/contributing.md) para detalhes sobre:
-
-- Como configurar o ambiente de desenvolvimento
-- Convenções de código e padrões do projeto
-- Como criar novos geradores, detectores ou adaptadores
-- Processo de pull request
-
-## 📄 Licença
-
-Este projeto é licenciado sob a [Licença MIT](LICENSE).
+This project is licensed under the [MIT License](LICENSE).

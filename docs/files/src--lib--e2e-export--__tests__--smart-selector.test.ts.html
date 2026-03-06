@@ -167,14 +167,6 @@
         <nav class="space-y-1">
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
-            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
-          </div>
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
-            <a href="../README.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">README</a>
-          </div>
         </nav>
 
         <h3 class="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-8 mb-2">Health</h3>
@@ -217,7 +209,7 @@
       </div>
       <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Lines of Code</dt>
-        <dd class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">273</dd>
+        <dd class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">379</dd>
       </div>
       <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Avg Complexity</dt>
@@ -277,7 +269,7 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2 py-0.5 rounded text-xs font-medium border bg-yellow-50 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800">function</span></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm"></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">-</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">10-21</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">12-23</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400 text-xs"><code>createElement(
   tag: string,
   attrs: Record&lt;string, string&gt; = {},
@@ -300,6 +292,8 @@ import { describe, it, expect, beforeEach } from &quot;vitest&quot;;
 import {
   extractSmartSelectors,
   pickBestSelector,
+  getStableClasses,
+  buildCSSPath,
 } from &quot;@/lib/e2e-export/smart-selector&quot;;
 
 function createElement(
@@ -471,7 +465,7 @@ describe(&quot;Smart Selector Extractor&quot;, () =&gt; {
 
       const selectors = extractSmartSelectors(el);
       expect(selectors.length).toBeGreaterThanOrEqual(1);
-      expect(selectors[selectors.length - 1].strategy).toBe(&quot;css&quot;);
+      expect(selectors[selectors.length - 1].strategy).toBe(&quot;selector-path&quot;);
     });
 
     it(&quot;returns multiple selectors ordered by priority&quot;, () =&gt; {
@@ -514,7 +508,7 @@ describe(&quot;Smart Selector Extractor&quot;, () =&gt; {
       const el = createElement(&quot;input&quot;, {}, form);
 
       const selectors = extractSmartSelectors(el);
-      const fallback = selectors.find((s) =&gt; s.strategy === &quot;css&quot;);
+      const fallback = selectors.find((s) =&gt; s.strategy === &quot;selector-path&quot;);
       expect(fallback).toBeDefined();
       expect(fallback!.value).toContain(&quot;&gt;&quot;);
     });
@@ -525,7 +519,7 @@ describe(&quot;Smart Selector Extractor&quot;, () =&gt; {
       const el = createElement(&quot;button&quot;, {}, div);
 
       const selectors = extractSmartSelectors(el);
-      const fallback = selectors.find((s) =&gt; s.strategy === &quot;css&quot;);
+      const fallback = selectors.find((s) =&gt; s.strategy === &quot;selector-path&quot;);
       expect(fallback).toBeDefined();
       expect(fallback!.value).toContain(&quot;#main-section&quot;);
     });
@@ -536,7 +530,7 @@ describe(&quot;Smart Selector Extractor&quot;, () =&gt; {
       const el = createElement(&quot;input&quot;, {}, container);
 
       const selectors = extractSmartSelectors(el);
-      const fallback = selectors.find((s) =&gt; s.strategy === &quot;css&quot;);
+      const fallback = selectors.find((s) =&gt; s.strategy === &quot;selector-path&quot;);
       expect(fallback).toBeDefined();
       expect(fallback!.value).toContain(&quot;nth-of-type&quot;);
     });
@@ -562,6 +556,110 @@ describe(&quot;Smart Selector Extractor&quot;, () =&gt; {
     it(&quot;returns fallback CSS when selectors is undefined&quot;, () =&gt; {
       const result = pickBestSelector(undefined, &quot;#default&quot;);
       expect(result).toBe(&quot;#default&quot;);
+    });
+  });
+
+  // ── getStableClasses ───────────────────────────────────────────────
+
+  describe(&quot;getStableClasses&quot;, () =&gt; {
+    it(&quot;returns stable semantic classes&quot;, () =&gt; {
+      const el = createElement(&quot;button&quot;, { class: &quot;btn btn-primary&quot; });
+      expect(getStableClasses(el)).toEqual([&quot;btn&quot;, &quot;btn-primary&quot;]);
+    });
+
+    it(&quot;filters out CSS-in-JS prefixes&quot;, () =&gt; {
+      const el = createElement(&quot;div&quot;, {
+        class: &quot;css-1a2b3c sc-abc123 emotion-12345 my-card&quot;,
+      });
+      expect(getStableClasses(el)).toEqual([&quot;my-card&quot;]);
+    });
+
+    it(&quot;filters out underscore-prefixed (CSS modules) classes&quot;, () =&gt; {
+      const el = createElement(&quot;div&quot;, {
+        class: &quot;_container _wrapper real-class&quot;,
+      });
+      expect(getStableClasses(el)).toEqual([&quot;real-class&quot;]);
+    });
+
+    it(&quot;filters out hex-like hash classes&quot;, () =&gt; {
+      const el = createElement(&quot;div&quot;, { class: &quot;a3b2c1f0 nav-bar&quot; });
+      expect(getStableClasses(el)).toEqual([&quot;nav-bar&quot;]);
+    });
+
+    it(&quot;returns at most 3 classes&quot;, () =&gt; {
+      const el = createElement(&quot;div&quot;, {
+        class: &quot;one two three four five&quot;,
+      });
+      expect(getStableClasses(el)).toHaveLength(3);
+    });
+
+    it(&quot;returns empty array when no stable classes&quot;, () =&gt; {
+      const el = createElement(&quot;div&quot;, { class: &quot;css-1abc sc-xyz&quot; });
+      expect(getStableClasses(el)).toEqual([]);
+    });
+  });
+
+  // ── tryClasses strategy ────────────────────────────────────────────
+
+  describe(&quot;extracts classes selector&quot;, () =&gt; {
+    it(&quot;extracts classes selector for element with stable classes&quot;, () =&gt; {
+      const el = createElement(&quot;button&quot;, { class: &quot;btn btn-submit&quot; });
+
+      const selectors = extractSmartSelectors(el);
+      const classesSel = selectors.find((s) =&gt; s.strategy === &quot;classes&quot;);
+      expect(classesSel).toBeDefined();
+      expect(classesSel!.value).toBe(&quot;button.btn.btn-submit&quot;);
+    });
+
+    it(&quot;does not extract classes selector when no stable classes exist&quot;, () =&gt; {
+      const el = createElement(&quot;div&quot;, { class: &quot;css-abc sc-xyz&quot; });
+
+      const selectors = extractSmartSelectors(el);
+      const classesSel = selectors.find((s) =&gt; s.strategy === &quot;classes&quot;);
+      expect(classesSel).toBeUndefined();
+    });
+
+    it(&quot;classes selector appears after id and before placeholder in priority order&quot;, () =&gt; {
+      const el = createElement(&quot;input&quot;, {
+        id: &quot;my-field&quot;,
+        class: &quot;form-control&quot;,
+        placeholder: &quot;Enter value&quot;,
+      });
+
+      const selectors = extractSmartSelectors(el);
+      const strategies = selectors.map((s) =&gt; s.strategy);
+      const idIdx = strategies.indexOf(&quot;id&quot;);
+      const classesIdx = strategies.indexOf(&quot;classes&quot;);
+      const placeholderIdx = strategies.indexOf(&quot;placeholder&quot;);
+
+      expect(idIdx).toBeLessThan(classesIdx);
+      expect(classesIdx).toBeLessThan(placeholderIdx);
+    });
+  });
+
+  // ── buildCSSPath ───────────────────────────────────────────────────
+
+  describe(&quot;buildCSSPath&quot;, () =&gt; {
+    it(&quot;returns id selector when element has id&quot;, () =&gt; {
+      const el = createElement(&quot;div&quot;, { id: &quot;main&quot; });
+      expect(buildCSSPath(el)).toBe(&quot;#main&quot;);
+    });
+
+    it(&quot;returns path for element without id&quot;, () =&gt; {
+      const parent = createElement(&quot;section&quot;, {});
+      const el = createElement(&quot;button&quot;, {}, parent);
+      const path = buildCSSPath(el);
+      expect(path).toContain(&quot;button&quot;);
+      expect(path).toContain(&quot;section&quot;);
+    });
+
+    it(&quot;returns unique nth-of-type path for sibling elements&quot;, () =&gt; {
+      const container = createElement(&quot;div&quot;, {});
+      createElement(&quot;button&quot;, {}, container);
+      const el = createElement(&quot;button&quot;, {}, container);
+
+      const path = buildCSSPath(el);
+      expect(path).toContain(&quot;nth-of-type(2)&quot;);
     });
   });
 });

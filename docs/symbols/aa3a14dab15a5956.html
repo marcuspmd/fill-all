@@ -167,14 +167,6 @@
         <nav class="space-y-1">
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
-            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
-          </div>
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
-            <a href="../README.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">README</a>
-          </div>
         </nav>
 
         <h3 class="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-8 mb-2">Health</h3>
@@ -236,7 +228,7 @@
            
         </h1>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Last updated: 2026-02-24T19:46:21.767Z
+          Last updated: 2026-03-04T23:21:38.389Z
         </div>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -244,7 +236,7 @@
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
             <p class="mt-1 text-sm text-gray-900 dark:text-white min-w-0 overflow-hidden">
-              <a href="../files/src--lib--form--adapters--antd--antd-tree-select-adapter.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/lib/form/adapters/antd/antd-tree-select-adapter.ts:55-70">src/lib/form/adapters/antd/antd-tree-select-adapter.ts:55-70</a>
+              <a href="../files/src--lib--form--adapters--antd--antd-tree-select-adapter.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/lib/form/adapters/antd/antd-tree-select-adapter.ts:56-71">src/lib/form/adapters/antd/antd-tree-select-adapter.ts:56-71</a>
             </p>
           </div>
           
@@ -254,7 +246,7 @@
               <span>LOC: 16</span>
               <span>Complexity: <span class="">1</span></span>
               <span>Params: 1</span>
-              <span>Coverage: <span class="font-semibold text-green-600 dark:text-green-400">100.0%</span> (3/3 lines, 4x executed)</span>
+              <span>Coverage: <span class="font-semibold text-green-600 dark:text-green-400">100.0%</span> (3/3 lines, 0x executed)</span>
             </div>
           </div>
         </div>
@@ -289,7 +281,7 @@
               <pre class="p-4 overflow-x-auto text-sm font-mono leading-tight"><code class="language-typescript">  buildField(wrapper: HTMLElement): FormField {
     const field: FormField = {
       element: wrapper,
-      selector: getUniqueSelector(wrapper),
+      selector: getAntdSelector(wrapper),
       category: &quot;unknown&quot;,
       fieldType: &quot;select&quot;,
       adapterName: &quot;antd-tree-select&quot;,
@@ -314,19 +306,22 @@
           <div class="mb-8">
                   <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Dependencies (Outgoing)</h2>
                   <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 border border-gray-200 dark:border-gray-700 overflow-x-auto">
-                    <div class="mermaid-expand-wrapper relative group" data-mermaid-src-base64="Z3JhcGggTFIKICBidWlsZEZpZWxkWyJidWlsZEZpZWxkIl0KICBmaW5kQW50TGFiZWxbImZpbmRBbnRMYWJlbCJdCiAgZmluZEFudElkWyJmaW5kQW50SWQiXQogIGlzQW50UmVxdWlyZWRbImlzQW50UmVxdWlyZWQiXQogIGdldFBsYWNlaG9sZGVyWyJnZXRQbGFjZWhvbGRlciJdCiAgYnVpbGRGaWVsZCAtLT58Y2FsbHN8IGZpbmRBbnRMYWJlbAogIGJ1aWxkRmllbGQgLS0+fGNhbGxzfCBmaW5kQW50SWQKICBidWlsZEZpZWxkIC0tPnxjYWxsc3wgaXNBbnRSZXF1aXJlZAogIGJ1aWxkRmllbGQgLS0+fGNhbGxzfCBnZXRQbGFjZWhvbGRlcgogIHN0eWxlIGJ1aWxkRmllbGQgZmlsbDojZGJlYWZlLHN0cm9rZTojMjU2M2ViLHN0cm9rZS13aWR0aDoycHgKICBjbGljayBidWlsZEZpZWxkICJhYTNhMTRkYWIxNWE1OTU2Lmh0bWwiCiAgY2xpY2sgZmluZEFudExhYmVsICI0NDQ2NTI2YTRhMDFhZmQ3Lmh0bWwiCiAgY2xpY2sgZmluZEFudElkICI1ZDdjMzY2ZDRkNTg1NDM0Lmh0bWwiCiAgY2xpY2sgaXNBbnRSZXF1aXJlZCAiOTA5Mzg1YzUxZjVlYjkzMC5odG1sIgogIGNsaWNrIGdldFBsYWNlaG9sZGVyICI1YjhiMmVkMGYyMzVmMTY3Lmh0bWwi">
+                    <div class="mermaid-expand-wrapper relative group" data-mermaid-src-base64="Z3JhcGggTFIKICBidWlsZEZpZWxkWyJidWlsZEZpZWxkIl0KICBnZXRBbnRkU2VsZWN0b3JbImdldEFudGRTZWxlY3RvciJdCiAgZmluZEFudExhYmVsWyJmaW5kQW50TGFiZWwiXQogIGZpbmRBbnRJZFsiZmluZEFudElkIl0KICBpc0FudFJlcXVpcmVkWyJpc0FudFJlcXVpcmVkIl0KICBnZXRQbGFjZWhvbGRlclsiZ2V0UGxhY2Vob2xkZXIiXQogIGJ1aWxkRmllbGQgLS0+fGNhbGxzfCBnZXRBbnRkU2VsZWN0b3IKICBidWlsZEZpZWxkIC0tPnxjYWxsc3wgZmluZEFudExhYmVsCiAgYnVpbGRGaWVsZCAtLT58Y2FsbHN8IGZpbmRBbnRJZAogIGJ1aWxkRmllbGQgLS0+fGNhbGxzfCBpc0FudFJlcXVpcmVkCiAgYnVpbGRGaWVsZCAtLT58Y2FsbHN8IGdldFBsYWNlaG9sZGVyCiAgc3R5bGUgYnVpbGRGaWVsZCBmaWxsOiNkYmVhZmUsc3Ryb2tlOiMyNTYzZWIsc3Ryb2tlLXdpZHRoOjJweAogIGNsaWNrIGJ1aWxkRmllbGQgImFhM2ExNGRhYjE1YTU5NTYuaHRtbCIKICBjbGljayBnZXRBbnRkU2VsZWN0b3IgIjcwN2VhZTFlZDQ0MzdjOGUuaHRtbCIKICBjbGljayBmaW5kQW50TGFiZWwgIjQ0NDY1MjZhNGEwMWFmZDcuaHRtbCIKICBjbGljayBmaW5kQW50SWQgIjVkN2MzNjZkNGQ1ODU0MzQuaHRtbCIKICBjbGljayBpc0FudFJlcXVpcmVkICI5MDkzODVjNTFmNWViOTMwLmh0bWwiCiAgY2xpY2sgZ2V0UGxhY2Vob2xkZXIgIjViOGIyZWQwZjIzNWYxNjcuaHRtbCI=">
   <div class="mermaid">graph LR
   buildField["buildField"]
+  getAntdSelector["getAntdSelector"]
   findAntLabel["findAntLabel"]
   findAntId["findAntId"]
   isAntRequired["isAntRequired"]
   getPlaceholder["getPlaceholder"]
+  buildField -->|calls| getAntdSelector
   buildField -->|calls| findAntLabel
   buildField -->|calls| findAntId
   buildField -->|calls| isAntRequired
   buildField -->|calls| getPlaceholder
   style buildField fill:#dbeafe,stroke:#2563eb,stroke-width:2px
   click buildField "aa3a14dab15a5956.html"
+  click getAntdSelector "707eae1ed4437c8e.html"
   click findAntLabel "4446526a4a01afd7.html"
   click findAntId "5d7c366d4d585434.html"
   click isAntRequired "909385c51f5eb930.html"
@@ -343,6 +338,9 @@
                   </thead>
                   <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     <tr>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="707eae1ed4437c8e.html" class="hover:underline">getAntdSelector</a></td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">calls</td>
+                    </tr><tr>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="4446526a4a01afd7.html" class="hover:underline">findAntLabel</a></td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">calls</td>
                     </tr><tr>

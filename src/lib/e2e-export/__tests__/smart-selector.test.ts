@@ -5,6 +5,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   extractSmartSelectors,
   pickBestSelector,
+  getStableClasses,
+  buildCSSPath,
 } from "@/lib/e2e-export/smart-selector";
 
 function createElement(
@@ -176,7 +178,7 @@ describe("Smart Selector Extractor", () => {
 
       const selectors = extractSmartSelectors(el);
       expect(selectors.length).toBeGreaterThanOrEqual(1);
-      expect(selectors[selectors.length - 1].strategy).toBe("css");
+      expect(selectors[selectors.length - 1].strategy).toBe("selector-path");
     });
 
     it("returns multiple selectors ordered by priority", () => {
@@ -219,7 +221,7 @@ describe("Smart Selector Extractor", () => {
       const el = createElement("input", {}, form);
 
       const selectors = extractSmartSelectors(el);
-      const fallback = selectors.find((s) => s.strategy === "css");
+      const fallback = selectors.find((s) => s.strategy === "selector-path");
       expect(fallback).toBeDefined();
       expect(fallback!.value).toContain(">");
     });
@@ -230,7 +232,7 @@ describe("Smart Selector Extractor", () => {
       const el = createElement("button", {}, div);
 
       const selectors = extractSmartSelectors(el);
-      const fallback = selectors.find((s) => s.strategy === "css");
+      const fallback = selectors.find((s) => s.strategy === "selector-path");
       expect(fallback).toBeDefined();
       expect(fallback!.value).toContain("#main-section");
     });
@@ -241,7 +243,7 @@ describe("Smart Selector Extractor", () => {
       const el = createElement("input", {}, container);
 
       const selectors = extractSmartSelectors(el);
-      const fallback = selectors.find((s) => s.strategy === "css");
+      const fallback = selectors.find((s) => s.strategy === "selector-path");
       expect(fallback).toBeDefined();
       expect(fallback!.value).toContain("nth-of-type");
     });
@@ -267,6 +269,110 @@ describe("Smart Selector Extractor", () => {
     it("returns fallback CSS when selectors is undefined", () => {
       const result = pickBestSelector(undefined, "#default");
       expect(result).toBe("#default");
+    });
+  });
+
+  // ── getStableClasses ───────────────────────────────────────────────
+
+  describe("getStableClasses", () => {
+    it("returns stable semantic classes", () => {
+      const el = createElement("button", { class: "btn btn-primary" });
+      expect(getStableClasses(el)).toEqual(["btn", "btn-primary"]);
+    });
+
+    it("filters out CSS-in-JS prefixes", () => {
+      const el = createElement("div", {
+        class: "css-1a2b3c sc-abc123 emotion-12345 my-card",
+      });
+      expect(getStableClasses(el)).toEqual(["my-card"]);
+    });
+
+    it("filters out underscore-prefixed (CSS modules) classes", () => {
+      const el = createElement("div", {
+        class: "_container _wrapper real-class",
+      });
+      expect(getStableClasses(el)).toEqual(["real-class"]);
+    });
+
+    it("filters out hex-like hash classes", () => {
+      const el = createElement("div", { class: "a3b2c1f0 nav-bar" });
+      expect(getStableClasses(el)).toEqual(["nav-bar"]);
+    });
+
+    it("returns at most 3 classes", () => {
+      const el = createElement("div", {
+        class: "one two three four five",
+      });
+      expect(getStableClasses(el)).toHaveLength(3);
+    });
+
+    it("returns empty array when no stable classes", () => {
+      const el = createElement("div", { class: "css-1abc sc-xyz" });
+      expect(getStableClasses(el)).toEqual([]);
+    });
+  });
+
+  // ── tryClasses strategy ────────────────────────────────────────────
+
+  describe("extracts classes selector", () => {
+    it("extracts classes selector for element with stable classes", () => {
+      const el = createElement("button", { class: "btn btn-submit" });
+
+      const selectors = extractSmartSelectors(el);
+      const classesSel = selectors.find((s) => s.strategy === "classes");
+      expect(classesSel).toBeDefined();
+      expect(classesSel!.value).toBe("button.btn.btn-submit");
+    });
+
+    it("does not extract classes selector when no stable classes exist", () => {
+      const el = createElement("div", { class: "css-abc sc-xyz" });
+
+      const selectors = extractSmartSelectors(el);
+      const classesSel = selectors.find((s) => s.strategy === "classes");
+      expect(classesSel).toBeUndefined();
+    });
+
+    it("classes selector appears after id and before placeholder in priority order", () => {
+      const el = createElement("input", {
+        id: "my-field",
+        class: "form-control",
+        placeholder: "Enter value",
+      });
+
+      const selectors = extractSmartSelectors(el);
+      const strategies = selectors.map((s) => s.strategy);
+      const idIdx = strategies.indexOf("id");
+      const classesIdx = strategies.indexOf("classes");
+      const placeholderIdx = strategies.indexOf("placeholder");
+
+      expect(idIdx).toBeLessThan(classesIdx);
+      expect(classesIdx).toBeLessThan(placeholderIdx);
+    });
+  });
+
+  // ── buildCSSPath ───────────────────────────────────────────────────
+
+  describe("buildCSSPath", () => {
+    it("returns id selector when element has id", () => {
+      const el = createElement("div", { id: "main" });
+      expect(buildCSSPath(el)).toBe("#main");
+    });
+
+    it("returns path for element without id", () => {
+      const parent = createElement("section", {});
+      const el = createElement("button", {}, parent);
+      const path = buildCSSPath(el);
+      expect(path).toContain("button");
+      expect(path).toContain("section");
+    });
+
+    it("returns unique nth-of-type path for sibling elements", () => {
+      const container = createElement("div", {});
+      createElement("button", {}, container);
+      const el = createElement("button", {}, container);
+
+      const path = buildCSSPath(el);
+      expect(path).toContain("nth-of-type(2)");
     });
   });
 });

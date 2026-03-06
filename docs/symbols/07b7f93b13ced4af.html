@@ -167,14 +167,6 @@
         <nav class="space-y-1">
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
-            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
-          </div>
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
-            <a href="../README.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">README</a>
-          </div>
         </nav>
 
         <h3 class="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-8 mb-2">Health</h3>
@@ -236,7 +228,7 @@
            
         </h1>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Last updated: 2026-03-01T23:25:47.104Z
+          Last updated: 2026-03-04T23:21:38.393Z
         </div>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -244,15 +236,15 @@
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
             <p class="mt-1 text-sm text-gray-900 dark:text-white min-w-0 overflow-hidden">
-              <a href="../files/src--lib--form--dom-watcher.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/lib/form/dom-watcher.ts:221-246">src/lib/form/dom-watcher.ts:221-246</a>
+              <a href="../files/src--lib--form--dom-watcher.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/lib/form/dom-watcher.ts:222-259">src/lib/form/dom-watcher.ts:222-259</a>
             </p>
           </div>
           
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Metrics</h3>
             <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-900 dark:text-white">
-              <span>LOC: 26</span>
-              <span>Complexity: <span class="">3</span></span>
+              <span>LOC: 38</span>
+              <span>Complexity: <span class="">4</span></span>
               <span>Params: 1</span>
               
             </div>
@@ -307,8 +299,20 @@
       return;
     }
 
-    log.info(`Filling ${newFields.length} new field(s) only`);
-    for (const field of newFields) {
+    const url = window.location.href;
+    const ignoredFields = await getIgnoredFieldsForUrl(url);
+    const ignoredSelectors = new Set(ignoredFields.map((f) =&gt; f.selector));
+    const fieldsToFill = newFields.filter(
+      (f) =&gt; !ignoredSelectors.has(f.selector),
+    );
+
+    if (fieldsToFill.length === 0) {
+      log.debug(&quot;Todos os novos campos são ignorados — skip&quot;);
+      return;
+    }
+
+    log.info(`Filling ${fieldsToFill.length} new field(s) only`);
+    for (const field of fieldsToFill) {
       await fillSingleField(field);
     }
 

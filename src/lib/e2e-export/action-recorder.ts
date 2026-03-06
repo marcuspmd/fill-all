@@ -17,7 +17,11 @@ import type {
   RecordingStatus,
   SmartSelector,
 } from "./e2e-export.types";
-import { extractSmartSelectors } from "./smart-selector";
+import {
+  buildCSSPath,
+  extractSmartSelectors,
+  getStableClasses,
+} from "./smart-selector";
 
 // ---------------------------------------------------------------------------
 // State
@@ -132,10 +136,18 @@ function buildQuickSelector(el: Element): string {
   if (name) return `${el.tagName.toLowerCase()}[name="${CSS.escape(name)}"]`;
 
   const tag = el.tagName.toLowerCase();
+
+  // Stable semantic classes are more specific than attribute-based selectors
+  const stableClasses = getStableClasses(el);
+  if (stableClasses.length > 0) {
+    return `${tag}.${stableClasses.map((c) => CSS.escape(c)).join(".")}`;
+  }
+
   const type = el.getAttribute("type");
   if (type) return `${tag}[type="${CSS.escape(type)}"]`;
 
-  return tag;
+  // Fallback: generate a unique CSS path from the DOM hierarchy
+  return buildCSSPath(el);
 }
 
 function resolveLabel(el: Element): string | undefined {
@@ -287,9 +299,37 @@ function onInput(e: Event): void {
 
 function onChange(e: Event): void {
   const el = e.target;
-  if (!(el instanceof HTMLSelectElement)) return;
   if (!session || session.status !== "recording") return;
-  if (isExtensionUI(el)) return;
+  if (isExtensionUI(el as Element)) return;
+
+  // Checkbox and radio: `change` is the reliable event across all browsers.
+  // Deduplicate with onInput in case the browser also fires `input` (Chrome 74+).
+  if (el instanceof HTMLInputElement) {
+    const lastStep = session.steps[session.steps.length - 1];
+    if (el.type === "checkbox") {
+      const action = el.checked ? "check" : "uncheck";
+      if (
+        lastStep?.type === action &&
+        lastStep.selector === buildQuickSelector(el) &&
+        now() - lastStep.timestamp < 500
+      )
+        return;
+      addStep(buildStep(action, el));
+      return;
+    }
+    if (el.type === "radio") {
+      if (
+        lastStep?.type === "check" &&
+        lastStep.selector === buildQuickSelector(el) &&
+        now() - lastStep.timestamp < 500
+      )
+        return;
+      addStep(buildStep("check", el, { value: el.value }));
+      return;
+    }
+  }
+
+  if (!(el instanceof HTMLSelectElement)) return;
 
   // Select changes are captured here if not caught by input
   const lastStep = session.steps[session.steps.length - 1];

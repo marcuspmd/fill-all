@@ -26,7 +26,9 @@ export type SelectorStrategy =
   | "role"
   | "name"
   | "id"
+  | "classes"
   | "placeholder"
+  | "selector-path"
   | "css";
 
 /** A prioritised selector with metadata */

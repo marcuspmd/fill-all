@@ -167,14 +167,6 @@
         <nav class="space-y-1">
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
-            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
-          </div>
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
-            <a href="../README.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">README</a>
-          </div>
         </nav>
 
         <h3 class="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-8 mb-2">Health</h3>
@@ -236,7 +228,7 @@
            
         </h1>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          Last updated: 2026-03-01T23:25:47.107Z
+          Last updated: 2026-03-04T23:21:38.396Z
         </div>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -244,15 +236,15 @@
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
             <p class="mt-1 text-sm text-gray-900 dark:text-white min-w-0 overflow-hidden">
-              <a href="../files/src--lib--form--field-icon-rule.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/lib/form/field-icon-rule.ts:95-157">src/lib/form/field-icon-rule.ts:95-157</a>
+              <a href="../files/src--lib--form--field-icon-rule.ts.html" class="text-blue-600 dark:text-blue-400 hover:underline truncate block" title="src/lib/form/field-icon-rule.ts:95-164">src/lib/form/field-icon-rule.ts:95-164</a>
             </p>
           </div>
           
           <div class="min-w-0">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Metrics</h3>
             <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-900 dark:text-white">
-              <span>LOC: 63</span>
-              <span>Complexity: <span class="text-red-600 dark:text-red-400 font-bold">15</span></span>
+              <span>LOC: 70</span>
+              <span>Complexity: <span class="text-red-600 dark:text-red-400 font-bold">14</span></span>
               <span>Params: 2</span>
               
             </div>
@@ -282,7 +274,7 @@
           <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Architecture violations</h3>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-2"><a href="../governance.html#arch" class="text-blue-600 dark:text-blue-400 hover:underline">View all</a></p>
           <ul class="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
-            <li><span class="font-medium text-amber-700 dark:text-amber-400">[warning]</span> max-cyclomatic-complexity: 'showRulePopup' has cyclomatic complexity 15 (max 10)</li>
+            <li><span class="font-medium text-amber-700 dark:text-amber-400">[warning]</span> max-cyclomatic-complexity: 'showRulePopup' has cyclomatic complexity 14 (max 10)</li>
           </ul>
         </div>
 
@@ -304,6 +296,24 @@
     setupPopupListeners();
   }
 
+  if (!genSearchableSelect) {
+    const wrap = rulePopupElement.querySelector&lt;HTMLElement&gt;(
+      &quot;#fa-rp-generator-wrap&quot;,
+    );
+    if (wrap) {
+      genSearchableSelect = new SearchableSelect({
+        entries: buildGeneratorSelectEntries(),
+        value: &quot;auto&quot;,
+        placeholder: &quot;Pesquisar tipo…&quot;,
+      });
+      genSearchableSelect.mount(wrap);
+      genSearchableSelect.on(&quot;change&quot;, () =&gt; {
+        updateParamsSection();
+        updatePreview();
+      });
+    }
+  }
+
   const nameEl =
     rulePopupElement.querySelector&lt;HTMLElement&gt;(&quot;#fa-rp-field-name&quot;);
   if (nameEl) nameEl.textContent = currentRuleField?.label || &quot;&quot;;
@@ -312,8 +322,6 @@
     rulePopupElement.querySelector&lt;HTMLInputElement&gt;(&quot;#fa-rp-fixed&quot;);
   if (fixedInput) fixedInput.value = &quot;&quot;;
 
-  const genSelect =
-    rulePopupElement.querySelector&lt;HTMLSelectElement&gt;(&quot;#fa-rp-generator&quot;);
   const suggestionEl =
     rulePopupElement.querySelector&lt;HTMLElement&gt;(&quot;#fa-rp-suggestion&quot;);
   const suggestionTypeEl = rulePopupElement.querySelector&lt;HTMLElement&gt;(
@@ -327,16 +335,7 @@
     saveBtn.disabled = false;
   }
 
-  if (genSelect) {
-    if (currentSuggestedType) {
-      const hasOption = Array.from(genSelect.options).some(
-        (o) =&gt; o.value === currentSuggestedType,
-      );
-      genSelect.value = hasOption ? currentSuggestedType : &quot;auto&quot;;
-    } else {
-      genSelect.value = &quot;auto&quot;;
-    }
-  }
+  genSearchableSelect?.setValue(currentSuggestedType ?? &quot;auto&quot;);
 
   if (suggestionEl &amp;&amp; suggestionTypeEl) {
     if (currentSuggestedType) {
@@ -368,16 +367,18 @@
           <div class="mb-8">
                   <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Dependencies (Outgoing)</h2>
                   <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 border border-gray-200 dark:border-gray-700 overflow-x-auto">
-                    <div class="mermaid-expand-wrapper relative group" data-mermaid-src-base64="Z3JhcGggTFIKICBzaG93UnVsZVBvcHVwWyJzaG93UnVsZVBvcHVwIl0KICBnZXRSdWxlUG9wdXBIVE1MWyJnZXRSdWxlUG9wdXBIVE1MIl0KICBzZXR1cFBvcHVwTGlzdGVuZXJzWyJzZXR1cFBvcHVwTGlzdGVuZXJzIl0KICB1cGRhdGVQYXJhbXNTZWN0aW9uWyJ1cGRhdGVQYXJhbXNTZWN0aW9uIl0KICB1cGRhdGVQcmV2aWV3WyJ1cGRhdGVQcmV2aWV3Il0KICBwb3NpdGlvblJ1bGVQb3B1cFsicG9zaXRpb25SdWxlUG9wdXAiXQogIHNob3dSdWxlUG9wdXAgLS0+fGNhbGxzfCBnZXRSdWxlUG9wdXBIVE1MCiAgc2hvd1J1bGVQb3B1cCAtLT58Y2FsbHN8IHNldHVwUG9wdXBMaXN0ZW5lcnMKICBzaG93UnVsZVBvcHVwIC0tPnxjYWxsc3wgdXBkYXRlUGFyYW1zU2VjdGlvbgogIHNob3dSdWxlUG9wdXAgLS0+fGNhbGxzfCB1cGRhdGVQcmV2aWV3CiAgc2hvd1J1bGVQb3B1cCAtLT58Y2FsbHN8IHBvc2l0aW9uUnVsZVBvcHVwCiAgc3R5bGUgc2hvd1J1bGVQb3B1cCBmaWxsOiNkYmVhZmUsc3Ryb2tlOiMyNTYzZWIsc3Ryb2tlLXdpZHRoOjJweAogIGNsaWNrIHNob3dSdWxlUG9wdXAgIjlhMTFkYjNiNzFkNmNjZjUuaHRtbCIKICBjbGljayBnZXRSdWxlUG9wdXBIVE1MICI5Zjk3YzkxMWVlNzhkMmRhLmh0bWwiCiAgY2xpY2sgc2V0dXBQb3B1cExpc3RlbmVycyAiY2E0YzJiZjY5YjdkNGIxMS5odG1sIgogIGNsaWNrIHVwZGF0ZVBhcmFtc1NlY3Rpb24gIjllMGQ0NmJkMDZmMzUzMzMuaHRtbCIKICBjbGljayB1cGRhdGVQcmV2aWV3ICJkY2FiYWI0NjQ3ODE4ZjYxLmh0bWwiCiAgY2xpY2sgcG9zaXRpb25SdWxlUG9wdXAgIjI1Y2ZlYmQxNDIxZjViNzQuaHRtbCI=">
+                    <div class="mermaid-expand-wrapper relative group" data-mermaid-src-base64="Z3JhcGggTFIKICBzaG93UnVsZVBvcHVwWyJzaG93UnVsZVBvcHVwIl0KICBnZXRSdWxlUG9wdXBIVE1MWyJnZXRSdWxlUG9wdXBIVE1MIl0KICBzZXR1cFBvcHVwTGlzdGVuZXJzWyJzZXR1cFBvcHVwTGlzdGVuZXJzIl0KICBTZWFyY2hhYmxlU2VsZWN0WyJTZWFyY2hhYmxlU2VsZWN0Il0KICB1cGRhdGVQYXJhbXNTZWN0aW9uWyJ1cGRhdGVQYXJhbXNTZWN0aW9uIl0KICB1cGRhdGVQcmV2aWV3WyJ1cGRhdGVQcmV2aWV3Il0KICBwb3NpdGlvblJ1bGVQb3B1cFsicG9zaXRpb25SdWxlUG9wdXAiXQogIHNob3dSdWxlUG9wdXAgLS0+fGNhbGxzfCBnZXRSdWxlUG9wdXBIVE1MCiAgc2hvd1J1bGVQb3B1cCAtLT58Y2FsbHN8IHNldHVwUG9wdXBMaXN0ZW5lcnMKICBzaG93UnVsZVBvcHVwIC0uLT58aW5zdGFudGlhdGVzfCBTZWFyY2hhYmxlU2VsZWN0CiAgc2hvd1J1bGVQb3B1cCAtLT58Y2FsbHN8IHVwZGF0ZVBhcmFtc1NlY3Rpb24KICBzaG93UnVsZVBvcHVwIC0tPnxjYWxsc3wgdXBkYXRlUHJldmlldwogIHNob3dSdWxlUG9wdXAgLS0+fGNhbGxzfCBwb3NpdGlvblJ1bGVQb3B1cAogIHN0eWxlIHNob3dSdWxlUG9wdXAgZmlsbDojZGJlYWZlLHN0cm9rZTojMjU2M2ViLHN0cm9rZS13aWR0aDoycHgKICBjbGljayBzaG93UnVsZVBvcHVwICI5YTExZGIzYjcxZDZjY2Y1Lmh0bWwiCiAgY2xpY2sgZ2V0UnVsZVBvcHVwSFRNTCAiOWY5N2M5MTFlZTc4ZDJkYS5odG1sIgogIGNsaWNrIHNldHVwUG9wdXBMaXN0ZW5lcnMgImNhNGMyYmY2OWI3ZDRiMTEuaHRtbCIKICBjbGljayBTZWFyY2hhYmxlU2VsZWN0ICIxOTRjMTEzYjk3Y2U0ODZkLmh0bWwiCiAgY2xpY2sgdXBkYXRlUGFyYW1zU2VjdGlvbiAiOWUwZDQ2YmQwNmYzNTMzMy5odG1sIgogIGNsaWNrIHVwZGF0ZVByZXZpZXcgImRjYWJhYjQ2NDc4MThmNjEuaHRtbCIKICBjbGljayBwb3NpdGlvblJ1bGVQb3B1cCAiMjVjZmViZDE0MjFmNWI3NC5odG1sIg==">
   <div class="mermaid">graph LR
   showRulePopup["showRulePopup"]
   getRulePopupHTML["getRulePopupHTML"]
   setupPopupListeners["setupPopupListeners"]
+  SearchableSelect["SearchableSelect"]
   updateParamsSection["updateParamsSection"]
   updatePreview["updatePreview"]
   positionRulePopup["positionRulePopup"]
   showRulePopup -->|calls| getRulePopupHTML
   showRulePopup -->|calls| setupPopupListeners
+  showRulePopup -.->|instantiates| SearchableSelect
   showRulePopup -->|calls| updateParamsSection
   showRulePopup -->|calls| updatePreview
   showRulePopup -->|calls| positionRulePopup
@@ -385,6 +386,7 @@
   click showRulePopup "9a11db3b71d6ccf5.html"
   click getRulePopupHTML "9f97c911ee78d2da.html"
   click setupPopupListeners "ca4c2bf69b7d4b11.html"
+  click SearchableSelect "194c113b97ce486d.html"
   click updateParamsSection "9e0d46bd06f35333.html"
   click updatePreview "dcabab4647818f61.html"
   click positionRulePopup "25cfebd1421f5b74.html"</div>
@@ -406,6 +408,9 @@
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="ca4c2bf69b7d4b11.html" class="hover:underline">setupPopupListeners</a></td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">calls</td>
                     </tr><tr>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="194c113b97ce486d.html" class="hover:underline">SearchableSelect</a></td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">instantiates</td>
+                    </tr><tr>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="9e0d46bd06f35333.html" class="hover:underline">updateParamsSection</a></td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">calls</td>
                     </tr><tr>
@@ -414,6 +419,9 @@
                     </tr><tr>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400"><a href="25cfebd1421f5b74.html" class="hover:underline">positionRulePopup</a></td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">calls</td>
+                    </tr><tr>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400">change</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">dynamic_call</td>
                     </tr>
                   </tbody>
                 </table>

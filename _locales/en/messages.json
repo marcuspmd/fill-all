@@ -1834,5 +1834,290 @@
   },
   "editorSave": {
     "message": "Save"
+  },
+  "tabDemo": {
+    "message": "Demo"
+  },
+  "demoTabLabel": {
+    "message": "Demo"
+  },
+  "demoConvertTitle": {
+    "message": "Convert Recording to Demo"
+  },
+  "demoConvertHint": {
+    "message": "Record an interaction in the Record tab and convert it into a replayable demo."
+  },
+  "demoConvertHintReady": {
+    "message": "Ready! $1 step(s) recorded. Give it a name and save."
+  },
+  "demoFlowName": {
+    "message": "Demo Name"
+  },
+  "demoFlowNamePlaceholder": {
+    "message": "e.g. user-signup"
+  },
+  "demoSeed": {
+    "message": "Seed (optional)"
+  },
+  "demoSaveAsDemo": {
+    "message": "Save as Demo"
+  },
+  "demoLibraryTitle": {
+    "message": "Demo Library"
+  },
+  "demoRefresh": {
+    "message": "Refresh"
+  },
+  "demoLibraryLoading": {
+    "message": "Loading demos…"
+  },
+  "demoLibraryEmpty": {
+    "message": "No demos saved yet."
+  },
+  "demoColName": {
+    "message": "Name"
+  },
+  "demoColSteps": {
+    "message": "Steps"
+  },
+  "demoColCreated": {
+    "message": "Created"
+  },
+  "demoColActions": {
+    "message": "Actions"
+  },
+  "demoReplay": {
+    "message": "Replay"
+  },
+  "demoPause": {
+    "message": "Pause"
+  },
+  "demoResume": {
+    "message": "Resume"
+  },
+  "demoStop": {
+    "message": "Stop"
+  },
+  "demoExportJson": {
+    "message": "Export JSON"
+  },
+  "demoDelete": {
+    "message": "Delete"
+  },
+  "demoReplayStatusTitle": {
+    "message": "Replaying Demo"
+  },
+  "demoReplayStep": {
+    "message": "Step $1 of $2"
+  },
+  "demoErrorLoad": {
+    "message": "Error loading demos"
+  },
+  "demoErrorNoName": {
+    "message": "Please provide a name for the demo"
+  },
+  "demoErrorNoSteps": {
+    "message": "Record some steps before saving"
+  },
+  "demoErrorSave": {
+    "message": "Error saving demo"
+  },
+  "demoSaveSuccess": {
+    "message": "Demo \"$1\" saved successfully"
+  },
+  "demoErrorReplay": {
+    "message": "Error replaying demo"
+  },
+  "demoReplayStarted": {
+    "message": "Replaying demo \"$1\""
+  },
+  "demoDeleteSuccess": {
+    "message": "Demo deleted"
+  },
+  "demoErrorDelete": {
+    "message": "Error deleting demo"
+  },
+  "demoExportSuccess": {
+    "message": "Demo \"$1\" exported"
+  },
+  "demoReplayComplete": {
+    "message": "Demo completed successfully"
+  },
+  "demoReplayFailed": {
+    "message": "Demo failed"
+  },
+  "demoReplayOptionsTitle": {
+    "message": "Replay Options"
+  },
+  "demoReplaySpeed": {
+    "message": "Speed"
+  },
+  "demoShowCursor": {
+    "message": "Show cursor"
+  },
+  "demoEditSteps": {
+    "message": "Edit Steps"
+  },
+  "demoEditStep": {
+    "message": "Edit step"
+  },
+  "demoNoSteps": {
+    "message": "No steps yet. Add one below."
+  },
+  "demoColAction": {
+    "message": "Action"
+  },
+  "demoColLabel": {
+    "message": "Label"
+  },
+  "demoColTarget": {
+    "message": "Selector / URL"
+  },
+  "demoColDelayBefore": {
+    "message": "Before (ms)"
+  },
+  "demoColDelayAfter": {
+    "message": "After (ms)"
+  },
+  "demoColOptional": {
+    "message": "Optional"
+  },
+  "demoAddStep": {
+    "message": "Add Step"
+  },
+  "demoDeleteStep": {
+    "message": "Remove step"
+  },
+  "demoColEffects": {
+    "message": "Effects"
+  },
+  "demoCaptionText": {
+    "message": "Caption text"
+  },
+  "demoCaptionPosition": {
+    "message": "Position"
+  },
+  "demoAddEffect": {
+    "message": "Effect"
+  },
+  "demoEffectNone": {
+    "message": "none"
+  },
+  "demoEffectTiming": {
+    "message": "When to run this effect"
+  },
+  "demoEffectTimingBefore": {
+    "message": "before"
+  },
+  "demoEffectTimingDuring": {
+    "message": "during"
+  },
+  "demoEffectTimingAfter": {
+    "message": "after"
+  },
+  "demoLabelText": {
+    "message": "Label text"
+  },
+  "demoSaveSteps": {
+    "message": "Save Steps"
+  },
+  "demoCancelEdit": {
+    "message": "Cancel"
+  },
+  "demoStepsSaved": {
+    "message": "Steps of \"$1\" saved successfully"
+  },
+  "demoVideoTitle": {
+    "message": "Video Recording"
+  },
+  "demoVideoHint": {
+    "message": "Record the replay as a WebM video directly from the DevTools panel."
+  },
+  "demoVideoStart": {
+    "message": "Start Recording"
+  },
+  "demoVideoStop": {
+    "message": "Stop Recording"
+  },
+  "demoVideoDownload": {
+    "message": "Download Video"
+  },
+  "demoVideoRecording": {
+    "message": "Recording…"
+  },
+  "demoVideoStarted": {
+    "message": "Video recording started"
+  },
+  "demoVideoStopped": {
+    "message": "Video recording completed"
+  },
+  "demoVideoDownloaded": {
+    "message": "Video downloaded successfully"
+  },
+  "demoVideoErrorNoTab": {
+    "message": "No inspected tab found"
+  },
+  "demoVideoErrorStream": {
+    "message": "Failed to obtain screen capture stream"
+  },
+  "demoVideoRecord": {
+    "message": "Record Video"
+  },
+  "demoVideoRecordAndReplay": {
+    "message": "Record video during replay"
+  },
+  "demoVideoRecordingActive": {
+    "message": "Recording…"
+  },
+  "demoMoveStepUp": {
+    "message": "Move step up"
+  },
+  "demoMoveStepDown": {
+    "message": "Move step down"
+  },
+  "demoEffectText": {
+    "message": "Text"
+  },
+  "demoEffectPosition": {
+    "message": "Position"
+  },
+  "demoEffectDuration": {
+    "message": "Duration (ms)"
+  },
+  "demoEffectScale": {
+    "message": "Scale"
+  },
+  "demoEffectIntensity": {
+    "message": "Intensity"
+  },
+  "demoEffectCount": {
+    "message": "Count"
+  },
+  "demoEffectOpacity": {
+    "message": "Opacity (0–1)"
+  },
+  "demoEffectNote": {
+    "message": "Note"
+  },
+  "demoEffectNotePlaceholder": {
+    "message": "Optional annotation…"
+  },
+  "demoEffectPermanent": {
+    "message": "permanent"
+  },
+  "demoEffectKeep": {
+    "message": "keep"
+  },
+  "demoPositionAbove": {
+    "message": "above"
+  },
+  "demoPositionBelow": {
+    "message": "below"
+  },
+  "demoPositionLeft": {
+    "message": "left"
+  },
+  "demoPositionRight": {
+    "message": "right"
   }
 }

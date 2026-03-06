@@ -17,6 +17,7 @@ export const STORAGE_KEYS = {
   SETTINGS: "fill_all_settings",
   IGNORED_FIELDS: "fill_all_ignored_fields",
   FIELD_CACHE: "fill_all_field_cache",
+  DEMO_FLOWS: "fill_all_demo_flows",
 } as const;
 
 /** Union type of all valid storage key values. */

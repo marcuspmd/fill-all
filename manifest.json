@@ -9,11 +9,14 @@
     "activeTab",
     "scripting",
     "contextMenus",
-    "tabs"
+    "tabs",
+    "tabCapture",
+    "webNavigation"
   ],
   "optional_permissions": [],
   "host_permissions": [
-    "<all_urls>"
+    "https://*/*",
+    "http://*/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.ts",
@@ -62,7 +65,8 @@
         "_locales/pt_BR/messages.json"
       ],
       "matches": [
-        "<all_urls>"
+        "https://*/*",
+        "http://*/*"
       ]
     }
   ],

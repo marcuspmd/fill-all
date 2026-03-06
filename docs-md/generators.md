@@ -1,213 +1,177 @@
-# Geradores de Dados — Fill All
+# Data Generators — Fill All
 
-Documentação completa do sistema de geradores de dados brasileiros válidos.
-
----
-
-## Visão Geral
-
-Os geradores produzem dados sintéticos para preenchimento de formulários. Todos seguem princípios rígidos:
-
-- **Funções puras** — sem side effects
-- **Síncronos** — retorno imediato (`() → string`)
-- **Dados válidos** — CPFs, CNPJs e documentos com dígitos verificadores corretos
-- **Localização BR** — nomes, endereços, telefones e formatos brasileiros
+This document describes the generator system that powers most non-AI fallback values in Fill All.
 
 ---
 
-## Registry Central
+## Core principles
 
-O arquivo `src/lib/generators/index.ts` contém o registry que mapeia `FieldType` → `GeneratorFn`.
+Generators in this project are expected to be:
 
-```
-FIELD_TYPE_DEFINITIONS → GENERATOR_FACTORIES → generatorMap
-         │                       │                    │
-    Define tipo +           Factory que           Map dinâmico
-    generator key +         recebe params         consultado por
-    params opcionais        e retorna string      generate(type)
-```
+- **pure**
+- **synchronous**
+- **string-returning**
+- **safe to call repeatedly**
 
-### Como Funciona
+For this repository, generators should not throw during normal operation. When something cannot be generated, use a safe fallback pattern.
 
-1. `FIELD_TYPE_DEFINITIONS` define cada `FieldType` com um `generator` key e `params` opcionais
-2. `GENERATOR_FACTORIES` mapeia cada key para uma função factory
-3. `buildGeneratorMap()` combina as duas para criar o map final
-4. `generate(fieldType)` consulta o map e executa a factory
+## What generators are used for
 
-```typescript
-// Entry point principal
-generate("cpf")         // → "123.456.789-09"
-generate("email")       // → "joao.silva@email.com"
-generate("birth-date")  // → "1985-03-14"
-```
+Generators are the reliable value engine behind the extension.
 
----
+They power:
 
-## Geradores por Categoria
+- default field filling
+- fallback behavior when AI is unavailable
+- rule-based generator selection
+- adaptive values constrained by HTML attributes
 
-### Documentos
+## Main categories
 
-| Função | Arquivo | Saída | Validação |
-|--------|---------|-------|-----------|
-| `generateCpf(formatted?)` | `cpf.ts` | `123.456.789-09` | Dígitos verificadores válidos |
-| `generateCnpj(formatted?)` | `cnpj.ts` | `12.345.678/0001-95` | Dígitos verificadores válidos |
-| `generateCpfCnpj()` | `misc.ts` | CPF ou CNPJ aleatório | Válido |
-| `generateRg(formatted?)` | `rg.ts` | `12.345.678-9` | Formato válido |
-| `generateCnh()` | `rg.ts` | `12345678901` | 11 dígitos |
-| `generatePis()` | `rg.ts` | `123.45678.90-1` | Dígito verificador válido |
-| `generatePassport()` | `misc.ts` | `AB123456` | Formato padrão |
-| `generateNationalId()` | `misc.ts` | Documento de identidade | — |
-| `generateTaxId()` | `misc.ts` | CPF ou CNPJ | Válido |
+### Document generators
 
-### Dados Pessoais
+Current repository coverage includes Brazilian document-oriented values such as:
 
-| Função | Arquivo | Saída |
-|--------|---------|-------|
-| `generateFullName()` | `name.ts` | `João Carlos Silva` |
-| `generateFirstName()` | `name.ts` | `Maria` |
-| `generateLastName()` | `name.ts` | `Oliveira` |
-| `generateCompanyName()` | `name.ts` | `TechSol Soluções LTDA` |
+- CPF
+- CNPJ
+- RG
+- CNH
+- PIS
+- passport-style identifiers
 
-### Contato
+Where appropriate, generated values include valid check digits.
 
-| Função | Arquivo | Saída |
-|--------|---------|-------|
-| `generateEmail()` | `email.ts` | `joao.silva@email.com` |
-| `generatePhone(mobile?, formatted?)` | `phone.ts` | `(11) 98765-4321` |
+### Identity and contact generators
 
-### Endereço
+- full names
+- first and last names
+- company names
+- emails
+- phone numbers
+- usernames
+- passwords
+- OTP and verification-code style values
 
-| Função | Arquivo | Saída |
-|--------|---------|-------|
-| `generateFullAddress()` | `address.ts` | Endereço completo com CEP |
-| `generateStreet(onlyLetters?)` | `address.ts` | `Rua das Flores` |
-| `generateHouseNumber()` | `address.ts` | `1234` |
-| `generateComplement(onlyLetters?)` | `address.ts` | `Apto 501` |
-| `generateNeighborhood(onlyLetters?)` | `address.ts` | `Centro` |
-| `generateCity()` | `address.ts` | `São Paulo` |
-| `generateState()` | `address.ts` | `SP` |
-| `generateCountry()` | `address.ts` | `Brasil` |
-| `generateCep(formatted?)` | `address.ts` | `01234-567` |
+### Address generators
 
-### Datas
+- street names
+- house numbers
+- complements
+- neighborhoods
+- cities
+- states
+- countries
+- CEP / ZIP code values
+- full address compositions
 
-| Função | Arquivo | Saída |
-|--------|---------|-------|
-| `generateDate(format?)` | `date.ts` | `2024-03-14` (ISO) |
-| `generateBirthDate(minAge?, maxAge?)` | `date.ts` | `1985-07-22` |
-| `generateFutureDate(maxDays?)` | `date.ts` | `2025-06-15` |
+### Date and finance generators
 
-### Financeiro
+- generic dates
+- birth dates
+- future dates
+- credit-card style values
+- expiration dates
+- CVV values
+- PIX keys
+- money-like values
 
-| Função | Arquivo | Saída |
-|--------|---------|-------|
-| `generateCreditCardNumber()` | `finance.ts` | `4532 1234 5678 9012` |
-| `generateCreditCardExpiration()` | `finance.ts` | `12/28` |
-| `generateCreditCardCvv()` | `finance.ts` | `123` |
-| `generatePixKey()` | `finance.ts` | Chave PIX (email, phone ou random) |
-| `generateMoney(min?, max?)` | `misc.ts` | `1.234,56` |
+### Generic text generators
 
-### Autenticação
+- short text
+- descriptions
+- notes
+- product names
+- departments
+- job titles
+- websites
+- coupons and SKUs
 
-| Função | Arquivo | Saída |
-|--------|---------|-------|
-| `generateUsername()` | `misc.ts` | `joao_silva_42` |
-| `generatePassword(length?)` | `misc.ts` | `aB3$xK9!mP2@` |
-| `generateOtp(length?)` | `misc.ts` | `847291` |
-| `generateVerificationCode(length?)` | `misc.ts` | `583017` |
+### Adaptive generation
 
-### Genéricos
+The adaptive generator family can reshape output based on field constraints such as:
 
-| Função | Arquivo | Saída |
-|--------|---------|-------|
-| `generateText(words?)` | `misc.ts` | Texto lorem realista |
-| `generateDescription()` | `misc.ts` | Parágrafo de descrição |
-| `generateNotes()` | `misc.ts` | Texto de notas |
-| `generateWebsite()` | `misc.ts` | `https://www.exemplo.com.br` |
-| `generateProductName()` | `misc.ts` | Nome de produto |
-| `generateSku()` | `misc.ts` | `SKU-A1B2C3` |
-| `generateCoupon()` | `misc.ts` | `PROMO2024` |
-| `generateJobTitle()` | `misc.ts` | `Desenvolvedor Senior` |
-| `generateDepartment()` | `misc.ts` | `Tecnologia` |
+- `minlength`
+- `maxlength`
+- `min`
+- `max`
+- `pattern`
 
-### Gerador Adaptativo
-
-`generateAdaptive()` (`adaptive.ts`) respeita constraints do campo HTML:
-
-- `minlength` / `maxlength`
-- `min` / `max` (numéricos)
-- `pattern` (regex)
-- Trunca ou ajusta o valor gerado para caber nas restrições
+This is especially useful when a detected field type is correct but the target input has validation restrictions that a default value must respect.
 
 ---
 
-## Como Criar um Novo Gerador
+## Registry model
 
-### 1. Crie o Arquivo
+Generator selection is not hardcoded in one giant conditional. The project uses a registry-driven model.
 
-```typescript
-// src/lib/generators/titulo-eleitor.ts
+At a high level:
 
-/**
- * Generates a valid Brazilian voter registration number (Título de Eleitor).
- */
-export function generateTituloEleitor(formatted = true): string {
-  // 1. Gere os 8 primeiros dígitos aleatórios
-  const sequencial = Array.from({ length: 8 }, () =>
-    Math.floor(Math.random() * 10)
-  ).join("");
+1. field-type metadata defines which generator key a field uses
+2. generator factories map keys to implementation functions
+3. a central map resolves `FieldType -> generator`
+4. the runtime calls `generate(type, params)` or the equivalent factory path
 
-  // 2. Gere código do estado (01-28)
-  const estadoCode = String(Math.floor(Math.random() * 28) + 1).padStart(2, "0");
+This makes the generator layer easier to extend without rewriting the fill engine.
 
-  // 3. Calcule dígitos verificadores
-  const base = sequencial + estadoCode;
-  const d1 = calculateDigit1(base);
-  const d2 = calculateDigit2(estadoCode, d1);
+## Why this matters
 
-  const raw = base + d1 + d2;
-  return formatted ? formatTituloEleitor(raw) : raw;
-}
-```
+The generator system is one of the project’s most stable foundations:
 
-### 2. Registre a Factory
-
-Em `src/lib/generators/index.ts`, adicione ao `GENERATOR_FACTORIES`:
-
-```typescript
-const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
-  // ... existentes ...
-  "titulo-eleitor": (p) => generateTituloEleitor(p?.formatted !== false),
-};
-```
-
-### 3. Adicione o FieldType
-
-Em `src/types/field-type-definitions.ts`, adicione a definição:
-
-```typescript
-{
-  type: "titulo-eleitor",
-  generator: "titulo-eleitor",
-  label: "Título de Eleitor",
-  category: "document",
-}
-```
-
-### 4. Exporte
-
-No barrel `src/lib/generators/index.ts`, adicione o re-export:
-
-```typescript
-export { generateTituloEleitor } from "./titulo-eleitor";
-```
+- it works offline
+- it is deterministic enough for practical testing workflows
+- it complements AI instead of depending on AI
+- it handles region-specific validation details that generic form fillers often ignore
 
 ---
 
-## Princípios
+## Conventions for new generators
 
-1. **Dados brasileiros** — Formatos, DDDs, estados e nomes brasileiros
-2. **Validação real** — CPFs e CNPJs passam em validadores oficiais
-3. **Determinismo controlado** — Uso de `Math.random()` (sem seed fixo)
-4. **Sem dependências externas** — Apenas lógica pura (exceto `@faker-js/faker` em alguns módulos)
-5. **Formatação opcional** — Parâmetro `formatted` para retornar com ou sem máscara
+When adding a generator:
+
+1. create a dedicated file under `src/lib/generators/`
+2. export named `generate*()` functions
+3. keep the implementation synchronous
+4. avoid side effects
+5. register the generator in the central registry
+6. wire it to the relevant field-type definition
+7. add or update tests
+
+### Example workflow
+
+Typical update path:
+
+1. add `src/lib/generators/<new-file>.ts`
+2. export `generateNewThing()`
+3. update `src/lib/generators/index.ts`
+4. update the appropriate field-type definition mapping
+5. add unit tests under the module’s `__tests__` area
+
+## Generator behavior expectations
+
+### Formatting
+
+Many generators may support both formatted and raw output. If a generator accepts a `formatted` option, document that clearly and keep the default behavior predictable.
+
+### Localization
+
+This project is intentionally strong on Brazilian data generation. New generators should preserve that localization quality where relevant.
+
+### Validation friendliness
+
+Prefer values that pass common client-side validators and masks. The goal is not just to generate random text; it is to generate values that are actually useful in form testing.
+
+---
+
+## Relationship with rules and AI
+
+Generators are used in multiple fill paths:
+
+- directly through rules
+- after field classification
+- as fallback when contextual AI or Chrome AI cannot provide a usable value
+
+So while AI gets the shiny headlines, generators are still the workhorses doing real overtime.
+
+## Summary
+
+If you need dependable, local, test-friendly values, the generator layer is the backbone of Fill All. Extend it carefully, keep it pure, and add tests whenever you teach it a new trick.

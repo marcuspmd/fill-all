@@ -167,14 +167,6 @@
         <nav class="space-y-1">
           <a href="../docs.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">All Docs</a>
           
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">docs-md</span>
-            <a href="../docs-md/ai-pipeline.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Ai Pipeline</a><a href="../docs-md/architecture.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Architecture</a><a href="../docs-md/contributing.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Contributing</a><a href="../docs-md/generators.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Generators</a><a href="../docs-md/modules.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Modules</a><a href="../docs-md/post-dev-to.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Post Dev To</a><a href="../docs-md/privacidade.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Privacidade</a><a href="../docs-md/roadmap.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">Roadmap</a>
-          </div>
-          <div class="mt-1">
-            <span class="block px-4 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</span>
-            <a href="../README.html" class="block px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white pl-6">README</a>
-          </div>
         </nav>
 
         <h3 class="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-8 mb-2">Health</h3>
@@ -217,7 +209,7 @@
       </div>
       <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Lines of Code</dt>
-        <dd class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">614</dd>
+        <dd class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">672</dd>
       </div>
       <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
         <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Avg Complexity</dt>
@@ -853,6 +845,64 @@ describe(&quot;rule-engine/resolveFieldValue&quot;, () =&gt; {
     await resolveFieldValue(field, &quot;https://example.com&quot;);
 
     expect(mockGenerate).toHaveBeenCalledWith(&quot;cpf&quot;, undefined);
+  });
+
+  describe(&quot;generator=auto com fieldType explícito na regra&quot;, () =&gt; {
+    it(&quot;usa fieldType da regra quando generator=auto e fieldType difere do campo detectado&quot;, async () =&gt; {
+      // Regression: user edits field type to &quot;cpf&quot; in the DevTools editor but keeps
+      // generator as &quot;auto&quot;. The rule has fieldType:&quot;cpf&quot; + generator:&quot;auto&quot;.
+      // Bug was: system fell through to TF-detected type (text) instead of using &quot;cpf&quot;.
+      const field = createField({ fieldType: &quot;text&quot; }); // TF detected &quot;text&quot;
+      mockGetRulesForUrl.mockResolvedValue([
+        createRule({ fieldType: &quot;cpf&quot;, generator: &quot;auto&quot; }), // user chose &quot;cpf&quot;
+      ]);
+      mockGenerateWithConstraints.mockImplementation((fn: () =&gt; string) =&gt;
+        fn(),
+      );
+      mockGenerate.mockReturnValue(&quot;111.111.111-11&quot;);
+
+      const result = await resolveFieldValue(field, &quot;https://example.com&quot;);
+
+      // Must call generate with &quot;cpf&quot;, NOT with &quot;text&quot;
+      expect(mockGenerate).toHaveBeenCalledWith(&quot;cpf&quot;, undefined);
+      expect(result.value).toBe(&quot;111.111.111-11&quot;);
+      expect(result.source).toBe(&quot;generator&quot;);
+    });
+
+    it(&quot;cai no gerador padrão do campo quando generator=auto e fieldType da regra é unknown&quot;, async () =&gt; {
+      // When the rule's fieldType is &quot;unknown&quot;, fall through to the detected field type
+      const field = createField({ fieldType: &quot;email&quot; });
+      mockGetRulesForUrl.mockResolvedValue([
+        createRule({ fieldType: &quot;unknown&quot;, generator: &quot;auto&quot; }),
+      ]);
+      mockGenerateWithConstraints.mockImplementation((fn: () =&gt; string) =&gt;
+        fn(),
+      );
+      mockGenerate.mockReturnValue(&quot;gerado@email.com&quot;);
+
+      const result = await resolveFieldValue(field, &quot;https://example.com&quot;);
+
+      // Falls through to detected &quot;email&quot; type
+      expect(mockGenerate).toHaveBeenCalledWith(&quot;email&quot;);
+      expect(result.source).toBe(&quot;generator&quot;);
+    });
+
+    it(&quot;generator=auto com fieldType da regra igual ao detectado usa o tipo do campo normalmente&quot;, async () =&gt; {
+      const field = createField({ fieldType: &quot;cpf&quot; });
+      mockGetRulesForUrl.mockResolvedValue([
+        createRule({ fieldType: &quot;cpf&quot;, generator: &quot;auto&quot; }),
+      ]);
+      mockGenerateWithConstraints.mockImplementation((fn: () =&gt; string) =&gt;
+        fn(),
+      );
+      mockGenerate.mockReturnValue(&quot;999.888.777-66&quot;);
+
+      const result = await resolveFieldValue(field, &quot;https://example.com&quot;);
+
+      expect(mockGenerate).toHaveBeenCalledWith(&quot;cpf&quot;, undefined);
+      expect(result.value).toBe(&quot;999.888.777-66&quot;);
+      expect(result.source).toBe(&quot;generator&quot;);
+    });
   });
 
   describe(&quot;campos de data (generateDateForField)&quot;, () =&gt; {

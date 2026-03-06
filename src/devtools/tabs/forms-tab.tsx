@@ -8,14 +8,12 @@
  * - Set default form / delete form
  */
 
-import { h } from "preact";
 import type { SavedForm } from "@/types";
 import { t } from "@/lib/i18n";
 import { panelState } from "../panel-state";
 import { sendToPage, sendToBackground } from "../panel-messaging";
 import { addLog } from "../panel-utils";
-import { renderTo } from "../components";
-import { FormsTabView } from "@/lib/ui/components";
+import { renderTo, FormsTabView } from "@/lib/ui/components";
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 

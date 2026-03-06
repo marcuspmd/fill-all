@@ -8,7 +8,6 @@
  * - Export recorded script (Playwright, Cypress, Pest/Dusk) with optional AI optimisation
  */
 
-import { h } from "preact";
 import { t } from "@/lib/i18n";
 import { panelState } from "../panel-state";
 import {
@@ -17,8 +16,7 @@ import {
   getInspectedPageInfo,
 } from "../panel-messaging";
 import { addLog } from "../panel-utils";
-import { renderTo } from "../components";
-import { RecordTabView } from "@/lib/ui/components";
+import { renderTo, RecordTabView } from "@/lib/ui/components";
 
 // ── Recording Controls ────────────────────────────────────────────────────────
 

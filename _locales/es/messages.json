@@ -1834,5 +1834,290 @@
   },
   "editorSave": {
     "message": "Guardar"
+  },
+  "tabDemo": {
+    "message": "Demo"
+  },
+  "demoTabLabel": {
+    "message": "Demo"
+  },
+  "demoConvertTitle": {
+    "message": "Convertir Grabación en Demo"
+  },
+  "demoConvertHint": {
+    "message": "Graba una interacción en la pestaña Record y conviértela en un demo reproducible."
+  },
+  "demoConvertHintReady": {
+    "message": "¡Listo! $1 paso(s) grabado(s). Asigna un nombre y guarda."
+  },
+  "demoFlowName": {
+    "message": "Nombre del Demo"
+  },
+  "demoFlowNamePlaceholder": {
+    "message": "Ej: registro-usuario"
+  },
+  "demoSeed": {
+    "message": "Semilla (opcional)"
+  },
+  "demoSaveAsDemo": {
+    "message": "Guardar como Demo"
+  },
+  "demoLibraryTitle": {
+    "message": "Biblioteca de Demos"
+  },
+  "demoRefresh": {
+    "message": "Actualizar"
+  },
+  "demoLibraryLoading": {
+    "message": "Cargando demos…"
+  },
+  "demoLibraryEmpty": {
+    "message": "Aún no hay demos guardados."
+  },
+  "demoColName": {
+    "message": "Nombre"
+  },
+  "demoColSteps": {
+    "message": "Pasos"
+  },
+  "demoColCreated": {
+    "message": "Creado"
+  },
+  "demoColActions": {
+    "message": "Acciones"
+  },
+  "demoReplay": {
+    "message": "Reproducir"
+  },
+  "demoPause": {
+    "message": "Pausar"
+  },
+  "demoResume": {
+    "message": "Reanudar"
+  },
+  "demoStop": {
+    "message": "Detener"
+  },
+  "demoExportJson": {
+    "message": "Exportar JSON"
+  },
+  "demoDelete": {
+    "message": "Eliminar"
+  },
+  "demoReplayStatusTitle": {
+    "message": "Reproduciendo Demo"
+  },
+  "demoReplayStep": {
+    "message": "Paso $1 de $2"
+  },
+  "demoErrorLoad": {
+    "message": "Error al cargar demos"
+  },
+  "demoErrorNoName": {
+    "message": "Ingresa un nombre para el demo"
+  },
+  "demoErrorNoSteps": {
+    "message": "Graba algunos pasos antes de guardar"
+  },
+  "demoErrorSave": {
+    "message": "Error al guardar demo"
+  },
+  "demoSaveSuccess": {
+    "message": "Demo \"$1\" guardado con éxito"
+  },
+  "demoErrorReplay": {
+    "message": "Error al reproducir demo"
+  },
+  "demoReplayStarted": {
+    "message": "Reproduciendo demo \"$1\""
+  },
+  "demoDeleteSuccess": {
+    "message": "Demo eliminado"
+  },
+  "demoErrorDelete": {
+    "message": "Error al eliminar demo"
+  },
+  "demoExportSuccess": {
+    "message": "Demo \"$1\" exportado"
+  },
+  "demoReplayComplete": {
+    "message": "Demo completado con éxito"
+  },
+  "demoReplayFailed": {
+    "message": "Demo fallido"
+  },
+  "demoReplayOptionsTitle": {
+    "message": "Opciones de Replay"
+  },
+  "demoReplaySpeed": {
+    "message": "Velocidad"
+  },
+  "demoShowCursor": {
+    "message": "Mostrar cursor"
+  },
+  "demoEditStep": {
+    "message": "Editar paso"
+  },
+  "demoNoSteps": {
+    "message": "No hay pasos aún. Agrega uno abajo."
+  },
+  "demoEditSteps": {
+    "message": "Editar Pasos"
+  },
+  "demoColAction": {
+    "message": "Acción"
+  },
+  "demoColLabel": {
+    "message": "Etiqueta"
+  },
+  "demoColTarget": {
+    "message": "Selector / URL"
+  },
+  "demoColDelayBefore": {
+    "message": "Antes (ms)"
+  },
+  "demoColDelayAfter": {
+    "message": "Después (ms)"
+  },
+  "demoColOptional": {
+    "message": "Opcional"
+  },
+  "demoAddStep": {
+    "message": "Agregar Paso"
+  },
+  "demoDeleteStep": {
+    "message": "Eliminar paso"
+  },
+  "demoColEffects": {
+    "message": "Efectos"
+  },
+  "demoCaptionText": {
+    "message": "Texto del subtítulo"
+  },
+  "demoCaptionPosition": {
+    "message": "Posición"
+  },
+  "demoAddEffect": {
+    "message": "Efecto"
+  },
+  "demoEffectNone": {
+    "message": "ninguno"
+  },
+  "demoEffectTiming": {
+    "message": "Cuándo ejecutar este efecto"
+  },
+  "demoEffectTimingBefore": {
+    "message": "antes"
+  },
+  "demoEffectTimingDuring": {
+    "message": "durante"
+  },
+  "demoEffectTimingAfter": {
+    "message": "después"
+  },
+  "demoLabelText": {
+    "message": "Texto del label"
+  },
+  "demoSaveSteps": {
+    "message": "Guardar Pasos"
+  },
+  "demoCancelEdit": {
+    "message": "Cancelar"
+  },
+  "demoStepsSaved": {
+    "message": "Pasos de \"$1\" guardados con éxito"
+  },
+  "demoVideoTitle": {
+    "message": "Grabación de Vídeo"
+  },
+  "demoVideoHint": {
+    "message": "Graba el replay como vídeo WebM directamente desde el panel DevTools."
+  },
+  "demoVideoStart": {
+    "message": "Iniciar Grabación"
+  },
+  "demoVideoStop": {
+    "message": "Detener Grabación"
+  },
+  "demoVideoDownload": {
+    "message": "Descargar Vídeo"
+  },
+  "demoVideoRecording": {
+    "message": "Grabando…"
+  },
+  "demoVideoStarted": {
+    "message": "Grabación de vídeo iniciada"
+  },
+  "demoVideoStopped": {
+    "message": "Grabación de vídeo completada"
+  },
+  "demoVideoDownloaded": {
+    "message": "Vídeo descargado con éxito"
+  },
+  "demoVideoErrorNoTab": {
+    "message": "No se encontró ninguna pestaña inspeccionada"
+  },
+  "demoVideoErrorStream": {
+    "message": "Error al obtener el stream de captura de pantalla"
+  },
+  "demoVideoRecord": {
+    "message": "Grabar Video"
+  },
+  "demoVideoRecordAndReplay": {
+    "message": "Grabar vídeo durante la reproducción"
+  },
+  "demoVideoRecordingActive": {
+    "message": "Grabando…"
+  },
+  "demoMoveStepUp": {
+    "message": "Mover paso arriba"
+  },
+  "demoMoveStepDown": {
+    "message": "Mover paso abajo"
+  },
+  "demoEffectText": {
+    "message": "Texto"
+  },
+  "demoEffectPosition": {
+    "message": "Posición"
+  },
+  "demoEffectDuration": {
+    "message": "Duración (ms)"
+  },
+  "demoEffectScale": {
+    "message": "Escala"
+  },
+  "demoEffectIntensity": {
+    "message": "Intensidad"
+  },
+  "demoEffectCount": {
+    "message": "Cantidad"
+  },
+  "demoEffectOpacity": {
+    "message": "Opacidad (0–1)"
+  },
+  "demoEffectNote": {
+    "message": "Nota"
+  },
+  "demoEffectNotePlaceholder": {
+    "message": "Anotación opcional…"
+  },
+  "demoEffectPermanent": {
+    "message": "permanente"
+  },
+  "demoEffectKeep": {
+    "message": "mantener"
+  },
+  "demoPositionAbove": {
+    "message": "arriba"
+  },
+  "demoPositionBelow": {
+    "message": "abajo"
+  },
+  "demoPositionLeft": {
+    "message": "izquierda"
+  },
+  "demoPositionRight": {
+    "message": "derecha"
   }
 }
