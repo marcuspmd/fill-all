@@ -2174,5 +2174,13 @@
   "quickShortcutCopied": {
     "message": "copiado",
     "description": "Mensaje de éxito cuando el valor se copia"
+  },
+  "clearDetected": {
+    "message": "Limpiar Detectados",
+    "description": "Etiqueta del botón para limpiar todos los campos detectados"
+  },
+  "clearForm": {
+    "message": "Limpiar Formulário",
+    "description": "Etiqueta del botón para limpiar el formulario"
   }
 }

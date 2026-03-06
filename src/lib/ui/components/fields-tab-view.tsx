@@ -83,28 +83,30 @@ function FieldRow({
           title={t("actionFill")}
           onClick={() => onFill(field.selector)}
         >
-          ⚡
+          <span class="material-icons-round">bolt</span>
         </button>
         <button
           class="icon-btn"
           title={t("actionInspect")}
           onClick={() => onInspect(field.selector)}
         >
-          🔎
+          <span class="material-icons-round">manage_search</span>
         </button>
         <button
           class="icon-btn"
           title={t("actionEditField")}
           onClick={() => onEdit(field)}
         >
-          ✏️
+          <span class="material-icons-round">edit</span>
         </button>
         <button
           class={`icon-btn${ignored ? " icon-btn-off" : ""}`}
           title={ignored ? t("actionReactivate") : t("actionIgnore")}
           onClick={() => onToggleIgnore(field.selector, label)}
         >
-          {ignored ? "🚫" : "👁️"}
+          <span class="material-icons-round">
+            {ignored ? "visibility_off" : "visibility"}
+          </span>
         </button>
       </td>
     </tr>
@@ -143,41 +145,51 @@ export function FieldsTabView({
           id="btn-detect-fields"
           disabled={detecting}
           onClick={onDetect}
+          title={t("detectFields")}
         >
-          {detecting
-            ? `🔄 ${t("detectFields")} ...`
-            : `🔍 ${t("detectFields")}`}
+          <span class="material-icons-round">
+            {detecting ? "hourglass_empty" : "search"}
+          </span>
+          {detecting ? `${t("detectFields")} ...` : t("detectFields")}
         </button>
         <button
           class="btn"
           id="btn-fill-all-fields"
           disabled={detecting && !hasFields}
           onClick={onFillAll}
+          title={t("fillAll")}
         >
-          ⚡ {t("fillAll")}
+          <span class="material-icons-round">electrical_services</span>
+          {t("fillAll")}
         </button>
         <button
           class="btn"
           id="btn-fill-empty-fields"
           disabled={detecting && !hasFields}
           onClick={onFillEmpty}
+          title={t("fillOnlyEmpty")}
         >
-          🟦 {t("fillOnlyEmpty")}
+          <span class="material-icons-round">unfold_more</span>
+          {t("fillOnlyEmpty")}
         </button>
         <button
           class="btn btn-danger"
           id="btn-clear-fields"
           disabled={!hasFields}
           onClick={onClearDetected}
+          title={t("clearDetected")}
         >
-          🗑️ Limpar Detectados
+          <span class="material-icons-round">delete_sweep</span>
+          {t("clearDetected")}
         </button>
         <button
           class="btn btn-danger"
           id="btn-clear-form"
           onClick={onClearForm}
+          title={t("clearForm")}
         >
-          🧹 Limpar Form
+          <span class="material-icons-round">clear</span>
+          {t("clearForm")}
         </button>
         <span class="fields-count">
           {fields.length} {t("fieldCount")}
@@ -203,7 +215,13 @@ export function FieldsTabView({
                   colspan={7}
                   style={{ textAlign: "center", padding: "20px" }}
                 >
-                  ⏳ Detectando campos...
+                  <span
+                    class="material-icons-round"
+                    style="fontSize:14px;verticalAlign:middle"
+                  >
+                    hourglass_empty
+                  </span>{" "}
+                  Detectando campos...
                 </td>
               </tr>
             </tbody>
@@ -242,7 +260,13 @@ export function FieldsTabView({
                     colspan={7}
                     style={{ textAlign: "center", padding: "10px" }}
                   >
-                    ⏳ {t("detectFields")}...
+                    <span
+                      class="material-icons-round"
+                      style="fontSize:14px;verticalAlign:middle"
+                    >
+                      hourglass_empty
+                    </span>{" "}
+                    {t("detectFields")}...
                   </td>
                 </tr>
               )}

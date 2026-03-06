@@ -20,12 +20,12 @@ export interface AppShellProps {
 type TabDef = { id: TabId; icon: string; label: () => string };
 
 const TABS: TabDef[] = [
-  { id: "actions", icon: "⚡", label: () => t("tabActions") },
-  { id: "fields", icon: "🔍", label: () => t("tabFields") },
-  { id: "forms", icon: "📄", label: () => t("tabForms") },
-  { id: "record", icon: "🔴", label: () => t("tabRecord") },
-  { id: "demo", icon: "🎬", label: () => t("tabDemo") },
-  { id: "log", icon: "📋", label: () => t("tabLog") },
+  { id: "actions", icon: "bolt", label: () => t("tabActions") },
+  { id: "fields", icon: "search", label: () => t("tabFields") },
+  { id: "forms", icon: "description", label: () => t("tabForms") },
+  { id: "record", icon: "fiber_manual_record", label: () => t("tabRecord") },
+  { id: "demo", icon: "smart_display", label: () => t("tabDemo") },
+  { id: "log", icon: "assignment", label: () => t("tabLog") },
 ];
 
 export function AppShell({
@@ -38,7 +38,7 @@ export function AppShell({
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div class="toolbar">
         <div class="toolbar-left">
-          <span class="toolbar-title">🔧 Fill All</span>
+          <span class="toolbar-title">Fill All</span>
           <div class="tabs">
             {TABS.map(({ id, icon, label }) => (
               <button
@@ -47,7 +47,8 @@ export function AppShell({
                 data-tab={id}
                 onClick={() => onTabSwitch(id)}
               >
-                {icon} {label()}
+                <span class="material-icons-round">{icon}</span>
+                {label()}
               </button>
             ))}
           </div>
@@ -59,7 +60,7 @@ export function AppShell({
             title={t("fpOpenOptions")}
             onClick={onOptions}
           >
-            ⚙️
+            <span class="material-icons-round">settings</span>
           </button>
         </div>
       </div>

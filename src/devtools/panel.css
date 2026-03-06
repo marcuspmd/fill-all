@@ -1,5 +1,12 @@
 /* DevTools Panel — Dark theme matching Chrome DevTools aesthetic */
 
+@font-face {
+  font-family: "Material Icons Round";
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/material-icons-round.woff2') format('woff2');
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -37,6 +44,25 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+
+/* ── Material Icons ── */
+
+.material-icons-round {
+  font-family: "Material Icons Round", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  user-select: none;
+  line-height: 1;
 }
 
 /* ── Toolbar ── */
@@ -197,6 +223,13 @@ body {
 
 .card-icon {
   font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-icon.material-icons-round {
+  font-size: 22px;
 }
 
 .card-label {
@@ -238,6 +271,13 @@ body {
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn .material-icons-round {
+  font-size: 18px;
 }
 
 .btn:hover {

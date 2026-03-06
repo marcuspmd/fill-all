@@ -2174,5 +2174,13 @@
   "quickShortcutCopied": {
     "message": "copied",
     "description": "Success message when value copied to clipboard"
+  },
+  "clearDetected": {
+    "message": "Clear Detected Fields",
+    "description": "Button label to clear all detected fields"
+  },
+  "clearForm": {
+    "message": "Clear Form",
+    "description": "Button label to clear the entire form"
   }
 }
