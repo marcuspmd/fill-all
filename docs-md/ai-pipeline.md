@@ -1,297 +1,232 @@
-# Pipeline de AI — Fill All
+# AI Pipeline — Fill All
 
-Documentação do sistema de inteligência artificial para classificação e preenchimento de campos.
-
----
-
-## Visão Geral
-
-O Fill All usa **dois motores de AI** complementares para classificar campos de formulário:
-
-| Motor | Tecnologia | Contexto | Quando Usa |
-|-------|-----------|----------|------------|
-| **TensorFlow.js** | MLP (Multi-Layer Perceptron) | Offline, rápido | Sempre disponível |
-| **Chrome AI** | Gemini Nano (Prompt API) | LLM on-device | Chrome 131+, se habilitado |
-
-Ambos alimentam a **pipeline de detecção**, que decide o tipo de cada campo e qual gerador usar.
+This document describes the current detection, AI, and machine-learning pipeline used by Fill All.
 
 ---
 
-## Pipeline de Detecção
+## High-level model
 
-A pipeline é **imutável** — transformações criam novas instâncias via `.with()`, `.without()`, `.withOrder()`.
+Fill All does not rely on a single strategy. It combines deterministic rules, structural detection, ML classification, and optional AI-assisted generation.
 
-### Ordem Padrão
+The current stack includes:
 
-```
-Campo HTML
-  │
-  ├─ 1. htmlTypeClassifier    (confidence: 1.0)   ← Mapeamento nativo HTML
-  ├─ 2. keywordClassifier     (confidence: 1.0)   ← Keywords pt-BR nos sinais
-  ├─ 3. tensorflowClassifier  (confidence: 0.2+)  ← MLP TensorFlow.js
-  ├─ 4. chromeAiClassifier    (confidence: 0.6+)  ← Gemini Nano
-  └─ 5. htmlFallbackClassifier(confidence: 0.1)   ← Último recurso
-```
+- rules and saved templates
+- HTML and keyword-based heuristics
+- TensorFlow.js classification
+- Chrome Built-in AI / Gemini Nano classification and generation
+- adaptive generators as fallback output providers
 
-A pipeline para no **primeiro classificador com confiança acima do threshold**. Se nenhum atingir, usa o fallback.
+## Two distinct AI-related flows
 
-### Thresholds de Confiança
+### 1. Field classification pipeline
 
-| Classificador | Threshold Mínimo | Observação |
-|---------------|-----------------|------------|
-| HTML Type | 1.0 | Certeza absoluta por tipo nativo |
-| Keyword | 1.0 | Match exato de keywords |
-| TensorFlow (softmax) | 0.2 | Top-1 do softmax |
-| TensorFlow (learned) | 0.5 | Cosine similarity com entries aprendidas |
-| Chrome AI | 0.6 | Confiança da resposta do LLM |
-| HTML Fallback | 0.1 | Sempre retorna resultado |
+Used during standard form detection and filling.
 
-### Customização
+Typical order:
 
-```typescript
-// Reordenar classificadores
-const pipeline = DEFAULT_PIPELINE.withOrder(["html-type", "tensorflow"]);
+1. HTML/native type classifier
+2. keyword classifier
+3. TensorFlow.js classifier
+4. Chrome AI classifier
+5. HTML fallback classifier
 
-// Remover classificadores
-const noAi = DEFAULT_PIPELINE.without("chrome-ai");
+This path determines **what a field is**.
 
-// Adicionar classificador custom
-const custom = DEFAULT_PIPELINE.with(meuClassifier);
+### 2. Contextual AI fill
 
-// Inserir antes de outro
-const injected = DEFAULT_PIPELINE.insertBefore("tensorflow", meuClassifier);
-```
+Used when the user explicitly chooses contextual AI fill.
+
+This path determines **what values should be generated for the full form**.
+
+Unlike the standard flow, it can process the form as a batch and keep values coherent across related fields.
 
 ---
 
-## TensorFlow.js — MLP Classifier
+## Detection pipeline behavior
 
-### Arquitetura do Modelo
+The detection pipeline is immutable. Customization returns a new pipeline instance instead of mutating the existing one.
 
-```
-Input (trigram vectors, dimensão = vocab_size)
-  │
-  ├─ Dense(256, relu, L2 regularization 1e-4)
-  ├─ Dropout(0.3)
-  │
-  ├─ Dense(128, relu, L2 regularization 1e-4)
-  ├─ Dropout(0.2)
-  │
-  └─ Dense(NUM_CLASSES, softmax)
-       │
-       └─ Probabilidades por FieldType
-```
+Examples of supported customization patterns:
 
-### Feature Engineering
+- reorder classifiers
+- remove specific classifiers
+- inject additional classifiers
 
-1. **Sinais extraídos** do campo: label, name, id, placeholder, autocomplete, type
-2. **Sinais estruturados** em 3 tiers com pesos:
-   - Primary (3x): label, name, id, placeholder
-   - Secondary (2x): autocomplete
-   - Structural (1x): inputType, required, pattern
-3. **Tokens de metadata**: `__cat_personal`, `__lang_pt`, `__input_text`, `__has_pattern`
-4. **Trigrams** extraídos do texto normalizado
-5. **Vetorização TF** L2-normalizada
+That keeps the pipeline predictable and easy to test.
 
-### Dois Modelos
+## Built-in classifier stages
 
-| Modelo | Origem | Armazenamento | Quando Carrega |
-|--------|--------|---------------|----------------|
-| **Bundled** | Script offline (`npm run train:model`) | `public/model/` | Sempre |
-| **Runtime** | Treinado in-browser | `chrome.storage.local` | Se existir, tem prioridade |
+### HTML/native type classifier
 
-### Treinamento Offline
+- fast
+- deterministic
+- highest-confidence source for native types
 
-```bash
-npm run train:model
-```
+### Keyword classifier
 
-Usa `scripts/train-model.ts` com dataset de `src/lib/dataset/training-data.ts`. Gera:
-- `public/model/model.json` — topologia
-- `public/model/labels.json` — array de FieldTypes
-- `public/model/vocab.json` — mapa de trigrams
+- uses field signals such as label, name, id, placeholder, and autocomplete
+- handles common localized patterns well
 
-### Treinamento Runtime (In-Browser)
+### TensorFlow.js classifier
 
-Disparado pela options page ou via mensagem `RETRAIN_LEARNING_DATABASE`:
+- browser-side MLP model
+- works offline
+- can use runtime-trained data in addition to bundled assets
 
-```typescript
-const result = await trainModelFromDataset(entries, (progress) => {
-  console.log(`Epoch ${progress.epoch}/${progress.totalEpochs}`);
-  console.log(`Loss: ${progress.loss}, Accuracy: ${progress.accuracy}`);
-});
-```
+### Chrome AI classifier
 
-**Hiperparâmetros:**
-- Optimizer: Adam (lr = 0.001)
-- Batch size: 32
-- Max epochs: 80
-- Early stopping: patience 20 (restaura melhores pesos)
-- Mínimo: 10 amostras, 2+ tipos diferentes
+- uses Chrome Built-in AI / Gemini Nano when available
+- supports richer semantic interpretation
+- typically acts later in the pipeline because it is more expensive than structural heuristics
 
-**Persistência no Storage:**
-- `fill_all_runtime_model` — topology + weights (Base64)
-- `fill_all_runtime_vocab` — mapa de trigrams
-- `fill_all_runtime_labels` — array de FieldTypes
-- `fill_all_runtime_meta` — métricas de treinamento
+### HTML fallback classifier
+
+- last-resort path
+- ensures the pipeline can still return a usable guess in weak-signal scenarios
 
 ---
 
-## Chrome AI — Gemini Nano
+## TensorFlow.js pipeline
 
-### Requisitos
+### Input signals
 
-- Chrome 131+
-- Flag `chrome://flags/#optimization-guide-on-device-model` → Enabled
-- Modelo Gemini Nano baixado (~1.7GB)
+The ML pipeline is fed by normalized form-field metadata, including combinations of:
 
-### Funcionamento
+- label text
+- `name`
+- `id`
+- placeholder
+- autocomplete hints
+- input type
+- structural metadata such as `required` or `pattern`
 
-1. **Verifica disponibilidade** via `LanguageModel.availability()`
-2. **Cria sessão** com system prompt especializado
-3. **Envia contexto do campo** (label, name, type, placeholder, autocomplete)
-4. **Recebe valor gerado** ou **classificação do tipo**
+### Feature representation
 
-### System Prompt
+The codebase uses structured signals and n-gram style processing to convert field metadata into model-friendly vectors.
 
-```
-You are a form field value generator. When given information about a form field
-(its label, name, type, placeholder), you generate a single realistic test value.
-Rules:
-- Return ONLY the value, no explanations
-- Use Brazilian Portuguese when generating names, addresses, etc.
-- Generate valid CPFs, CNPJs when asked
-- For dates, use ISO format (YYYY-MM-DD)
-- For emails, use realistic-looking addresses
-- Keep values concise and appropriate for the field
-```
+Important ideas:
 
-### Sessão Reutilizável
+- normalized text
+- weighted signal tiers
+- metadata tokens
+- trigram/vectorized representations
 
-A sessão é criada uma vez e reutilizada para múltiplos campos, reduzindo latência.
+### Runtime model behavior
 
----
+The project supports both:
 
-## Learning Store
+- a bundled model shipped with the extension
+- a runtime-trained model persisted locally in browser storage
 
-Sistema de aprendizado contínuo que melhora a classificação ao longo do tempo.
+Runtime-trained models can take precedence when present.
 
-### Como Funciona
+### Learning loop
 
-```
-Preenchimento correto → storeLearnedEntry()
-                              │
-                              ▼
-                    chrome.storage.local
-                    (max 500 entries, FIFO)
-                              │
-                              ▼
-                    tensorflowClassifier consulta
-                    entries aprendidas via cosine
-                    similarity (threshold 0.5)
-```
-
-### Características
-
-| Propriedade | Valor |
-|-------------|-------|
-| Max entries | 500 |
-| Eviction | FIFO (mais antigos removidos primeiro) |
-| Dedup | Por sinais normalizados (mesmo texto → atualiza em vez de duplicar) |
-| Sources | `"auto"` (uso orgânico) ou `"rule"` (importado de regras) |
-
-### Retrain via Regras
-
-`retrainLearnedFromRules()` converte regras existentes em entries de aprendizado, permitindo que o modelo aprenda com configurações manuais do usuário.
+Fill All also maintains learned entries from user activity and rules. Those entries can improve classification and can feed retraining workflows.
 
 ---
 
-## Dataset
+## Chrome Built-in AI
 
-Dados estruturados para treinamento e avaliação do modelo.
+### What it is used for
 
-### Splits
+Chrome AI is currently used in two ways:
 
-| Split | Arquivo | Finalidade |
-|-------|---------|-----------|
-| Training | `training-data.ts` | Treinar o modelo |
-| Validation | `validation-data.ts` | Ajustar hiperparâmetros + `evaluateClassifier()` |
-| Test | `test-data.ts` | Avaliação final + `runTestEvaluation()` |
-| Runtime | `runtime-dataset.ts` | Entries curadas pelo usuário (CRUD) |
+- field-level classification/generation support
+- contextual whole-form filling when the user explicitly requests it
 
-### Formato de Entry
+### Availability model
 
-```typescript
-interface DatasetEntry {
-  id: string;
-  type: FieldType;        // "cpf", "email", "full-name", etc.
-  signals: string;        // Texto concatenado de sinais do campo
-  difficulty?: "easy" | "medium" | "hard";
-  source?: string;        // "builtin", "user", "imported"
-}
-```
+Chrome AI features depend on the user’s Chrome version and local model availability. The extension must handle unavailability gracefully.
 
-### Data Augmentation
-
-| Função | Efeito |
-|--------|--------|
-| `augmentShuffle()` | Embaralha ordem das palavras |
-| `augmentDrop()` | Remove 20% das palavras aleatoriamente |
-| `augmentTypo()` | Simula typos (swap de caracteres adjacentes) |
-
-### Health Check
-
-```typescript
-const health = checkDatasetHealth(entries);
-// → { underRepresented: ["passport"], missing: ["titulo-eleitor"], leakage: false }
-```
-
-Detecta:
-- Tipos com < 3 amostras (sub-representados)
-- Tipos ausentes do enum `FieldType`
-- Data leakage entre splits
-
-### Thresholds de Qualidade
-
-| Métrica | Threshold |
-|---------|-----------|
-| Accuracy global | ≥ 85% |
-| Accuracy por tipo | ≥ 70% |
-| Taxa de "unknown" | ≤ 15% |
+The current code does that by falling back to the standard non-AI filling path when AI is not available or returns no useful output.
 
 ---
 
-## Fluxo Completo de Classificação
+## Contextual AI fill in practice
 
-```
-1. Usuário aciona preenchimento (popup / atalho / context menu)
-        │
-2. Background envia FILL_ALL_FIELDS para content script
-        │
-3. Content script detecta campos:
-   ├─ form-detector.ts → detectAllFields()
-   ├─ Adapters (Select2, Ant Design) detectam componentes custom
-   └─ Extractors (label, selector, signals) extraem metadados
-        │
-4. Para cada campo, pipeline executa classificadores na ordem:
-   ├─ htmlTypeClassifier  → Mapeamento HTML nativo
-   ├─ keywordClassifier   → Keywords nos sinais
-   ├─ tensorflowClassifier:
-   │   ├─ Consulta learned entries (cosine similarity ≥ 0.5)
-   │   └─ Modelo MLP (softmax ≥ 0.2)
-   ├─ chromeAiClassifier  → Gemini Nano (se disponível)
-   └─ htmlFallbackClassifier → input[type] como último recurso
-        │
-5. Resultado: { type: FieldType, confidence: number, method: string }
-        │
-6. form-filler.ts resolve o valor (prioridade):
-   ├─ fixedValue (regra com valor fixo)
-   ├─ Formulário salvo (template)
-   ├─ Chrome AI (gera valor via LLM)
-   ├─ Generator padrão (por tipo classificado)
-   └─ generateText() (fallback)
-        │
-7. Valor preenchido + eventos disparados (input/change/blur)
-        │
-8. Resultado salvo no learning store (aprendizado contínuo)
-```
+The contextual AI flow is one of the biggest differences between the older docs and the current code.
+
+### Current inputs supported by the popup
+
+The popup can collect optional context from:
+
+- free text
+- CSV uploads
+- image uploads
+- PDF uploads converted into page images
+
+### Current runtime behavior
+
+The `fillContextualAI` path currently:
+
+- detects eligible fields
+- skips ignored fields
+- respects settings like empty-only behavior where applicable
+- builds structured field descriptors for the full form
+- sends one batched request for the form rather than isolated requests per field
+- uses optional multimodal context when provided
+- falls back to the regular fill pipeline if nothing useful is returned
+
+This improves consistency for related values such as:
+
+- full name + email
+- address + ZIP code + city
+- company + role + department
+
+---
+
+## Value resolution priority
+
+Even with AI available, Fill All still preserves deterministic user-configured behavior.
+
+Priority order:
+
+1. ignored field
+2. fixed rule value
+3. saved form/template value
+4. AI-assisted value generation when explicitly requested or configured
+5. TensorFlow.js classification + generator
+6. default generator fallback
+
+This matters because the product is not "AI-only"; it is a hybrid automation tool.
+
+---
+
+## Training and evaluation data
+
+The repository includes dedicated dataset modules for:
+
+- training data
+- validation data
+- test data
+- runtime dataset entries curated by the user
+
+Related helpers also support:
+
+- augmentation
+- dataset health checks
+- integration between learned entries and runtime datasets
+
+---
+
+## Practical implications for contributors
+
+When changing AI or ML behavior:
+
+- keep the pipeline immutable
+- do not force a classifier result when confidence is weak
+- prefer `null` over low-confidence noise
+- preserve local-only behavior where possible
+- update tests and docs together when adding new AI entry points or datasets
+
+## Summary
+
+Fill All’s AI pipeline is best understood as a layered decision system:
+
+- rules and templates first
+- heuristics next
+- ML and AI where they add value
+- generators as the reliable output engine
+
+That hybrid design is what makes the extension practical instead of magical-in-a-slide-deck-only.

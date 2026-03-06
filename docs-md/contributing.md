@@ -1,247 +1,207 @@
-# Contribuindo — Fill All
+# Contributing — Fill All
 
-Obrigado por considerar contribuir com o Fill All! Este guia vai te ajudar a configurar o ambiente e entender nossas convenções.
-
----
-
-## Pré-requisitos
-
-- **Node.js** 18+ (recomendado 20+)
-- **npm** 9+
-- **Google Chrome** 128+ (para testar a extensão)
-- **Chrome 131+** se quiser testar Chrome AI (Gemini Nano)
+Thanks for contributing to Fill All. This guide covers the current development workflow, repository conventions, and what to validate before opening a pull request.
 
 ---
 
-## Setup do Ambiente
+## Requirements
+
+- Node.js 18+
+- npm 9+
+- Google Chrome 128+
+- Chrome 131+ if you want to exercise Chrome Built-in AI features locally
+
+## Setup
 
 ```bash
-# 1. Clone o repositório
-git clone https://github.com/user/fill-all.git
+git clone https://github.com/marcuspmd/fill-all.git
 cd fill-all
-
-# 2. Instale dependências
 npm install
-
-# 3. Build de desenvolvimento (com HMR)
-npm run dev
-
-# 4. Carregue no Chrome
-# → chrome://extensions/
-# → Ative "Modo de desenvolvedor" (toggle no canto superior direito)
-# → "Carregar sem compactação"
-# → Selecione a pasta dist/
-```
-
-### Scripts Disponíveis
-
-| Script | Comando | Descrição |
-|--------|---------|-----------|
-| Dev | `npm run dev` | Build com HMR via Vite |
-| Build | `npm run build` | Build de produção → `dist/` |
-| Type Check | `npm run type-check` | Verificação de tipos (tsc --noEmit) |
-| Clean | `npm run clean` | Remove `dist/` |
-| Train Model | `npm run train:model` | Treina modelo TensorFlow.js |
-| Import Rules | `npm run import:rules` | Importa regras exportadas para dataset |
-
----
-
-## Estrutura do Projeto
-
-```
-src/
-├── background/      # Service Worker (hub de mensagens)
-│   └── handlers/    # Handlers de domínio (rules, storage, cache, etc.)
-├── content/         # Content script (opera no DOM das páginas)
-├── popup/           # Popup UI (interface rápida)
-├── options/         # Options page (configurações completas)
-├── devtools/        # Painel DevTools
-├── lib/             # Bibliotecas core
-│   ├── ai/          # Chrome AI + TensorFlow.js + learning
-│   ├── form/        # Detecção e preenchimento de formulários
-│   │   ├── detectors/   # Pipeline + classificadores
-│   │   ├── extractors/  # Label, selector, signals extractors
-│   │   └── adapters/    # Select2, Ant Design adapters
-│   ├── generators/  # Geradores de dados brasileiros
-│   ├── dataset/     # Dados de treinamento e avaliação
-│   ├── storage/     # Wrapper sobre chrome.storage.local
-│   ├── rules/       # Motor de regras
-│   ├── messaging/   # Validação de mensagens (Zod + light)
-│   ├── logger/      # Logger centralizado
-│   ├── shared/      # N-grams, sinais estruturados, catálogo
-│   ├── ui/          # Renderizadores HTML compartilhados
-│   ├── url/         # URL glob matching
-│   └── chrome/      # Helpers Chrome API
-├── types/           # Tipos TypeScript
-└── docs/            # Documentação
-```
-
----
-
-## Convenções de Código
-
-### TypeScript
-
-- **Strict mode** ativado (`strict: true`, target ES2022)
-- **Sem `any` implícito** — tipagem explícita obrigatória
-- Usar `@/*` para imports (ex: `import { generateCpf } from "@/lib/generators"`)
-- **Nunca `export default`** — apenas named exports
-
-### Naming
-
-| Categoria | Padrão | Exemplo |
-|-----------|--------|---------|
-| Detectores/classificadores | Objetos `const` (NÃO classes) | `htmlTypeDetector` |
-| Funções | `verbNoun` | `detectBasicType()`, `generateCpf()` |
-| Storage | `get*`, `save*`, `delete*` | `getRulesForUrl()` |
-| Tipos | `PascalCase` | `FieldType`, `FormField` |
-| Constantes | `UPPER_SNAKE_CASE` | `STORAGE_KEYS`, `DEFAULT_PIPELINE` |
-| Parsers | `parse*Payload()` | `parseRulePayload()` |
-
-### Error Handling
-
-```typescript
-// ✅ Parsers — retornar null, nunca throw
-export function parseRulePayload(input: unknown): FieldRule | null {
-  const result = schema.safeParse(input);
-  return result.success ? result.data : null;
-}
-
-// ✅ Async — sempre try-catch com logger
-try {
-  await loadModel();
-} catch (err) {
-  log.warn("Failed to load model:", err);
-}
-
-// ❌ Nunca fazer isso em storage/parsers/generators
-throw new Error("Invalid data");
-```
-
-### Logger
-
-Sempre usar `createLogger` — nunca `console.log` direto:
-
-```typescript
-import { createLogger } from "@/lib/logger";
-const log = createLogger("MeuModulo");
-
-log.debug("detalhe interno");
-log.info("operação concluída");
-log.warn("fallback ativado");
-log.error("falha crítica", err);
-```
-
-### Validação
-
-| Camada | Onde usar | Método |
-|--------|-----------|--------|
-| **Full Zod** | Background, options, caminhos críticos | Schema Zod + `safeParse()` |
-| **Light** | Content script (hot paths) | Apenas `typeof` checks |
-
-- Zod v4: usar `z.uuid()` (nunca `z.string().uuid()` — deprecated)
-
----
-
-## Como Contribuir
-
-### Novo Gerador de Dados
-
-1. Crie o arquivo em `src/lib/generators/` (ex: `titulo-eleitor.ts`)
-2. Exporte funções `generate*()` — devem ser **puras e síncronas**
-3. Registre no `generatorMap` em `src/lib/generators/index.ts`
-4. Adicione o tipo em `FieldType` (`src/types/index.ts`) se necessário
-
-```typescript
-// src/lib/generators/titulo-eleitor.ts
-export function generateTituloEleitor(formatted = true): string {
-  // Gerar título de eleitor válido
-  // Retornar string formatada ou apenas dígitos
-}
-```
-
-> Veja [docs/generators.md](./generators.md) para detalhes completos.
-
-### Novo Classificador
-
-1. Crie em `src/lib/form/detectors/strategies/`
-2. Implemente a interface `FieldClassifier` como **objeto** (não classe)
-3. Retorne `null` quando não tiver confiança
-4. Registre em `classifiers.ts`
-
-```typescript
-// Classificador como objeto imutável
-export const meuClassifier: FieldClassifier = {
-  name: "meu-classifier",
-  detect(field: FormField): ClassifierResult | null {
-    // Retornar null se não tiver confiança
-    return { type: "cpf", confidence: 0.95, method: "meu-classifier" };
-  }
-};
-```
-
-### Novo Adapter de Componente
-
-1. Crie em `src/lib/form/adapters/`
-2. Implemente `CustomComponentAdapter`
-3. Registre no `ADAPTER_REGISTRY` em `adapter-registry.ts`
-
-### Bug Fixes e Melhorias
-
-1. Fork o repositório
-2. Crie uma branch descritiva: `fix/campo-select-nao-preenchido` ou `feat/gerador-titulo-eleitor`
-3. Faça suas alterações seguindo as convenções
-4. Rode `npm run type-check` para garantir que não há erros de tipagem
-5. Abra um Pull Request com descrição clara do que foi alterado
-
----
-
-## Validação
-
-Antes de enviar um PR, certifique-se de:
-
-```bash
-# Verificação de tipos
-npm run type-check
-
-# Build de produção (verifica se compila)
 npm run build
 ```
 
+Then load `dist/` in `chrome://extensions/` with Developer mode enabled.
+
+## Common commands
+
+### Development
+
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Vite development build |
+| `npm run build` | Production build |
+| `npm run clean` | Remove `dist/` |
+| `npm run type-check` | TypeScript validation |
+| `npm run train:model` | Train the TensorFlow model |
+| `npm run import:rules` | Import rules into the runtime dataset |
+
+### Testing and validation
+
+| Command | Purpose |
+|---|---|
+| `npm test` | Run unit tests |
+| `npm run test:watch` | Run unit tests in watch mode |
+| `npm run test:coverage` | Run unit tests with coverage |
+| `npm run test:e2e` | Run Playwright E2E tests |
+| `npm run test:e2e:ui` | Run Playwright in UI mode |
+| `npm run test:e2e:coverage` | Run instrumented E2E coverage flow |
+| `npm run test:all` | Run unit and E2E tests sequentially |
+| `npm run validate` | Validate types, unit tests, and build |
+| `npm run validate:quick` | Faster validation pass |
+| `npm run validate:full` | Validate types, unit, build, and E2E |
+
 ---
 
-## Dicas de Desenvolvimento
+## Repository structure
 
-### Hot Reload
+```text
+src/
+├── background/      # Service worker and handlers
+├── content/         # Content script runtime
+├── popup/           # Minimal popup UI
+├── options/         # Main configuration page
+├── devtools/        # DevTools panel and advanced workflows
+├── lib/             # Core libraries
+└── types/           # Shared contracts
+```
 
-Com `npm run dev`, o Vite + CRXJS faz HMR automático. Porém, algumas mudanças exigem reload manual:
+Useful library areas under `src/lib/`:
 
-- **Service Worker** (`src/background/`) → Clique em "Atualizar" na página de extensões
-- **Content Script** (`src/content/`) → Recarregue a página
-- **Popup/Options** → Feche e reabra
-
-### Debugging
-
-- **Background**: `chrome://extensions/` → "Inspecionar views: service worker"
-- **Content Script**: DevTools da página → Console (contexto "Fill All")
-- **DevTools Panel**: DevTools → aba "Fill All"
-
-### Chrome AI (Gemini Nano)
-
-Para testar funcionalidades de Chrome AI:
-1. Chrome 131+ necessário
-2. Acesse `chrome://flags/#optimization-guide-on-device-model`
-3. Defina como "Enabled BypassPerfRequirement"
-4. Reinicie o Chrome e aguarde download do modelo (~1.7GB)
+- `ai/`
+- `form/`
+- `generators/`
+- `dataset/`
+- `storage/`
+- `rules/`
+- `messaging/`
+- `logger/`
+- `demo/`
+- `e2e-export/`
 
 ---
 
-## Arquitetura de Decisão
+## Project conventions
 
-Se a contribuição impacta arquitetura ou padrões existentes, documente:
+### TypeScript and exports
 
-- **O que** está mudando e **por quê**
-- **Alternativas** consideradas
-- **Impacto** em módulos existentes
+- strict TypeScript only
+- avoid implicit `any`
+- use named exports only
+- prefer `@/*` imports
 
-Para mudanças significativas, abra uma Issue primeiro para discutir a abordagem.
+### Naming
+
+| Category | Convention | Example |
+|---|---|---|
+| functions | `verbNoun` | `detectAllFields()` |
+| detector objects | immutable `const` object | `htmlTypeDetector` |
+| storage helpers | `get*`, `save*`, `delete*` | `saveRule()` |
+| parsers | `parse*Payload()` | `parseRulePayload()` |
+| constants | `UPPER_SNAKE_CASE` | `STORAGE_KEYS` |
+| types | `PascalCase` | `FormField` |
+
+### Error handling
+
+- do not throw from storage helpers, parsers, or generators
+- for Zod parsing, use `safeParse()` and return `null` on failure
+- wrap async logic in `try/catch` and log context with `createLogger()`
+
+### Validation layers
+
+| Layer | Where to use |
+|---|---|
+| full Zod validation | background, options, critical paths |
+| light validation | content-script hot paths |
+
+### Logging
+
+Use `createLogger("Namespace")`. Avoid direct `console.log` in project code.
+
+### Zod note
+
+Use `z.uuid()` instead of `z.string().uuid()`.
+
+---
+
+## Working in key areas
+
+### Adding a new generator
+
+1. add a new file under `src/lib/generators/`
+2. export named `generate*()` helpers
+3. register the generator in the central registry
+4. update field-type metadata if needed
+5. add unit tests
+
+### Adding a new classifier or detector
+
+1. implement it as an immutable object, not a class
+2. return `null` when confidence is insufficient
+3. register it through the classifier pipeline setup
+4. update tests for ordering, fallback, and confidence behavior
+
+### Working on content-script behavior
+
+Remember that the content script is a hot path.
+
+- avoid unnecessary heavy validation
+- be careful with DOM traversals
+- keep replay and watcher behavior efficient
+
+### Working on DevTools tooling
+
+The DevTools surface now includes recording and demo workflows. Changes here should consider:
+
+- shared panel state
+- live updates from the inspected tab
+- replay progress events
+- export and recording UX
+
+---
+
+## Testing expectations
+
+### Unit tests
+
+- use Vitest
+- file suffix: `.test.ts`
+- place tests close to the module area or under the expected project structure
+
+### E2E tests
+
+- use Playwright
+- file suffix: `.test.e2e.ts`
+- use the project fixtures when E2E coverage is required
+
+Before submitting a PR, run at least:
+
+```bash
+npm run type-check
+npm test
+npm run build
+```
+
+For behavior changes in recording, replay, demo, or form-filling flows, run the relevant E2E coverage too.
+
+## Pull-request guidance
+
+Please aim for:
+
+- focused branches
+- small, reviewable commits
+- updated tests when behavior changes
+- updated docs when product behavior or developer workflow changes
+
+If the change significantly alters architecture or workflows, document the reasoning in the PR description.
+
+## Debugging tips
+
+- background: inspect the extension service worker from `chrome://extensions/`
+- content script: inspect the page and switch to the extension execution context if needed
+- DevTools panel: open the Fill All panel directly in Chrome DevTools
+
+## AI-related setup note
+
+Chrome Built-in AI support depends on the local browser environment. If those features are unavailable, the repository should still behave correctly via non-AI and TensorFlow-backed fallbacks.
+
+That fallback behavior is intentional and should stay healthy.
