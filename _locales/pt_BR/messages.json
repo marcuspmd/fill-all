@@ -273,7 +273,7 @@
     "message": "+ Criar Template"
   },
   "btnSettings": {
-    "message": "⚙️ Configurações"
+    "message": "Configurações"
   },
   "btnDownloadNow": {
     "message": "⬇️ Baixar agora"
@@ -2122,5 +2122,57 @@
   },
   "demoPositionRight": {
     "message": "direita"
+  },
+  "quickShortcuts": {
+    "message": "Atalhos rápidos",
+    "description": "Label da seção de botões de ação rápida no popup"
+  },
+  "quickFieldCpf": {
+    "message": "CPF",
+    "description": "Label do botão rápido CPF"
+  },
+  "quickFieldCnpj": {
+    "message": "CNPJ",
+    "description": "Label do botão rápido CNPJ"
+  },
+  "quickFieldName": {
+    "message": "Nome",
+    "description": "Label do botão rápido Nome"
+  },
+  "quickFieldPhone": {
+    "message": "Telefone",
+    "description": "Label do botão rápido Telefone"
+  },
+  "quickFieldCep": {
+    "message": "CEP",
+    "description": "Label do botão rápido CEP"
+  },
+  "devtoolsHint": {
+    "message": "Para usar todo o potencial da ferramenta, abra o painel Fill All no DevTools",
+    "description": "Mensagem sugerindo abrir o painel DevTools"
+  },
+  "devtoolsOpen": {
+    "message": "Abrir DevTools",
+    "description": "Label do botão para abrir DevTools"
+  },
+  "btnAbout": {
+    "message": "Sobre",
+    "description": "Label do botão Sobre"
+  },
+  "showFieldIcon": {
+    "message": "Exibir ícone nos campos",
+    "description": "Tooltip para toggle do ícone de campo"
+  },
+  "quickShortcutNotAvailable": {
+    "message": "Atalho indisponível",
+    "description": "Mensagem de erro quando atalho rápido não pode ser gerado"
+  },
+  "quickShortcutCopyFailed": {
+    "message": "Não foi possível copiar",
+    "description": "Mensagem de erro quando cópia para clipboard falha"
+  },
+  "quickShortcutCopied": {
+    "message": "copiado",
+    "description": "Mensagem de sucesso quando valor foi copiado"
   }
 }

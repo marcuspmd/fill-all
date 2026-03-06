@@ -273,7 +273,7 @@
     "message": "+ Create Template"
   },
   "btnSettings": {
-    "message": "⚙️ Settings"
+    "message": "Settings"
   },
   "btnDownloadNow": {
     "message": "⬇️ Download now"
@@ -2122,5 +2122,57 @@
   },
   "demoPositionRight": {
     "message": "right"
+  },
+  "quickShortcuts": {
+    "message": "Quick shortcuts",
+    "description": "Section label for quick action buttons in popup"
+  },
+  "quickFieldCpf": {
+    "message": "CPF",
+    "description": "CPF quick button label"
+  },
+  "quickFieldCnpj": {
+    "message": "CNPJ",
+    "description": "CNPJ quick button label"
+  },
+  "quickFieldName": {
+    "message": "Name",
+    "description": "Name quick button label"
+  },
+  "quickFieldPhone": {
+    "message": "Phone",
+    "description": "Phone quick button label"
+  },
+  "quickFieldCep": {
+    "message": "CEP / Postal Code",
+    "description": "CEP quick button label"
+  },
+  "devtoolsHint": {
+    "message": "To use the full potential of the tool, open the Fill All panel in DevTools",
+    "description": "Hint message suggesting to open DevTools panel"
+  },
+  "devtoolsOpen": {
+    "message": "Open DevTools",
+    "description": "Button label to open DevTools panel"
+  },
+  "btnAbout": {
+    "message": "About",
+    "description": "Button label for About page"
+  },
+  "showFieldIcon": {
+    "message": "Show field icon",
+    "description": "Tooltip for field icon toggle"
+  },
+  "quickShortcutNotAvailable": {
+    "message": "Shortcut unavailable",
+    "description": "Error message when quick shortcut cannot be generated"
+  },
+  "quickShortcutCopyFailed": {
+    "message": "Failed to copy",
+    "description": "Error message when copy to clipboard fails"
+  },
+  "quickShortcutCopied": {
+    "message": "copied",
+    "description": "Success message when value copied to clipboard"
   }
 }
