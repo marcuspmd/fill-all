@@ -6,6 +6,9 @@ import type { DetectionStrategyEntry, Settings } from "@/types";
 import { DEFAULT_DETECTION_PIPELINE } from "@/types";
 import { t, initI18n, localizeHTML } from "@/lib/i18n";
 import { escapeHtml, showToast } from "./shared";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("SettingsSection");
 
 // ── Detection Pipeline ────────────────────────────────────────────────────────
 
@@ -247,11 +250,9 @@ function renderStrategyList(pipeline: DetectionStrategyEntry[]): void {
     });
 
     list.appendChild(item);
-    console.log(`[renderStrategyList] Item ${idx} adicionado ao DOM`);
+    log.debug(`Estratégia renderizada: índice=${idx}`);
   });
-  console.log(
-    `[renderStrategyList] Renderização completa! Total de itens: ${pipeline.length}`,
-  );
+  log.debug(`Renderização completa! Total de itens: ${pipeline.length}`);
 }
 
 // ── Chrome AI Status ──────────────────────────────────────────────────────────
@@ -370,7 +371,7 @@ async function loadSettings(): Promise<void> {
 
   // Detection pipeline
   renderStrategyList(settings.detectionPipeline ?? DEFAULT_DETECTION_PIPELINE);
-  console.log("[loadSettings] Estratégias renderizadas");
+  log.debug("Estratégias renderizadas");
   void checkChromeAiStatus();
 }
 

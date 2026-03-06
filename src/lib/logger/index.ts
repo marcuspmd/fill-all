@@ -59,6 +59,14 @@ const state: LoggerState = {
 /** true enquanto initLogger() ainda não terminou */
 let initializing = true;
 
+/** Chrome storage listener reference for cleanup */
+let storageListener:
+  | ((
+      changes: { [key: string]: chrome.storage.StorageChange },
+      area: chrome.storage.AreaName,
+    ) => void)
+  | null = null;
+
 interface BufferedEntry {
   level: LogLevel | "group";
   prefix: string;
@@ -185,7 +193,7 @@ export async function initLogger(): Promise<void> {
   flushBuffer();
 
   // Atualiza em tempo real quando as configurações mudarem.
-  chrome.storage.onChanged.addListener((changes, area) => {
+  storageListener = (changes, area) => {
     if (area !== "local" || !changes[SETTINGS_KEY]) return;
     const newSettings = changes[SETTINGS_KEY].newValue as
       | { debugLog?: boolean; logLevel?: LogLevel; logMaxEntries?: number }
@@ -197,7 +205,23 @@ export async function initLogger(): Promise<void> {
       level: newSettings.logLevel ?? (enabled ? "debug" : "warn"),
     });
     configureLogStore({ maxEntries: newSettings.logMaxEntries ?? 1000 });
-  });
+  };
+  chrome.storage.onChanged.addListener(storageListener);
+}
+
+/**
+ * Cleans up the logger listeners.
+ * Should be called when the context is destroyed.
+ */
+export function destroyLogger(): void {
+  if (storageListener) {
+    try {
+      chrome.storage.onChanged.removeListener(storageListener);
+    } catch {
+      // Ignore cleanup errors
+    }
+    storageListener = null;
+  }
 }
 
 // ── Interface do logger criado por namespace ───────────────────────────────────

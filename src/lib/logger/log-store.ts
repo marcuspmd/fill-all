@@ -43,6 +43,14 @@ const listeners: Set<LogStoreListener> = new Set();
 /** Whether the store has been initialized (loaded from storage) */
 let initialized = false;
 
+/** Chrome storage listener reference for cleanup */
+let storageListener:
+  | ((
+      changes: { [key: string]: chrome.storage.StorageChange },
+      area: chrome.storage.AreaName,
+    ) => void)
+  | null = null;
+
 // ── Public API ─────────────────────────────────────────────────────────────────
 
 /**
@@ -67,17 +75,35 @@ export async function initLogStore(): Promise<void> {
 
   // Listen for changes from other contexts
   try {
-    chrome.storage.onChanged.addListener((changes, area) => {
+    storageListener = (changes, area) => {
       if (area !== "session" || !changes[STORAGE_KEY]) return;
       const newVal = changes[STORAGE_KEY].newValue as LogEntry[] | undefined;
       if (Array.isArray(newVal)) {
         localEntries = newVal.slice(-maxEntries);
         notifyListeners();
       }
-    });
+    };
+    chrome.storage.onChanged.addListener(storageListener);
   } catch {
     // Listener setup failed — cross-context sync won't work
   }
+}
+
+/**
+ * Cleans up the log store listeners.
+ * Should be called when the context is destroyed (e.g., DevTools panel closed).
+ */
+export function destroyLogStore(): void {
+  if (storageListener) {
+    try {
+      chrome.storage.onChanged.removeListener(storageListener);
+    } catch {
+      // Ignore cleanup errors
+    }
+    storageListener = null;
+  }
+  listeners.clear();
+  initialized = false;
 }
 
 /**
@@ -155,9 +181,16 @@ export async function clearLogEntries(): Promise<void> {
 /**
  * Subscribes to log entry updates.
  * The listener receives all current entries on every change.
+ * Warns when too many subscribers are active to surface potential memory leaks.
  * @returns An unsubscribe function.
  */
 export function onLogUpdate(listener: LogStoreListener): () => void {
+  if (listeners.size >= 20) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[LogStore] ${listeners.size + 1} active subscribers — potential memory leak. Always call the returned unsubscribe function.`,
+    );
+  }
   listeners.add(listener);
   return () => {
     listeners.delete(listener);

@@ -223,6 +223,17 @@ export function createProgressNotification(): ProgressNotification {
   const fieldItems = new Map<string, HTMLElement>();
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
   let aiGeneratingItem: HTMLElement | undefined;
+  let pendingScroll = false;
+
+  function scheduleScroll() {
+    if (!pendingScroll) {
+      pendingScroll = true;
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+        pendingScroll = false;
+      });
+    }
+  }
 
   function getOrCreateItem(field: FormField): HTMLElement {
     const key = field.selector;
@@ -232,8 +243,8 @@ export function createProgressNotification(): ProgressNotification {
       item.className = "fa-progress-item";
       list.appendChild(item);
       fieldItems.set(key, item);
-      // Auto-scroll to bottom
-      container.scrollTop = container.scrollHeight;
+      // Auto-scroll to bottom (batched)
+      scheduleScroll();
     }
     return item;
   }
@@ -255,7 +266,7 @@ export function createProgressNotification(): ProgressNotification {
         <span class="fa-progress-badge">AI</span>
       `;
       list.appendChild(aiGeneratingItem);
-      container.scrollTop = container.scrollHeight;
+      scheduleScroll();
     },
 
     hideAiGenerating() {

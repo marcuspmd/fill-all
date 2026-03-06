@@ -98,24 +98,37 @@ type FillableElement =
 
 let lastContextMenuElement: FillableElement | null = null;
 
+/** Listener reference for cleanup */
+let contextMenuListener: ((event: MouseEvent) => void) | null = null;
+
 // guard against test environment without DOM
 if (typeof document !== "undefined") {
-  document.addEventListener(
-    "contextmenu",
-    (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const field = target.closest("input, select, textarea");
-      if (
-        field instanceof HTMLInputElement ||
-        field instanceof HTMLSelectElement ||
-        field instanceof HTMLTextAreaElement
-      ) {
-        lastContextMenuElement = field;
-      }
-    },
-    true,
-  );
+  contextMenuListener = (event: MouseEvent) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const field = target.closest("input, select, textarea");
+    if (
+      field instanceof HTMLInputElement ||
+      field instanceof HTMLSelectElement ||
+      field instanceof HTMLTextAreaElement
+    ) {
+      lastContextMenuElement = field;
+    }
+  };
+  document.addEventListener("contextmenu", contextMenuListener, true);
+}
+
+/**
+ * Cleanup function to remove document event listeners.
+ * Should be called before page navigation or when extension is disabled.
+ */
+export function cleanupContentScript(): void {
+  if (contextMenuListener) {
+    document.removeEventListener("contextmenu", contextMenuListener, true);
+    contextMenuListener = null;
+  }
+  stopWatching();
+  destroyCursorOverlay();
 }
 
 function generateId(): string {

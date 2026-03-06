@@ -120,3 +120,19 @@ export async function clearFieldDetectionCache(): Promise<void> {
     () => [],
   );
 }
+
+/**
+ * Removes cache entries older than `maxAgeMs` milliseconds.
+ * Defaults to 7 days. Use to prevent unbounded storage growth over time.
+ * @param maxAgeMs - Maximum age in milliseconds (default: 7 days)
+ */
+export async function cleanupStaleFieldDetectionCache(
+  maxAgeMs = 7 * 24 * 60 * 60 * 1000,
+): Promise<void> {
+  const cutoff = Date.now() - maxAgeMs;
+  await updateStorageAtomically(
+    STORAGE_KEYS.FIELD_CACHE,
+    [] as FieldDetectionCacheEntry[],
+    (current) => current.filter((entry) => entry.updatedAt >= cutoff),
+  );
+}

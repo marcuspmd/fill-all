@@ -17,6 +17,9 @@ import type {
   ScreenRecordOptions,
 } from "./demo.types";
 import type { StepEffect, CaptionConfig } from "./effects";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("DemoSchemas");
 
 // ── Primitives ────────────────────────────────────────────────────────────
 
@@ -244,10 +247,8 @@ export const screenRecordOptionsSchema: z.ZodType<ScreenRecordOptions> =
 export function parseFlowScript(input: unknown): FlowScript | null {
   const result = flowScriptSchema.safeParse(input);
   if (!result.success) {
-    // Log structured error for debugging in background console
-    // eslint-disable-next-line no-console
-    console.warn(
-      "[FlowScript] Validation failed:",
+    log.warn(
+      "FlowScript validation failed:",
       JSON.stringify(result.error.issues, null, 2),
     );
   }

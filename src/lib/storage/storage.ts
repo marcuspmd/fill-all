@@ -47,6 +47,7 @@ export {
   saveFieldDetectionCacheForUrl,
   deleteFieldDetectionCacheForUrl,
   clearFieldDetectionCache,
+  cleanupStaleFieldDetectionCache,
 } from "./cache-storage";
 
 export { matchUrlPattern } from "@/lib/url/match-url-pattern";

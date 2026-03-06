@@ -241,11 +241,3 @@ export function renderRecordTab(): void {
     />,
   );
 }
-
-/**
- * @deprecated Use renderRecordTab() — Preact handles partial updates.
- * Kept for backward-compatible callers in panel.ts.
- */
-export function renderRecordStepsTable(): void {
-  renderRecordTab();
-}

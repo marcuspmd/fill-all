@@ -124,6 +124,24 @@ function handleMutations(mutations: MutationRecord[]): void {
   if (isFillingInProgress) return;
 
   const isRelevant = mutations.some((m) => {
+    // Ignore mutations in Fill All extension UI
+    if (m.target instanceof HTMLElement) {
+      if (
+        m.target.id === "fill-all-notification" ||
+        m.target.closest("#fill-all-notification") ||
+        m.target.id === "fill-all-cursor-overlay" ||
+        m.target.closest("#fill-all-cursor-overlay") ||
+        m.target.id === "fill-all-field-icon" ||
+        m.target.closest("#fill-all-field-icon") ||
+        m.target.id === "fill-all-record-indicator" ||
+        m.target.closest("#fill-all-record-indicator") ||
+        m.target.closest(".fa-field-icon") ||
+        m.target.closest(".fa-progress-container")
+      ) {
+        return false;
+      }
+    }
+
     if (
       m.type === "childList" &&
       (m.addedNodes.length > 0 || m.removedNodes.length > 0)
@@ -140,7 +158,6 @@ function handleMutations(mutations: MutationRecord[]): void {
     }
     if (m.type === "attributes") {
       const target = m.target as HTMLElement;
-      if (target.id === "fill-all-notification") return false;
       if (
         m.attributeName === "disabled" ||
         m.attributeName === "hidden" ||

@@ -67,6 +67,8 @@ let onStepUpdatedCallback: StepCallback | null = null;
 
 const MUTATION_DEBOUNCE_MS = 400;
 const FORM_FIELD_SELECTOR = "input, select, textarea, [contenteditable='true']";
+/** Maximum number of network responses retained during a recording session */
+const MAX_CAPTURED_RESPONSES = 500;
 
 /** sessionStorage key used to persist the recording session across page navigations. */
 const RECORDING_SESSION_KEY = "fill-all-recording";
@@ -626,8 +628,11 @@ function onNetworkRequestEnd(
   pendingNetworkRequests = Math.max(0, pendingNetworkRequests - 1);
   lastNetworkActivityTimestamp = now();
 
-  // Store response for HTTP assertion generation
+  // Store response for HTTP assertion generation (capped to avoid unbounded growth)
   capturedResponses.push({ url, method, status, timestamp: now() });
+  if (capturedResponses.length > MAX_CAPTURED_RESPONSES) {
+    capturedResponses = capturedResponses.slice(-MAX_CAPTURED_RESPONSES);
+  }
 
   // Add a visible assert step for state-changing requests (POST/PUT/PATCH/DELETE)
   // so the user can see AJAX calls in the recording panel and assertions are generated.
@@ -757,6 +762,7 @@ function stopNetworkMonitoring(): void {
     networkIdleTimer = null;
   }
   pendingNetworkRequests = 0;
+  // Note: xhrRequestInfo is a WeakMap and will be GC'd automatically when XHR refs are released
 }
 
 // ---------------------------------------------------------------------------

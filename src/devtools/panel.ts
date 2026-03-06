@@ -22,7 +22,7 @@ import { renderTo, AppShell } from "@/lib/ui/components";
 import { renderActionsTab } from "./tabs/actions-tab";
 import { renderFieldsTab } from "./tabs/fields-tab";
 import { renderFormsTab, loadForms } from "./tabs/forms-tab";
-import { renderRecordTab, renderRecordStepsTable } from "./tabs/record-tab";
+import { renderRecordTab } from "./tabs/record-tab";
 import { renderLogTab } from "./tabs/log-tab";
 import {
   renderDemoTab,
@@ -87,52 +87,66 @@ function renderActiveTab(): void {
 
 // ── Recording Listener ────────────────────────────────────────────────────────
 
-chrome.runtime.onMessage.addListener(
-  (message: { type?: string; payload?: Record<string, unknown> }, sender) => {
-    if (sender.tab?.id !== panelState.inspectedTabId) return;
+const runtimeMessageListener = (
+  message: { type?: string; payload?: Record<string, unknown> },
+  sender: chrome.runtime.MessageSender,
+) => {
+  if (sender.tab?.id !== panelState.inspectedTabId) return;
 
-    if (message.type === "RECORDING_RESTORED") {
-      const p = message.payload as { steps?: RecordStep[] } | undefined;
-      if (Array.isArray(p?.steps)) {
-        panelState.recordedStepsPreview = p.steps;
-        renderRecordStepsTable();
-      }
+  if (message.type === "RECORDING_RESTORED") {
+    const p = message.payload as { steps?: RecordStep[] } | undefined;
+    if (Array.isArray(p?.steps)) {
+      panelState.recordedStepsPreview = p.steps;
+      renderRecordTab();
     }
+  }
 
-    if (message.type === "RECORDING_STEP_ADDED") {
-      const p = message.payload as { step?: RecordStep } | undefined;
-      if (p?.step) {
-        panelState.recordedStepsPreview.push(p.step);
-        renderRecordStepsTable();
-      }
+  if (message.type === "RECORDING_STEP_ADDED") {
+    const p = message.payload as { step?: RecordStep } | undefined;
+    if (p?.step) {
+      panelState.recordedStepsPreview.push(p.step);
+      renderRecordTab();
     }
+  }
 
-    if (message.type === "RECORDING_STEP_UPDATED") {
-      const p = message.payload as
-        | { step?: RecordStep; index?: number }
-        | undefined;
-      if (
-        p?.step &&
-        typeof p.index === "number" &&
-        panelState.recordedStepsPreview[p.index]
-      ) {
-        panelState.recordedStepsPreview[p.index] = p.step;
-        renderRecordStepsTable();
-      }
+  if (message.type === "RECORDING_STEP_UPDATED") {
+    const p = message.payload as
+      | { step?: RecordStep; index?: number }
+      | undefined;
+    if (
+      p?.step &&
+      typeof p.index === "number" &&
+      panelState.recordedStepsPreview[p.index]
+    ) {
+      panelState.recordedStepsPreview[p.index] = p.step;
+      renderRecordTab();
     }
+  }
 
-    if (message.type === "DEMO_REPLAY_PROGRESS") {
-      applyReplayProgress(message.payload as unknown as ReplayProgress);
-    }
+  if (message.type === "DEMO_REPLAY_PROGRESS") {
+    applyReplayProgress(message.payload as unknown as ReplayProgress);
+  }
 
-    if (message.type === "DEMO_REPLAY_COMPLETE") {
-      const p = message.payload as
-        | { status?: "completed" | "failed" }
-        | undefined;
-      applyReplayComplete(p?.status ?? "completed");
-    }
-  },
-);
+  if (message.type === "DEMO_REPLAY_COMPLETE") {
+    const p = message.payload as
+      | { status?: "completed" | "failed" }
+      | undefined;
+    applyReplayComplete(p?.status ?? "completed");
+  }
+};
+
+chrome.runtime.onMessage.addListener(runtimeMessageListener);
+
+/**
+ * Cleanup function to be called when the panel is destroyed.
+ */
+export function destroyPanel(): void {
+  try {
+    chrome.runtime.onMessage.removeListener(runtimeMessageListener);
+  } catch {
+    // Ignore cleanup errors
+  }
+}
 
 // ── Navigation Listener ───────────────────────────────────────────────────────
 

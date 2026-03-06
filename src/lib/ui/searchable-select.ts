@@ -77,6 +77,11 @@ export class SearchableSelect {
   private _listeners: ChangeListener[] = [];
 
   private boundHandleOutsideClick: (e: MouseEvent) => void;
+  private boundInputFocus: (() => void) | null = null;
+  private boundInputClick: (() => void) | null = null;
+  private boundInputChange: (() => void) | null = null;
+  private boundInputKeyDown: ((e: KeyboardEvent) => void) | null = null;
+  private boundDropdownMouseDown: ((e: MouseEvent) => void) | null = null;
 
   constructor(private readonly opts: SearchableSelectOptions) {
     this.flat = flattenEntries(opts.entries);
@@ -151,13 +156,37 @@ export class SearchableSelect {
   }
 
   destroy(): void {
+    // Remove all event listeners
+    if (this.input) {
+      if (this.boundInputFocus)
+        this.input.removeEventListener("focus", this.boundInputFocus);
+      if (this.boundInputClick)
+        this.input.removeEventListener("click", this.boundInputClick);
+      if (this.boundInputChange)
+        this.input.removeEventListener("input", this.boundInputChange);
+      if (this.boundInputKeyDown)
+        this.input.removeEventListener("keydown", this.boundInputKeyDown);
+    }
+    if (this.dropdown && this.boundDropdownMouseDown) {
+      this.dropdown.removeEventListener(
+        "mousedown",
+        this.boundDropdownMouseDown,
+      );
+    }
     document.removeEventListener("mousedown", this.boundHandleOutsideClick);
+
+    // Clear references
     this.root?.remove();
     this.root = null;
     this.input = null;
     this.dropdown = null;
     this.hiddenInput = null;
     this._listeners = [];
+    this.boundInputFocus = null;
+    this.boundInputClick = null;
+    this.boundInputChange = null;
+    this.boundInputKeyDown = null;
+    this.boundDropdownMouseDown = null;
   }
 
   // ─── Private ───────────────────────────────────────────────────────────────
@@ -165,18 +194,22 @@ export class SearchableSelect {
   private bindEvents(): void {
     if (!this.input || !this.dropdown) return;
 
-    this.input.addEventListener("focus", () => this.open());
-    this.input.addEventListener("click", () => this.open());
-    this.input.addEventListener("input", () => this.onInputChange());
-    this.input.addEventListener("keydown", (e) => this.onKeyDown(e));
-
-    this.dropdown.addEventListener("mousedown", (e) => {
+    this.boundInputFocus = () => this.open();
+    this.boundInputClick = () => this.open();
+    this.boundInputChange = () => this.onInputChange();
+    this.boundInputKeyDown = (e: KeyboardEvent) => this.onKeyDown(e);
+    this.boundDropdownMouseDown = (e: MouseEvent) => {
       const li = (e.target as HTMLElement).closest<HTMLElement>(".fa-ss__opt");
       if (!li || li.dataset.disabled) return;
       e.preventDefault();
       this.selectByValue(li.dataset.value!);
-    });
+    };
 
+    this.input.addEventListener("focus", this.boundInputFocus);
+    this.input.addEventListener("click", this.boundInputClick);
+    this.input.addEventListener("input", this.boundInputChange);
+    this.input.addEventListener("keydown", this.boundInputKeyDown);
+    this.dropdown.addEventListener("mousedown", this.boundDropdownMouseDown);
     document.addEventListener("mousedown", this.boundHandleOutsideClick);
   }
 
