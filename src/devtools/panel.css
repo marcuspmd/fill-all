@@ -107,6 +107,10 @@ body {
   line-height: 1;
 }
 
+.toolbar-btn .material-icons-round {
+  font-size: 17px;
+}
+
 .toolbar-btn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -138,6 +142,15 @@ body {
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+.tab .material-icons-round {
+  font-size: 15px;
+  flex-shrink: 0;
 }
 
 .tab:hover {
@@ -223,13 +236,15 @@ body {
 
 .card-icon {
   font-size: 20px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
 
 .card-icon.material-icons-round {
   font-size: 22px;
+  display: inline-flex;
 }
 
 .card-label {
@@ -536,6 +551,9 @@ body {
 
 .cell-actions {
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 /* ── Badges ── */
@@ -604,14 +622,28 @@ body {
   align-items: center;
   justify-content: center;
   transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.icon-btn .material-icons-round {
+  font-size: 16px;
 }
 
 .icon-btn:hover {
   background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .icon-btn-off {
   opacity: 0.5;
+}
+
+/* ── Step type icon in record table ── */
+.step-type-icon {
+  font-size: 14px !important;
+  vertical-align: middle;
+  margin-right: 4px;
+  opacity: 0.75;
 }
 
 /* ── Forms List ── */

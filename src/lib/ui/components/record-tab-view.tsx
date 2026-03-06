@@ -65,12 +65,7 @@ function StepRow({
     <tr>
       <td class="cell-num">{index + 1}</td>
       <td>
-        <span
-          class="material-icons-round"
-          style={{ fontSize: 14, verticalAlign: "middle", marginRight: 4 }}
-        >
-          {icon}
-        </span>
+        <span class="material-icons-round step-type-icon">{icon}</span>
         {step.type}
       </td>
       <td class="cell-mono">{step.selector ?? step.url ?? "-"}</td>
