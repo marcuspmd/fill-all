@@ -217,8 +217,22 @@ async function handleFill(
   el.value = "";
   el.dispatchEvent(new Event("input", { bubbles: true }));
 
-  // Simulate typing character by character
-  if (config.typingDelay > 0 && value.length > 0) {
+  // Types that require a complete value — partial assignments trigger browser validation warnings
+  const DIRECT_SET_TYPES = new Set([
+    "date",
+    "time",
+    "datetime-local",
+    "month",
+    "week",
+    "color",
+    "number",
+    "range",
+  ]);
+  const useDirectSet =
+    el instanceof HTMLInputElement && DIRECT_SET_TYPES.has(el.type);
+
+  // Simulate typing character by character (skipped for structured input types)
+  if (config.typingDelay > 0 && value.length > 0 && !useDirectSet) {
     for (const char of value) {
       el.value += char;
       el.dispatchEvent(new Event("input", { bubbles: true }));
