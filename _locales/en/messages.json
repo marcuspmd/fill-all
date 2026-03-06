@@ -2060,6 +2060,9 @@
   "demoVideoErrorStream": {
     "message": "Failed to obtain screen capture stream"
   },
+  "demoVideoErrorPermission": {
+    "message": "Permission required: open the extension via the Chrome toolbar popup to grant screen recording permissions before using this feature."
+  },
   "demoVideoRecord": {
     "message": "Record Video"
   },

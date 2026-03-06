@@ -2060,6 +2060,9 @@
   "demoVideoErrorStream": {
     "message": "Error al obtener el stream de captura de pantalla"
   },
+  "demoVideoErrorPermission": {
+    "message": "Permiso requerido: abre la extensión desde el ícono en la barra de herramientas de Chrome (popup) para conceder los permisos de grabación de pantalla antes de usar esta función."
+  },
   "demoVideoRecord": {
     "message": "Grabar Video"
   },

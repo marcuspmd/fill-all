@@ -588,19 +588,19 @@ function EffectsEditor({
     if (kind === "none") return;
     const base: StepEffect =
       kind === "label" ? { kind: "label", text: "" } : ({ kind } as StepEffect);
-    step.effects = [...effects, base];
+    step.effects = [...(step.effects ?? []), base];
     onUpdate();
   }
 
   function removeEffect(idx: number) {
-    const next = [...effects];
+    const next = [...(step.effects ?? [])];
     next.splice(idx, 1);
     step.effects = next.length > 0 ? next : undefined;
     onUpdate();
   }
 
   function patchEffect(idx: number, patch: Partial<StepEffect>) {
-    const next = [...effects];
+    const next = [...(step.effects ?? [])];
     next[idx] = { ...next[idx], ...patch } as StepEffect;
     step.effects = next;
     onUpdate();
@@ -1708,6 +1708,7 @@ async function captureTabStream(tabId: number): Promise<MediaStream | null> {
       `${t("demoVideoErrorStream")}: ${response?.error ?? "no streamId returned from background"}`,
       "error",
     );
+    alert(t("demoVideoErrorPermission"));
     return null;
   }
 
