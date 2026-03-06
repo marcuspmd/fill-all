@@ -102,7 +102,7 @@ async function loadDatasetList(filter = ""): Promise<void> {
       <div class="rule-info" style="flex: 1; min-width: 0;">
         <span class="badge">${escapeHtml(entry.type)}</span>
         <span class="rule-selector" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 480px;" title="${escapeHtml(entry.signals)}">${escapeHtml(entry.signals)}</span>
-        <span class="rule-priority" style="white-space: nowrap;">${sourceLabel[entry.source] ?? entry.source} · ${diffLabel[entry.difficulty] ?? entry.difficulty}</span>
+        <span class="rule-priority" style="white-space: nowrap;">${escapeHtml(sourceLabel[entry.source] ?? entry.source)} · ${escapeHtml(diffLabel[entry.difficulty] ?? entry.difficulty)}</span>
       </div>
       <button class="btn btn-sm btn-delete" data-entry-id="${escapeHtml(entry.id)}" title="${t("removeEntryTitle")}">✕</button>
     `;

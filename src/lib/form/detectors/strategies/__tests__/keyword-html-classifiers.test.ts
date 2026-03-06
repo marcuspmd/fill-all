@@ -188,6 +188,23 @@ describe("keywordClassifier", () => {
     const r = keywordClassifier.detect(makeField("OBSERVACAO"));
     expect(r?.type).toBe("text");
   });
+
+  it("falls back to empty string when contextSignals is undefined", () => {
+    // Tests the `??` branch where contextSignals is null/undefined
+    const input = document.createElement("input");
+    input.type = "text";
+    const field = {
+      element: input,
+      type: "text",
+      name: "obs",
+      id: "obs",
+      label: "obs",
+      selector: "#obs",
+      contextSignals: undefined,
+    } as unknown as import("@/types").FormField;
+    // With undefined contextSignals the raw is "" → trimmed is "" → returns null
+    expect(keywordClassifier.detect(field)).toBeNull();
+  });
 });
 
 // ── detectBasicType ───────────────────────────────────────────────────────────

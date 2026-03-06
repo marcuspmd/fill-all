@@ -427,4 +427,52 @@ describe("antdRadioAdapter", () => {
     expect(result).toBe(true);
     expect(clickCount).toBeGreaterThanOrEqual(1);
   });
+
+  it("buildField filtra opções com texto vazio", () => {
+    const group = makeRadioGroup([
+      { value: "sim", text: "Sim" },
+      { value: "empty", text: "" },
+    ]);
+    document.body.appendChild(group);
+
+    const field = antdRadioAdapter.buildField(group);
+    // Only the non-empty option should be in the options list
+    expect(field.options).toHaveLength(1);
+    expect(field.options![0].value).toBe("sim");
+  });
+
+  it("fill mantém estabilidade com label com textContent nulo", () => {
+    const group = document.createElement("div");
+    group.className = "ant-radio-group";
+
+    const normalLabel = document.createElement("label");
+    normalLabel.className = "ant-radio-wrapper";
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.value = "x";
+    normalLabel.appendChild(input);
+    const textSpan = document.createElement("span");
+    textSpan.textContent = "X";
+    normalLabel.appendChild(textSpan);
+
+    // Label with null textContent to exercise the `?? ""` branch on lines 78 and 87
+    const nullLabel = document.createElement("label");
+    nullLabel.className = "ant-radio-wrapper";
+    const input2 = document.createElement("input");
+    input2.type = "radio";
+    input2.value = "null-tc";
+    nullLabel.appendChild(input2);
+    Object.defineProperty(nullLabel, "textContent", {
+      get: () => null,
+      configurable: true,
+    });
+
+    group.appendChild(normalLabel);
+    group.appendChild(nullLabel);
+    document.body.appendChild(group);
+
+    // fill should still work via fallback or value match
+    const result = antdRadioAdapter.fill(group, "x");
+    expect(result).toBe(true);
+  });
 });

@@ -178,10 +178,7 @@ const flowStepSchema: z.ZodType<FlowStep> = z.object({
 
   valueSource: flowValueSourceSchema.optional(),
 
-  url: z.preprocess(
-    (v) => (v === "" ? undefined : v),
-    z.string().url().optional(),
-  ),
+  url: z.preprocess((v) => (v === "" ? undefined : v), z.url().optional()),
 
   selectIndex: z.number().int().min(0).optional(),
   selectText: z.string().optional(),
@@ -216,7 +213,7 @@ const replayConfigSchema: z.ZodType<ReplayConfig> = z.object({
 const flowMetadataSchema: z.ZodType<FlowMetadata> = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  baseUrl: z.union([z.string().url(), z.literal("")]),
+  baseUrl: z.union([z.url(), z.literal("")]),
   seed: z.string().min(1),
   createdAt: z.number(),
   updatedAt: z.number(),

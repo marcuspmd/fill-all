@@ -287,6 +287,242 @@ describe("reactSelectAdapter.buildField()", () => {
 
     expect(field.contextSignals).toBe("mock signals");
   });
+
+  it("name vem de visibleInput?.name quando hiddenInput ausente", () => {
+    const wrapper = makeWrapper({ searchable: true });
+    const combobox = wrapper.querySelector<HTMLInputElement>(
+      "input[role='combobox']",
+    )!;
+    combobox.name = "campo-combobox";
+    document.body.appendChild(wrapper);
+
+    const field = reactSelectAdapter.buildField(wrapper);
+
+    expect(field.name).toBe("campo-combobox");
+  });
+});
+
+// ─── extractValue() ──────────────────────────────────────────────────────────
+
+describe("reactSelectAdapter.extractValue()", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("retorna o value do hidden input quando presente e não-vazio", () => {
+    const wrapper = makeWrapper({ hiddenInputName: "estado" });
+    const hidden = wrapper.querySelector<HTMLInputElement>(
+      "input[type='hidden']",
+    )!;
+    hidden.value = "SP";
+    document.body.appendChild(wrapper);
+
+    expect(reactSelectAdapter.extractValue!(wrapper)).toBe("SP");
+  });
+
+  it("não retorna hidden.value quando hidden existe mas value é vazio (fallback para tags)", () => {
+    const wrapper = makeWrapper({ hiddenInputName: "estado" });
+    // hidden input existe mas value está vazio
+    document.body.appendChild(wrapper);
+
+    // Sem tags multi também → deve retornar null
+    expect(reactSelectAdapter.extractValue!(wrapper)).toBeNull();
+  });
+
+  it("retorna valores das tags multi-value concatenados por vírgula", () => {
+    const wrapper = makeWrapper({ multi: true });
+    document.body.appendChild(wrapper);
+
+    // Adiciona tags multi-value ao valueContainer
+    const valueContainer = wrapper.querySelector(
+      ".react-select__value-container",
+    )!;
+    for (const text of ["Tag A", "Tag B"]) {
+      const mv = document.createElement("div");
+      mv.className = "react-select__multi-value";
+      const label = document.createElement("div");
+      label.className = "react-select__multi-value__label";
+      label.textContent = text;
+      mv.appendChild(label);
+      valueContainer.appendChild(mv);
+    }
+
+    expect(reactSelectAdapter.extractValue!(wrapper)).toBe("Tag A,Tag B");
+  });
+
+  it("ignora tags com texto vazio na concatenação", () => {
+    const wrapper = makeWrapper({ multi: true });
+    document.body.appendChild(wrapper);
+
+    const valueContainer = wrapper.querySelector(
+      ".react-select__value-container",
+    )!;
+    const mvEmpty = document.createElement("div");
+    mvEmpty.className = "react-select__multi-value__label";
+    mvEmpty.textContent = "  "; // whitespace only
+    const mvValid = document.createElement("div");
+    mvValid.className = "react-select__multi-value";
+    const mvLabelValid = document.createElement("div");
+    mvLabelValid.className = "react-select__multi-value__label";
+    mvLabelValid.textContent = "Tag C";
+    mvValid.appendChild(mvLabelValid);
+    const mvEmpty2 = document.createElement("div");
+    mvEmpty2.className = "react-select__multi-value";
+    mvEmpty2.appendChild(mvEmpty);
+    valueContainer.appendChild(mvEmpty2);
+    valueContainer.appendChild(mvValid);
+
+    expect(reactSelectAdapter.extractValue!(wrapper)).toBe("Tag C");
+  });
+
+  it("retorna null quando não há hidden value nem tags multi-value", () => {
+    const wrapper = makeWrapper({ searchable: true });
+    document.body.appendChild(wrapper);
+
+    expect(reactSelectAdapter.extractValue!(wrapper)).toBeNull();
+  });
+
+  it("hidden input embrulhado em div: retorna value quando não-vazio", () => {
+    const wrapper = makeWrapper({
+      hiddenInputName: "cidade",
+      hiddenInputWrapped: true,
+    });
+    const hidden = wrapper.querySelector<HTMLInputElement>(
+      "input[type='hidden']",
+    )!;
+    hidden.value = "Recife";
+    document.body.appendChild(wrapper);
+
+    expect(reactSelectAdapter.extractValue!(wrapper)).toBe("Recife");
+  });
+});
+
+// ─── fill() — waitForAsyncOptions paths ──────────────────────────────────────
+
+describe("reactSelectAdapter.fill() — waitForAsyncOptions async paths", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("aguarda opções que aparecem durante polling do waitForAsyncOptions", async () => {
+    vi.useRealTimers();
+
+    const wrapper = makeWrapper({ searchable: true });
+    document.body.appendChild(wrapper);
+
+    // Menu inline com loading-indicator já presente
+    const menu = document.createElement("div");
+    menu.className = "react-select__menu";
+    const loading = document.createElement("div");
+    loading.className = "react-select__loading-message";
+    loading.textContent = "Carregando...";
+    menu.appendChild(loading);
+    wrapper.appendChild(menu);
+
+    const fillPromise = reactSelectAdapter.fill(wrapper, "opcao-async");
+
+    // Após 200ms: remove loading e adiciona opção, cobrindo linha 396-397
+    await new Promise<void>((r) => setTimeout(r, 200));
+    menu.removeChild(loading);
+    const opt = document.createElement("div");
+    opt.className = "react-select__option";
+    opt.textContent = "opcao-async";
+    menu.appendChild(opt);
+
+    const result = await fillPromise;
+    expect(result).toBe(true);
+  }, 4000);
+
+  it("path estabilizou (linha 396): loading desaparece, opção aparece 100ms depois", async () => {
+    vi.useRealTimers();
+
+    const wrapper = makeWrapper({ searchable: true });
+    document.body.appendChild(wrapper);
+
+    const menu = document.createElement("div");
+    menu.className = "react-select__menu";
+    const loading = document.createElement("div");
+    loading.className = "react-select__loading-message";
+    loading.textContent = "Carregando...";
+    menu.appendChild(loading);
+    wrapper.appendChild(menu);
+
+    const fillPromise = reactSelectAdapter.fill(wrapper, "estabilizado");
+
+    // t≈80ms: remove loading entre poll 1 e poll 2 (poll roda a cada 100ms)
+    await new Promise<void>((r) => setTimeout(r, 80));
+    menu.removeChild(loading);
+
+    // t≈150ms: adiciona opção DENTRO da janela de 100ms do !isLoading branch
+    await new Promise<void>((r) => setTimeout(r, 70));
+    const opt = document.createElement("div");
+    opt.className = "react-select__option";
+    opt.textContent = "estabilizado";
+    menu.appendChild(opt);
+
+    const result = await fillPromise;
+    expect(result).toBe(true);
+  }, 5000);
+
+  it("aguarda opções que aparecem após loading-indicator desaparecer", async () => {
+    vi.useRealTimers();
+
+    const wrapper = makeWrapper({ searchable: true });
+    document.body.appendChild(wrapper);
+
+    const fillPromise = reactSelectAdapter.fill(wrapper, "opcao");
+
+    // Adiciona menu com loading-indicator após um tick
+    await new Promise<void>((r) => setTimeout(r, 20));
+
+    const menu = document.createElement("div");
+    menu.className = "react-select__menu";
+    const loading = document.createElement("div");
+    loading.className = "react-select__loading-message";
+    loading.textContent = "Carregando...";
+    menu.appendChild(loading);
+    wrapper.appendChild(menu);
+
+    // Após 150ms: remove loading e adiciona opção
+    await new Promise<void>((r) => setTimeout(r, 150));
+    menu.removeChild(loading);
+    const opt = document.createElement("div");
+    opt.className = "react-select__option";
+    opt.textContent = "opcao";
+    menu.appendChild(opt);
+
+    const result = await fillPromise;
+    expect(result).toBe(true);
+  }, 3000);
+
+  it("fill() com searchable: retorna false quando menu sem opções mesmo após filtro (clear + retry)", async () => {
+    vi.useFakeTimers();
+
+    // Menu com zero opções disponíveis (tudo disabled)
+    const wrapper = makeWrapper({ searchable: true });
+    document.body.appendChild(wrapper);
+
+    const menu = document.createElement("div");
+    menu.className = "react-select__menu";
+    // Adiciona um menu-notice (no-options message)
+    const notice = document.createElement("div");
+    notice.className = "react-select__menu-notice";
+    notice.textContent = "Nenhum resultado";
+    menu.appendChild(notice);
+    wrapper.appendChild(menu);
+
+    const fillPromise = reactSelectAdapter.fill(wrapper, "inexistente");
+    await vi.runAllTimersAsync();
+    const result = await fillPromise;
+
+    expect(result).toBe(false);
+
+    vi.useRealTimers();
+  });
 });
 
 // ─── fill() ──────────────────────────────────────────────────────────────────
@@ -494,6 +730,31 @@ describe("reactSelectAdapter.fill() — waitForReactSelectMenu", () => {
     menu.appendChild(opt);
     // Append ao wrapper: findInline() irá encontrar
     wrapper.appendChild(menu);
+
+    const result = await fillPromise;
+    expect(result).toBe(true);
+  }, 2000);
+
+  it("MutationObserver detecta menu portalizado sem aria-controls adicionado ao body", async () => {
+    vi.useRealTimers();
+
+    // Wrapper sem aria-controls no input
+    const wrapper = makeWrapper({ searchable: false });
+    document.body.appendChild(wrapper);
+
+    const fillPromise = reactSelectAdapter.fill(wrapper, "Portalizado");
+
+    // Simula react-select adicionando menu portalizado ao body (não ao wrapper)
+    await new Promise<void>((r) => setTimeout(r, 10));
+
+    const portalMenu = document.createElement("div");
+    portalMenu.className = "react-select__menu";
+    const opt = document.createElement("div");
+    opt.className = "react-select__option";
+    opt.textContent = "Portalizado";
+    portalMenu.appendChild(opt);
+    // Append diretamente ao body — não está dentro do wrapper
+    document.body.appendChild(portalMenu);
 
     const result = await fillPromise;
     expect(result).toBe(true);

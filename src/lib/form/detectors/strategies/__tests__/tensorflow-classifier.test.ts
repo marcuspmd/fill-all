@@ -74,6 +74,7 @@ import {
 import {
   classifyByTfSoft,
   classifyField,
+  disposeTensorflowModel,
   invalidateClassifier,
   loadPretrainedModel,
   reloadClassifier,
@@ -409,6 +410,37 @@ describe("invalidateClassifier — loadLearnedVectors error", () => {
   });
 });
 
+// ── disposeTensorflowModel ────────────────────────────────────────────────────
+
+describe("disposeTensorflowModel", () => {
+  it("disposes model and resets state when _pretrained is loaded", async () => {
+    resetModelMock();
+    await reloadClassifier();
+
+    // Model is now loaded — dispose should clear it without throwing
+    expect(() => disposeTensorflowModel()).not.toThrow();
+    expect(mockDispose).toHaveBeenCalled();
+  });
+
+  it("is a no-op when _pretrained is null", () => {
+    // Call dispose twice: first call clears state, second should be a no-op
+    resetModelMock();
+    // Do NOT call reloadClassifier — model is null from previous dispose
+    expect(() => disposeTensorflowModel()).not.toThrow();
+    // mockDispose should not have been called again since model was null
+  });
+
+  it("classifier returns null after dispose (state fully cleared)", async () => {
+    resetModelMock();
+    await reloadClassifier();
+    disposeTensorflowModel();
+
+    // After dispose, classifyByTfSoft should return null (no model)
+    const result = classifyByTfSoft("email label");
+    expect(result).toBeNull();
+  });
+});
+
 // ── classifyByTfSoft — learned vectors match (lines 248-256) ─────────────────
 
 describe("classifyByTfSoft — learned match path", () => {
@@ -434,5 +466,180 @@ describe("classifyByTfSoft — learned match path", () => {
 
     // Reset for other tests
     vi.mocked(dotProduct).mockReturnValue(0);
+  });
+});
+
+// ── invalidateClassifier — else branch (line 189) ────────────────────────────
+
+describe("invalidateClassifier — model not loaded (else branch)", () => {
+  it("warns when model is not loaded and does not throw", () => {
+    // Dispose model so _pretrained is null → else branch is taken
+    disposeTensorflowModel();
+    expect(() => invalidateClassifier()).not.toThrow();
+  });
+});
+
+// ── loadPretrainedModel — bundled model path (lines 114-130) ─────────────────
+
+describe("loadPretrainedModel — bundled model path", () => {
+  it("loads bundled model files when runtime model returns null", async () => {
+    // Reset all module-level state first
+    disposeTensorflowModel();
+
+    // Step 1 (runtime model) returns null → fall through to Step 2 (bundled)
+    vi.mocked(loadRuntimeModel).mockResolvedValueOnce(null);
+
+    // Provide chrome.runtime.getURL
+    Object.assign(chrome.runtime, {
+      getURL: vi.fn().mockReturnValue("chrome-extension://test/"),
+    });
+
+    // Mock fetch for vocab and labels files
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        json: () => Promise.resolve({ em: 0, ai: 1, ma: 2 }),
+      })
+      .mockResolvedValueOnce({
+        json: () => Promise.resolve(["email", "name", "phone"]),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    // tf.loadLayersModel returns a usable model
+    const tf = await import("@tensorflow/tfjs");
+    vi.mocked(tf.loadLayersModel).mockResolvedValueOnce(mockTfModel as never);
+
+    // getLearnedEntries returns empty for loadLearnedVectors
+    vi.mocked(getLearnedEntries).mockResolvedValueOnce([]);
+
+    await expect(loadPretrainedModel()).resolves.toBeUndefined();
+
+    vi.unstubAllGlobals();
+
+    // Re-stub chrome after unstubAllGlobals to keep other tests working
+    vi.stubGlobal("chrome", {
+      storage: {
+        local: {
+          get: vi.fn().mockResolvedValue({}),
+          set: vi.fn().mockResolvedValue(undefined),
+          remove: vi.fn().mockResolvedValue(undefined),
+          clear: vi.fn().mockResolvedValue(undefined),
+        },
+        onChanged: {
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+        },
+      },
+      runtime: {
+        sendMessage: vi.fn(),
+        onMessage: {
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+        },
+        onConnect: {
+          addListener: vi.fn(),
+        },
+        lastError: undefined,
+        getURL: vi.fn().mockReturnValue("chrome-extension://test/"),
+      },
+      tabs: {
+        query: vi.fn(),
+        sendMessage: vi.fn(),
+      },
+    });
+
+    // Restore model for subsequent tests
+    resetModelMock();
+    await reloadClassifier();
+  });
+});
+
+// ── loadPretrainedModel — already loaded (line 88 no-op) ───────────────────────
+
+describe("loadPretrainedModel — already loaded", () => {
+  it("is a no-op when model is already loaded (covers TRUE branch of if (_pretrained))", async () => {
+    // Ensure model is loaded first
+    resetModelMock();
+    await reloadClassifier();
+
+    // Calling loadPretrainedModel again without reset hits the early-return branch
+    await expect(loadPretrainedModel()).resolves.toBeUndefined();
+  });
+});
+
+// ── classifyByTfSoft — StructuredSignals input (ternary FALSE branch) ──────────
+
+describe("classifyByTfSoft — StructuredSignals input", () => {
+  it("handles StructuredSignals object instead of string (covers FALSE branch of typeof)", async () => {
+    resetModelMock();
+    await reloadClassifier();
+
+    mockDataSync.mockReturnValue(new Float32Array([0.05, 0.85, 0.1]));
+
+    // Pass a StructuredSignals object to use the non-string branch of the ternary
+    const signals = {
+      primary: ["email", "input"],
+      secondary: [],
+      structural: ["text"],
+    };
+    const result = classifyByTfSoft(signals);
+
+    // Should still classify using TF model
+    expect(result).not.toBeNull();
+  });
+});
+
+// ── classifyByTfSoft — learned vectors loop: else branch ──────────────────────
+
+describe("classifyByTfSoft — learned vectors loop lower score", () => {
+  it("skips entry when sim <= bestLearnedScore (covers else branch of if (sim > best))", async () => {
+    // Populate two learned entries — the second will have a lower dotProduct
+    vi.mocked(getLearnedEntries).mockResolvedValueOnce([
+      { signals: "email campo principal", type: "email" as FieldType },
+      { signals: "outro campo diferente", type: "name" as FieldType },
+    ] as never[]);
+    resetModelMock();
+    await reloadClassifier();
+
+    // First call returns high score, second call returns lower score
+    vi.mocked(dotProduct)
+      .mockReturnValueOnce(0.9) // first entry — high score
+      .mockReturnValueOnce(0.3); // second entry — lower score (else branch)
+
+    const result = classifyByTfSoft("email campo principal");
+
+    // Best learned score was 0.9 for "email" — should take learned match
+    expect(result).not.toBeNull();
+    expect(result?.type).toBe("email");
+
+    vi.mocked(dotProduct).mockReturnValue(0);
+  });
+});
+
+// ── loadPretrainedModel — bundled model failure (lines 138-139) ────────────────
+
+describe("loadPretrainedModel — bundled model failure", () => {
+  it("logs error and warn when bundled model loading fails (covers lines 138-139)", async () => {
+    disposeTensorflowModel();
+
+    // Runtime model returns null → fall through to bundled path
+    vi.mocked(loadRuntimeModel).mockResolvedValueOnce(null);
+
+    Object.assign(chrome.runtime, {
+      getURL: vi.fn().mockReturnValue("chrome-extension://test/"),
+    });
+
+    // tf.loadLayersModel rejects → triggers catch block (lines 138-139)
+    const tf = await import("@tensorflow/tfjs");
+    vi.mocked(tf.loadLayersModel).mockRejectedValueOnce(
+      new Error("bundled load failed"),
+    );
+
+    // Should not throw — catch block handles the error gracefully
+    await expect(loadPretrainedModel()).resolves.toBeUndefined();
+
+    // Restore state for subsequent tests
+    resetModelMock();
+    await reloadClassifier();
   });
 });

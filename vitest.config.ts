@@ -29,6 +29,12 @@ export default defineConfig({
         // TensorFlow.js training: requires a real browser with TF.js bundled
         "src/lib/ai/runtime-trainer.ts",
         "src/lib/dataset/user-samples.ts",
+        // Demo module: requires chrome.tabCapture, MediaRecorder, DOM animations — covered by E2E tests
+        "src/lib/demo/screen-recorder.ts",
+        "src/lib/demo/replay-orchestrator.ts",
+        "src/lib/demo/cursor-overlay.ts",
+        "src/lib/demo/step-executor.ts",
+        "src/lib/demo/effects/**",
       ],
       thresholds: {
         lines: 85,

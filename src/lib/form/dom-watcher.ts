@@ -157,6 +157,10 @@ function handleMutations(mutations: MutationRecord[]): void {
       return true;
     }
     if (m.type === "attributes") {
+      // Ignore attribute changes injected by Fill All itself to prevent self-loop
+      if (m.attributeName === "data-fill-all-filled") {
+        return false;
+      }
       const target = m.target as HTMLElement;
       if (
         m.attributeName === "disabled" ||

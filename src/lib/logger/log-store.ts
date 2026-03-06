@@ -179,6 +179,22 @@ export async function clearLogEntries(): Promise<void> {
 }
 
 /**
+ * Returns metrics about the current state of the log store.
+ * Useful for diagnosing memory leaks and monitoring subscriber count.
+ */
+export function getLogStoreMetrics(): {
+  totalEntries: number;
+  maxEntries: number;
+  subscriberCount: number;
+} {
+  return {
+    totalEntries: localEntries.length,
+    maxEntries,
+    subscriberCount: listeners.size,
+  };
+}
+
+/**
  * Subscribes to log entry updates.
  * The listener receives all current entries on every change.
  * Warns when too many subscribers are active to surface potential memory leaks.

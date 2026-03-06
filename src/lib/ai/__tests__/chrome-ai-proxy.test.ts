@@ -237,3 +237,73 @@ describe("optimizeScriptViaProxy", () => {
     });
   });
 });
+
+// ── generateFormContextValuesViaProxy ─────────────────────────────────────────
+
+describe("generateFormContextValuesViaProxy", () => {
+  const fields = [
+    { index: 0, label: "Nome", fieldType: "name" as const, name: "name" },
+  ];
+
+  it("returns a FormContextOutput object when background returns a valid object", async () => {
+    const mockOutput = { "0": "Marcus" };
+    (globalThis as any).chrome.runtime.sendMessage =
+      makeSendMessage(mockOutput);
+    const { generateFormContextValuesViaProxy } =
+      await import("@/lib/ai/chrome-ai-proxy");
+    const result = await generateFormContextValuesViaProxy(fields);
+    expect(result).toEqual(mockOutput);
+  });
+
+  it("returns null when background returns null", async () => {
+    (globalThis as any).chrome.runtime.sendMessage = makeSendMessage(null);
+    const { generateFormContextValuesViaProxy } =
+      await import("@/lib/ai/chrome-ai-proxy");
+    expect(await generateFormContextValuesViaProxy(fields)).toBeNull();
+  });
+
+  it("returns null when background returns an array (not a plain object)", async () => {
+    (globalThis as any).chrome.runtime.sendMessage = makeSendMessage(["value"]);
+    const { generateFormContextValuesViaProxy } =
+      await import("@/lib/ai/chrome-ai-proxy");
+    expect(await generateFormContextValuesViaProxy(fields)).toBeNull();
+  });
+
+  it("returns null when background returns a non-object value", async () => {
+    (globalThis as any).chrome.runtime.sendMessage = makeSendMessage("string");
+    const { generateFormContextValuesViaProxy } =
+      await import("@/lib/ai/chrome-ai-proxy");
+    expect(await generateFormContextValuesViaProxy(fields)).toBeNull();
+  });
+
+  it("returns null and does not throw when sendMessage rejects", async () => {
+    (globalThis as any).chrome.runtime.sendMessage = vi
+      .fn()
+      .mockRejectedValue(new Error("context lost"));
+    const { generateFormContextValuesViaProxy } =
+      await import("@/lib/ai/chrome-ai-proxy");
+    await expect(generateFormContextValuesViaProxy(fields)).resolves.toBeNull();
+  });
+
+  it("sends AI_GENERATE_FORM_CONTEXT with all optional params", async () => {
+    const sendMessage = makeSendMessage({ "0": "value" });
+    (globalThis as any).chrome.runtime.sendMessage = sendMessage;
+    const { generateFormContextValuesViaProxy } =
+      await import("@/lib/ai/chrome-ai-proxy");
+    await generateFormContextValuesViaProxy(
+      fields,
+      "context",
+      "data:image/png;base64,abc",
+      ["data:image/png;base64,page1"],
+    );
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: "AI_GENERATE_FORM_CONTEXT",
+      payload: {
+        fields,
+        userContext: "context",
+        imageDataUrl: "data:image/png;base64,abc",
+        pdfPageDataUrls: ["data:image/png;base64,page1"],
+      },
+    });
+  });
+});

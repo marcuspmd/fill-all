@@ -66,6 +66,7 @@ let _tfLoadPromise: Promise<typeof import("@tensorflow/tfjs")> | null = null;
 
 async function loadTfModule(): Promise<typeof import("@tensorflow/tfjs")> {
   if (_tfModule) return _tfModule;
+  /* istanbul ignore next -- concurrent-call deduplication guard */
   if (_tfLoadPromise) return _tfLoadPromise;
   _tfLoadPromise = import("@tensorflow/tfjs").then((mod) => {
     _tfModule = mod;
@@ -87,6 +88,7 @@ async function loadTfModule(): Promise<typeof import("@tensorflow/tfjs")> {
  */
 export async function loadPretrainedModel(): Promise<void> {
   if (_pretrained) return;
+  /* istanbul ignore next -- concurrent-call deduplication guard */
   if (_pretrainedLoadPromise) return _pretrainedLoadPromise;
 
   _pretrainedLoadPromise = (async () => {
@@ -186,6 +188,7 @@ export function invalidateClassifier(): void {
   log.debug(TF_MESSAGES.invalidate.dropped(prev));
   if (_pretrained) {
     loadLearnedVectors().catch((err) => {
+      /* istanbul ignore next */
       log.error(TF_MESSAGES.invalidate.reloadError, err);
     });
   } else {

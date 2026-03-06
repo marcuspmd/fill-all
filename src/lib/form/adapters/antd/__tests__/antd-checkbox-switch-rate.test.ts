@@ -193,6 +193,53 @@ describe("antdCheckboxAdapter", () => {
     antdCheckboxAdapter.fill(group, "sim");
     expect(clicked).toBe(0);
   });
+
+  it("buildField filtra opções com texto vazio", () => {
+    const group = makeCheckboxGroup([
+      { value: "a", text: "Ativo" },
+      { value: "empty", text: "" },
+    ]);
+    document.body.appendChild(group);
+
+    const field = antdCheckboxAdapter.buildField(group);
+    // Only non-empty text options should be included
+    expect(field.options).toHaveLength(1);
+    expect(field.options![0].value).toBe("a");
+  });
+
+  it("fill mantém estabilidade com label com textContent nulo", () => {
+    const group = document.createElement("div");
+    group.className = "ant-checkbox-group";
+
+    const normalLabel = document.createElement("label");
+    normalLabel.className = "ant-checkbox-wrapper";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = "ok";
+    normalLabel.appendChild(input);
+    const span = document.createElement("span");
+    span.textContent = "OK";
+    normalLabel.appendChild(span);
+
+    // Label with null textContent to exercise the `?? ""` branch on line 66
+    const nullLabel = document.createElement("label");
+    nullLabel.className = "ant-checkbox-wrapper";
+    const input2 = document.createElement("input");
+    input2.type = "checkbox";
+    input2.value = "null-tc";
+    nullLabel.appendChild(input2);
+    Object.defineProperty(nullLabel, "textContent", {
+      get: () => null,
+      configurable: true,
+    });
+
+    group.appendChild(normalLabel);
+    group.appendChild(nullLabel);
+    document.body.appendChild(group);
+
+    const result = antdCheckboxAdapter.fill(group, "ok");
+    expect(result).toBe(true);
+  });
 });
 
 // ─── Switch Adapter ──────────────────────────────────────────────────────────

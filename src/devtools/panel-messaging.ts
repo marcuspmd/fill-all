@@ -22,6 +22,12 @@ export async function sendToBackground(
 
 // ── Inspected Page Introspection ──────────────────────────────────────────────
 
+// NOTE: `chrome.devtools.inspectedWindow.eval()` is the only official mechanism
+// to execute code in the inspected page's context from a DevTools panel.
+// It is safe here because:
+//   1. Only callable from a DevTools panel context (requires "devtools_page" in manifest)
+//   2. All script strings are hardcoded — no user data is interpolated
+// Never interpolate external/user-controlled data into the eval string.
 export function getInspectedPageInfo(): Promise<
   [string | undefined, string | undefined]
 > {

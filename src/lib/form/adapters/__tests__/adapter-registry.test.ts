@@ -5,6 +5,7 @@ import {
   getAdapter,
   detectCustomComponents,
   fillCustomComponent,
+  extractCustomComponentValue,
 } from "../adapter-registry";
 import type { CustomComponentAdapter, AdapterName } from "../adapter.interface";
 import type { FormField } from "@/types";
@@ -223,5 +224,174 @@ describe("fillCustomComponent", () => {
     const field = makeField("fill-throw" as AdapterName);
     const result = await fillCustomComponent(field, "v");
     expect(result).toBe(false);
+  });
+});
+
+// ── extractCustomComponentValue ───────────────────────────────────────────────
+
+describe("extractCustomComponentValue", () => {
+  function makeField(
+    adapterName?: AdapterName,
+    element?: HTMLElement,
+  ): FormField {
+    return {
+      element: element ?? document.createElement("div"),
+      selector: "#x",
+      category: "unknown",
+      fieldType: "unknown",
+      label: "x",
+      name: "",
+      id: "",
+      placeholder: "",
+      required: false,
+      contextSignals: "",
+      adapterName,
+    };
+  }
+
+  it("returns null when field has no adapterName", () => {
+    expect(extractCustomComponentValue(makeField())).toBeNull();
+  });
+
+  it("returns null when adapterName not found in registry", () => {
+    const field = makeField("ghost-extractor" as AdapterName);
+    expect(extractCustomComponentValue(field)).toBeNull();
+  });
+
+  it("returns value from adapter.extractValue when provided and returns a value", () => {
+    const adapter = makeAdapter(
+      "custom-extractor" as AdapterName,
+      ".custom-ex",
+    );
+    (
+      adapter as CustomComponentAdapter & { extractValue: () => string }
+    ).extractValue = vi.fn().mockReturnValue("extracted-value");
+    registerAdapter(adapter);
+
+    const field = makeField("custom-extractor" as AdapterName);
+    expect(extractCustomComponentValue(field)).toBe("extracted-value");
+  });
+
+  it("falls through to native when adapter.extractValue returns null", () => {
+    const wrapper = document.createElement("div");
+    const input = document.createElement("input");
+    input.value = "fallback-value";
+    wrapper.appendChild(input);
+
+    const adapter = makeAdapter(
+      "ex-fallthrough" as AdapterName,
+      ".ex-fallthrough",
+    );
+    (
+      adapter as CustomComponentAdapter & {
+        extractValue: () => null;
+      }
+    ).extractValue = vi.fn().mockReturnValue(null);
+    registerAdapter(adapter);
+
+    const field = makeField("ex-fallthrough" as AdapterName, wrapper);
+    expect(extractCustomComponentValue(field)).toBe("fallback-value");
+  });
+
+  it("falls through to native when adapter.extractValue throws", () => {
+    const wrapper = document.createElement("div");
+    const input = document.createElement("input");
+    input.value = "fallback-after-throw";
+    wrapper.appendChild(input);
+
+    const adapter = makeAdapter("ex-throw" as AdapterName, ".ex-throw");
+    (
+      adapter as CustomComponentAdapter & {
+        extractValue: () => string | null;
+      }
+    ).extractValue = vi.fn().mockImplementation(() => {
+      throw new Error("extraction failed");
+    });
+    registerAdapter(adapter);
+
+    const field = makeField("ex-throw" as AdapterName, wrapper);
+    expect(extractCustomComponentValue(field)).toBe("fallback-after-throw");
+  });
+
+  it("returns native.value for HTMLSelectElement", () => {
+    const wrapper = document.createElement("div");
+    const select = document.createElement("select");
+    const opt = document.createElement("option");
+    opt.value = "option-a";
+    opt.selected = true;
+    select.appendChild(opt);
+    wrapper.appendChild(select);
+
+    const adapter = makeAdapter("ex-select" as AdapterName, ".ex-select");
+    registerAdapter(adapter);
+
+    const field = makeField("ex-select" as AdapterName, wrapper);
+    expect(extractCustomComponentValue(field)).toBe("option-a");
+  });
+
+  it("returns 'true' for checked checkbox input", () => {
+    const wrapper = document.createElement("div");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = true;
+    wrapper.appendChild(input);
+
+    const adapter = makeAdapter("ex-checkbox" as AdapterName, ".ex-chk");
+    registerAdapter(adapter);
+
+    const field = makeField("ex-checkbox" as AdapterName, wrapper);
+    expect(extractCustomComponentValue(field)).toBe("true");
+  });
+
+  it("returns 'false' for unchecked radio input", () => {
+    const wrapper = document.createElement("div");
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.checked = false;
+    wrapper.appendChild(input);
+
+    const adapter = makeAdapter("ex-radio" as AdapterName, ".ex-radio");
+    registerAdapter(adapter);
+
+    const field = makeField("ex-radio" as AdapterName, wrapper);
+    expect(extractCustomComponentValue(field)).toBe("false");
+  });
+
+  it("returns input.value for text input", () => {
+    const wrapper = document.createElement("div");
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = "text-value";
+    wrapper.appendChild(input);
+
+    const adapter = makeAdapter("ex-text" as AdapterName, ".ex-text");
+    registerAdapter(adapter);
+
+    const field = makeField("ex-text" as AdapterName, wrapper);
+    expect(extractCustomComponentValue(field)).toBe("text-value");
+  });
+
+  it("returns textarea.value for textarea", () => {
+    const wrapper = document.createElement("div");
+    const textarea = document.createElement("textarea");
+    textarea.value = "textarea-content";
+    wrapper.appendChild(textarea);
+
+    const adapter = makeAdapter("ex-textarea" as AdapterName, ".ex-textarea");
+    registerAdapter(adapter);
+
+    const field = makeField("ex-textarea" as AdapterName, wrapper);
+    expect(extractCustomComponentValue(field)).toBe("textarea-content");
+  });
+
+  it("returns null when no native input found and no extractValue", () => {
+    const wrapper = document.createElement("div");
+    wrapper.textContent = "no inputs here";
+
+    const adapter = makeAdapter("ex-empty" as AdapterName, ".ex-empty");
+    registerAdapter(adapter);
+
+    const field = makeField("ex-empty" as AdapterName, wrapper);
+    expect(extractCustomComponentValue(field)).toBeNull();
   });
 });

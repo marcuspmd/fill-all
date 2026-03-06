@@ -324,6 +324,7 @@ function waitForReactSelectMenu(
   if (existing) return Promise.resolve(existing);
 
   return new Promise((resolve) => {
+    /* v8 ignore next 8 -- MutationObserver callback not tracked by V8 coverage in happy-dom */
     const observer = new MutationObserver(() => {
       const found = findInline() ?? findPortaled();
       if (found) {

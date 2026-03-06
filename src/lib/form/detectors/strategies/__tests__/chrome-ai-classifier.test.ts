@@ -228,5 +228,55 @@ describe("chromeAiClassifier", () => {
 
       document.body.removeChild(wrapper);
     });
+
+    it("skips context HTML when closest ancestor is FORM", async () => {
+      mockClassifyFieldViaProxy.mockResolvedValue(null);
+
+      // input directly inside a <form> — getContextHtml should return null
+      const form = document.createElement("form");
+      const input = document.createElement("input");
+      input.type = "text";
+      input.name = "name";
+      form.appendChild(input);
+      document.body.appendChild(form);
+
+      const field = makeField({ element: input });
+      await chromeAiClassifier.detectAsync!(field);
+
+      const calls = mockClassifyFieldViaProxy.mock.calls as unknown as Array<
+        [{ contextHtml?: string }]
+      >;
+      const call = calls[0]?.[0];
+      // contextHtml should be undefined since container is a <form>
+      expect(call?.contextHtml).toBeUndefined();
+
+      document.body.removeChild(form);
+    });
+
+    it("truncates context HTML when it exceeds 500 chars (covers line 59)", async () => {
+      mockClassifyFieldViaProxy.mockResolvedValue(null);
+
+      // Create a <label> with long textContent so outerHTML > 500 chars
+      const label = document.createElement("label");
+      label.textContent = "x".repeat(600);
+      const input = document.createElement("input");
+      input.type = "text";
+      input.name = "longfield";
+      label.appendChild(input);
+      document.body.appendChild(label);
+
+      const field = makeField({ element: input });
+      await chromeAiClassifier.detectAsync!(field);
+
+      const calls = mockClassifyFieldViaProxy.mock.calls as unknown as Array<
+        [{ contextHtml?: string }]
+      >;
+      const call = calls[0]?.[0];
+      // contextHtml should exist but be truncated with "…"
+      expect(call?.contextHtml).toBeDefined();
+      expect(call?.contextHtml).toContain("…");
+
+      document.body.removeChild(label);
+    });
   });
 });

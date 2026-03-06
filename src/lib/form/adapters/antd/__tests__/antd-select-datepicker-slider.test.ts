@@ -4,7 +4,7 @@
  * Testes para antdSelectAdapter, antdDatepickerAdapter, antdSliderAdapter
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 vi.mock("@/lib/form/extractors", () => ({
   getUniqueSelector: vi.fn(
@@ -645,6 +645,331 @@ describe("antdSelectAdapter", () => {
       expect(result).toBe(true);
       expect(clicked).toBe(true);
     });
+
+    // ─── multiselect: sem searchInput (branch 59) ───────────────────────────
+
+    it("fill: multiselect sem .ant-select-input não dispara Escape", async () => {
+      // wrapper with .ant-select-selector but combobox WITHOUT the search-input class
+      const wrapper = document.createElement("div");
+      wrapper.className = "ant-select ant-select-multiple";
+
+      const selectorEl = document.createElement("div");
+      selectorEl.className = "ant-select-selector";
+
+      // input with role=combobox but NOT .ant-select-selection-search-input / .ant-select-input
+      const combobox = document.createElement("input");
+      combobox.setAttribute("role", "combobox");
+      combobox.className = "custom-combobox-only";
+
+      selectorEl.appendChild(combobox);
+      wrapper.appendChild(selectorEl);
+      document.body.appendChild(wrapper);
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "ant-select-dropdown";
+      const option = document.createElement("div");
+      option.className = "ant-select-item-option";
+      option.setAttribute("title", "Opção");
+      option.textContent = "Opção";
+      dropdown.appendChild(option);
+      document.body.appendChild(dropdown);
+
+      let escapeFired = false;
+      combobox.addEventListener("keydown", (e: KeyboardEvent) => {
+        if (e.key === "Escape") escapeFired = true;
+      });
+
+      const result = await antdSelectAdapter.fill(wrapper, "Opção");
+      expect(result).toBe(true);
+      expect(escapeFired).toBe(false);
+    });
+
+    // ─── multiselect: com listboxId (branches 47-51) ────────────────────────
+
+    it("fill: multiselect usa listboxId (aria-controls) para escopo do dropdown", async () => {
+      const listboxId = "test-multi-scoped-lb";
+      const wrapper = makeMultipleSelect();
+      const combobox = wrapper.querySelector<HTMLInputElement>("input")!;
+      combobox.setAttribute("aria-controls", listboxId);
+      document.body.appendChild(wrapper);
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "ant-select-dropdown";
+
+      const listbox = document.createElement("ul");
+      listbox.id = listboxId;
+      listbox.setAttribute("role", "listbox");
+      dropdown.appendChild(listbox);
+
+      const option = document.createElement("div");
+      option.className = "ant-select-item-option";
+      option.setAttribute("title", "Multi Scoped");
+      option.textContent = "Multi Scoped";
+      dropdown.appendChild(option);
+      document.body.appendChild(dropdown);
+
+      const result = await antdSelectAdapter.fill(wrapper, "Multi Scoped");
+      expect(result).toBe(true);
+    });
+
+    // ─── multiselect: opção sem title usa textContent (branch 55) ──────────
+
+    it("fill: usa textContent quando option não tem atributo title", async () => {
+      const wrapper = makeMultipleSelect();
+      document.body.appendChild(wrapper);
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "ant-select-dropdown";
+
+      // Option without title attribute — branch 55 arm 1 (getAttribute returns null)
+      const option = document.createElement("div");
+      option.className = "ant-select-item-option";
+      option.textContent = "Opção Sem Title";
+      // Intentionally NOT setting option.setAttribute("title", ...)
+      dropdown.appendChild(option);
+      document.body.appendChild(dropdown);
+
+      let clicked = false;
+      option.addEventListener("click", () => (clicked = true));
+
+      const result = await antdSelectAdapter.fill(wrapper, "Opção Sem Title");
+      expect(result).toBe(true);
+      expect(clicked).toBe(true);
+    });
+
+    it("fill: usa includes quando title tem sufixo extra (partial match)", async () => {
+      const wrapper = makeMultipleSelect();
+      document.body.appendChild(wrapper);
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "ant-select-dropdown";
+
+      // Option title doesn't exactly match desired value → includes match
+      const option = document.createElement("div");
+      option.className = "ant-select-item-option";
+      option.setAttribute("title", "São Paulo - SP");
+      option.textContent = "São Paulo - SP";
+      dropdown.appendChild(option);
+      document.body.appendChild(dropdown);
+
+      let clicked = false;
+      option.addEventListener("click", () => (clicked = true));
+
+      const result = await antdSelectAdapter.fill(wrapper, "São Paulo");
+      expect(result).toBe(true);
+      expect(clicked).toBe(true);
+    });
+  });
+
+  // ─── extractValue ──────────────────────────────────────────────────────────
+
+  it("extractValue: retorna texto das selection-items separado por vírgula", () => {
+    const wrapper = makeSelect();
+    const item1 = document.createElement("span");
+    item1.className = "ant-select-selection-item";
+    item1.textContent = "Opção A";
+    const item2 = document.createElement("span");
+    item2.className = "ant-select-selection-item";
+    item2.textContent = "Opção B";
+    wrapper.querySelector(".ant-select-selector")!.append(item1, item2);
+    document.body.appendChild(wrapper);
+
+    expect(antdSelectAdapter.extractValue!(wrapper)).toBe("Opção A,Opção B");
+  });
+
+  it("extractValue: filtra itens com textContent vazio", () => {
+    const wrapper = makeSelect();
+    const item1 = document.createElement("span");
+    item1.className = "ant-select-selection-item";
+    item1.textContent = "Valor";
+    const item2 = document.createElement("span");
+    item2.className = "ant-select-selection-item";
+    item2.textContent = "   "; // whitespace-only
+    wrapper.querySelector(".ant-select-selector")!.append(item1, item2);
+    document.body.appendChild(wrapper);
+
+    expect(antdSelectAdapter.extractValue!(wrapper)).toBe("Valor");
+  });
+
+  it("extractValue: retorna valor do input quando não há selection-items", () => {
+    const wrapper = makeSelect();
+    const input = wrapper.querySelector<HTMLInputElement>("input")!;
+    input.value = "texto no input";
+    document.body.appendChild(wrapper);
+
+    expect(antdSelectAdapter.extractValue!(wrapper)).toBe("texto no input");
+  });
+
+  it("extractValue: retorna null quando não há items nem input", () => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ant-select";
+    document.body.appendChild(wrapper);
+
+    expect(antdSelectAdapter.extractValue!(wrapper)).toBeNull();
+  });
+
+  // ─── fill: selectorEl sem combobox ────────────────────────────────────────
+
+  it("fill: abre dropdown via selector quando selectorEl existe mas não há combobox", async () => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ant-select";
+    const selectorEl = document.createElement("div");
+    selectorEl.className = "ant-select-selector";
+    wrapper.appendChild(selectorEl);
+    document.body.appendChild(wrapper);
+
+    const dropdown = document.createElement("div");
+    dropdown.className = "ant-select-dropdown";
+    const option = document.createElement("div");
+    option.className = "ant-select-item-option";
+    option.setAttribute("title", "Opção Sem Combobox");
+    option.textContent = "Opção Sem Combobox";
+    dropdown.appendChild(option);
+    document.body.appendChild(dropdown);
+
+    const result = await antdSelectAdapter.fill(wrapper, "Opção Sem Combobox");
+    expect(result).toBe(true);
+  });
+
+  // ─── fill: retry dropdown (branch 14) ────────────────────────────────────
+
+  describe("fill: retry dropdown após waitForElement falhar", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("encontra dropdown na segunda tentativa (branch 14 arm 1)", async () => {
+      vi.useFakeTimers();
+
+      const wrapper = makeSelect();
+      document.body.appendChild(wrapper);
+
+      // First waitForElement call (for dropdown) returns null
+      vi.mocked(waitForElement).mockResolvedValueOnce(null);
+
+      // Add dropdown to DOM before the 300ms timer fires
+      const dropdown = document.createElement("div");
+      dropdown.className = "ant-select-dropdown";
+      const option = document.createElement("div");
+      option.className = "ant-select-item-option";
+      option.setAttribute("title", "Retry Option");
+      option.textContent = "Retry Option";
+      dropdown.appendChild(option);
+      document.body.appendChild(dropdown);
+
+      const fillPromise = antdSelectAdapter.fill(wrapper, "Retry Option");
+
+      // Advance past the 300ms setTimeout in the retry block
+      await vi.advanceTimersByTimeAsync(350);
+
+      const result = await fillPromise;
+      expect(result).toBe(true);
+    });
+  });
+
+  // ─── fill: selectOption com listboxId (branches 23-29) ───────────────────
+
+  it("fill: getOwnDropdown usa listboxId (aria-controls) para escopo do dropdown", async () => {
+    const listboxId = "test-select-scoped-lb";
+    const wrapper = makeSelect();
+    const combobox = wrapper.querySelector<HTMLInputElement>("input")!;
+    combobox.setAttribute("aria-controls", listboxId);
+    document.body.appendChild(wrapper);
+
+    // Dropdown com listbox específico vinculado via aria-controls
+    const dropdown = document.createElement("div");
+    dropdown.className = "ant-select-dropdown";
+
+    const listbox = document.createElement("ul");
+    listbox.id = listboxId;
+    listbox.setAttribute("role", "listbox");
+    dropdown.appendChild(listbox);
+
+    const option = document.createElement("div");
+    option.className = "ant-select-item-option";
+    option.setAttribute("title", "Opção Scoped");
+    option.textContent = "Opção Scoped";
+    dropdown.appendChild(option);
+    document.body.appendChild(dropdown);
+
+    // When option is clicked, hide dropdown so waitForDropdownClose exits quickly
+    option.addEventListener("click", () => {
+      dropdown.classList.add("ant-select-dropdown-hidden");
+    });
+
+    const result = await antdSelectAdapter.fill(wrapper, "Opção Scoped");
+    expect(result).toBe(true);
+  });
+
+  // ─── fill: Phase 2 AJAX match (branch 43) ────────────────────────────────
+
+  it("fill: Phase 2 — encontra match após digitar no input de busca (AJAX)", async () => {
+    const wrapper = makeSelect();
+    document.body.appendChild(wrapper);
+    const searchInput = wrapper.querySelector<HTMLInputElement>("input")!;
+
+    // Start with empty dropdown — Phase 1 finds nothing
+    const dropdown = document.createElement("div");
+    dropdown.className = "ant-select-dropdown";
+    document.body.appendChild(dropdown);
+
+    // Simulate AJAX: add matching option when input event fires
+    searchInput.addEventListener(
+      "input",
+      () => {
+        const opt = document.createElement("div");
+        opt.className = "ant-select-item-option";
+        opt.setAttribute("title", searchInput.value);
+        opt.textContent = searchInput.value;
+        dropdown.appendChild(opt);
+      },
+      { once: true },
+    );
+
+    const result = await antdSelectAdapter.fill(wrapper, "AJAX Option");
+    expect(result).toBe(true);
+  });
+
+  // ─── fill: Phase 2 ignorada com readOnly (branches 41, 44) ───────────────
+
+  it("fill: Phase 2 ignorada quando searchInput é readOnly — cai para Phase 3", async () => {
+    const wrapper = makeSelect();
+    const searchInput = wrapper.querySelector<HTMLInputElement>("input")!;
+    searchInput.readOnly = true;
+    document.body.appendChild(wrapper);
+
+    const dropdown = document.createElement("div");
+    dropdown.className = "ant-select-dropdown";
+    const option = document.createElement("div");
+    option.className = "ant-select-item-option";
+    option.setAttribute("title", "Opção XPTO");
+    option.textContent = "Opção XPTO";
+    dropdown.appendChild(option);
+    document.body.appendChild(dropdown);
+
+    // Phase 2 is skipped (readOnly), Phase 3 picks random option
+    const result = await antdSelectAdapter.fill(wrapper, "valor-especifico");
+    expect(result).toBe(true);
+  });
+
+  // ─── fill: opções todas desabilitadas (branches 37, 38) ──────────────────
+
+  it("fill: retorna false quando dropdown só tem opções desabilitadas", async () => {
+    const wrapper = makeSelect();
+    document.body.appendChild(wrapper);
+
+    const dropdown = document.createElement("div");
+    dropdown.className = "ant-select-dropdown";
+    const disabledOption = document.createElement("div");
+    disabledOption.className =
+      "ant-select-item-option ant-select-item-option-disabled";
+    disabledOption.setAttribute("title", "Opção Desabilitada");
+    disabledOption.textContent = "Opção Desabilitada";
+    dropdown.appendChild(disabledOption);
+    document.body.appendChild(dropdown);
+
+    const result = await antdSelectAdapter.fill(wrapper, "qualquer");
+    expect(result).toBe(false);
   });
 });
 
@@ -892,5 +1217,47 @@ describe("antdSliderAdapter", () => {
 
     antdSliderAdapter.fill(wrapper, "25");
     expect(handle.style.left).toBe("25%");
+  });
+
+  it("fill funciona sem atributos aria-valuemin e aria-valuemax (usa defaults 0/100)", () => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ant-slider";
+
+    const track = document.createElement("div");
+    track.className = "ant-slider-track";
+
+    const handle = document.createElement("div");
+    handle.className = "ant-slider-handle";
+    handle.setAttribute("role", "slider");
+    handle.setAttribute("aria-valuenow", "0");
+    // Deliberately no aria-valuemin / aria-valuemax → covers `?? "0"` and `?? "100"`
+
+    wrapper.append(track, handle);
+    document.body.appendChild(wrapper);
+
+    const result = antdSliderAdapter.fill(wrapper, "50");
+    expect(result).toBe(true);
+    expect(handle.getAttribute("aria-valuenow")).toBe("50");
+    expect(track.style.width).toBe("50%");
+  });
+
+  it("fill funciona sem .ant-slider-track (cobre branch if(track))", () => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ant-slider";
+
+    const handle = document.createElement("div");
+    handle.className = "ant-slider-handle";
+    handle.setAttribute("role", "slider");
+    handle.setAttribute("aria-valuemin", "0");
+    handle.setAttribute("aria-valuemax", "100");
+    handle.setAttribute("aria-valuenow", "0");
+    // No track element → covers `if (track)` false branch (line 86)
+
+    wrapper.appendChild(handle);
+    document.body.appendChild(wrapper);
+
+    const result = antdSliderAdapter.fill(wrapper, "30");
+    expect(result).toBe(true);
+    expect(handle.getAttribute("aria-valuenow")).toBe("30");
   });
 });

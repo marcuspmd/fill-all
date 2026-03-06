@@ -318,6 +318,56 @@ describe("SearchableSelect — destroy", () => {
     expect(() => ss.getValue()).not.toThrow();
     expect(cb).not.toHaveBeenCalled();
   });
+
+  it("removes all DOM event listeners from input on destroy", () => {
+    const { ss, container } = mount(FLAT_ENTRIES);
+    const input = getInput(container);
+    const removeSpy = vi.spyOn(input, "removeEventListener");
+    ss.destroy();
+    const removedEvents = removeSpy.mock.calls.map((c) => c[0]);
+    expect(removedEvents).toContain("focus");
+    expect(removedEvents).toContain("click");
+    expect(removedEvents).toContain("input");
+    expect(removedEvents).toContain("keydown");
+  });
+
+  it("removes mousedown listener from dropdown on destroy", () => {
+    const { ss, container } = mount(FLAT_ENTRIES);
+    const dropdown = getDropdown(container);
+    const removeSpy = vi.spyOn(dropdown, "removeEventListener");
+    ss.destroy();
+    const removedEvents = removeSpy.mock.calls.map((c) => c[0]);
+    expect(removedEvents).toContain("mousedown");
+  });
+
+  it("removes outside-click listener from document on destroy", () => {
+    const { ss } = mount(FLAT_ENTRIES);
+    const removeSpy = vi.spyOn(document, "removeEventListener");
+    ss.destroy();
+    const removedEvents = removeSpy.mock.calls.map((c) => c[0]);
+    expect(removedEvents).toContain("mousedown");
+    removeSpy.mockRestore();
+  });
+
+  it("outside click no longer triggers close after destroy", () => {
+    const { ss, container } = mount(FLAT_ENTRIES);
+    // Open the dropdown first
+    getInput(container).dispatchEvent(new Event("focus"));
+    expect(getDropdown(container).hasAttribute("hidden")).toBe(false);
+    ss.destroy();
+    // After destroy, the root is gone — no errors should be thrown
+    expect(() =>
+      document.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })),
+    ).not.toThrow();
+  });
+
+  it("destroy is idempotent — calling twice does not throw", () => {
+    const { ss } = mount(FLAT_ENTRIES);
+    expect(() => {
+      ss.destroy();
+      ss.destroy();
+    }).not.toThrow();
+  });
 });
 
 describe("SearchableSelect — disabled", () => {
