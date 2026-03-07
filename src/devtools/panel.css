@@ -303,6 +303,9 @@ body {
 .btn-sm {
   padding: 4px 10px;
   font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .btn-danger {
@@ -1162,6 +1165,15 @@ body {
   font-weight: 600;
   color: var(--indigo);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.demo-section-title .material-icons-round {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .demo-hint {
@@ -1227,8 +1239,8 @@ body {
 }
 
 .demo-table td {
-  padding: 5px 8px;
-  border-bottom: 1px solid rgba(69, 71, 90, 0.4);
+  padding: 20px 8px;
+  border-bottom: 1px solid var(--border, #45475a);
   vertical-align: middle;
 }
 
@@ -1264,7 +1276,7 @@ body {
 
 .demo-col-actions .btn,
 .demo-col-actions .demo-video-actions {
-  margin-left: 3px;
+  margin-left: 8px;
 }
 
 .demo-col-actions .btn:first-child {
@@ -1333,7 +1345,7 @@ body {
 }
 
 .demo-steps-editor {
-  padding: 8px 12px 12px;
+  padding: 12px 14px 14px;
 }
 
 .demo-steps-table {
@@ -1398,15 +1410,24 @@ body {
 
 .demo-step-move-btn {
   font-size: 9px;
-  padding: 0 4px;
-  line-height: 1.4;
-  min-width: 18px;
+  padding: 0 2px;
+  line-height: 1;
+  min-width: 20px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-tertiary, #181825);
   border: 1px solid var(--border, #45475a);
   color: var(--text-muted, #6c7086);
   border-radius: 3px;
   cursor: pointer;
   transition: color 0.1s, border-color 0.1s;
+}
+
+.demo-step-move-btn .material-icons-round {
+  font-size: 12px;
+  line-height: 1;
 }
 
 .demo-step-move-btn:not(:disabled):hover {
@@ -1460,11 +1481,18 @@ body {
   border: none;
   color: var(--text-muted, #6c7086);
   cursor: pointer;
-  padding: 2px 5px;
+  padding: 2px 4px;
   font-size: 11px;
   line-height: 1;
   border-radius: 3px;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.demo-effect-remove-btn .material-icons-round {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .demo-effect-remove-btn:hover {
@@ -1603,6 +1631,19 @@ body {
 .btn-xs {
   padding: 1px 5px;
   font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.btn-xs .material-icons-round {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.btn-sm .material-icons-round {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .btn-danger {
@@ -1646,6 +1687,10 @@ body {
   display: flex;
   gap: 6px;
   align-items: center;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--border, #45475a);
+  margin-top: 4px;
 }
 
 /* ── Step card list ── */
