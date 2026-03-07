@@ -76,14 +76,14 @@ export function buildGroupedFieldTypeOptions(selected?: string): string {
 // ── Record Step Icons ─────────────────────────────────────────────────────────
 
 export const STEP_ICONS: Record<string, string> = {
-  fill: "✏️",
-  click: "🖱️",
-  select: "📋",
-  check: "☑️",
-  uncheck: "🔲",
-  submit: "🚀",
-  assert: "🌐",
-  wait: "⏱️",
-  navigate: "🔗",
-  scroll: "📜",
+  fill: "edit_note",
+  click: "ads_click",
+  select: "list",
+  check: "check_box",
+  uncheck: "check_box_outline_blank",
+  submit: "send",
+  assert: "verified",
+  wait: "schedule",
+  navigate: "link",
+  scroll: "swap_vert",
 };

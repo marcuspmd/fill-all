@@ -12,7 +12,7 @@
 import type { FieldType, GeneratorParams } from "@/types";
 import { FIELD_TYPE_DEFINITIONS } from "@/types";
 import { generateCpf } from "./cpf";
-import { generateCnpj } from "./cnpj";
+import { generateCnpj, generateCnpjAlphanumeric } from "./cnpj";
 import { generateEmail } from "./email";
 import { generatePhone } from "./phone";
 import {
@@ -80,8 +80,14 @@ type GeneratorFactory = (params?: GeneratorParams) => string;
 const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
   // ── Documentos ──────────────────────────────────────────────
   cpf: (p) => generateCpf(p?.formatted !== false),
-  cnpj: (p) => generateCnpj(p?.formatted !== false),
-  "cpf-cnpj": () => generateCpfCnpj(),
+  cnpj: (p) =>
+    generateCnpj(p?.formatted !== false, p?.cnpjAlphanumeric === true),
+  "cpf-cnpj": (p) =>
+    p?.cnpjAlphanumeric === true
+      ? Math.random() < 0.6
+        ? generateCpf(p?.formatted !== false)
+        : generateCnpjAlphanumeric(p?.formatted !== false)
+      : generateCpfCnpj(),
   rg: (p) => generateRg(p?.formatted !== false),
   passport: () => generatePassport(),
   cnh: () => generateCnh(),
@@ -221,6 +227,7 @@ export { generateFromPattern } from "./pattern";
 export {
   generateCpf,
   generateCnpj,
+  generateCnpjAlphanumeric,
   generateEmail,
   generatePhone,
   generateFirstName,

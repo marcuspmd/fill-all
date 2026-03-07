@@ -38,6 +38,7 @@ export interface FormsTabViewCallbacks {
   onSave: (form: SavedForm, isNew: boolean) => Promise<void>;
   onSetDefault: (form: SavedForm) => void;
   onDelete: (form: SavedForm) => void;
+  onSaveCurrentForm: () => void;
 }
 
 export interface FormsTabViewProps extends FormsTabViewCallbacks {
@@ -53,6 +54,7 @@ export function FormsTabView({
   onSave,
   onSetDefault,
   onDelete,
+  onSaveCurrentForm,
 }: FormsTabViewProps) {
   const [editingForm, setEditingForm] = useState<SavedForm | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -95,10 +97,20 @@ export function FormsTabView({
     <div>
       <div class="fields-toolbar">
         <button class="btn" onClick={onLoad}>
-          🔄 {t("btnLoadForms")}
+          <span class="material-icons-round">refresh</span>
+          {t("btnLoadForms")}
         </button>
         <button class="btn btn-success" onClick={openNewForm}>
-          + {t("btnNewForm")}
+          <span class="material-icons-round">add</span>
+          {t("btnNewForm")}
+        </button>
+        <button
+          class="btn btn-secondary"
+          onClick={onSaveCurrentForm}
+          title={t("saveFormDesc")}
+        >
+          <span class="material-icons-round">save</span>
+          {t("saveForm")}
         </button>
         <span class="fields-count">
           {savedForms.length} {t("formCount")}
@@ -106,7 +118,15 @@ export function FormsTabView({
       </div>
       <div class="forms-list">
         {!formsLoaded ? (
-          <div class="empty">⏳ {t("logLoadingForms")}</div>
+          <div class="empty">
+            <span
+              class="material-icons-round"
+              style={{ fontSize: 14, verticalAlign: "middle" }}
+            >
+              hourglass_empty
+            </span>{" "}
+            {t("logLoadingForms")}
+          </div>
         ) : savedForms.length === 0 ? (
           <div class="empty">{t("loadFormsDesc")}</div>
         ) : (
@@ -129,27 +149,29 @@ export function FormsTabView({
               </div>
               <div class="form-actions">
                 <button class="btn btn-sm" onClick={() => onApply(form)}>
-                  ▶️ {t("btnApply")}
+                  <span class="material-icons-round">play_arrow</span>
+                  {t("btnApply")}
                 </button>
                 <button
                   class="btn btn-sm btn-warning"
                   onClick={() => openEditForm(form)}
                 >
-                  ✏️ {t("btnEdit")}
+                  <span class="material-icons-round">edit</span>
+                  {t("btnEdit")}
                 </button>
                 <button
                   class="btn btn-sm btn-secondary"
                   title={t("btnSetDefault")}
                   onClick={() => onSetDefault(form)}
                 >
-                  ⭐
+                  <span class="material-icons-round">star</span>
                 </button>
                 <button
                   class="btn btn-sm btn-danger"
                   title={t("msgConfirmDeleteForm")}
                   onClick={() => onDelete(form)}
                 >
-                  🗑️
+                  <span class="material-icons-round">delete</span>
                 </button>
               </div>
             </div>
@@ -258,13 +280,15 @@ export function EditFormScreen({
     <div class="edit-form-screen">
       <div class="fields-toolbar">
         <button class="btn btn-secondary" onClick={onClose}>
-          ← {t("btnCancel")}
+          <span class="material-icons-round">arrow_back</span>
+          {t("btnCancel")}
         </button>
         <span class="modal-title" style={{ flex: 1, marginLeft: 8 }}>
           {isNew ? "➕" : "✏️"} {t(isNew ? "newFormTitle" : "editTemplate")}
         </span>
         <button class="btn btn-success" onClick={handleSave} disabled={saving}>
-          💾 {saving ? "..." : t("btnSave")}
+          <span class="material-icons-round">save</span>
+          {saving ? "..." : t("btnSave")}
         </button>
       </div>
 
@@ -307,14 +331,14 @@ export function EditFormScreen({
               title={t("btnEdit")}
               onClick={() => setEditingFieldIndex(i)}
             >
-              ✏️
+              <span class="material-icons-round">edit</span>
             </button>
             <button
               class="btn btn-sm btn-danger"
               title={t("tooltipRemoveField")}
               onClick={() => handleRemoveField(i)}
             >
-              🗑
+              <span class="material-icons-round">delete</span>
             </button>
           </div>
         ))}
@@ -322,7 +346,8 @@ export function EditFormScreen({
 
       <div style={{ padding: "8px 0" }}>
         <button class="btn btn-secondary" onClick={handleAddField}>
-          + {t("btnAddField")}
+          <span class="material-icons-round">add</span>
+          {t("btnAddField")}
         </button>
       </div>
 
@@ -386,9 +411,17 @@ function FieldRowModal({ field, index, onSave, onClose }: FieldRowModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div class="modal-header">
-          <span class="modal-title">✏️ {t("editField")}</span>
+          <span class="modal-title">
+            <span
+              class="material-icons-round"
+              style={{ fontSize: 16, verticalAlign: "middle", marginRight: 4 }}
+            >
+              edit
+            </span>
+            {t("editField")}
+          </span>
           <button class="modal-close" onClick={onClose}>
-            ✕
+            <span class="material-icons-round">close</span>
           </button>
         </div>
 
@@ -456,10 +489,12 @@ function FieldRowModal({ field, index, onSave, onClose }: FieldRowModalProps) {
 
         <div class="modal-footer">
           <button class="btn" onClick={onClose}>
-            ✕ {t("btnCancel")}
+            <span class="material-icons-round">close</span>
+            {t("btnCancel")}
           </button>
           <button class="btn btn-success" onClick={handleSave}>
-            💾 {t("btnSave")}
+            <span class="material-icons-round">save</span>
+            {t("btnSave")}
           </button>
         </div>
       </div>

@@ -244,9 +244,17 @@ export function FieldEditorModal({
     <div class="modal-overlay" onClick={onClose}>
       <div class="modal-box" onClick={(e) => e.stopPropagation()}>
         <div class="modal-header">
-          <span class="modal-title">✏️ {t("editFieldRule")}</span>
+          <span class="modal-title">
+            <span
+              class="material-icons-round"
+              style={{ fontSize: 18, verticalAlign: "middle", marginRight: 6 }}
+            >
+              edit
+            </span>
+            {t("editFieldRule")}
+          </span>
           <button class="modal-close" onClick={onClose}>
-            ✕
+            <span class="material-icons-round">close</span>
           </button>
         </div>
 
@@ -322,12 +330,14 @@ export function FieldEditorModal({
               onClick={handleRedetect}
               disabled={isRedetecting}
             >
-              🔍 {isRedetecting ? t("editorRedetecting") : t("editorRedetect")}
+              <span class="material-icons-round">search</span>{" "}
+              {isRedetecting ? t("editorRedetecting") : t("editorRedetect")}
             </button>
           )}
           {existingRule && (
             <button class="btn btn-danger" onClick={onDelete}>
-              🗑️ {t("editorDeleteRule")}
+              <span class="material-icons-round">delete</span>{" "}
+              {t("editorDeleteRule")}
             </button>
           )}
           <button class="btn" onClick={onClose}>

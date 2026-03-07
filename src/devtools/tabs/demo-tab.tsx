@@ -70,7 +70,10 @@ function ConvertSection() {
   if (!hasSteps) {
     return (
       <section class="demo-section">
-        <h3 class="demo-section-title">🎬 {t("demoConvertTitle")}</h3>
+        <h3 class="demo-section-title">
+          <span class="material-icons-round">movie</span>
+          {t("demoConvertTitle")}
+        </h3>
         <p class="demo-hint">{t("demoConvertHint")}</p>
       </section>
     );
@@ -78,7 +81,10 @@ function ConvertSection() {
 
   return (
     <section class="demo-section">
-      <h3 class="demo-section-title">🎬 {t("demoConvertTitle")}</h3>
+      <h3 class="demo-section-title">
+        <span class="material-icons-round">movie</span>
+        {t("demoConvertTitle")}
+      </h3>
       <p class="demo-hint">
         {t(
           "demoConvertHintReady",
@@ -113,7 +119,8 @@ function ConvertSection() {
         class="btn btn-primary"
         onClick={() => void saveRecordingAsDemo()}
       >
-        💾 {t("demoSaveAsDemo")}
+        <span class="material-icons-round">save</span>
+        {t("demoSaveAsDemo")}
       </button>
     </section>
   );
@@ -122,16 +129,19 @@ function ConvertSection() {
 // ── Section 2: Replay Options ─────────────────────────────────────────────────
 
 const SPEED_LABELS: Record<string, string> = {
-  instant: "⚡ Instant",
-  fast: "🐇 Rápido",
-  normal: "🚶 Normal",
-  slow: "🐢 Lento",
+  instant: "Instant",
+  fast: "Rápido",
+  normal: "Normal",
+  slow: "Lento",
 };
 
 function DemoReplayOptions() {
   return (
     <section class="demo-section demo-replay-options">
-      <h3 class="demo-section-title">⚙️ {t("demoReplayOptionsTitle")}</h3>
+      <h3 class="demo-section-title">
+        <span class="material-icons-round">tune</span>
+        {t("demoReplayOptionsTitle")}
+      </h3>
       <div class="demo-replay-options-row">
         <label class="demo-label">{t("demoReplaySpeed")}</label>
         <select
@@ -174,21 +184,25 @@ function DemoLibrary() {
   return (
     <section class="demo-section">
       <div class="demo-section-header">
-        <h3 class="demo-section-title">📂 {t("demoLibraryTitle")}</h3>
+        <h3 class="demo-section-title">
+          <span class="material-icons-round">folder_open</span>
+          {t("demoLibraryTitle")}
+        </h3>
         <div class="demo-section-header-actions">
           <button
             class="btn btn-sm"
             onClick={() => void handleUploadFlow()}
             title="Carregar script JSON"
           >
-            📤 Upload
+            <span class="material-icons-round">upload</span>
+            Upload
           </button>
           <button
             class="btn btn-sm"
             onClick={() => void loadDemoFlows()}
             title={t("demoRefresh")}
           >
-            🔄
+            <span class="material-icons-round">refresh</span>
           </button>
         </div>
       </div>
@@ -254,7 +268,7 @@ function DemoFlowRow({ flow }: { flow: FlowScript }) {
             title={t("demoReplay")}
             onClick={() => void startReplay(flow)}
           >
-            ▶
+            <span class="material-icons-round">play_arrow</span>
           </button>
         ) : isRunning ? (
           <>
@@ -263,14 +277,14 @@ function DemoFlowRow({ flow }: { flow: FlowScript }) {
               title={t("demoPause")}
               onClick={() => void pauseReplay()}
             >
-              ⏸
+              <span class="material-icons-round">pause</span>
             </button>
             <button
               class="btn btn-sm btn-danger"
               title={t("demoStop")}
               onClick={() => void stopReplay()}
             >
-              ⏹
+              <span class="material-icons-round">stop</span>
             </button>
           </>
         ) : (
@@ -280,14 +294,14 @@ function DemoFlowRow({ flow }: { flow: FlowScript }) {
               title={t("demoResume")}
               onClick={() => void resumeReplay()}
             >
-              ▶
+              <span class="material-icons-round">play_arrow</span>
             </button>
             <button
               class="btn btn-sm btn-danger"
               title={t("demoStop")}
               onClick={() => void stopReplay()}
             >
-              ⏹
+              <span class="material-icons-round">stop</span>
             </button>
           </>
         )}
@@ -299,7 +313,8 @@ function DemoFlowRow({ flow }: { flow: FlowScript }) {
             title={t("demoVideoStop")}
             onClick={() => stopVideoRecording()}
           >
-            🔴 {t("demoVideoStop")}
+            <span class="material-icons-round">stop_circle</span>
+            {t("demoVideoStop")}
           </button>
         ) : hasVideoBlob ? (
           <div class="demo-video-actions">
@@ -308,14 +323,15 @@ function DemoFlowRow({ flow }: { flow: FlowScript }) {
               title={t("demoVideoDownload")}
               onClick={() => downloadVideoBlob()}
             >
-              📥 {t("demoVideoDownload")}
+              <span class="material-icons-round">download</span>
+              {t("demoVideoDownload")}
             </button>
             <button
               class="btn btn-sm"
               title="Descartar gravação"
               onClick={() => discardVideoBlob()}
             >
-              🗑️
+              <span class="material-icons-round">delete</span>
             </button>
             <button
               class="btn btn-sm btn-video-record"
@@ -323,7 +339,7 @@ function DemoFlowRow({ flow }: { flow: FlowScript }) {
               disabled={anyVideoRecording}
               onClick={() => void startVideoAndReplay(flow)}
             >
-              🔁
+              <span class="material-icons-round">replay</span>
             </button>
           </div>
         ) : (
@@ -333,7 +349,8 @@ function DemoFlowRow({ flow }: { flow: FlowScript }) {
             disabled={anyVideoRecording || isBusy}
             onClick={() => void startVideoAndReplay(flow)}
           >
-            🎥 {t("demoVideoRecord")}
+            <span class="material-icons-round">videocam</span>
+            {t("demoVideoRecord")}
           </button>
         )}
 
@@ -347,21 +364,21 @@ function DemoFlowRow({ flow }: { flow: FlowScript }) {
             renderDemoTab();
           }}
         >
-          ✏️
+          <span class="material-icons-round">edit</span>
         </button>
         <button
           class="btn btn-sm"
           title={t("demoExportJson")}
           onClick={() => exportFlowJson(flow)}
         >
-          📥
+          <span class="material-icons-round">download</span>
         </button>
         <button
           class="btn btn-sm btn-danger"
           title={t("demoDelete")}
           onClick={() => void deleteFlow(flow.id)}
         >
-          🗑️
+          <span class="material-icons-round">delete</span>
         </button>
       </td>
     </tr>
@@ -511,20 +528,23 @@ function DemoFlowEditRow({ flow }: { flow: FlowScript }) {
                 addStep(sel.value as FlowActionType);
               }}
             >
-              + {t("demoAddStep")}
+              <span class="material-icons-round">add</span>
+              {t("demoAddStep")}
             </button>
           </div>
 
           {/* Save / Cancel */}
           <div class="demo-steps-actions">
+            <button class="btn btn-sm" onClick={cancelEdit}>
+              <span class="material-icons-round">close</span>
+              {t("demoCancelEdit")}
+            </button>
             <button
               class="btn btn-sm btn-primary"
               onClick={() => void saveStepEdits()}
             >
-              💾 {t("demoSaveSteps")}
-            </button>
-            <button class="btn btn-sm" onClick={cancelEdit}>
-              ✕ {t("demoCancelEdit")}
+              <span class="material-icons-round">save</span>
+              {t("demoSaveSteps")}
             </button>
           </div>
         </div>
@@ -566,13 +586,13 @@ const CAPTION_POSITIONS = ["top", "middle", "bottom"] as const;
 // ── Step effects inline editor ────────────────────────────────────────────────
 
 const EFFECT_ICONS: Record<EffectKind, string> = {
-  label: "🏷️",
-  grow: "📈",
-  zoom: "🔎",
-  pin: "📌",
-  shake: "💫",
-  confetti: "🎉",
-  spotlight: "🔦",
+  label: "label",
+  grow: "trending_up",
+  zoom: "zoom_in",
+  pin: "push_pin",
+  shake: "vibration",
+  confetti: "celebration",
+  spotlight: "highlight",
 };
 
 function EffectsEditor({
@@ -588,19 +608,19 @@ function EffectsEditor({
     if (kind === "none") return;
     const base: StepEffect =
       kind === "label" ? { kind: "label", text: "" } : ({ kind } as StepEffect);
-    step.effects = [...effects, base];
+    step.effects = [...(step.effects ?? []), base];
     onUpdate();
   }
 
   function removeEffect(idx: number) {
-    const next = [...effects];
+    const next = [...(step.effects ?? [])];
     next.splice(idx, 1);
     step.effects = next.length > 0 ? next : undefined;
     onUpdate();
   }
 
   function patchEffect(idx: number, patch: Partial<StepEffect>) {
-    const next = [...effects];
+    const next = [...(step.effects ?? [])];
     next[idx] = { ...next[idx], ...patch } as StepEffect;
     step.effects = next;
     onUpdate();
@@ -617,7 +637,10 @@ function EffectsEditor({
             >
               <div class="demo-effect-card-header">
                 <span class={`demo-effect-badge demo-effect-badge-${eff.kind}`}>
-                  {EFFECT_ICONS[eff.kind]} {eff.kind}
+                  <span class="material-icons-round">
+                    {EFFECT_ICONS[eff.kind]}
+                  </span>
+                  {eff.kind}
                 </span>
                 <div class="demo-effect-header-timing">
                   <label class="demo-effect-label-txt">
@@ -634,14 +657,12 @@ function EffectsEditor({
                     }
                   >
                     <option value="before">
-                      ⏮ {t("demoEffectTimingBefore")}
+                      {t("demoEffectTimingBefore")}
                     </option>
                     <option value="during">
-                      ▶ {t("demoEffectTimingDuring")}
+                      {t("demoEffectTimingDuring")}
                     </option>
-                    <option value="after">
-                      ⏭ {t("demoEffectTimingAfter")}
-                    </option>
+                    <option value="after">{t("demoEffectTimingAfter")}</option>
                   </select>
                 </div>
                 <button
@@ -649,7 +670,7 @@ function EffectsEditor({
                   title={t("demoDeleteStep")}
                   onClick={() => removeEffect(i)}
                 >
-                  ✕
+                  <span class="material-icons-round">close</span>
                 </button>
               </div>
               <div class="demo-effect-card-body">
@@ -669,9 +690,7 @@ function EffectsEditor({
         >
           {ALL_EFFECT_KINDS_WITH_NONE.map((k) => (
             <option key={k} value={k}>
-              {k === "none"
-                ? `── ${t("demoEffectNone")} ──`
-                : `${EFFECT_ICONS[k as EffectKind] ?? ""} ${k}`}
+              {k === "none" ? `── ${t("demoEffectNone")} ──` : k}
             </option>
           ))}
         </select>
@@ -684,7 +703,8 @@ function EffectsEditor({
             addEffect(sel.value as EffectKind | "none");
           }}
         >
-          + {t("demoAddEffect")}
+          <span class="material-icons-round">add</span>
+          {t("demoAddEffect")}
         </button>
       </div>
     </div>
@@ -1086,7 +1106,7 @@ function DemoStepCard({
           title={t("demoMoveStepUp")}
           onClick={onMoveUp}
         >
-          ▲
+          <span class="material-icons-round">arrow_upward</span>
         </button>
         <button
           class="btn btn-xs demo-step-move-btn"
@@ -1094,7 +1114,7 @@ function DemoStepCard({
           title={t("demoMoveStepDown")}
           onClick={onMoveDown}
         >
-          ▼
+          <span class="material-icons-round">arrow_downward</span>
         </button>
       </div>
       <span class="demo-step-card-idx">{idx + 1}</span>
@@ -1121,14 +1141,14 @@ function DemoStepCard({
       )}
       <div class="demo-step-card-actions">
         <button class="btn btn-xs" title={t("demoEditStep")} onClick={onEdit}>
-          ✏️
+          <span class="material-icons-round">edit</span>
         </button>
         <button
           class="btn btn-xs btn-danger"
           title={t("demoDeleteStep")}
           onClick={onDelete}
         >
-          🗑
+          <span class="material-icons-round">delete</span>
         </button>
       </div>
     </div>
@@ -1708,6 +1728,7 @@ async function captureTabStream(tabId: number): Promise<MediaStream | null> {
       `${t("demoVideoErrorStream")}: ${response?.error ?? "no streamId returned from background"}`,
       "error",
     );
+    alert(t("demoVideoErrorPermission"));
     return null;
   }
 
@@ -1745,7 +1766,9 @@ function ReplayStatus() {
   return (
     <section class="demo-section demo-replay-status">
       <h3 class="demo-section-title">
-        {status === "running" ? "▶ " : "⏸ "}
+        <span class="material-icons-round">
+          {status === "running" ? "play_arrow" : "pause"}
+        </span>
         {t("demoReplayStatusTitle")}
       </h3>
       {progress && (
@@ -1769,7 +1792,8 @@ function ReplayStatus() {
             class="btn btn-sm btn-warning"
             onClick={() => void pauseReplay()}
           >
-            ⏸ {t("demoPause")}
+            <span class="material-icons-round">pause</span>
+            {t("demoPause")}
           </button>
         )}
         {status === "paused" && (
@@ -1777,11 +1801,13 @@ function ReplayStatus() {
             class="btn btn-sm btn-success"
             onClick={() => void resumeReplay()}
           >
-            ▶ {t("demoResume")}
+            <span class="material-icons-round">play_arrow</span>
+            {t("demoResume")}
           </button>
         )}
         <button class="btn btn-sm btn-danger" onClick={() => void stopReplay()}>
-          ⏹ {t("demoStop")}
+          <span class="material-icons-round">stop</span>
+          {t("demoStop")}
         </button>
       </div>
     </section>

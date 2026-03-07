@@ -273,7 +273,7 @@
     "message": "+ Create Template"
   },
   "btnSettings": {
-    "message": "⚙️ Settings"
+    "message": "Settings"
   },
   "btnDownloadNow": {
     "message": "⬇️ Download now"
@@ -1655,6 +1655,9 @@
   "paramFormatted": {
     "message": "Formatted (with punctuation)"
   },
+  "paramCnpjAlphanumeric": {
+    "message": "Alphanumeric CNPJ (RFB IN No. 2.229/2024)"
+  },
   "paramOnlyLetters": {
     "message": "Letters only (no numbers)"
   },
@@ -2060,6 +2063,9 @@
   "demoVideoErrorStream": {
     "message": "Failed to obtain screen capture stream"
   },
+  "demoVideoErrorPermission": {
+    "message": "Permission required: open the extension via the Chrome toolbar popup to grant screen recording permissions before using this feature."
+  },
   "demoVideoRecord": {
     "message": "Record Video"
   },
@@ -2119,5 +2125,65 @@
   },
   "demoPositionRight": {
     "message": "right"
+  },
+  "quickShortcuts": {
+    "message": "Quick shortcuts",
+    "description": "Section label for quick action buttons in popup"
+  },
+  "quickFieldCpf": {
+    "message": "CPF",
+    "description": "CPF quick button label"
+  },
+  "quickFieldCnpj": {
+    "message": "CNPJ",
+    "description": "CNPJ quick button label"
+  },
+  "quickFieldName": {
+    "message": "Name",
+    "description": "Name quick button label"
+  },
+  "quickFieldPhone": {
+    "message": "Phone",
+    "description": "Phone quick button label"
+  },
+  "quickFieldCep": {
+    "message": "CEP / Postal Code",
+    "description": "CEP quick button label"
+  },
+  "devtoolsHint": {
+    "message": "To use the full potential of the tool, open the Fill All panel in DevTools",
+    "description": "Hint message suggesting to open DevTools panel"
+  },
+  "devtoolsOpen": {
+    "message": "Open DevTools",
+    "description": "Button label to open DevTools panel"
+  },
+  "btnAbout": {
+    "message": "About",
+    "description": "Button label for About page"
+  },
+  "showFieldIcon": {
+    "message": "Show field icon",
+    "description": "Tooltip for field icon toggle"
+  },
+  "quickShortcutNotAvailable": {
+    "message": "Shortcut unavailable",
+    "description": "Error message when quick shortcut cannot be generated"
+  },
+  "quickShortcutCopyFailed": {
+    "message": "Failed to copy",
+    "description": "Error message when copy to clipboard fails"
+  },
+  "quickShortcutCopied": {
+    "message": "copied",
+    "description": "Success message when value copied to clipboard"
+  },
+  "clearDetected": {
+    "message": "Clear Detected Fields",
+    "description": "Button label to clear all detected fields"
+  },
+  "clearForm": {
+    "message": "Clear Form",
+    "description": "Button label to clear the entire form"
   }
 }

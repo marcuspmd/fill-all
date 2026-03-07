@@ -64,6 +64,7 @@ export async function saveCurrentForm(): Promise<void> {
     };
     if (result?.success) {
       addLog(`${t("logFormSaved")}: ${result.form?.name ?? ""}`, "success");
+      await loadForms();
     } else {
       addLog(t("logErrorSavingForm"), "error");
     }
@@ -134,6 +135,7 @@ export function renderFormsTab(): void {
           void deleteFormById(form.id);
         }
       }}
+      onSaveCurrentForm={() => void saveCurrentForm()}
     />,
   );
 }

@@ -12,6 +12,11 @@ export interface GeneratorParams {
   readonly min?: number;
   readonly max?: number;
   readonly formatted?: boolean;
+  /**
+   * When `true`, generates the new alphanumeric CNPJ format (RFB IN nº 2.229/2024).
+   * Applies to generators: `cnpj`, `cpf-cnpj`.
+   */
+  readonly cnpjAlphanumeric?: boolean;
   readonly length?: number;
   readonly onlyNumbers?: boolean;
   readonly onlyLetters?: boolean;
@@ -623,6 +628,12 @@ export const GENERATOR_PARAM_DEFS: Readonly<
       labelKey: "paramFormatted",
       defaultValue: true,
     },
+    {
+      key: "cnpjAlphanumeric",
+      type: "boolean",
+      labelKey: "paramCnpjAlphanumeric",
+      defaultValue: false,
+    },
   ],
   "cpf-cnpj": [
     {
@@ -630,6 +641,12 @@ export const GENERATOR_PARAM_DEFS: Readonly<
       type: "boolean",
       labelKey: "paramFormatted",
       defaultValue: true,
+    },
+    {
+      key: "cnpjAlphanumeric",
+      type: "boolean",
+      labelKey: "paramCnpjAlphanumeric",
+      defaultValue: false,
     },
   ],
   rg: [

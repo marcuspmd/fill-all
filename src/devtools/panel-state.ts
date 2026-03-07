@@ -21,6 +21,8 @@ export type TabId = "actions" | "fields" | "forms" | "record" | "demo" | "log";
 
 export type RecordingState = "idle" | "recording" | "paused" | "stopped";
 
+export type PanelTheme = "dark" | "light" | "system";
+
 export type RecordStep = {
   type: string;
   selector?: string;
@@ -38,6 +40,10 @@ export const panelState = {
 
   // UI state
   activeTab: "actions" as TabId,
+  theme: ((): PanelTheme => {
+    const stored = localStorage.getItem("panel-theme");
+    return stored === "light" || stored === "system" ? stored : "dark";
+  })() as PanelTheme,
 
   // Fields
   detectedFields: [] as DetectedFieldSummary[],
