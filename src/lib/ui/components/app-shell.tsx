@@ -8,12 +8,15 @@
 
 import { h, type ComponentChildren } from "preact";
 import type { TabId } from "@/devtools/panel-state";
+import type { PanelTheme } from "@/devtools/panel-state";
 import { t } from "@/lib/i18n";
 
 export interface AppShellProps {
   activeTab: TabId;
   onTabSwitch: (tab: TabId) => void;
   onOptions: () => void;
+  theme: PanelTheme;
+  onThemeToggle: () => void;
   children?: ComponentChildren;
 }
 
@@ -28,10 +31,24 @@ const TABS: TabDef[] = [
   { id: "log", icon: "assignment", label: () => t("tabLog") },
 ];
 
+const THEME_ICONS: Record<PanelTheme, string> = {
+  dark: "dark_mode",
+  light: "light_mode",
+  system: "brightness_auto",
+};
+
+const THEME_TITLES: Record<PanelTheme, string> = {
+  dark: "Tema: Escuro — clicar para Claro",
+  light: "Tema: Claro — clicar para Sistema",
+  system: "Tema: Sistema — clicar para Escuro",
+};
+
 export function AppShell({
   activeTab,
   onTabSwitch,
   onOptions,
+  theme,
+  onThemeToggle,
   children,
 }: AppShellProps) {
   return (
@@ -54,6 +71,14 @@ export function AppShell({
           </div>
         </div>
         <div class="toolbar-right">
+          <button
+            class="toolbar-btn"
+            id="btn-theme"
+            title={THEME_TITLES[theme]}
+            onClick={onThemeToggle}
+          >
+            <span class="material-icons-round">{THEME_ICONS[theme]}</span>
+          </button>
           <button
             class="toolbar-btn"
             id="btn-options"

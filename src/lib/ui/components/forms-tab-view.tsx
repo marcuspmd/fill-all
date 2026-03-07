@@ -38,6 +38,7 @@ export interface FormsTabViewCallbacks {
   onSave: (form: SavedForm, isNew: boolean) => Promise<void>;
   onSetDefault: (form: SavedForm) => void;
   onDelete: (form: SavedForm) => void;
+  onSaveCurrentForm: () => void;
 }
 
 export interface FormsTabViewProps extends FormsTabViewCallbacks {
@@ -53,6 +54,7 @@ export function FormsTabView({
   onSave,
   onSetDefault,
   onDelete,
+  onSaveCurrentForm,
 }: FormsTabViewProps) {
   const [editingForm, setEditingForm] = useState<SavedForm | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -101,6 +103,14 @@ export function FormsTabView({
         <button class="btn btn-success" onClick={openNewForm}>
           <span class="material-icons-round">add</span>
           {t("btnNewForm")}
+        </button>
+        <button
+          class="btn btn-secondary"
+          onClick={onSaveCurrentForm}
+          title={t("saveFormDesc")}
+        >
+          <span class="material-icons-round">save</span>
+          {t("saveForm")}
         </button>
         <span class="fields-count">
           {savedForms.length} {t("formCount")}

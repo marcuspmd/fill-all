@@ -134,6 +134,7 @@ export function renderFormsTab(): void {
           void deleteFormById(form.id);
         }
       }}
+      onSaveCurrentForm={() => void saveCurrentForm()}
     />,
   );
 }

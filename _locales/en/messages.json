@@ -1655,6 +1655,9 @@
   "paramFormatted": {
     "message": "Formatted (with punctuation)"
   },
+  "paramCnpjAlphanumeric": {
+    "message": "Alphanumeric CNPJ (RFB IN No. 2.229/2024)"
+  },
   "paramOnlyLetters": {
     "message": "Letters only (no numbers)"
   },

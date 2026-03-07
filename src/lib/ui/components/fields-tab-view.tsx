@@ -159,7 +159,7 @@ export function FieldsTabView({
           onClick={onFillAll}
           title={t("fillAll")}
         >
-          <span class="material-icons-round">electrical_services</span>
+          <span class="material-icons-round">bolt</span>
           {t("fillAll")}
         </button>
         <button
@@ -169,7 +169,7 @@ export function FieldsTabView({
           onClick={onFillEmpty}
           title={t("fillOnlyEmpty")}
         >
-          <span class="material-icons-round">unfold_more</span>
+          <span class="material-icons-round">filter_list</span>
           {t("fillOnlyEmpty")}
         </button>
         <button
