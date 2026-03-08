@@ -21,6 +21,10 @@ import {
   getGeneratorParamDefs,
   type GeneratorParamDef,
 } from "@/types/field-type-definitions";
+import {
+  collectGeneratorParams,
+  renderGeneratorParamFields,
+} from "@/lib/ui/generator-param-ui";
 
 let rulePopupElement: HTMLElement | null = null;
 let genSearchableSelect: SearchableSelect | null = null;
@@ -237,7 +241,10 @@ function updateParamsSection(): void {
     return;
   }
 
-  container.innerHTML = renderParamFields(paramDefs);
+  container.innerHTML = renderGeneratorParamFields(paramDefs, undefined, {
+    includeTitle: true,
+    prefix: "fa-rp-",
+  });
   container.style.display = "block";
 
   // Listen for param changes to update preview
@@ -247,105 +254,6 @@ function updateParamsSection(): void {
   });
 }
 
-function renderParamFields(paramDefs: readonly GeneratorParamDef[]): string {
-  const fields = paramDefs
-    .map((def) => {
-      const label = chrome.i18n?.getMessage(def.labelKey) ?? def.labelKey;
-      if (def.type === "select" && def.selectOptions) {
-        const options = def.selectOptions
-          .map((opt) => {
-            const optLabel =
-              chrome.i18n?.getMessage(opt.labelKey) ?? opt.labelKey;
-            const selected = opt.value === def.defaultValue ? "selected" : "";
-            return `<option value="${opt.value}" ${selected}>${optLabel}</option>`;
-          })
-          .join("");
-        return `
-          <div class="fa-rp-param-field">
-            <label class="fa-rp-param-label">${label}</label>
-            <select data-param-key="${def.key}" class="fa-rp-input fa-rp-param-input">${options}</select>
-          </div>`;
-      }
-      if (def.type === "boolean") {
-        const checked = def.defaultValue ? "checked" : "";
-        return `
-          <label class="fa-rp-param-toggle">
-            <input type="checkbox" data-param-key="${def.key}" ${checked} />
-            <span>${label}</span>
-          </label>`;
-      }
-      if (def.type === "text") {
-        const placeholder = def.placeholder
-          ? (chrome.i18n?.getMessage(def.placeholder) ?? def.placeholder)
-          : "";
-        return `
-          <div class="fa-rp-param-field">
-            <label class="fa-rp-param-label">${label}</label>
-            <input type="text" data-param-key="${def.key}" value="${def.defaultValue}" placeholder="${placeholder}" class="fa-rp-input fa-rp-param-input" />
-          </div>`;
-      }
-      const min = def.min != null ? `min="${def.min}"` : "";
-      const max = def.max != null ? `max="${def.max}"` : "";
-      const step = def.step != null ? `step="${def.step}"` : "";
-      return `
-        <div class="fa-rp-param-field">
-          <label class="fa-rp-param-label">${label}</label>
-          <input type="number" data-param-key="${def.key}" value="${def.defaultValue}" ${min} ${max} ${step} class="fa-rp-input fa-rp-param-input" />
-        </div>`;
-    })
-    .join("");
-
-  const title =
-    chrome.i18n?.getMessage("paramSectionTitle") ?? "Parâmetros do Gerador";
-  return `<div class="fa-rp-param-title">${title}</div>${fields}`;
-}
-
-function collectParamsFromUI(): GeneratorParams | undefined {
-  if (!rulePopupElement) return undefined;
-  const container =
-    rulePopupElement.querySelector<HTMLElement>("#fa-rp-params");
-  if (!container || container.style.display === "none") return undefined;
-
-  const inputs = container.querySelectorAll<HTMLInputElement>(
-    "input[data-param-key]",
-  );
-  const selects = container.querySelectorAll<HTMLSelectElement>(
-    "select[data-param-key]",
-  );
-  if (inputs.length === 0 && selects.length === 0) return undefined;
-
-  const params: Record<string, unknown> = {};
-  let hasAny = false;
-
-  inputs.forEach((input) => {
-    const key = input.dataset.paramKey!;
-    if (input.type === "checkbox") {
-      params[key] = input.checked;
-      hasAny = true;
-    } else if (input.type === "number") {
-      const val = parseFloat(input.value);
-      if (!isNaN(val)) {
-        params[key] = val;
-        hasAny = true;
-      }
-    } else if (input.type === "text") {
-      if (input.value !== "") {
-        params[key] = input.value;
-        hasAny = true;
-      }
-    }
-  });
-
-  selects.forEach((select) => {
-    const key = select.dataset.paramKey!;
-    if (select.value) {
-      params[key] = select.value;
-      hasAny = true;
-    }
-  });
-
-  return hasAny ? (params as GeneratorParams) : undefined;
-}
 
 function updatePreview(): void {
   if (!rulePopupElement) return;
@@ -375,7 +283,9 @@ function updatePreview(): void {
         : (selectedType as FieldType);
 
     try {
-      const overrideParams = collectParamsFromUI();
+      const overrideParams = collectGeneratorParams(
+        rulePopupElement?.querySelector<HTMLElement>("#fa-rp-params")!,
+      );
       previewValueEl.textContent = generate(typeToGenerate, overrideParams);
     } catch {
       previewValueEl.textContent = "—";
@@ -476,7 +386,11 @@ async function saveFieldRule(): Promise<void> {
     fieldType: currentSuggestedType ?? "unknown",
     fixedValue,
     generator: fixedValue ? "auto" : generator,
-    generatorParams: fixedValue ? undefined : collectParamsFromUI(),
+    generatorParams: fixedValue
+      ? undefined
+      : collectGeneratorParams(
+          rulePopupElement?.querySelector<HTMLElement>("#fa-rp-params")!,
+        ),
     priority: 10,
     createdAt: Date.now(),
     updatedAt: Date.now(),
