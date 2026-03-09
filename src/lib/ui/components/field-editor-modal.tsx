@@ -241,7 +241,12 @@ export function FieldEditorModal({
   }
 
   return (
-    <div class="modal-overlay" onClick={onClose}>
+    <div
+      class="modal-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div class="modal-box" onClick={(e) => e.stopPropagation()}>
         <div class="modal-header">
           <span class="modal-title">
