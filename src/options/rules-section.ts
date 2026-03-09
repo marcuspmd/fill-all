@@ -9,6 +9,8 @@ import {
   showToast,
   ruleTypeSelect,
   ruleGeneratorSelect,
+  collectGeneratorParams,
+  renderGeneratorParamFields,
 } from "./shared";
 import { t } from "@/lib/i18n";
 import {
@@ -158,93 +160,8 @@ function updateRuleParamsSection(existingParams?: GeneratorParams): void {
     return;
   }
 
-  fieldsDiv.innerHTML = paramDefs
-    .map((def) => renderOptionParamField(def, existingParams))
-    .join("");
+  fieldsDiv.innerHTML = renderGeneratorParamFields(paramDefs, existingParams);
   container.style.display = "block";
-}
-
-function renderOptionParamField(
-  def: GeneratorParamDef,
-  existingParams?: GeneratorParams,
-): string {
-  const label = t(def.labelKey) || def.labelKey;
-  const currentValue = existingParams?.[def.key] ?? def.defaultValue;
-
-  if (def.type === "select" && def.selectOptions) {
-    const options = def.selectOptions
-      .map((opt) => {
-        const optLabel = t(opt.labelKey) || opt.labelKey;
-        const selected = opt.value === currentValue ? "selected" : "";
-        return `<option value="${escapeHtml(opt.value)}" ${selected}>${escapeHtml(optLabel)}</option>`;
-      })
-      .join("");
-    return `
-      <div class="form-group" style="min-width:150px;">
-        <label>${escapeHtml(label)}</label>
-        <select data-param-key="${def.key}">${options}</select>
-      </div>`;
-  }
-
-  if (def.type === "boolean") {
-    const checked = currentValue ? "checked" : "";
-    return `
-      <div class="form-group" style="min-width:150px;">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="checkbox" data-param-key="${def.key}" ${checked} />
-          ${escapeHtml(label)}
-        </label>
-      </div>`;
-  }
-
-  const min = def.min != null ? `min="${def.min}"` : "";
-  const max = def.max != null ? `max="${def.max}"` : "";
-  const step = def.step != null ? `step="${def.step}"` : "";
-  return `
-    <div class="form-group" style="min-width:120px;">
-      <label>${escapeHtml(label)}</label>
-      <input type="number" data-param-key="${def.key}" value="${currentValue ?? ""}" ${min} ${max} ${step} />
-    </div>`;
-}
-
-function collectRuleParams(): GeneratorParams | undefined {
-  const fieldsDiv = document.getElementById("rule-params-fields");
-  if (!fieldsDiv) return undefined;
-
-  const inputs = fieldsDiv.querySelectorAll<HTMLInputElement>(
-    "input[data-param-key]",
-  );
-  const selects = fieldsDiv.querySelectorAll<HTMLSelectElement>(
-    "select[data-param-key]",
-  );
-  if (inputs.length === 0 && selects.length === 0) return undefined;
-
-  const params: Record<string, unknown> = {};
-  let hasAny = false;
-
-  inputs.forEach((input) => {
-    const key = input.dataset.paramKey!;
-    if (input.type === "checkbox") {
-      params[key] = input.checked;
-      hasAny = true;
-    } else if (input.type === "number") {
-      const val = parseFloat(input.value);
-      if (!isNaN(val)) {
-        params[key] = val;
-        hasAny = true;
-      }
-    }
-  });
-
-  selects.forEach((select) => {
-    const key = select.dataset.paramKey!;
-    if (select.value) {
-      params[key] = select.value;
-      hasAny = true;
-    }
-  });
-
-  return hasAny ? (params as GeneratorParams) : undefined;
 }
 
 function bindRulesEvents(): void {
@@ -281,7 +198,9 @@ function bindRulesEvents(): void {
         fieldType: fieldTypeValue as FieldType,
         generator: (ruleGeneratorSelect?.getValue() ??
           "auto") as FieldRule["generator"],
-        generatorParams: collectRuleParams(),
+        generatorParams: collectGeneratorParams(
+          document.getElementById("rule-params-fields")!,
+        ),
         fixedValue:
           (
             document.getElementById("rule-fixed") as HTMLInputElement

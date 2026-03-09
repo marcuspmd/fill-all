@@ -10,9 +10,13 @@ import {
 } from "@/lib/ui/select-builders";
 import { SearchableSelect } from "@/lib/ui/searchable-select";
 
-export { escapeHtml } from "@/lib/ui";
-export { showToast } from "@/lib/ui";
-export { initTabs } from "@/lib/ui";
+export {
+  escapeHtml,
+  showToast,
+  initTabs,
+  collectGeneratorParams,
+  renderGeneratorParamFields,
+} from "@/lib/ui";
 
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;

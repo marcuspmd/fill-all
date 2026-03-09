@@ -126,6 +126,20 @@ header h1 {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
+.param-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.param-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
