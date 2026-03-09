@@ -7,7 +7,7 @@
  * - Keyboard shortcuts: Enter to save, Escape to cancel
  */
 
-import type { FieldRule, FieldType, FormField, GeneratorParams } from "@/types";
+import type { FieldRule, FieldType, FormField } from "@/types";
 import { RULE_POPUP_ID } from "./field-icon-styles";
 import { getUniqueSelector, findLabel, buildSignals } from "./extractors";
 import { getFieldTypeOptions } from "@/lib/shared/field-type-catalog";
@@ -20,7 +20,6 @@ import { keywordClassifier } from "./detectors/strategies/keyword-classifier";
 import {
   getGeneratorKey,
   getGeneratorParamDefs,
-  type GeneratorParamDef,
 } from "@/types/field-type-definitions";
 import {
   collectGeneratorParams,
@@ -255,117 +254,6 @@ function updateParamsSection(): void {
   });
 }
 
-function renderParamFields(paramDefs: readonly GeneratorParamDef[]): string {
-  const fields = paramDefs
-    .map((def) => {
-      const label = escapeHtml(
-        chrome.i18n?.getMessage(def.labelKey) ?? def.labelKey,
-      );
-      const safeKey = escapeAttr(String(def.key));
-
-      if (def.type === "select" && def.selectOptions) {
-        const options = def.selectOptions
-          .map((opt) => {
-            const optLabel = escapeHtml(
-              chrome.i18n?.getMessage(opt.labelKey) ?? opt.labelKey,
-            );
-            const selected = opt.value === def.defaultValue ? "selected" : "";
-            const safeValue = escapeAttr(opt.value);
-            return `<option value="${safeValue}" ${selected}>${optLabel}</option>`;
-          })
-          .join("");
-        return `
-          <div class="fa-rp-param-field">
-            <label class="fa-rp-param-label">${label}</label>
-            <select data-param-key="${safeKey}" class="fa-rp-input fa-rp-param-input">${options}</select>
-          </div>`;
-      }
-      if (def.type === "boolean") {
-        const checked = def.defaultValue ? "checked" : "";
-        return `
-          <label class="fa-rp-param-toggle">
-            <input type="checkbox" data-param-key="${safeKey}" ${checked} />
-            <span>${label}</span>
-          </label>`;
-      }
-      if (def.type === "text") {
-        const placeholder = def.placeholder
-          ? (chrome.i18n?.getMessage(def.placeholder) ?? def.placeholder)
-          : "";
-        const safeValue = escapeAttr(String(def.defaultValue));
-        const safePlaceholder = escapeAttr(placeholder);
-        return `
-          <div class="fa-rp-param-field">
-            <label class="fa-rp-param-label">${label}</label>
-            <input type="text" data-param-key="${safeKey}" value="${safeValue}" placeholder="${safePlaceholder}" class="fa-rp-input fa-rp-param-input" />
-          </div>`;
-      }
-      const safeValue = escapeAttr(String(def.defaultValue));
-      const min = def.min != null ? `min="${escapeAttr(String(def.min))}"` : "";
-      const max = def.max != null ? `max="${escapeAttr(String(def.max))}"` : "";
-      const step =
-        def.step != null ? `step="${escapeAttr(String(def.step))}"` : "";
-      return `
-        <div class="fa-rp-param-field">
-          <label class="fa-rp-param-label">${label}</label>
-          <input type="number" data-param-key="${safeKey}" value="${safeValue}" ${min} ${max} ${step} class="fa-rp-input fa-rp-param-input" />
-        </div>`;
-    })
-    .join("");
-
-  const title = escapeHtml(
-    chrome.i18n?.getMessage("paramSectionTitle") ?? "Parâmetros do Gerador",
-  );
-  return `<div class="fa-rp-param-title">${title}</div>${fields}`;
-}
-
-function collectParamsFromUI(): GeneratorParams | undefined {
-  if (!rulePopupElement) return undefined;
-  const container =
-    rulePopupElement.querySelector<HTMLElement>("#fa-rp-params");
-  if (!container || container.style.display === "none") return undefined;
-
-  const inputs = container.querySelectorAll<HTMLInputElement>(
-    "input[data-param-key]",
-  );
-  const selects = container.querySelectorAll<HTMLSelectElement>(
-    "select[data-param-key]",
-  );
-  if (inputs.length === 0 && selects.length === 0) return undefined;
-
-  const params: Record<string, unknown> = {};
-  let hasAny = false;
-
-  inputs.forEach((input) => {
-    const key = input.dataset.paramKey!;
-    if (input.type === "checkbox") {
-      params[key] = input.checked;
-      hasAny = true;
-    } else if (input.type === "number") {
-      const val = parseFloat(input.value);
-      if (!isNaN(val)) {
-        params[key] = val;
-        hasAny = true;
-      }
-    } else if (input.type === "text") {
-      if (input.value !== "") {
-        params[key] = input.value;
-        hasAny = true;
-      }
-    }
-  });
-
-  selects.forEach((select) => {
-    const key = select.dataset.paramKey!;
-    if (select.value) {
-      params[key] = select.value;
-      hasAny = true;
-    }
-  });
-
-  return hasAny ? (params as GeneratorParams) : undefined;
-}
-
 function updatePreview(): void {
   if (!rulePopupElement) return;
 
@@ -394,9 +282,11 @@ function updatePreview(): void {
         : (selectedType as FieldType);
 
     try {
-      const overrideParams = collectGeneratorParams(
-        rulePopupElement?.querySelector<HTMLElement>("#fa-rp-params")!,
-      );
+      const paramsContainer =
+        rulePopupElement?.querySelector<HTMLElement>("#fa-rp-params");
+      const overrideParams = paramsContainer
+        ? collectGeneratorParams(paramsContainer)
+        : undefined;
       previewValueEl.textContent = generate(typeToGenerate, overrideParams);
     } catch {
       previewValueEl.textContent = "—";
@@ -499,9 +389,13 @@ async function saveFieldRule(): Promise<void> {
     generator: fixedValue ? "auto" : generator,
     generatorParams: fixedValue
       ? undefined
-      : collectGeneratorParams(
-          rulePopupElement?.querySelector<HTMLElement>("#fa-rp-params")!,
-        ),
+      : (() => {
+          const paramsContainer =
+            rulePopupElement?.querySelector<HTMLElement>("#fa-rp-params");
+          return paramsContainer
+            ? collectGeneratorParams(paramsContainer)
+            : undefined;
+        })(),
     priority: 10,
     createdAt: Date.now(),
     updatedAt: Date.now(),

@@ -69,8 +69,8 @@ export function renderGeneratorParamField(
     const selectOptionsHtml = def.selectOptions
       .map((opt) => {
         const optLabel = t(opt.labelKey) || opt.labelKey;
-        const selected = opt.value === value ? "selected" : "";
-        return `<option value="${escapeHtml(opt.value)}" ${selected}>${escapeHtml(optLabel)}</option>`;
+        const selected = opt.value === value ? " selected" : "";
+        return `<option value="${escapeHtml(opt.value)}"${selected}>${escapeHtml(optLabel)}</option>`;
       })
       .join("");
     return `
