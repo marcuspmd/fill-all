@@ -14,6 +14,7 @@ import { getFieldTypeOptions } from "@/lib/shared/field-type-catalog";
 import { SearchableSelect } from "@/lib/ui/searchable-select";
 import { buildGeneratorSelectEntries } from "@/lib/ui/select-builders";
 import { generate } from "@/lib/generators";
+import { escapeHtml, escapeAttr } from "@/lib/ui/html-utils";
 import { detectBasicType } from "./detectors/html-type-detector";
 import { keywordClassifier } from "./detectors/strategies/keyword-classifier";
 import {
@@ -250,27 +251,33 @@ function updateParamsSection(): void {
 function renderParamFields(paramDefs: readonly GeneratorParamDef[]): string {
   const fields = paramDefs
     .map((def) => {
-      const label = chrome.i18n?.getMessage(def.labelKey) ?? def.labelKey;
+      const label = escapeHtml(
+        chrome.i18n?.getMessage(def.labelKey) ?? def.labelKey,
+      );
+      const safeKey = escapeAttr(String(def.key));
+
       if (def.type === "select" && def.selectOptions) {
         const options = def.selectOptions
           .map((opt) => {
-            const optLabel =
-              chrome.i18n?.getMessage(opt.labelKey) ?? opt.labelKey;
+            const optLabel = escapeHtml(
+              chrome.i18n?.getMessage(opt.labelKey) ?? opt.labelKey,
+            );
             const selected = opt.value === def.defaultValue ? "selected" : "";
-            return `<option value="${opt.value}" ${selected}>${optLabel}</option>`;
+            const safeValue = escapeAttr(opt.value);
+            return `<option value="${safeValue}" ${selected}>${optLabel}</option>`;
           })
           .join("");
         return `
           <div class="fa-rp-param-field">
             <label class="fa-rp-param-label">${label}</label>
-            <select data-param-key="${def.key}" class="fa-rp-input fa-rp-param-input">${options}</select>
+            <select data-param-key="${safeKey}" class="fa-rp-input fa-rp-param-input">${options}</select>
           </div>`;
       }
       if (def.type === "boolean") {
         const checked = def.defaultValue ? "checked" : "";
         return `
           <label class="fa-rp-param-toggle">
-            <input type="checkbox" data-param-key="${def.key}" ${checked} />
+            <input type="checkbox" data-param-key="${safeKey}" ${checked} />
             <span>${label}</span>
           </label>`;
       }
@@ -278,25 +285,30 @@ function renderParamFields(paramDefs: readonly GeneratorParamDef[]): string {
         const placeholder = def.placeholder
           ? (chrome.i18n?.getMessage(def.placeholder) ?? def.placeholder)
           : "";
+        const safeValue = escapeAttr(String(def.defaultValue));
+        const safePlaceholder = escapeAttr(placeholder);
         return `
           <div class="fa-rp-param-field">
             <label class="fa-rp-param-label">${label}</label>
-            <input type="text" data-param-key="${def.key}" value="${def.defaultValue}" placeholder="${placeholder}" class="fa-rp-input fa-rp-param-input" />
+            <input type="text" data-param-key="${safeKey}" value="${safeValue}" placeholder="${safePlaceholder}" class="fa-rp-input fa-rp-param-input" />
           </div>`;
       }
-      const min = def.min != null ? `min="${def.min}"` : "";
-      const max = def.max != null ? `max="${def.max}"` : "";
-      const step = def.step != null ? `step="${def.step}"` : "";
+      const safeValue = escapeAttr(String(def.defaultValue));
+      const min = def.min != null ? `min="${escapeAttr(String(def.min))}"` : "";
+      const max = def.max != null ? `max="${escapeAttr(String(def.max))}"` : "";
+      const step =
+        def.step != null ? `step="${escapeAttr(String(def.step))}"` : "";
       return `
         <div class="fa-rp-param-field">
           <label class="fa-rp-param-label">${label}</label>
-          <input type="number" data-param-key="${def.key}" value="${def.defaultValue}" ${min} ${max} ${step} class="fa-rp-input fa-rp-param-input" />
+          <input type="number" data-param-key="${safeKey}" value="${safeValue}" ${min} ${max} ${step} class="fa-rp-input fa-rp-param-input" />
         </div>`;
     })
     .join("");
 
-  const title =
-    chrome.i18n?.getMessage("paramSectionTitle") ?? "Parâmetros do Gerador";
+  const title = escapeHtml(
+    chrome.i18n?.getMessage("paramSectionTitle") ?? "Parâmetros do Gerador",
+  );
   return `<div class="fa-rp-param-title">${title}</div>${fields}`;
 }
 
