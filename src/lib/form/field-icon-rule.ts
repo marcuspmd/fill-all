@@ -36,6 +36,7 @@ let currentRuleField: {
   name?: string;
   id?: string;
 } | null = null;
+let handleDocumentClickBound: ((e: Event) => void) | null = null;
 
 export function handleRuleButtonClick(
   target: HTMLElement,
@@ -165,6 +166,22 @@ function showRulePopup(anchor: HTMLElement, onDismiss: () => void): void {
   positionRulePopup(anchor);
   rulePopupElement.style.display = "block";
   fixedInput?.focus();
+
+  // Register outside-click handler after a tick to avoid capturing the opening click
+  if (handleDocumentClickBound) {
+    document.removeEventListener("mousedown", handleDocumentClickBound);
+  }
+  handleDocumentClickBound = (e: Event) => {
+    if (!rulePopupElement || rulePopupElement.style.display !== "block") return;
+    const target = e.target as HTMLElement;
+    if (!rulePopupElement.contains(target)) {
+      hideRulePopup();
+      currentOnDismiss?.();
+    }
+  };
+  setTimeout(() => {
+    document.addEventListener("mousedown", handleDocumentClickBound!);
+  }, 0);
 }
 
 function setupPopupListeners(): void {
@@ -297,15 +314,27 @@ function updatePreview(): void {
   }
 }
 
+export function isRulePopupVisible(): boolean {
+  return !!rulePopupElement && rulePopupElement.style.display === "block";
+}
+
 export function hideRulePopup(): void {
   if (rulePopupElement) {
     rulePopupElement.style.display = "none";
     currentRuleField = null;
   }
+  if (handleDocumentClickBound) {
+    document.removeEventListener("mousedown", handleDocumentClickBound);
+    handleDocumentClickBound = null;
+  }
 }
 
 export function destroyRulePopup(): void {
   document.removeEventListener("keydown", handlePopupKeyDown);
+  if (handleDocumentClickBound) {
+    document.removeEventListener("mousedown", handleDocumentClickBound);
+    handleDocumentClickBound = null;
+  }
   genSearchableSelect?.destroy();
   genSearchableSelect = null;
   rulePopupElement?.remove();

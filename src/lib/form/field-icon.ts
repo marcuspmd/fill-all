@@ -23,6 +23,7 @@ import {
   handleRuleButtonClick,
   hideRulePopup,
   destroyRulePopup,
+  isRulePopupVisible,
 } from "./field-icon-rule";
 
 // ── Core state ────────────────────────────────────────────────────────────────
@@ -80,6 +81,9 @@ function handleFocusIn(e: FocusEvent): void {
 
 function handleFocusOut(_e: FocusEvent): void {
   hideTimeout = setTimeout(() => {
+    // Don't remove the icon/popup while the rule popup is open
+    if (isRulePopupVisible()) return;
+
     const active = document.activeElement;
     if (
       active &&

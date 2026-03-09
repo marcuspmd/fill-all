@@ -4,6 +4,8 @@
 
 **AI-powered Chrome extension for smart form filling, recording, and demo generation**
 
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/marcuspmd/fill-all)
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install%20Extension-1a73e8?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/fill-all/djnkgmelgfdjpeacmolelikhgioendjh)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-34A853)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
