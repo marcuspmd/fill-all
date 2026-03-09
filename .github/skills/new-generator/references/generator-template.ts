@@ -30,11 +30,12 @@ export function generate<Name>(formatted = true): string {
 }
 
 function generateRawData(): string {
-  // TODO: Implement raw data generation
-  return "";
+  return Array.from({ length: 9 }, () =>
+    Math.floor(Math.random() * 10),
+  ).join("");
 }
 
 function formatData(raw: string): string {
-  // TODO: Implement formatting (dots, dashes, etc.)
-  return raw;
+  // Example format: XX.XXX.XXX-X
+  return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5, 8)}-${raw.slice(8)}`;
 }
