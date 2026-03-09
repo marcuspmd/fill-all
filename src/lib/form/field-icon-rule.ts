@@ -8,6 +8,7 @@
  */
 
 import type { FieldRule, FieldType, FormField } from "@/types";
+import { t } from "@/lib/i18n";
 import { RULE_POPUP_ID } from "./field-icon-styles";
 import { getUniqueSelector, findLabel, buildSignals } from "./extractors";
 import { getFieldTypeOptions } from "@/lib/shared/field-type-catalog";
@@ -116,7 +117,9 @@ function showRulePopup(anchor: HTMLElement, onDismiss: () => void): void {
       genSearchableSelect = new SearchableSelect({
         entries: buildGeneratorSelectEntries(),
         value: "auto",
-        placeholder: "Pesquisar tipo…",
+        placeholder: t("rulePopupSearchPlaceholder") || "Search type…",
+        appendToBody: true,
+        dropdownClass: "fa-rp-gen-dd",
       });
       genSearchableSelect.mount(wrap);
       genSearchableSelect.on("change", () => {
@@ -143,7 +146,7 @@ function showRulePopup(anchor: HTMLElement, onDismiss: () => void): void {
     rulePopupElement.querySelector<HTMLButtonElement>("#fa-rp-save");
 
   if (saveBtn) {
-    saveBtn.textContent = "💾 Salvar";
+    saveBtn.textContent = t("rulePopupSaveBtn") || "Save";
     saveBtn.disabled = false;
   }
 
@@ -215,6 +218,52 @@ function setupPopupListeners(): void {
       updatePreview();
     });
 
+  rulePopupElement
+    .querySelector("#fa-rp-preview-copy")
+    ?.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      const val = rulePopupElement
+        ?.querySelector<HTMLElement>("#fa-rp-preview-value")
+        ?.textContent?.trim();
+      if (!val || val === "—") return;
+      void navigator.clipboard.writeText(val).then(() => {
+        const btn = rulePopupElement?.querySelector<HTMLButtonElement>(
+          "#fa-rp-preview-copy",
+        );
+        if (!btn) return;
+        const orig = btn.textContent;
+        btn.textContent = "✓";
+        btn.classList.add("fa-rp-preview-icon-btn--copied");
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.classList.remove("fa-rp-preview-icon-btn--copied");
+        }, 1200);
+      });
+    });
+
+  rulePopupElement
+    .querySelector("#fa-rp-preview-copy")
+    ?.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      const val = rulePopupElement
+        ?.querySelector<HTMLElement>("#fa-rp-preview-value")
+        ?.textContent?.trim();
+      if (!val || val === "—") return;
+      void navigator.clipboard.writeText(val).then(() => {
+        const btn = rulePopupElement?.querySelector<HTMLButtonElement>(
+          "#fa-rp-preview-copy",
+        );
+        if (!btn) return;
+        const orig = btn.textContent;
+        btn.textContent = "✓";
+        btn.classList.add("fa-rp-preview-icon-btn--copied");
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.classList.remove("fa-rp-preview-icon-btn--copied");
+        }, 1200);
+      });
+    });
+
   document.addEventListener("keydown", handlePopupKeyDown);
 }
 
@@ -282,6 +331,9 @@ function updatePreview(): void {
   const refreshBtn = rulePopupElement.querySelector<HTMLElement>(
     "#fa-rp-preview-refresh",
   );
+  const copyBtn = rulePopupElement.querySelector<HTMLElement>(
+    "#fa-rp-preview-copy",
+  );
 
   if (!fixedInput || !previewValueEl) return;
 
@@ -291,6 +343,7 @@ function updatePreview(): void {
     previewValueEl.textContent = fixedVal;
     previewValueEl.className = "fa-rp-preview-fixed";
     if (refreshBtn) refreshBtn.style.display = "none";
+    if (copyBtn) copyBtn.style.display = "flex";
   } else {
     const selectedType = genSearchableSelect?.getValue() ?? "auto";
     const typeToGenerate: FieldType =
@@ -311,6 +364,7 @@ function updatePreview(): void {
 
     previewValueEl.className = "fa-rp-preview-generated";
     if (refreshBtn) refreshBtn.style.display = "flex";
+    if (copyBtn) copyBtn.style.display = "flex";
   }
 }
 
@@ -348,8 +402,8 @@ function positionRulePopup(anchor: HTMLElement): void {
   if (!rulePopupElement) return;
 
   const rect = anchor.getBoundingClientRect();
-  const popupWidth = 280;
-  const popupHeight = 280;
+  const popupWidth = 380;
+  const popupHeight = 520;
 
   let top = rect.bottom + window.scrollY + 4;
   let left = rect.left + window.scrollX;
@@ -368,31 +422,67 @@ function positionRulePopup(anchor: HTMLElement): void {
 }
 
 function getRulePopupHTML(): string {
+  const i = (key: string) => t(key) || key;
   return `
-    <div class="fa-rp-header">📌 Regra — <span id="fa-rp-field-name"></span></div>
+    <div class="fa-rp-header">
+      <div class="fa-rp-header-top">
+        <div class="fa-rp-header-left">
+          <div class="fa-rp-header-title">${i("rulePopupTitle")}</div>
+          <div class="fa-rp-header-subtitle">${i("rulePopupSubtitle")}</div>
+        </div>
+        <div class="fa-rp-suggestion" id="fa-rp-suggestion" style="display:none">
+          ✨ <span>${i("rulePopupSuggested")}</span>&nbsp;<span id="fa-rp-suggestion-type"></span>
+        </div>
+      </div>
+      <div class="fa-rp-progress-bar"><div class="fa-rp-progress-fill"></div></div>
+    </div>
     <div class="fa-rp-body">
-      <div class="fa-rp-suggestion" id="fa-rp-suggestion" style="display:none">
-        ✨ Sugerido: <span id="fa-rp-suggestion-type"></span>
+      <div class="fa-rp-card fa-rp-card--lavender">
+        <div class="fa-rp-card-icon fa-rp-card-icon--lavender">☰</div>
+        <div class="fa-rp-card-content">
+          <div class="fa-rp-card-title">${i("rulePopupFixedValueTitle")}</div>
+          <div class="fa-rp-card-desc">${i("rulePopupFixedValueDesc")}</div>
+          <input type="text" id="fa-rp-fixed" class="fa-rp-input"
+            placeholder="${i("rulePopupFixedValuePlaceholder")}" />
+        </div>
       </div>
-      <div class="fa-rp-group">
-        <label class="fa-rp-label">Valor fixo</label>
-        <input type="text" id="fa-rp-fixed" class="fa-rp-input" placeholder="Deixe vazio para usar gerador" />
+      <div class="fa-rp-divider">
+        <div class="fa-rp-divider-line"></div>
+        <span class="fa-rp-divider-text">${i("rulePopupOrSeparator")}</span>
+        <div class="fa-rp-divider-line"></div>
       </div>
-      <div class="fa-rp-group">
-        <label class="fa-rp-label">Gerador automático</label>
-        <div id="fa-rp-generator-wrap"></div>
+      <div class="fa-rp-card fa-rp-card--aqua">
+        <div class="fa-rp-card-icon fa-rp-card-icon--aqua">⚙️</div>
+        <div class="fa-rp-card-content">
+          <div class="fa-rp-card-title-row">
+            <div class="fa-rp-card-title">${i("rulePopupGeneratorTitle")}</div>
+            <span class="fa-rp-badge-auto">Auto</span>
+          </div>
+          <div class="fa-rp-card-desc">${i("rulePopupGeneratorDesc")}</div>
+          <div id="fa-rp-generator-wrap"></div>
+          <div id="fa-rp-params" class="fa-rp-params" style="display:none"></div>
+        </div>
       </div>
-      <div id="fa-rp-params" class="fa-rp-params" style="display:none"></div>
-      <div class="fa-rp-preview">
-        <span class="fa-rp-preview-label">Preview</span>
-        <span id="fa-rp-preview-value" class="fa-rp-preview-generated">—</span>
-        <button id="fa-rp-preview-refresh" type="button" title="Gerar novo valor" style="display:none">↻</button>
+      <div class="fa-rp-preview-section">
+        <span class="fa-rp-preview-label-badge">${i("rulePopupPreviewLabel")}</span>
+        <div class="fa-rp-preview-value-row">
+          <span id="fa-rp-preview-value" class="fa-rp-preview-generated">—</span>
+          <button id="fa-rp-preview-copy" type="button"
+            class="fa-rp-preview-icon-btn" title="Copiar" style="display:none">⎘</button>
+          <button id="fa-rp-preview-refresh" type="button"
+            class="fa-rp-preview-icon-btn"
+            title="${i("rulePopupGenerateNew")}" style="display:none">↻</button>
+        </div>
       </div>
       <div class="fa-rp-actions">
-        <button id="fa-rp-save" class="fa-rp-btn-primary" type="button">💾 Salvar</button>
-        <button id="fa-rp-cancel" class="fa-rp-btn-cancel" type="button">Cancelar</button>
+        <button id="fa-rp-save" class="fa-rp-btn-primary" type="button">${i("rulePopupSaveBtn")}</button>
+        <button id="fa-rp-cancel" class="fa-rp-btn-cancel" type="button">${i("rulePopupCancelBtn")}</button>
       </div>
-      <div class="fa-rp-hint">Enter para salvar · Esc para cancelar</div>
+      <div class="fa-rp-hint">
+        <kbd>Enter</kbd> ${i("rulePopupHintSave")}
+        <span class="fa-rp-hint-sep">·</span>
+        <kbd>Esc</kbd> ${i("rulePopupHintCancel")}
+      </div>
     </div>
   `;
 }
@@ -435,7 +525,7 @@ async function saveFieldRule(): Promise<void> {
   const saveBtn =
     rulePopupElement?.querySelector<HTMLButtonElement>("#fa-rp-save");
   if (saveBtn) {
-    saveBtn.textContent = "✓ Salvo!";
+    saveBtn.textContent = "✓ " + (t("rulePopupSavedBtn") || "Saved!");
     saveBtn.disabled = true;
     setTimeout(() => {
       hideRulePopup();

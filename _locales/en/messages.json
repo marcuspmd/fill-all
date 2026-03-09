@@ -2185,5 +2185,73 @@
   "clearForm": {
     "message": "Clear Form",
     "description": "Button label to clear the entire form"
+  },
+  "rulePopupTitle": {
+    "message": "Configure Rule",
+    "description": "Title of the field rule popup"
+  },
+  "rulePopupSubtitle": {
+    "message": "Follow the steps to define how the field will be filled.",
+    "description": "Subtitle of the field rule popup"
+  },
+  "rulePopupSuggested": {
+    "message": "Suggested:",
+    "description": "Label before the suggested type in the rule popup header badge"
+  },
+  "rulePopupFixedValueTitle": {
+    "message": "Do you want to use a fixed value?",
+    "description": "Title of the fixed value card section"
+  },
+  "rulePopupFixedValueDesc": {
+    "message": "If filled, this text will always be used. Leave empty to generate values automatically.",
+    "description": "Description text under the fixed value input"
+  },
+  "rulePopupFixedValuePlaceholder": {
+    "message": "Leave empty to use the generator",
+    "description": "Placeholder for the fixed value input"
+  },
+  "rulePopupOrSeparator": {
+    "message": "or configure the generator",
+    "description": "Separator text between the fixed value card and the generator card"
+  },
+  "rulePopupGeneratorTitle": {
+    "message": "Generate values automatically",
+    "description": "Title of the generator card section"
+  },
+  "rulePopupGeneratorDesc": {
+    "message": "Choose the ideal format for the system to create realistic data.",
+    "description": "Description text under the generator select"
+  },
+  "rulePopupPreviewLabel": {
+    "message": "Example result",
+    "description": "Label badge above the preview value"
+  },
+  "rulePopupGenerateNew": {
+    "message": "Generate new value",
+    "description": "Tooltip for the refresh button in the preview section"
+  },
+  "rulePopupSaveBtn": {
+    "message": "Confirm & Save",
+    "description": "Primary save button text in the rule popup"
+  },
+  "rulePopupSavedBtn": {
+    "message": "✓ Saved!",
+    "description": "Save button text shown after successfully saving the rule"
+  },
+  "rulePopupSearchPlaceholder": {
+    "message": "Search type…",
+    "description": "Placeholder for the generator type searchable select"
+  },
+  "rulePopupHintSave": {
+    "message": "Save",
+    "description": "Keyboard hint label next to the Enter key"
+  },
+  "rulePopupHintCancel": {
+    "message": "Cancel",
+    "description": "Keyboard hint label next to the Escape key"
+  },
+  "rulePopupCancelBtn": {
+    "message": "Back",
+    "description": "Cancel button text in the rule popup"
   }
 }

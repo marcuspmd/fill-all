@@ -256,185 +256,376 @@ export function injectStyles(): void {
       transition: background 0.15s;
     }
     #fa-modal-cancel:hover { background: #f1f5f9; }
+    /* ── Rule Popup — Host CSS isolation reset ───────────────────── */
+    #${RULE_POPUP_ID},
+    #${RULE_POPUP_ID} *,
+    #${RULE_POPUP_ID} *::before,
+    #${RULE_POPUP_ID} *::after {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+    #${RULE_POPUP_ID} div,
+    #${RULE_POPUP_ID} span {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+      line-height: normal;
+    }
+    #${RULE_POPUP_ID} button {
+      all: unset;
+      box-sizing: border-box;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    /*
+     * IMPORTANT: wrap type selectors in :where() (specificity 0) so the reset
+     * rule is only (1,0,0). Class rules like .fa-rp-input / .fa-rp-param-input
+     * at (1,1,0) will always win the cascade.
+     */
+    #${RULE_POPUP_ID} :where(input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    input[type="search"]) {
+      all: unset;
+      box-sizing: border-box;
+      display: block;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    /* Restore native checkbox appearance — class rules can override accent-color etc. */
+    #${RULE_POPUP_ID} input[type="checkbox"] {
+      -webkit-appearance: checkbox;
+      appearance: checkbox;
+      box-sizing: border-box;
+    }
+    #${RULE_POPUP_ID} kbd {
+      all: unset;
+      box-sizing: border-box;
+      display: inline-block;
+      font-family: inherit;
+    }
+    #${RULE_POPUP_ID} ul,
+    #${RULE_POPUP_ID} li {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
     /* ── Rule Popup ──────────────────────────────────────────────────── */
     #${RULE_POPUP_ID} {
       position: absolute;
       z-index: 2147483646;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
-      width: 280px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.07);
+      width: 380px;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       font-size: 12px;
       display: none;
       background: #fff;
-      border-radius: 10px;
+      border-radius: 16px;
       border: 1px solid #e2e8f0;
-    }
-    #${RULE_POPUP_ID} .fa-rp-header {
-      padding: 8px 12px;
-      background: linear-gradient(135deg, #7c3aed, #6366f1);
-      color: #fff;
-      font-weight: 700;
-      font-size: 11px;
-      white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
-      border-radius: 10px 10px 0 0;
     }
-    #${RULE_POPUP_ID} .fa-rp-body {
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    #${RULE_POPUP_ID} .fa-rp-group {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-    #${RULE_POPUP_ID} .fa-rp-label {
-      font-size: 10px;
-      color: #64748b;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    #${RULE_POPUP_ID} .fa-rp-input,
-    #${RULE_POPUP_ID} .fa-rp-select {
-      padding: 5px 8px;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      font-size: 12px;
-      font-family: inherit;
-      color: #1e293b;
-      background: #f8fafc;
-      outline: none;
-      width: 100%;
-      box-sizing: border-box;
-      transition: border-color 0.15s;
-    }
-    #${RULE_POPUP_ID} .fa-rp-input:focus,
-    #${RULE_POPUP_ID} .fa-rp-select:focus {
-      border-color: #6366f1;
+    /* ── Rule Popup — Header ─────────────────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-header {
+      padding: 14px 16px 0;
       background: #fff;
-    }
-    #${RULE_POPUP_ID} .fa-rp-actions {
+      border-bottom: 1px solid #f1f5f9;
       display: flex;
-      gap: 6px;
-      margin-top: 2px;
+      flex-direction: column;
     }
-    #${RULE_POPUP_ID} .fa-rp-btn-primary {
+    #${RULE_POPUP_ID} .fa-rp-header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding-bottom: 10px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-header-left {
       flex: 1;
-      padding: 6px 10px;
-      background: #4f46e5;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      font-family: inherit;
-      transition: background 0.15s;
+      min-width: 0;
     }
-    #${RULE_POPUP_ID} .fa-rp-btn-primary:hover {
-      background: #4338ca;
+    #${RULE_POPUP_ID} .fa-rp-header-title {
+      color: #1e293b;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.3;
     }
-    #${RULE_POPUP_ID} .fa-rp-btn-primary:disabled {
-      background: #16a34a;
-      cursor: default;
+    #${RULE_POPUP_ID} .fa-rp-header-subtitle {
+      color: #94a3b8;
+      font-size: 11px;
+      line-height: 1.4;
+      margin-top: 3px;
     }
-    #${RULE_POPUP_ID} .fa-rp-btn-cancel {
-      padding: 6px 12px;
-      background: transparent;
-      color: #64748b;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-family: inherit;
-      transition: background 0.15s;
+    #${RULE_POPUP_ID} .fa-rp-progress-bar {
+      height: 3px;
+      background: #e2e8f0;
+      overflow: hidden;
     }
-    #${RULE_POPUP_ID} .fa-rp-btn-cancel:hover {
-      background: #f1f5f9;
+    #${RULE_POPUP_ID} .fa-rp-progress-fill {
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, #7c3aed, #6366f1);
+      border-radius: 0 99px 99px 0;
     }
     /* ── Rule Popup — Suggestion Badge ──────────────────────────── */
     #${RULE_POPUP_ID} .fa-rp-suggestion {
-      align-items: center;
-      gap: 4px;
-      padding: 5px 8px;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 6px;
-      font-size: 10px;
-      color: #15803d;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    #${RULE_POPUP_ID} #fa-rp-suggestion-type {
-      color: #065f46;
-      font-weight: 700;
-    }
-    /* ── Rule Popup — Live Preview ───────────────────────────────── */
-    #${RULE_POPUP_ID} .fa-rp-preview {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 8px;
-      background: #f8fafc;
-      border: 1px dashed #e2e8f0;
-      border-radius: 6px;
-      min-height: 28px;
+      gap: 3px;
+      padding: 4px 10px;
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+      border-radius: 99px;
+      font-size: 10px;
+      color: #7c3aed;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    #${RULE_POPUP_ID} .fa-rp-preview-label {
+    #${RULE_POPUP_ID} #fa-rp-suggestion-type { font-weight: 700; }
+    #${RULE_POPUP_ID} .fa-rp-body {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    /* ── Rule Popup — Cards ──────────────────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-card {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    #${RULE_POPUP_ID} .fa-rp-card--lavender {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    #${RULE_POPUP_ID} .fa-rp-card--aqua {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    #${RULE_POPUP_ID} .fa-rp-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    #${RULE_POPUP_ID} .fa-rp-card-icon--lavender { background: #eff6ff; }
+    #${RULE_POPUP_ID} .fa-rp-card-icon--aqua { background: #f0fdfa; }
+    #${RULE_POPUP_ID} .fa-rp-card-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.3;
+    }
+    #${RULE_POPUP_ID} .fa-rp-card-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-badge-auto {
       font-size: 9px;
       font-weight: 700;
+      letter-spacing: 0.4px;
+      background: #ccfbf1;
+      color: #0d9488;
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    #${RULE_POPUP_ID} .fa-rp-card-desc {
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.4;
+      margin-bottom: 2px;
+    }
+    /* ── Rule Popup — Inputs ─────────────────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-input,
+    #${RULE_POPUP_ID} .fa-rp-select {
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 12px;
+      font-family: inherit;
+      color: #1e293b;
+      background: #fff;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 6px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    #${RULE_POPUP_ID} .fa-rp-input:focus,
+    #${RULE_POPUP_ID} .fa-rp-select:focus {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 3px rgba(139,92,246,0.1);
+    }
+    /* ── Rule Popup — Divider ────────────────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-divider-line {
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+    #${RULE_POPUP_ID} .fa-rp-divider-text {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
       color: #94a3b8;
+      white-space: nowrap;
+    }
+    /* ── Rule Popup — Live Preview ───────────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-preview-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    #${RULE_POPUP_ID} .fa-rp-preview-label-badge {
+      font-size: 9px;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      white-space: nowrap;
+      color: #94a3b8;
+    }
+    #${RULE_POPUP_ID} .fa-rp-preview-value-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
     }
     #${RULE_POPUP_ID} #fa-rp-preview-value {
       flex: 1;
-      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      text-align: center;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    }
-    #${RULE_POPUP_ID} .fa-rp-preview-fixed {
       color: #1e293b;
-      font-weight: 600;
     }
-    #${RULE_POPUP_ID} .fa-rp-preview-generated {
-      color: #4f46e5;
-    }
-    #${RULE_POPUP_ID} #fa-rp-preview-refresh {
-      background: none;
+    #${RULE_POPUP_ID} .fa-rp-preview-fixed { color: #1e293b; }
+    #${RULE_POPUP_ID} .fa-rp-preview-generated { color: #1e293b; }
+    #${RULE_POPUP_ID} .fa-rp-preview-icon-btn {
+      background: #fff;
       border: none;
-      color: #94a3b8;
+      color: #333;
       cursor: pointer;
-      padding: 1px 3px;
-      font-size: 13px;
+      padding: 2px;
+      font-size: 15px;
       line-height: 1;
       display: flex;
       align-items: center;
-      border-radius: 4px;
+      justify-content: center;
+      border-radius: 99px;
       transition: color 0.15s, background 0.15s;
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
     }
-    #${RULE_POPUP_ID} #fa-rp-preview-refresh:hover {
-      color: #4f46e5;
+    #${RULE_POPUP_ID} .fa-rp-preview-icon-btn:hover {
+      color: #7c3aed;
       background: #ede9fe;
     }
+    #${RULE_POPUP_ID} .fa-rp-preview-icon-btn--copied {
+      color: #16a34a !important;
+      background: #dcfce7 !important;
+    }
+    #${RULE_POPUP_ID} .fa-rp-preview-icon-btn--copied {
+      color: #16a34a !important;
+      background: #dcfce7 !important;
+    }
+    /* ── Rule Popup — Actions ────────────────────────────────────── */
+    #${RULE_POPUP_ID} .fa-rp-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #${RULE_POPUP_ID} .fa-rp-btn-primary {
+      flex: 1;
+      padding: 10px 12px;
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    #${RULE_POPUP_ID} .fa-rp-btn-primary:not(:disabled)::before {
+      content: '✓';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 900;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    #${RULE_POPUP_ID} .fa-rp-btn-primary:hover { opacity: 0.9; }
+    #${RULE_POPUP_ID} .fa-rp-btn-primary:active { transform: scale(0.97); }
+    #${RULE_POPUP_ID} .fa-rp-btn-primary:disabled {
+      background: #16a34a;
+      opacity: 1;
+      cursor: default;
+      transform: none;
+    }
+    #${RULE_POPUP_ID} .fa-rp-btn-cancel {
+      padding: 10px 14px;
+      background: transparent;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    #${RULE_POPUP_ID} .fa-rp-btn-cancel:hover { background: #f1f5f9; }
     /* ── Rule Popup — Generator Params ───────────────────────────── */
     #${RULE_POPUP_ID} .fa-rp-params {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      padding: 6px 8px;
-      background: #f1f5f9;
+      padding: 8px;
+      background: rgba(241,245,249,0.8);
       border: 1px solid #e2e8f0;
-      border-radius: 6px;
+      border-radius: 8px;
+      margin-top: 4px;
     }
     #${RULE_POPUP_ID} .fa-rp-params-title {
       font-size: 9px;
@@ -467,22 +658,39 @@ export function injectStyles(): void {
       box-sizing: border-box;
       transition: border-color 0.15s;
     }
-    #${RULE_POPUP_ID} .fa-rp-param-input:focus {
-      border-color: #6366f1;
-    }
+    #${RULE_POPUP_ID} .fa-rp-param-input:focus { border-color: #8b5cf6; }
     #${RULE_POPUP_ID} .fa-rp-param-check {
+      -webkit-appearance: checkbox;
+      appearance: checkbox;
       width: 14px;
       height: 14px;
-      accent-color: #4f46e5;
+      flex-shrink: 0;
+      accent-color: #7c3aed;
+      cursor: pointer;
     }
     /* ── Rule Popup — Keyboard Hint ──────────────────────────────── */
     #${RULE_POPUP_ID} .fa-rp-hint {
       font-size: 9px;
-      color: #94a3b8;
+      color: #cbd5e1;
       text-align: center;
-      padding-top: 2px;
-      letter-spacing: 0.2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      flex-wrap: wrap;
     }
+    #${RULE_POPUP_ID} .fa-rp-hint kbd {
+      display: inline-block;
+      padding: 1px 4px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 9px;
+      font-family: inherit;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    #${RULE_POPUP_ID} .fa-rp-hint-sep { color: #e2e8f0; }
     /* ── SearchableSelect — scoped to rule popup ─────────────────── */
     #${RULE_POPUP_ID} .fa-ss {
       position: relative;
@@ -582,6 +790,58 @@ export function injectStyles(): void {
       list-style: none;
     }
     #${RULE_POPUP_ID} .fa-ss__value { display: none; }
+
+    /* ── Portal dropdown for rule popup (teleported to document.body) ── */
+    .fa-rp-gen-dd {
+      z-index: 2147483647;
+      max-height: 180px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      padding: 2px 0;
+      margin: 0;
+      list-style: none;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+    .fa-rp-gen-dd[hidden] { display: none; }
+    .fa-rp-gen-dd .fa-ss__group {
+      padding: 4px 8px 2px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    .fa-rp-gen-dd .fa-ss__opt {
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 1px 3px;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 12px;
+      list-style: none;
+      display: block;
+    }
+    .fa-rp-gen-dd .fa-ss__opt:hover,
+    .fa-rp-gen-dd .fa-ss__opt--highlighted {
+      background: #ede9fe;
+      color: #3730a3;
+    }
+    .fa-rp-gen-dd .fa-ss__empty {
+      padding: 6px 8px;
+      color: #94a3b8;
+      font-style: italic;
+      font-size: 11px;
+      list-style: none;
+    }
   `;
   document.head.appendChild(style);
 }

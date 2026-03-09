@@ -41,6 +41,13 @@ export interface SearchableSelectOptions {
   className?: string;
   /** Whether to disable the component. */
   disabled?: boolean;
+  /**
+   * When true, the dropdown is teleported to document.body as position:fixed.
+   * Required when the component is inside a container with overflow:hidden.
+   */
+  appendToBody?: boolean;
+  /** Extra CSS class added to the dropdown element (useful for portal styling). */
+  dropdownClass?: string;
 }
 
 type ChangeListener = (value: string, label: string) => void;
@@ -140,7 +147,7 @@ export class SearchableSelect {
         />
         <span class="fa-ss__arrow" aria-hidden="true">▾</span>
       </div>
-      <div class="fa-ss__dropdown" role="listbox" hidden></div>
+      <div class="fa-ss__dropdown${this.opts.dropdownClass ? " " + this.opts.dropdownClass : ""}" role="listbox" hidden></div>
       <input type="hidden" class="fa-ss__value" value="${escHtml(this._value)}" />
     `;
 
@@ -175,7 +182,14 @@ export class SearchableSelect {
     }
     document.removeEventListener("mousedown", this.boundHandleOutsideClick);
 
-    // Clear references
+    // Clear references, ensuring portal dropdown is removed from body
+    if (
+      this.opts.appendToBody &&
+      this.dropdown &&
+      document.body.contains(this.dropdown)
+    ) {
+      document.body.removeChild(this.dropdown);
+    }
     this.root?.remove();
     this.root = null;
     this.input = null;
@@ -220,7 +234,23 @@ export class SearchableSelect {
     this.input!.value = "";
     this.input!.setAttribute("aria-expanded", "true");
     this.renderOptions(this.flat);
+    if (this.opts.appendToBody && this.dropdown && this.root) {
+      this.positionPortalDropdown();
+      if (!document.body.contains(this.dropdown)) {
+        document.body.appendChild(this.dropdown);
+      }
+    }
     this.dropdown!.removeAttribute("hidden");
+  }
+
+  private positionPortalDropdown(): void {
+    if (!this.root || !this.dropdown) return;
+    const rect = this.root.getBoundingClientRect();
+    this.dropdown.style.position = "fixed";
+    this.dropdown.style.top = `${rect.bottom + 3}px`;
+    this.dropdown.style.left = `${rect.left}px`;
+    this.dropdown.style.width = `${rect.width}px`;
+    this.dropdown.style.right = "auto";
   }
 
   private close(restoreLabel = true): void {
@@ -230,6 +260,19 @@ export class SearchableSelect {
     this.dropdown!.setAttribute("hidden", "");
     if (restoreLabel && this.input) {
       this.input.value = this._label;
+    }
+    if (
+      this.opts.appendToBody &&
+      this.dropdown &&
+      this.root &&
+      !this.root.contains(this.dropdown)
+    ) {
+      this.root.appendChild(this.dropdown);
+      this.dropdown.style.removeProperty("position");
+      this.dropdown.style.removeProperty("top");
+      this.dropdown.style.removeProperty("left");
+      this.dropdown.style.removeProperty("width");
+      this.dropdown.style.removeProperty("right");
     }
   }
 
@@ -330,8 +373,8 @@ export class SearchableSelect {
 
   private handleOutsideClick(e: MouseEvent): void {
     if (!this._open) return;
-    if (this.root && !this.root.contains(e.target as Node)) {
-      this.close();
-    }
+    const target = e.target as Node;
+    if (this.root?.contains(target) || this.dropdown?.contains(target)) return;
+    this.close();
   }
 }

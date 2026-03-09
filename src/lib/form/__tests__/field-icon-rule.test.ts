@@ -103,6 +103,11 @@ Object.defineProperty(window.chrome.runtime, "sendMessage", {
   writable: true,
 });
 
+Object.defineProperty(window.chrome, "i18n", {
+  value: { getMessage: (key: string) => key },
+  writable: true,
+});
+
 // ── SUT ───────────────────────────────────────────────────────────────────────
 
 import {
@@ -321,7 +326,7 @@ describe("field-icon-rule", () => {
       await Promise.resolve();
 
       expect(saveBtn.disabled).toBe(true);
-      expect(saveBtn.textContent).toBe("✓ Salvo!");
+      expect(saveBtn.textContent).toBe("\u2713 rulePopupSavedBtn");
     });
 
     it("calls onDismiss after successful save", async () => {
@@ -335,7 +340,7 @@ describe("field-icon-rule", () => {
 
       // Button should be disabled and show success message after save
       expect(saveBtn.disabled).toBe(true);
-      expect(saveBtn.textContent).toBe("✓ Salvo!");
+      expect(saveBtn.textContent).toBe("\u2713 rulePopupSavedBtn");
     });
 
     it("includes field selector in save message", async () => {
@@ -526,7 +531,7 @@ describe("field-icon-rule", () => {
 
       const saveBtn = document.querySelector<HTMLButtonElement>("#fa-rp-save")!;
       expect(saveBtn.disabled).toBe(true);
-      expect(saveBtn.textContent).toBe("✓ Salvo!");
+      expect(saveBtn.textContent).toBe("\u2713 rulePopupSavedBtn");
     });
 
     it("does not trigger shortcuts when popup is hidden", async () => {

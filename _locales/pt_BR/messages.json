@@ -2185,5 +2185,73 @@
   "clearForm": {
     "message": "Limpar Form",
     "description": "Rótulo do botão para limpar o formulário"
+  },
+  "rulePopupTitle": {
+    "message": "Configurar Regra",
+    "description": "Título do popup de regra do campo"
+  },
+  "rulePopupSubtitle": {
+    "message": "Siga os passos para definir como o campo será preenchido.",
+    "description": "Subtítulo do popup de regra do campo"
+  },
+  "rulePopupSuggested": {
+    "message": "Sugerido:",
+    "description": "Texto antes do tipo sugerido no badge do cabeçalho do popup"
+  },
+  "rulePopupFixedValueTitle": {
+    "message": "Você quer usar um valor fixo?",
+    "description": "Título do card de valor fixo"
+  },
+  "rulePopupFixedValueDesc": {
+    "message": "Se preenchido, este texto será usado sempre. Deixe em branco para gerar valores automaticamente.",
+    "description": "Descrição abaixo do campo de valor fixo"
+  },
+  "rulePopupFixedValuePlaceholder": {
+    "message": "Deixe vazio para usar o gerador",
+    "description": "Placeholder do campo de valor fixo"
+  },
+  "rulePopupOrSeparator": {
+    "message": "ou configure o gerador",
+    "description": "Texto separador entre o card de valor fixo e o card do gerador"
+  },
+  "rulePopupGeneratorTitle": {
+    "message": "Gerar valores automaticamente",
+    "description": "Título do card do gerador"
+  },
+  "rulePopupGeneratorDesc": {
+    "message": "Escolha o formato ideal para o sistema criar dados realistas.",
+    "description": "Descrição abaixo do select do gerador"
+  },
+  "rulePopupPreviewLabel": {
+    "message": "Exemplo do resultado",
+    "description": "Badge de label acima do valor de preview"
+  },
+  "rulePopupGenerateNew": {
+    "message": "Gerar novo valor",
+    "description": "Tooltip do botão de refresh na seção de preview"
+  },
+  "rulePopupSaveBtn": {
+    "message": "Confirmar e Salvar",
+    "description": "Texto do botão salvar no popup de regra"
+  },
+  "rulePopupSavedBtn": {
+    "message": "✓ Salvo!",
+    "description": "Texto do botão salvar após salvar com sucesso"
+  },
+  "rulePopupSearchPlaceholder": {
+    "message": "Pesquisar tipo…",
+    "description": "Placeholder do select pesquisável de tipo de gerador"
+  },
+  "rulePopupHintSave": {
+    "message": "Salvar",
+    "description": "Dica de teclado ao lado da tecla Enter"
+  },
+  "rulePopupHintCancel": {
+    "message": "Cancelar",
+    "description": "Dica de teclado ao lado da tecla Escape"
+  },
+  "rulePopupCancelBtn": {
+    "message": "Voltar",
+    "description": "Texto do botão cancelar no popup de regra"
   }
 }
