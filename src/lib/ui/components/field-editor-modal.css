@@ -73,6 +73,11 @@
 
 /* ── Field Editor Modal ── */
 
+.modal-content,
+.modal-box {
+  pointer-events: auto;
+}
+
 .modal-box {
   width: 440px;
   max-width: 95vw;
@@ -84,7 +89,6 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
   display: flex;
   flex-direction: column;
-  pointer-events: auto;
 }
 
 .modal-box--form {
