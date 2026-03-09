@@ -581,6 +581,7 @@ export type MessageType =
   | "DEMO_CURSOR_CLICK"
   | "DEMO_CURSOR_DESTROY"
   | "DEMO_HIGHLIGHT_ELEMENT"
+  | "TOGGLE_FIELD_ICON"
   | "PING";
 
 /** Payload for any message exchanged between extension contexts. */

@@ -57,7 +57,7 @@ function StepRow({
   onRemove,
 }: StepRowProps) {
   const [editValue, setEditValue] = useState(step.value ?? "");
-  const icon = STEP_ICONS[step.type] ?? "❓";
+  const icon = STEP_ICONS[step.type] ?? "help_outline";
   const displayValue =
     step.value ?? step.label ?? (step.waitMs ? `${step.waitMs}ms` : "-");
 
@@ -65,7 +65,8 @@ function StepRow({
     <tr>
       <td class="cell-num">{index + 1}</td>
       <td>
-        {icon} {step.type}
+        <span class="material-icons-round step-type-icon">{icon}</span>
+        {step.type}
       </td>
       <td class="cell-mono">{step.selector ?? step.url ?? "-"}</td>
       <td class="cell-value">
@@ -86,17 +87,17 @@ function StepRow({
             />
             <button
               class="icon-btn step-edit-save"
-              title="✓"
+              title="Salvar"
               onClick={() => onSaveEdit(index, editValue)}
             >
-              ✅
+              <span class="material-icons-round">check</span>
             </button>
             <button
               class="icon-btn step-edit-cancel"
-              title="✕"
+              title="Cancelar"
               onClick={onCancelEdit}
             >
-              ❌
+              <span class="material-icons-round">close</span>
             </button>
           </Fragment>
         ) : (
@@ -111,10 +112,14 @@ function StepRow({
           title={t("actionEdit")}
           onClick={() => onEdit(index)}
         >
-          ✏️
+          <span class="material-icons-round">edit</span>
         </button>
-        <button class="icon-btn" title="🗑️" onClick={() => onRemove(index)}>
-          🗑️
+        <button
+          class="icon-btn"
+          title={t("btnDelete") ?? "Remover"}
+          onClick={() => onRemove(index)}
+        >
+          <span class="material-icons-round">delete</span>
         </button>
       </td>
     </tr>
@@ -183,21 +188,25 @@ export function RecordTabView({
       <div class="record-controls">
         {isIdle ? (
           <button class="action-card primary" onClick={onStart}>
-            <span class="card-icon">🔴</span>
+            <span class="card-icon material-icons-round">
+              radio_button_checked
+            </span>
             <span class="card-label">{t("recordStart")}</span>
             <span class="card-desc">{t("recordStartDesc")}</span>
           </button>
         ) : isRecording || isPaused ? (
           <Fragment>
             <button class="action-card btn-danger" onClick={onStop}>
-              <span class="card-icon">⏹️</span>
+              <span class="card-icon material-icons-round">stop</span>
               <span class="card-label">{t("recordStop")}</span>
             </button>
             <button
               class="action-card secondary"
               onClick={isPaused ? onResume : onPause}
             >
-              <span class="card-icon">{isPaused ? "▶️" : "⏸️"}</span>
+              <span class="card-icon material-icons-round">
+                {isPaused ? "play_arrow" : "pause"}
+              </span>
               <span class="card-label">
                 {isPaused ? t("recordResume") : t("recordPause")}
               </span>
@@ -206,13 +215,15 @@ export function RecordTabView({
         ) : (
           <Fragment>
             <button class="action-card primary" onClick={onStart}>
-              <span class="card-icon">🔴</span>
+              <span class="card-icon material-icons-round">
+                radio_button_checked
+              </span>
               <span class="card-label">{t("recordStart")}</span>
               <span class="card-desc">{t("recordStartDesc")}</span>
             </button>
             {hasSteps && (
               <button class="action-card btn-danger" onClick={onClear}>
-                <span class="card-icon">🗑️</span>
+                <span class="card-icon material-icons-round">delete</span>
                 <span class="card-label">{t("recordClear") ?? "Limpar"}</span>
               </button>
             )}
@@ -280,13 +291,14 @@ export function RecordTabView({
               </div>
               <div class="record-export-buttons">
                 <button class="btn btn-copy-script" onClick={onCopyScript}>
-                  📋 {t("recordCopyScript")}
+                  <span class="material-icons-round">content_copy</span>{" "}
+                  {t("recordCopyScript")}
                 </button>
                 <button
                   class="btn btn-dismiss-script"
                   onClick={onDismissScript}
                 >
-                  ✕
+                  <span class="material-icons-round">close</span>
                 </button>
               </div>
             </Fragment>

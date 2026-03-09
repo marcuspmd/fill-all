@@ -14,7 +14,7 @@ import "../lib/ui/searchable-select.css";
 import "../lib/ui/components/field-editor-modal.css";
 import { initI18n } from "@/lib/i18n";
 import { getLogViewerStyles } from "@/lib/logger/log-viewer";
-import type { TabId, RecordStep } from "./panel-state";
+import type { TabId, RecordStep, PanelTheme } from "./panel-state";
 import { panelState } from "./panel-state";
 import { sendToPage } from "./panel-messaging";
 import { addLog, updateStatusBar } from "./panel-utils";
@@ -32,6 +32,25 @@ import {
 } from "./tabs/demo-tab";
 import type { ReplayProgress } from "@/lib/demo";
 
+// ── Theme ────────────────────────────────────────────────────────────────────
+
+const THEME_CYCLE: Record<PanelTheme, PanelTheme> = {
+  dark: "light",
+  light: "system",
+  system: "dark",
+};
+
+function applyTheme(theme: PanelTheme): void {
+  document.body.dataset.theme = theme;
+}
+
+function toggleTheme(): void {
+  panelState.theme = THEME_CYCLE[panelState.theme];
+  localStorage.setItem("panel-theme", panelState.theme);
+  applyTheme(panelState.theme);
+  renderShell();
+}
+
 // ── App Shell ─────────────────────────────────────────────────────────────────
 
 function renderShell(): void {
@@ -41,6 +60,8 @@ function renderShell(): void {
     h(AppShell, {
       activeTab: panelState.activeTab,
       onTabSwitch: switchTab,
+      theme: panelState.theme,
+      onThemeToggle: toggleTheme,
       onOptions: () => {
         chrome.runtime.openOptionsPage();
         addLog("Opening options…", "info");
@@ -181,6 +202,9 @@ async function init(): Promise<void> {
     type: "GET_SETTINGS",
   })) as { uiLanguage?: "auto" | "en" | "pt_BR" } | null;
   await initI18n(settings?.uiLanguage ?? "auto");
+
+  // Apply saved theme
+  applyTheme(panelState.theme);
 
   // Sync watcher state from content script
   const watcherStatus = (await sendToPage({ type: "GET_WATCHER_STATUS" }).catch(

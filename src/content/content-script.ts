@@ -61,7 +61,7 @@ import {
   getWatcherConfig,
 } from "@/lib/form/dom-watcher";
 import type { WatcherConfig } from "@/lib/form/dom-watcher";
-import { initFieldIcon } from "@/lib/form/field-icon";
+import { initFieldIcon, destroyFieldIcon } from "@/lib/form/field-icon";
 import {
   loadPretrainedModel,
   invalidateClassifier,
@@ -647,6 +647,16 @@ export async function handleContentMessage(
           hlPayload.step as Parameters<typeof highlightElement>[0],
           hlPayload.durationMs ?? 300,
         );
+      }
+      return { success: true };
+    }
+
+    case "TOGGLE_FIELD_ICON": {
+      const show = message.payload === true;
+      if (show) {
+        initFieldIcon();
+      } else {
+        destroyFieldIcon();
       }
       return { success: true };
     }

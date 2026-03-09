@@ -9,6 +9,7 @@ import {
   getDemoFlows,
   saveDemoFlow,
   deleteDemoFlow,
+  getDemoFlowById,
 } from "@/lib/demo/demo-storage";
 import { parseFlowScript, flowScriptSchema } from "@/lib/demo/demo.schemas";
 import {
@@ -138,7 +139,6 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
         return { error: "Missing flowId or tabId" };
       }
 
-      const { getDemoFlowById } = await import("@/lib/demo/demo-storage");
       const flow = await getDemoFlowById(p.flowId);
       if (!flow) return { error: `Flow "${p.flowId}" not found` };
 

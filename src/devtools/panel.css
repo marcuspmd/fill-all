@@ -1,5 +1,12 @@
 /* DevTools Panel — Dark theme matching Chrome DevTools aesthetic */
 
+@font-face {
+  font-family: "Material Icons Round";
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/material-icons-round.woff2') format('woff2');
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -23,6 +30,44 @@
   --indigo: #b4befe;
 }
 
+/* ── Light theme ── */
+body[data-theme="light"] {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #e9ecef;
+  --bg-surface: #dee2e6;
+  --bg-hover: #ced4da;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #868e96;
+  --accent: #1971c2;
+  --accent-hover: #1864ab;
+  --success: #2f9e44;
+  --warning: #e67700;
+  --error: #c92a2a;
+  --border: #adb5bd;
+  --indigo: #4263eb;
+}
+
+/* ── System theme: follows OS preference ── */
+@media (prefers-color-scheme: light) {
+  body[data-theme="system"] {
+    --bg-primary: #f8f9fa;
+    --bg-secondary: #e9ecef;
+    --bg-surface: #dee2e6;
+    --bg-hover: #ced4da;
+    --text-primary: #212529;
+    --text-secondary: #495057;
+    --text-muted: #868e96;
+    --accent: #1971c2;
+    --accent-hover: #1864ab;
+    --success: #2f9e44;
+    --warning: #e67700;
+    --error: #c92a2a;
+    --border: #adb5bd;
+    --indigo: #4263eb;
+  }
+}
+
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -37,6 +82,25 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+
+/* ── Material Icons ── */
+
+.material-icons-round {
+  font-family: "Material Icons Round", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  user-select: none;
+  line-height: 1;
 }
 
 /* ── Toolbar ── */
@@ -81,6 +145,10 @@ body {
   line-height: 1;
 }
 
+.toolbar-btn .material-icons-round {
+  font-size: 17px;
+}
+
 .toolbar-btn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -112,6 +180,15 @@ body {
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+.tab .material-icons-round {
+  font-size: 15px;
+  flex-shrink: 0;
 }
 
 .tab:hover {
@@ -197,6 +274,15 @@ body {
 
 .card-icon {
   font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.card-icon.material-icons-round {
+  font-size: 22px;
+  display: inline-flex;
 }
 
 .card-label {
@@ -238,6 +324,13 @@ body {
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn .material-icons-round {
+  font-size: 18px;
 }
 
 .btn:hover {
@@ -248,6 +341,9 @@ body {
 .btn-sm {
   padding: 4px 10px;
   font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .btn-danger {
@@ -496,6 +592,9 @@ body {
 
 .cell-actions {
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 /* ── Badges ── */
@@ -564,14 +663,28 @@ body {
   align-items: center;
   justify-content: center;
   transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.icon-btn .material-icons-round {
+  font-size: 16px;
 }
 
 .icon-btn:hover {
   background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .icon-btn-off {
   opacity: 0.5;
+}
+
+/* ── Step type icon in record table ── */
+.step-type-icon {
+  font-size: 14px !important;
+  vertical-align: middle;
+  margin-right: 4px;
+  opacity: 0.75;
 }
 
 /* ── Forms List ── */
@@ -1090,6 +1203,15 @@ body {
   font-weight: 600;
   color: var(--indigo);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.demo-section-title .material-icons-round {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .demo-hint {
@@ -1155,8 +1277,8 @@ body {
 }
 
 .demo-table td {
-  padding: 5px 8px;
-  border-bottom: 1px solid rgba(69, 71, 90, 0.4);
+  padding: 20px 8px;
+  border-bottom: 1px solid var(--border, #45475a);
   vertical-align: middle;
 }
 
@@ -1192,7 +1314,7 @@ body {
 
 .demo-col-actions .btn,
 .demo-col-actions .demo-video-actions {
-  margin-left: 3px;
+  margin-left: 8px;
 }
 
 .demo-col-actions .btn:first-child {
@@ -1261,7 +1383,7 @@ body {
 }
 
 .demo-steps-editor {
-  padding: 8px 12px 12px;
+  padding: 12px 14px 14px;
 }
 
 .demo-steps-table {
@@ -1326,15 +1448,24 @@ body {
 
 .demo-step-move-btn {
   font-size: 9px;
-  padding: 0 4px;
-  line-height: 1.4;
-  min-width: 18px;
+  padding: 0 2px;
+  line-height: 1;
+  min-width: 20px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-tertiary, #181825);
   border: 1px solid var(--border, #45475a);
   color: var(--text-muted, #6c7086);
   border-radius: 3px;
   cursor: pointer;
   transition: color 0.1s, border-color 0.1s;
+}
+
+.demo-step-move-btn .material-icons-round {
+  font-size: 12px;
+  line-height: 1;
 }
 
 .demo-step-move-btn:not(:disabled):hover {
@@ -1388,11 +1519,18 @@ body {
   border: none;
   color: var(--text-muted, #6c7086);
   cursor: pointer;
-  padding: 2px 5px;
+  padding: 2px 4px;
   font-size: 11px;
   line-height: 1;
   border-radius: 3px;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.demo-effect-remove-btn .material-icons-round {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .demo-effect-remove-btn:hover {
@@ -1531,6 +1669,19 @@ body {
 .btn-xs {
   padding: 1px 5px;
   font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.btn-xs .material-icons-round {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.btn-sm .material-icons-round {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .btn-danger {
@@ -1574,6 +1725,10 @@ body {
   display: flex;
   gap: 6px;
   align-items: center;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--border, #45475a);
+  margin-top: 4px;
 }
 
 /* ── Step card list ── */

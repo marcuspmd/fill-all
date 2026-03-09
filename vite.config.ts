@@ -35,6 +35,12 @@ export default defineConfig(async () => {
       emptyOutDir: true,
       sourcemap: true,
       rollupOptions: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onwarn(warning: any, warn: any) {
+          // CRXJS emits _locales files twice (once per manifest pass) — suppress the harmless overwrite noise
+          if (warning.code === "EMITTED_ASSETS_OVERWRITE") return;
+          warn(warning);
+        },
         input: {
           "devtools-panel": resolve(__dirname, "src/devtools/panel.html"),
         },
