@@ -42,6 +42,8 @@ function escapeRegex(s: string): string {
 interface KeywordRule {
   /** Normalized substrings (or whole-word tokens) to look for */
   patterns: string[];
+  /** Compiled regex for matching all patterns in this rule */
+  regex: RegExp;
   /** FieldType to assign when matched */
   type: FieldType;
   /**
@@ -52,15 +54,15 @@ interface KeywordRule {
 }
 
 function matchesRule(normalized: string, rule: KeywordRule): boolean {
-  for (const pattern of rule.patterns) {
-    if (rule.wholeWord) {
-      const re = new RegExp(`(?<![a-z0-9])${escapeRegex(pattern)}(?![a-z0-9])`);
-      if (re.test(normalized)) return true;
-    } else {
-      if (normalized.includes(pattern)) return true;
-    }
-  }
-  return false;
+  return rule.regex.test(normalized);
+}
+
+function compileRule(rule: Omit<KeywordRule, "regex">): KeywordRule {
+  const combinedPattern = rule.patterns.map(escapeRegex).join("|");
+  const regex = rule.wholeWord
+    ? new RegExp(`(?<![a-z0-9])(${combinedPattern})(?![a-z0-9])`)
+    : new RegExp(combinedPattern);
+  return { ...rule, regex };
 }
 
 const KEYWORD_RULES: KeywordRule[] = [
@@ -70,7 +72,7 @@ const KEYWORD_RULES: KeywordRule[] = [
   // We intentionally skip them by returning a non-interfering type OR we can
   // just not match them at all — the simplest approach is to detect them early
   // and return a "checkbox" type so the filler handles them correctly.
-  {
+  compileRule({
     patterns: [
       "aceito os termos",
       "aceito o termos",
@@ -87,12 +89,12 @@ const KEYWORD_RULES: KeywordRule[] = [
       "i accept",
     ],
     type: "checkbox",
-  },
+  }),
 
   // ── Text / description area patterns ───────────────────────────────────────
   // Substring match for long patterns (≥ 4 chars). These describe free-text
   // fields in Portuguese/English forms and should resolve to "text".
-  {
+  compileRule({
     patterns: [
       "observacao",
       "observacoes",
@@ -112,17 +114,17 @@ const KEYWORD_RULES: KeywordRule[] = [
       "historico",
     ],
     type: "text",
-  },
+  }),
 
   // ── "obs" short-code — whole-word only ─────────────────────────────────────
   // Must be a complete word so that "observar" (obs inside a longer word) is
   // NOT matched. The normalize() function converts "obs-campo" / "obs_campo"
   // to "obs campo" so the word-boundary check works correctly.
-  {
+  compileRule({
     patterns: ["obs"],
     type: "text",
     wholeWord: true,
-  },
+  }),
 ];
 
 // ── Classifier ────────────────────────────────────────────────────────────────
