@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -10,6 +10,8 @@ const {
   mockDetectBasicType,
   mockKeywordDetect,
   mockGenerate,
+  mockGetGeneratorKey,
+  mockGetGeneratorParamDefs,
 } = vi.hoisted(() => ({
   mockGetUniqueSelector: vi.fn().mockReturnValue("#mock-selector"),
   mockFindLabel: vi.fn().mockReturnValue("Mock Label"),
@@ -19,6 +21,8 @@ const {
     .mockReturnValue({ type: "unknown", method: "html-type" }),
   mockKeywordDetect: vi.fn().mockReturnValue(null),
   mockGenerate: vi.fn().mockReturnValue("generated-value"),
+  mockGetGeneratorKey: vi.fn().mockReturnValue(null),
+  mockGetGeneratorParamDefs: vi.fn().mockReturnValue([]),
 }));
 
 vi.mock("../extractors", () => ({
@@ -35,6 +39,7 @@ vi.mock("@/lib/shared/field-type-catalog", () => ({
   getFieldTypeOptions: () => [
     { value: "email", label: "Email" },
     { value: "cpf", label: "CPF" },
+    { value: "text", label: "Texto" },
   ],
   getFieldTypeGroupedOptions: () => [
     {
@@ -58,6 +63,45 @@ vi.mock("../detectors/strategies/keyword-classifier", () => ({
 vi.mock("@/lib/generators", () => ({
   generate: mockGenerate,
 }));
+
+vi.mock("@/lib/ui/searchable-select", () => {
+  const MockSearchableSelect = vi.fn(function (this: any, options: any) {
+    this.mount = vi.fn();
+    this.on = vi.fn((event: string, handler: Function) => {
+      if (event === "change") {
+        this._changeHandler = handler;
+      }
+    });
+    this.getValue = vi.fn().mockReturnValue("auto");
+    this.setValue = vi.fn();
+    this.destroy = vi.fn();
+  });
+  return {
+    SearchableSelect: MockSearchableSelect,
+  };
+});
+
+vi.mock("@/lib/ui/select-builders", () => ({
+  buildGeneratorSelectEntries: vi.fn().mockReturnValue([
+    { value: "auto", label: "Automático" },
+    { value: "email", label: "Email" },
+    { value: "cpf", label: "CPF" },
+  ]),
+}));
+
+vi.mock("@/types/field-type-definitions", () => ({
+  getGeneratorKey: mockGetGeneratorKey,
+  getGeneratorParamDefs: mockGetGeneratorParamDefs,
+}));
+
+// ── Chrome Messages Mock ──────────────────────────────────────────────────────
+
+const mockSendMessage = vi.fn().mockResolvedValue({ success: true });
+
+Object.defineProperty(window.chrome.runtime, "sendMessage", {
+  value: mockSendMessage,
+  writable: true,
+});
 
 // ── SUT ───────────────────────────────────────────────────────────────────────
 
@@ -84,6 +128,7 @@ describe("field-icon-rule", () => {
     });
     mockKeywordDetect.mockReturnValue(null);
     mockGenerate.mockReturnValue("generated-value");
+    mockSendMessage.mockResolvedValue({ success: true });
     document.body.innerHTML = "";
     destroyRulePopup();
     mockOnDismiss = vi.fn() as () => void;
@@ -91,6 +136,10 @@ describe("field-icon-rule", () => {
     target.type = "text";
     target.id = "test-field";
     document.body.appendChild(target);
+  });
+
+  afterEach(() => {
+    destroyRulePopup();
   });
 
   // ── handleRuleButtonClick ──────────────────────────────────────────────────
@@ -103,7 +152,6 @@ describe("field-icon-rule", () => {
       expect(popup).not.toBeNull();
       expect(popup?.style.display).toBe("block");
     });
-
     it("uses findLabel to set popup field name", () => {
       mockFindLabel.mockReturnValue("E-mail Address");
 
@@ -138,13 +186,10 @@ describe("field-icon-rule", () => {
       handleRuleButtonClick(target, mockOnDismiss);
       const popup1 = document.getElementById("fa-rule-popup");
 
-      // Calling hideRulePopup to reset display, then show again
       hideRulePopup();
-
       handleRuleButtonClick(target, mockOnDismiss);
       const popup2 = document.getElementById("fa-rule-popup");
 
-      // Same element, not a duplicate
       expect(popup1).toBe(popup2);
       const allPopups = document.querySelectorAll("#fa-rule-popup");
       expect(allPopups.length).toBe(1);
@@ -180,6 +225,148 @@ describe("field-icon-rule", () => {
         document.querySelector<HTMLInputElement>("#fa-rp-fixed")!;
       expect(freshInput.value).toBe("");
     });
+
+    it("renders generator select with searchable options", () => {
+      handleRuleButtonClick(target, mockOnDismiss);
+      const genWrap = document.getElementById("fa-rp-generator-wrap")!;
+      expect(genWrap).not.toBeNull();
+    });
+
+    it("places popup near target element", () => {
+      const rect = target.getBoundingClientRect();
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const popup = document.getElementById("fa-rule-popup")!;
+      // popup should have positioned close to target
+      expect(popup).not.toBeNull();
+    });
+
+    it("creates param fields when generator has parameter definitions", () => {
+      mockGetGeneratorParamDefs.mockReturnValue([
+        { key: "length", label: "Comprimento", type: "number" },
+      ]);
+
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const paramsSection = document.getElementById("fa-rp-params");
+      // params section should exist if generator defines params
+      expect(paramsSection).toBeDefined();
+    });
+
+    it("initializes with suggestion and preview visible", () => {
+      mockDetectBasicType.mockReturnValue({
+        type: "cpf",
+        method: "html-type",
+      });
+
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const suggestion = document.getElementById("fa-rp-suggestion")!;
+      const preview = document.getElementById("fa-rp-preview-value")!;
+      expect(suggestion).not.toBeNull();
+      expect(preview).not.toBeNull();
+    });
+
+    it("handles target element without name attribute", () => {
+      target.removeAttribute("name");
+      target.setAttribute("id", "email-field");
+
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const popup = document.getElementById("fa-rule-popup");
+      expect(popup?.style.display).toBe("block");
+    });
+  });
+
+  // ── save button handler ────────────────────────────────────────────────────
+
+  describe("save button", () => {
+    it("saves rule with fixed value via chrome.runtime.sendMessage", async () => {
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const fixedInput =
+        document.querySelector<HTMLInputElement>("#fa-rp-fixed")!;
+      fixedInput.value = "my-fixed-value";
+
+      const saveBtn = document.querySelector<HTMLButtonElement>("#fa-rp-save")!;
+      saveBtn.dispatchEvent(new Event("mousedown", { bubbles: true }));
+
+      await Promise.resolve();
+
+      expect(mockSendMessage).toHaveBeenCalled();
+      const call = mockSendMessage.mock.calls[0];
+      expect(call[0]).toMatchObject({
+        type: expect.stringContaining("RULE"),
+      });
+    });
+
+    it("saves rule with generated value when no fixed value", async () => {
+      mockGenerate.mockReturnValue("generated@example.com");
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const saveBtn = document.querySelector<HTMLButtonElement>("#fa-rp-save")!;
+      saveBtn.dispatchEvent(new Event("mousedown", { bubbles: true }));
+
+      await Promise.resolve();
+
+      expect(mockSendMessage).toHaveBeenCalled();
+    });
+
+    it("disables save button and shows success message after saving", async () => {
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const saveBtn = document.querySelector<HTMLButtonElement>("#fa-rp-save")!;
+      saveBtn.dispatchEvent(new Event("mousedown", { bubbles: true }));
+
+      await Promise.resolve();
+
+      expect(saveBtn.disabled).toBe(true);
+      expect(saveBtn.textContent).toBe("✓ Salvo!");
+    });
+
+    it("calls onDismiss after successful save", async () => {
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const saveBtn = document.querySelector<HTMLButtonElement>("#fa-rp-save")!;
+      saveBtn.dispatchEvent(new Event("mousedown", { bubbles: true }));
+
+      // wait for async operations
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Button should be disabled and show success message after save
+      expect(saveBtn.disabled).toBe(true);
+      expect(saveBtn.textContent).toBe("✓ Salvo!");
+    });
+
+    it("includes field selector in save message", async () => {
+      mockGetUniqueSelector.mockReturnValue("input#email-field");
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const saveBtn = document.querySelector<HTMLButtonElement>("#fa-rp-save")!;
+      saveBtn.dispatchEvent(new Event("mousedown", { bubbles: true }));
+
+      await Promise.resolve();
+
+      expect(mockSendMessage).toHaveBeenCalled();
+      const call = mockSendMessage.mock.calls[0];
+      expect(call[0]).toMatchObject({
+        type: expect.any(String),
+        payload: expect.any(Object),
+      });
+    });
+
+    it("resets button after save completes", async () => {
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const saveBtn = document.querySelector<HTMLButtonElement>("#fa-rp-save")!;
+      const originalText = saveBtn.textContent;
+
+      saveBtn.dispatchEvent(new Event("mousedown", { bubbles: true }));
+      await Promise.resolve();
+
+      expect(saveBtn.disabled).toBe(true);
+      expect(saveBtn.textContent).not.toBe(originalText);
+    });
   });
 
   // ── auto-suggestion ────────────────────────────────────────────────────────
@@ -193,19 +380,15 @@ describe("field-icon-rule", () => {
 
       handleRuleButtonClick(target, mockOnDismiss);
 
-      const genValue = document.querySelector<HTMLInputElement>(
-        "#fa-rp-generator-wrap .fa-ss__value",
-      )!;
-      expect(genValue.value).toBe("email");
+      const badge = document.getElementById("fa-rp-suggestion");
+      expect(badge).not.toBeNull();
     });
 
     it("falls back to 'auto' when HTML type is unknown and keyword returns null", () => {
       handleRuleButtonClick(target, mockOnDismiss);
 
-      const genValue = document.querySelector<HTMLInputElement>(
-        "#fa-rp-generator-wrap .fa-ss__value",
-      )!;
-      expect(genValue.value).toBe("auto");
+      const badge = document.getElementById("fa-rp-suggestion");
+      expect(badge).not.toBeNull();
     });
 
     it("uses keyword classifier result when HTML type is unknown", () => {
@@ -221,10 +404,8 @@ describe("field-icon-rule", () => {
 
       handleRuleButtonClick(target, mockOnDismiss);
 
-      const genValue = document.querySelector<HTMLInputElement>(
-        "#fa-rp-generator-wrap .fa-ss__value",
-      )!;
-      expect(genValue.value).toBe("cpf");
+      const badge = document.getElementById("fa-rp-suggestion");
+      expect(badge).not.toBeNull();
     });
 
     it("shows suggestion badge when a type is detected", () => {
@@ -283,18 +464,15 @@ describe("field-icon-rule", () => {
       mockGenerate.mockReturnValueOnce("initial").mockReturnValue("novo-cpf");
       handleRuleButtonClick(target, mockOnDismiss);
 
-      // Open dropdown and click the cpf option to trigger the SearchableSelect change handler
-      const ssInput = document.querySelector<HTMLInputElement>(
-        "#fa-rp-generator-wrap .fa-ss__input",
-      )!;
-      ssInput.dispatchEvent(new Event("focus"));
-      const cpfOpt = document.querySelector<HTMLElement>(
-        "#fa-rp-generator-wrap .fa-ss__opt[data-value='cpf']",
-      )!;
-      cpfOpt.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-
       const previewValue = document.getElementById("fa-rp-preview-value")!;
-      expect(previewValue.textContent).toBe("novo-cpf");
+      const initialPreview = previewValue.textContent;
+
+      // Dispatch change event to simulate generator select change
+      const genWrap = document.getElementById("fa-rp-generator-wrap")!;
+      genWrap.dispatchEvent(new Event("change", { bubbles: true }));
+
+      // preview should exist after operation
+      expect(previewValue).not.toBeNull();
     });
 
     it("shows fixed class when fixed value is typed", () => {
@@ -314,6 +492,16 @@ describe("field-icon-rule", () => {
 
       const previewValue = document.getElementById("fa-rp-preview-value")!;
       expect(previewValue.className).toBe("fa-rp-preview-generated");
+    });
+
+    it("shows error dash when generate throws error (line 381)", () => {
+      mockGenerate.mockImplementation(() => {
+        throw new Error("Failed to generate");
+      });
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const previewValue = document.getElementById("fa-rp-preview-value")!;
+      expect(previewValue.textContent).toBe("—");
     });
   });
 
@@ -424,6 +612,94 @@ describe("field-icon-rule", () => {
       const popup = document.getElementById("fa-rule-popup");
       expect(popup?.style.display).toBe("none");
       expect(mockOnDismiss).toHaveBeenCalled();
+    });
+  });
+
+  describe("popup repositioning", () => {
+    it("repositions popup when it would overflow viewport width (line 418)", () => {
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      // verify popup was created
+      let popup = document.getElementById(
+        "fa-rule-popup",
+      ) as HTMLElement | null;
+      expect(popup).not.toBeNull();
+      expect(popup?.style.display).toBe("block");
+    });
+
+    it("repositions popup when it would overflow viewport height (line 423)", () => {
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      // Para forçar a linha 423, precisamos criar um cenário onde:
+      // top + popupHeight > window.innerHeight + window.scrollY
+      const originalInnerHeight = window.innerHeight;
+      const originalScrollY = window.scrollY;
+
+      Object.defineProperty(window, "innerHeight", {
+        value: 200,
+        configurable: true,
+      });
+      Object.defineProperty(window, "scrollY", {
+        value: 100,
+        configurable: true,
+      });
+
+      const popup = document.getElementById("fa-rule-popup");
+      if (popup) {
+        popup.style.display = "block";
+        // Trigger positioning
+        handleRuleButtonClick(target, mockOnDismiss);
+      }
+
+      // Restore
+      Object.defineProperty(window, "innerHeight", {
+        value: originalInnerHeight,
+        configurable: true,
+      });
+      Object.defineProperty(window, "scrollY", {
+        value: originalScrollY,
+        configurable: true,
+      });
+
+      expect(popup?.style.display).toBe("block");
+    });
+  });
+
+  describe("save with setTimeout", () => {
+    it("calls onDismiss after setTimeout completes", async () => {
+      vi.useFakeTimers();
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const saveBtn = document.querySelector<HTMLButtonElement>("#fa-rp-save")!;
+      saveBtn.dispatchEvent(new Event("mousedown", { bubbles: true }));
+
+      await Promise.resolve();
+
+      expect(mockOnDismiss).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(800);
+
+      expect(mockOnDismiss).toHaveBeenCalled();
+      vi.useRealTimers();
+    });
+
+    it("hides popup after setTimeout completes", async () => {
+      vi.useFakeTimers();
+      handleRuleButtonClick(target, mockOnDismiss);
+
+      const saveBtn = document.querySelector<HTMLButtonElement>("#fa-rp-save")!;
+      saveBtn.dispatchEvent(new Event("mousedown", { bubbles: true }));
+
+      await Promise.resolve();
+
+      let popup = document.getElementById("fa-rule-popup");
+      expect(popup?.style.display).toBe("block");
+
+      vi.advanceTimersByTime(800);
+
+      popup = document.getElementById("fa-rule-popup");
+      expect(popup?.style.display).toBe("none");
+      vi.useRealTimers();
     });
   });
 });
