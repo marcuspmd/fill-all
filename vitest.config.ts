@@ -21,7 +21,6 @@ export default defineConfig({
         // DOM-heavy files: require real browser/MutationObserver — covered by E2E tests
         "src/lib/form/dom-watcher.ts",
         "src/lib/form/field-icon.ts",
-        "src/lib/form/field-icon-rule.ts",
         "src/lib/form/field-icon-styles.ts",
         "src/lib/form/field-icon-utils.ts",
         "src/lib/form/field-overlay.ts",
