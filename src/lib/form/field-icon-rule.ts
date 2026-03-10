@@ -463,6 +463,20 @@ function getRulePopupHTML(): string {
           <div id="fa-rp-params" class="fa-rp-params" style="display:none"></div>
         </div>
       </div>
+      <div class="fa-rp-divider">
+        <div class="fa-rp-divider-line"></div>
+        <span class="fa-rp-divider-text">${i("rulePopupOrSeparator")}</span>
+        <div class="fa-rp-divider-line"></div>
+      </div>
+      <div class="fa-rp-card fa-rp-card--pink">
+        <div class="fa-rp-card-icon fa-rp-card-icon--pink">🤖</div>
+        <div class="fa-rp-card-content">
+          <div class="fa-rp-card-title">${i("editorAiPrompt")}</div>
+          <div class="fa-rp-card-desc">Customize o prompt de IA para geração de campo</div>
+          <input type="text" id="fa-rp-ai-prompt" class="fa-rp-input"
+            placeholder="${i("editorAiPromptPlaceholder")}" />
+        </div>
+      </div>
       <div class="fa-rp-preview-section">
         <span class="fa-rp-preview-label-badge">${i("rulePopupPreviewLabel")}</span>
         <div class="fa-rp-preview-value-row">
@@ -492,9 +506,12 @@ async function saveFieldRule(): Promise<void> {
 
   const fixedInput =
     rulePopupElement?.querySelector<HTMLInputElement>("#fa-rp-fixed");
+  const aiPromptInput =
+    rulePopupElement?.querySelector<HTMLInputElement>("#fa-rp-ai-prompt");
   const genSelect =
     rulePopupElement?.querySelector<HTMLSelectElement>("#fa-rp-generator");
   const fixedValue = fixedInput?.value.trim() || undefined;
+  const aiPrompt = aiPromptInput?.value.trim() || undefined;
   const generator = (genSearchableSelect?.getValue() ||
     "auto") as FieldRule["generator"];
 
@@ -505,6 +522,7 @@ async function saveFieldRule(): Promise<void> {
     fieldName: currentRuleField.name || currentRuleField.id || undefined,
     fieldType: currentSuggestedType ?? "unknown",
     fixedValue,
+    aiPrompt,
     generator: fixedValue ? "auto" : generator,
     generatorParams: fixedValue
       ? undefined

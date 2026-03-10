@@ -72,12 +72,16 @@ export function generateCnpj(formatted = true, alphanumeric = false): string {
 
   // Classic numeric CNPJ
   const base: string[] = [...randomDigits(8), "0", "0", "0", "1"];
-  base.push(String(calcCheckDigit(base, WEIGHTS_1)));
-  base.push(String(calcCheckDigit(base, WEIGHTS_2)));
+  const firstCheck = String(calcCheckDigit(base, WEIGHTS_1)).padStart(1, "0");
+  base.push(firstCheck);
+  const secondCheck = String(calcCheckDigit(base, WEIGHTS_2)).padStart(1, "0");
+  base.push(secondCheck);
 
   const raw = base.join("");
   if (!formatted) return raw;
-  return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5, 8)}/${raw.slice(8, 12)}-${raw.slice(12)}`;
+  // Ensure always 14 chars before formatting
+  const padded = raw.padStart(14, "0");
+  return `${padded.slice(0, 2)}.${padded.slice(2, 5)}.${padded.slice(5, 8)}/${padded.slice(8, 12)}-${padded.slice(12, 14)}`;
 }
 
 /**
@@ -96,12 +100,16 @@ export function generateCnpjAlphanumeric(formatted = true): string {
   } while (!hasLetters(raiz.join("")));
 
   const base: string[] = [...raiz, "0", "0", "0", "1"];
-  base.push(String(calcCheckDigit(base, WEIGHTS_1)));
-  base.push(String(calcCheckDigit(base, WEIGHTS_2)));
+  const firstCheck = String(calcCheckDigit(base, WEIGHTS_1)).padStart(1, "0");
+  base.push(firstCheck);
+  const secondCheck = String(calcCheckDigit(base, WEIGHTS_2)).padStart(1, "0");
+  base.push(secondCheck);
 
   const raw = base.join("");
   if (!formatted) return raw;
-  return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5, 8)}/${raw.slice(8, 12)}-${raw.slice(12)}`;
+  // Ensure always 14 chars before formatting
+  const padded = raw.padStart(14, "0");
+  return `${padded.slice(0, 2)}.${padded.slice(2, 5)}.${padded.slice(5, 8)}/${padded.slice(8, 12)}-${padded.slice(12, 14)}`;
 }
 
 // ── Validators ───────────────────────────────────────────────────────────────

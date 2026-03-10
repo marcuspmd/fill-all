@@ -1,8 +1,8 @@
 {
   "name": "fill-all",
-  "version": "1.3.0",
-  "description": "Chrome extension to auto-fill forms using AI, rules, and Brazilian document generators",
-  "private": true,
+  "version": "1.4.0",
+  "description": "Smart form auto-fill Chrome extension powered by on-device AI (Chrome Built-in AI / Gemini Nano), TensorFlow.js machine learning, customizable rules, and Brazilian document generators (CPF, CNPJ, etc.)",
+  "private": false,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -54,6 +54,6 @@
     "vite-plugin-istanbul": "^7.2.1",
     "vitest": "^4.0.18"
   },
-  "author": "marcusp",
+  "author": "Marcus Paulo M. Dias",
   "license": "MIT"
 }

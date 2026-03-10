@@ -2,8 +2,8 @@
  * Navigation Handler — manages page navigation during demo replay.
  *
  * Runs in the **background** service-worker context. Uses `chrome.tabs`
- * and `chrome.webNavigation` to navigate and wait for page load before
- * signalling the orchestrator to continue.
+ * to navigate and wait for page load before signalling the orchestrator
+ * to continue.
  */
 
 import { createLogger } from "@/lib/logger";

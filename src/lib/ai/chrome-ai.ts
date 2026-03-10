@@ -132,11 +132,15 @@ export async function getSession(): Promise<LanguageModelSession | null> {
  * Generates a realistic test value for a form field via Chrome AI.
  * Constructs a contextual prompt from the field's metadata (label, name, type, …).
  * @param field - The detected form field to generate a value for
+ * @param customPrompt - Optional custom prompt to use instead of auto-generating one
  * @returns A trimmed AI-generated value, or `""` when the session is unavailable
  */
-export async function generateFieldValue(field: FormField): Promise<string> {
+export async function generateFieldValue(
+  field: FormField,
+  customPrompt?: string,
+): Promise<string> {
   log.debug(
-    `Gerando valor para campo: selector="${field.selector}" label="${field.label ?? ""}" name="${field.name ?? ""}" type="${field.fieldType}"`,
+    `Gerando valor para campo: selector="${field.selector}" label="${field.label ?? ""}" name="${field.name ?? ""}" type="${field.fieldType}"${customPrompt ? " [custom prompt]" : ""}`,
   );
 
   const aiSession = await getSession();
@@ -153,6 +157,7 @@ export async function generateFieldValue(field: FormField): Promise<string> {
     autocomplete: field.autocomplete,
     inputType: (field.element as HTMLInputElement).type || "text",
     fieldType: field.fieldType,
+    customPrompt,
   };
 
   const prompt = fieldValueGeneratorPrompt.buildPrompt(input);
@@ -186,12 +191,14 @@ export async function generateFieldValue(field: FormField): Promise<string> {
 /**
  * Generates a value from serializable field metadata — no DOM element needed.
  * Used by the background handler when proxying AI_GENERATE from content scripts.
+ * @param input - Field metadata including optional custom prompt
+ * @returns A trimmed AI-generated value, or `""` when the session is unavailable
  */
 export async function generateFieldValueFromInput(
   input: FieldValueInput,
 ): Promise<string> {
   log.debug(
-    `Gerando valor via input: label="${input.label ?? ""}" name="${input.name ?? ""}" type="${input.fieldType}"`,
+    `Gerando valor via input: label="${input.label ?? ""}" name="${input.name ?? ""}" type="${input.fieldType}"${input.customPrompt ? " [custom prompt]" : ""}`,
   );
 
   const aiSession = await getSession();

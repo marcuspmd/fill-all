@@ -65,9 +65,8 @@ The extension is designed around local processing and local fallbacks.
 | `activeTab` | Operate on the current tab the user is interacting with |
 | `scripting` | Coordinate page-level execution where needed |
 | `contextMenus` | Add extension actions to the right-click menu |
-| `tabs` | Route messages and inspect the active tab context |
+| `tabs` | Route messages, inspect the active tab context, and manage navigation during demo replay |
 | `tabCapture` | Record replay videos from demo flows |
-| `webNavigation` | Support navigation-aware recording and replay flows |
 
 Host permissions:
 

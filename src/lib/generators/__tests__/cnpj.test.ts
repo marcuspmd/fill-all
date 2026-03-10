@@ -42,6 +42,15 @@ describe("generateCnpj", () => {
       expect(cnpj.slice(8, 12)).toBe("0001");
     }
   });
+
+  it("check digits (positions 13-14) are always exactly 2 digits", () => {
+    for (let i = 0; i < 50; i++) {
+      const cnpj = generateCnpj(false);
+      const checkDigits = cnpj.slice(12, 14);
+      expect(checkDigits).toMatch(/^\d{2}$/);
+      expect(checkDigits).toHaveLength(2);
+    }
+  });
 });
 
 // ── Alphanumeric CNPJ (RFB IN nº 2.229/2024) ─────────────────────────────────
@@ -72,6 +81,15 @@ describe("generateCnpjAlphanumeric", () => {
     for (let i = 0; i < 20; i++) {
       const cnpj = generateCnpjAlphanumeric(false);
       expect(cnpj.slice(8, 12)).toMatch(/^\d{4}$/);
+    }
+  });
+
+  it("check digits (positions 13-14) are always exactly 2 digits", () => {
+    for (let i = 0; i < 50; i++) {
+      const cnpj = generateCnpjAlphanumeric(false);
+      const checkDigits = cnpj.slice(12, 14);
+      expect(checkDigits).toMatch(/^\d{2}$/);
+      expect(checkDigits).toHaveLength(2);
     }
   });
 

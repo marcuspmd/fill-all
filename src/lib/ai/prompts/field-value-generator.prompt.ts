@@ -24,6 +24,11 @@ export interface FieldValueInput {
   readonly autocomplete?: string;
   readonly inputType: string;
   readonly fieldType: FieldType;
+  /**
+   * Optional custom prompt for AI generation.
+   * If provided, overrides the standard field-based prompt generation.
+   */
+  readonly customPrompt?: string;
 }
 
 // ── Prompt definition ─────────────────────────────────────────────────────────
@@ -71,6 +76,12 @@ export const fieldValueGeneratorPrompt: StructuredPrompt<
   ],
 
   buildPrompt(input: FieldValueInput): string {
+    // If a custom prompt is provided, use it directly
+    if (input.customPrompt) {
+      return input.customPrompt;
+    }
+
+    // Otherwise, build the standard field-based prompt
     const base = renderPromptBase(this);
 
     const context = [

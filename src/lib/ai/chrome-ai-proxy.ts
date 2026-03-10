@@ -43,9 +43,12 @@ export async function isAvailableViaProxy(): Promise<boolean> {
 /**
  * Generates a realistic test value for a form field by proxying the request
  * to the background service worker where `LanguageModel` is available.
+ * @param field - The form field to generate a value for
+ * @param customPrompt - Optional custom prompt to use for AI generation
  */
 export async function generateFieldValueViaProxy(
   field: FormField,
+  customPrompt?: string,
 ): Promise<string> {
   try {
     const input: FieldValueInput = {
@@ -56,6 +59,7 @@ export async function generateFieldValueViaProxy(
       autocomplete: field.autocomplete,
       inputType: (field.element as HTMLInputElement).type || "text",
       fieldType: field.fieldType,
+      customPrompt,
     };
 
     const result = await chrome.runtime.sendMessage({
@@ -64,7 +68,7 @@ export async function generateFieldValueViaProxy(
     });
 
     log.debug(
-      `AI_GENERATE → "${typeof result === "string" ? result : ""}" (campo: "${field.label ?? field.name ?? field.selector}")`,
+      `AI_GENERATE → "${typeof result === "string" ? result : ""}" (campo: "${field.label ?? field.name ?? field.selector}")${customPrompt ? " [custom prompt]" : ""}`,
     );
     return typeof result === "string" ? result : "";
   } catch (err) {

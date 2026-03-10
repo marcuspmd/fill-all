@@ -290,9 +290,8 @@ The extension currently requests these permissions:
 | `activeTab` | Act on the user’s current page |
 | `scripting` | Inject or coordinate page-side logic when needed |
 | `contextMenus` | Add right-click actions |
-| `tabs` | Route messages and inspect the active tab |
+| `tabs` | Route messages, inspect the active tab, and manage navigation during demo replay |
 | `tabCapture` | Record replay videos from demo flows |
-| `webNavigation` | Support navigation-aware replay and recording flows |
 
 Host permissions currently include:
 

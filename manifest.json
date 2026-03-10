@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "pt_BR",
   "name": "__MSG_extensionName__",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "__MSG_extensionDescription__",
   "permissions": [
     "storage",
@@ -10,8 +10,7 @@
     "scripting",
     "contextMenus",
     "tabs",
-    "tabCapture",
-    "webNavigation"
+    "tabCapture"
   ],
   "optional_permissions": [],
   "host_permissions": [

@@ -81,6 +81,8 @@ function editRule(rule: FieldRule): void {
     rule.fieldName || "";
   (document.getElementById("rule-fixed") as HTMLInputElement).value =
     rule.fixedValue || "";
+  (document.getElementById("rule-ai-prompt") as HTMLInputElement).value =
+    rule.aiPrompt || "";
   (document.getElementById("rule-priority") as HTMLInputElement).value = String(
     rule.priority,
   );
@@ -116,6 +118,7 @@ function cancelEditRule(): void {
   (document.getElementById("rule-selector") as HTMLInputElement).value = "";
   (document.getElementById("rule-field-name") as HTMLInputElement).value = "";
   (document.getElementById("rule-fixed") as HTMLInputElement).value = "";
+  (document.getElementById("rule-ai-prompt") as HTMLInputElement).value = "";
   (document.getElementById("rule-priority") as HTMLInputElement).value = "10";
   ruleTypeSelect?.setValue("");
   ruleGeneratorSelect?.setValue("");
@@ -204,6 +207,10 @@ function bindRulesEvents(): void {
         fixedValue:
           (
             document.getElementById("rule-fixed") as HTMLInputElement
+          ).value.trim() || undefined,
+        aiPrompt:
+          (
+            document.getElementById("rule-ai-prompt") as HTMLInputElement
           ).value.trim() || undefined,
         priority:
           parseInt(

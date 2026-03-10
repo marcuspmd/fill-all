@@ -74,19 +74,20 @@ function generateDateForField(fieldType: FieldType, field: FormField): string {
 
 /** Wraps an AI call with a hard timeout so it never blocks indefinitely. */
 async function callAiWithTimeout(
-  fn: (field: FormField) => Promise<string>,
+  fn: (field: FormField, customPrompt?: string) => Promise<string>,
   field: FormField,
   context: string,
   timeoutMs = DEFAULT_AI_TIMEOUT_MS,
+  customPrompt?: string,
 ): Promise<string> {
   const label = field.label ?? field.id ?? field.selector;
   log.info(
-    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${timeoutMs}ms)...`,
+    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${timeoutMs}ms)${customPrompt ? " [custom prompt]" : ""}...`,
   );
   const start = Date.now();
 
   const result = await Promise.race([
-    fn(field),
+    fn(field, customPrompt),
     new Promise<string>((_, reject) =>
       setTimeout(
         () => reject(new Error(`AI timeout (${timeoutMs}ms)`)),
@@ -189,6 +190,7 @@ export async function resolveFieldValue(
           field,
           "rule:ai",
           aiTimeoutMs,
+          matchingRule.aiPrompt,
         );
         const value = adaptGeneratedValue(aiValue, {
           element: field.element,
@@ -238,6 +240,7 @@ export async function resolveFieldValue(
         field,
         "forceAIFirst",
         aiTimeoutMs,
+        undefined,
       );
       const value = adaptGeneratedValue(aiValue, {
         element: field.element,
@@ -310,6 +313,7 @@ export async function resolveFieldValue(
         field,
         "último recurso",
         aiTimeoutMs,
+        undefined,
       );
       const adaptedAiValue = adaptGeneratedValue(aiValue, {
         element: field.element,
