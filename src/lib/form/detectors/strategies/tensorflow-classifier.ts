@@ -75,6 +75,52 @@ async function loadTfModule(): Promise<typeof import("@tensorflow/tfjs")> {
   return _tfLoadPromise;
 }
 
+// ── Model artifact loader (with background cache fallback) ─────────────────────
+
+/**
+ * Loads model artifacts (vocab, labels) with automatic fallback to background cache.
+ * If running in content script, requests artifacts from the background handler.
+ * Fallback: fetch directly if background request fails or extension context unavailable.
+ */
+async function loadModelArtifacts(): Promise<{
+  vocabRaw: Record<string, number>;
+  labelsRaw: string[];
+}> {
+  const base = chrome.runtime.getURL("");
+
+  // Try background cache first (content script optimization)
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: "GET_PRETRAINED_MODEL",
+      payload: {},
+    });
+    if (response && response.vocab && response.labels) {
+      log.debug("Model artifacts loaded from background cache");
+      return {
+        vocabRaw: response.vocab,
+        labelsRaw: response.labels,
+      };
+    }
+  } catch (err) {
+    log.debug(
+      "Background cache unavailable, falling back to direct fetch",
+      err,
+    );
+  }
+
+  // Fallback: fetch directly
+  const [vocabRaw, labelsRaw] = await Promise.all([
+    fetch(`${base}${TF_CONFIG.model.vocab}`).then(
+      (r) => r.json() as Promise<Record<string, number>>,
+    ),
+    fetch(`${base}${TF_CONFIG.model.labels}`).then(
+      (r) => r.json() as Promise<string[]>,
+    ),
+  ]);
+
+  return { vocabRaw, labelsRaw };
+}
+
 // ── Model loading ─────────────────────────────────────────────────────────────
 
 /**
@@ -110,18 +156,32 @@ export async function loadPretrainedModel(): Promise<void> {
         return;
       }
 
-      // Step 2: Fall back to bundled model files
+      // Step 2: Fall back to bundled model files with local storage caching
       const tf = await loadTfModule();
       const base = chrome.runtime.getURL("");
-      const [model, vocabRaw, labelsRaw] = await Promise.all([
-        tf.loadLayersModel(`${base}${TF_CONFIG.model.json}`),
-        fetch(`${base}${TF_CONFIG.model.vocab}`).then(
-          (r) => r.json() as Promise<Record<string, number>>,
-        ),
-        fetch(`${base}${TF_CONFIG.model.labels}`).then(
-          (r) => r.json() as Promise<string[]>,
-        ),
-      ]);
+      const { vocabRaw, labelsRaw } = await loadModelArtifacts();
+
+      // Try loading from localStorage cache first (model.json + weights)
+      let model = null;
+      const cacheKey = "fill-all-tf-model";
+      try {
+        model = await tf.loadLayersModel(`indexeddb://${cacheKey}`);
+        log.debug("✅ Model loaded from IndexedDB cache");
+      } catch {
+        // Cache miss — load from bundled files
+        log.debug("ℹ️ Model cache miss, loading from extension assets");
+        model = await tf.loadLayersModel(`${base}${TF_CONFIG.model.json}`);
+
+        // Save to IndexedDB for next time
+        try {
+          await model.save(`indexeddb://${cacheKey}`);
+          log.debug("💾 Model saved to IndexedDB cache");
+        } catch (err) {
+          log.warn("Failed to save model to IndexedDB:", err);
+          // Not fatal — will re-download next time
+        }
+      }
+
       _pretrained = {
         model,
         vocab: new Map(Object.entries(vocabRaw)),

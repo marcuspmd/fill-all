@@ -2253,5 +2253,45 @@
   "rulePopupCancelBtn": {
     "message": "Volver",
     "description": "Texto del botón cancelar en el popup de regla"
+  },
+  "aiFeedbackTitle": {
+    "message": "Retroalimentación de IA",
+    "description": "Título de la sección de configuración de retroalimentación de IA"
+  },
+  "aiFeedbackDesc": {
+    "message": "Configure las opciones de retroalimentación y personalización de IA para rellenado automático de campos.",
+    "description": "Descripción de la sección de retroalimentación de IA"
+  },
+  "settingShowFillToast": {
+    "message": "Mostrar notificación al rellenar",
+    "description": "Etiqueta de la casilla para mostrar notificación al rellenar campos"
+  },
+  "settingShowFillToastDesc": {
+    "message": "Muestra una notificación (toast) cuando los campos se rellenan automáticamente",
+    "description": "Descripción de la casilla de notificación de relleno"
+  },
+  "settingShowAiBadge": {
+    "message": "Mostrar insignia de IA",
+    "description": "Etiqueta de la casilla para mostrar insignia indicando campos rellenados con IA"
+  },
+  "settingShowAiBadgeDesc": {
+    "message": "Muestra una insignia en los campos rellenados con IA (Chrome AI o TensorFlow)",
+    "description": "Descripción de la casilla de insignia de IA"
+  },
+  "settingAiTimeout": {
+    "message": "Tiempo de espera de IA (ms):",
+    "description": "Etiqueta del campo de tiempo de espera de IA"
+  },
+  "settingAiTimeoutDesc": {
+    "message": "Tiempo máximo en milisegundos para esperar la respuesta de IA (500–30000ms)",
+    "description": "Descripción del campo de tiempo de espera de IA"
+  },
+  "settingChromeAiPrompt": {
+    "message": "Indicador personalizado de Chrome AI",
+    "description": "Etiqueta del campo de indicador personalizado"
+  },
+  "settingChromeAiPromptDesc": {
+    "message": "Deje en blanco para usar el indicador predeterminado. Use {fieldType} para referirse al tipo de campo y {fieldName} para el nombre del campo.",
+    "description": "Descripción del campo de indicador personalizado"
   }
 }

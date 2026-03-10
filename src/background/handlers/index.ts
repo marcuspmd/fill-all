@@ -9,3 +9,5 @@ export { learningHandler } from "./learning-handler";
 export { datasetHandler } from "./dataset-handler";
 export { aiHandler } from "./ai-handler";
 export { demoHandler } from "./demo-handler";
+export { classifierModelHandler } from "./classifier-model-handler";
+export { i18nHandler } from "./i18n-handler";

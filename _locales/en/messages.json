@@ -2253,5 +2253,45 @@
   "rulePopupCancelBtn": {
     "message": "Back",
     "description": "Cancel button text in the rule popup"
+  },
+  "aiFeedbackTitle": {
+    "message": "AI Feedback",
+    "description": "Title of the AI feedback settings section"
+  },
+  "aiFeedbackDesc": {
+    "message": "Configure AI feedback options and customization for automatic field filling.",
+    "description": "Description of the AI feedback settings section"
+  },
+  "settingShowFillToast": {
+    "message": "Show notification when filling",
+    "description": "Label for the checkbox to show notification when fields are filled"
+  },
+  "settingShowFillToastDesc": {
+    "message": "Displays a notification (toast) when fields are automatically filled",
+    "description": "Description of the fill notification checkbox"
+  },
+  "settingShowAiBadge": {
+    "message": "Show AI badge",
+    "description": "Label for the checkbox to show badge indicating fields filled with AI"
+  },
+  "settingShowAiBadgeDesc": {
+    "message": "Displays a badge on fields filled with AI (Chrome AI or TensorFlow)",
+    "description": "Description of the AI badge checkbox"
+  },
+  "settingAiTimeout": {
+    "message": "AI Timeout (ms):",
+    "description": "Label for the AI timeout field"
+  },
+  "settingAiTimeoutDesc": {
+    "message": "Maximum time in milliseconds to wait for AI response (500–30000ms)",
+    "description": "Description of the AI timeout field"
+  },
+  "settingChromeAiPrompt": {
+    "message": "Custom Chrome AI Prompt",
+    "description": "Label for the custom prompt field"
+  },
+  "settingChromeAiPromptDesc": {
+    "message": "Leave empty to use the default prompt. Use {fieldType} to reference the field type and {fieldName} for the field name.",
+    "description": "Description of the custom prompt field"
   }
 }

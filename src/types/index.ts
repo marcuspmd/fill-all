@@ -488,6 +488,8 @@ export interface Settings {
   aiTimeoutMs: number;
   /** When true, shows a persistent AI badge on fields filled by AI (can be dismissed) */
   showAiBadge: boolean;
+  /** Custom system prompt instructions for Chrome AI field generation (empty = default prompt) */
+  chromeAICustomPrompt: string;
   /** When true, shows a brief toast notification after filling all fields */
   showFillToast: boolean;
 }
@@ -530,6 +532,8 @@ export type MessageType =
   | "RETRAIN_LEARNING_DATABASE"
   | "INVALIDATE_CLASSIFIER"
   | "RELOAD_CLASSIFIER"
+  | "GET_PRETRAINED_MODEL"
+  | "GET_I18N_CATALOG"
   | "GET_DATASET"
   | "ADD_DATASET_ENTRY"
   | "REMOVE_DATASET_ENTRY"
@@ -667,5 +671,6 @@ export const DEFAULT_SETTINGS: Settings = {
 
   aiTimeoutMs: 5000,
   showAiBadge: false,
+  chromeAICustomPrompt: "",
   showFillToast: true,
 };

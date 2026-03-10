@@ -26,28 +26,60 @@ type MessageCatalog = Record<string, MessageEntry>;
 /** Active override catalog. `null` means use chrome.i18n.getMessage (auto). */
 let _catalog: MessageCatalog | null = null;
 
+/** Track last loaded language to avoid redundant fetches (optimization). */
+let _lastLoadedLang: string | null = null;
+
 /**
  * Initialises the i18n catalog for the given language.
  * Must be called once at app startup, before any `t()` or `localizeHTML()` calls.
  * Passing "auto" (default) delegates to Chrome's native locale resolution.
+ *
+ * Optimization: requests cached catalog from background handler to avoid
+ * redundant fetches on every page load.
  */
 export async function initI18n(
   lang: "auto" | "en" | "pt_BR" | "es" = "auto",
 ): Promise<void> {
+  // ✅ Optimization: request cached catalog from background
+  try {
+    const response = (await chrome.runtime.sendMessage({
+      type: "GET_I18N_CATALOG",
+      payload: { lang },
+    })) as { lang: string; catalog: MessageCatalog } | null;
+
+    if (response && response.catalog) {
+      _catalog = response.catalog;
+      _lastLoadedLang = response.lang;
+      return;
+    }
+  } catch (err) {
+    // Background not available or error — fall through to direct fetch
+  }
+
+  // Fallback: direct fetch if background unavailable
   if (lang === "auto") {
     _catalog = null;
+    _lastLoadedLang = "auto";
     return;
   }
+
+  if (_lastLoadedLang === lang && _catalog !== null) {
+    return; // Already loaded — skip fetch
+  }
+
   try {
     const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
     const res = await fetch(url);
     if (!res.ok) {
       _catalog = null;
+      _lastLoadedLang = null;
       return;
     }
     _catalog = (await res.json()) as MessageCatalog;
+    _lastLoadedLang = lang;
   } catch {
     _catalog = null;
+    _lastLoadedLang = null;
   }
 }
 

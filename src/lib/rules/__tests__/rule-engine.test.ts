@@ -161,7 +161,7 @@ describe("rule-engine/resolveFieldValue", () => {
       aiGenerateFn,
     );
 
-    expect(aiGenerateFn).toHaveBeenCalledWith(field);
+    expect(aiGenerateFn).toHaveBeenCalledWith(field, undefined);
     expect(result).toEqual({
       fieldSelector: "#email",
       value: "gerado por ai",

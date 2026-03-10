@@ -2253,5 +2253,45 @@
   "rulePopupCancelBtn": {
     "message": "Voltar",
     "description": "Texto do botão cancelar no popup de regra"
+  },
+  "aiFeedbackTitle": {
+    "message": "AI Feedback",
+    "description": "Título da seção de feedback da IA"
+  },
+  "aiFeedbackDesc": {
+    "message": "Configure as opções de feedback e customização da IA para preenchimento automático.",
+    "description": "Descrição da seção de feedback da IA"
+  },
+  "settingShowFillToast": {
+    "message": "Mostrar notificação ao preencher",
+    "description": "Label do checkbox para exibir notificação ao preencher campos"
+  },
+  "settingShowFillToastDesc": {
+    "message": "Exibe uma notificação (toast) quando campos são preenchidos automaticamente",
+    "description": "Descrição do checkbox para notificação de preenchimento"
+  },
+  "settingShowAiBadge": {
+    "message": "Mostrar badge de IA",
+    "description": "Label do checkbox para exibir badge indicando campos preenchidos com IA"
+  },
+  "settingShowAiBadgeDesc": {
+    "message": "Exibe um badge nos campos preenchidos com IA (Chrome AI ou TensorFlow)",
+    "description": "Descrição do checkbox para badge de IA"
+  },
+  "settingAiTimeout": {
+    "message": "Timeout da IA (ms):",
+    "description": "Label do campo de timeout da IA"
+  },
+  "settingAiTimeoutDesc": {
+    "message": "Tempo máximo em milissegundos para aguardar resposta da IA (500–30000ms)",
+    "description": "Descrição do campo de timeout da IA"
+  },
+  "settingChromeAiPrompt": {
+    "message": "Prompt customizado do Chrome AI",
+    "description": "Label do campo de prompt customizado"
+  },
+  "settingChromeAiPromptDesc": {
+    "message": "Deixe vazio para usar o prompt padrão. Use {fieldType} para referir ao tipo do campo e {fieldName} para o nome.",
+    "description": "Descrição do campo de prompt customizado"
   }
 }

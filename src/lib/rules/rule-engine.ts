@@ -112,9 +112,10 @@ async function callAiWithTimeout(
 export async function resolveFieldValue(
   field: FormField,
   url: string,
-  aiGenerateFn?: (field: FormField) => Promise<string>,
+  aiGenerateFn?: (field: FormField, customPrompt?: string) => Promise<string>,
   forceAIFirst = false,
   aiTimeoutMs = DEFAULT_AI_TIMEOUT_MS,
+  chromeAICustomPrompt?: string,
 ): Promise<GenerationResult> {
   const selector = field.selector;
 
@@ -240,7 +241,7 @@ export async function resolveFieldValue(
         field,
         "forceAIFirst",
         aiTimeoutMs,
-        undefined,
+        chromeAICustomPrompt,
       );
       const value = adaptGeneratedValue(aiValue, {
         element: field.element,

@@ -42,6 +42,7 @@ const settingsSchema = z
     watcherDebounceMs: z.number().int().min(100).max(5000),
     aiTimeoutMs: z.number().int().min(2000).max(15000),
     showAiBadge: z.boolean(),
+    chromeAICustomPrompt: z.string(),
     showFillToast: z.boolean(),
     logMaxEntries: z.number().int().min(100).max(10000),
   })

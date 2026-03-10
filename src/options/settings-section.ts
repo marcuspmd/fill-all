@@ -120,6 +120,9 @@ async function saveAiSettings(): Promise<void> {
         ) || 5000,
       ),
     ),
+    chromeAICustomPrompt: (
+      document.getElementById("setting-chrome-ai-prompt") as HTMLTextAreaElement
+    ).value.trim(),
   };
   await chrome.runtime.sendMessage({
     type: "SAVE_SETTINGS",
@@ -368,6 +371,9 @@ async function loadSettings(): Promise<void> {
   ).checked = settings.showAiBadge ?? false;
   (document.getElementById("setting-ai-timeout") as HTMLInputElement).value =
     String(settings.aiTimeoutMs ?? 5000);
+  (
+    document.getElementById("setting-chrome-ai-prompt") as HTMLTextAreaElement
+  ).value = settings.chromeAICustomPrompt ?? "";
 
   // Detection pipeline
   renderStrategyList(settings.detectionPipeline ?? DEFAULT_DETECTION_PIPELINE);
@@ -434,10 +440,14 @@ function bindSettingsEvents(): void {
     "setting-show-fill-toast",
     "setting-show-ai-badge",
     "setting-ai-timeout",
+    "setting-chrome-ai-prompt",
   ]) {
     const el = document.getElementById(id);
     el?.addEventListener("change", debouncedSaveAi);
     if (el?.tagName === "INPUT" && (el as HTMLInputElement).type === "number") {
+      el.addEventListener("input", debouncedSaveAi);
+    }
+    if (el?.tagName === "TEXTAREA") {
       el.addEventListener("input", debouncedSaveAi);
     }
   }

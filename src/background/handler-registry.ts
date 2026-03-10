@@ -12,6 +12,8 @@ import {
   datasetHandler,
   aiHandler,
   demoHandler,
+  classifierModelHandler,
+  i18nHandler,
 } from "./handlers";
 
 const ALL_HANDLERS: ReadonlyArray<MessageHandler> = [
@@ -22,6 +24,8 @@ const ALL_HANDLERS: ReadonlyArray<MessageHandler> = [
   datasetHandler,
   aiHandler,
   demoHandler,
+  classifierModelHandler,
+  i18nHandler,
 ];
 
 /** Pre-built map: MessageType → MessageHandler for O(1) dispatch */

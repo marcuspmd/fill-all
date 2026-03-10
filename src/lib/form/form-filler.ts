@@ -345,6 +345,7 @@ async function doFillAllFields(options?: {
         aiGenerateFn,
         settings.forceAIFirst,
         settings.aiTimeoutMs,
+        settings.chromeAICustomPrompt,
       );
 
       await applyValueToField(field, result.value);
@@ -427,6 +428,7 @@ export async function fillSingleField(
       aiGenerateFn,
       settings.forceAIFirst,
       settings.aiTimeoutMs,
+      settings.chromeAICustomPrompt,
     );
     await applyValueToField(field, result.value);
     logAuditFill({
@@ -671,7 +673,9 @@ async function applyValueToField(
 
 async function getAiFunction(
   settings: Settings,
-): Promise<((field: FormField) => Promise<string>) | undefined> {
+): Promise<
+  ((field: FormField, customPrompt?: string) => Promise<string>) | undefined
+> {
   log.debug(
     `useChromeAI=${settings.useChromeAI} | defaultStrategy=${settings.defaultStrategy} | forceAIFirst=${settings.forceAIFirst}`,
   );

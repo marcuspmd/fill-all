@@ -142,6 +142,7 @@ const DEFAULT_SETTINGS: Settings = {
   aiTimeoutMs: 5000,
   showAiBadge: false,
   showFillToast: false,
+  chromeAICustomPrompt: "",
 };
 
 /** Helper: wraps an array of fields into an async generator for streamAllFields mock */
