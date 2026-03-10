@@ -170,6 +170,12 @@ Generators are used in multiple fill paths:
 - after field classification
 - as fallback when contextual AI or Chrome AI cannot provide a usable value
 
+Rules can be configured to use a specific generator per field, either from the options page or directly from the inline field-icon controls on the page:
+
+| Rules Settings | Field Icon Rule Configuration |
+|:---:|:---:|
+| ![Rules](images/settings_rules.png) | ![Configure Rule from Field Icon](images/form_icons_configure_rules.png) |
+
 So while AI gets the shiny headlines, generators are still the workhorses doing real overtime.
 
 ## Summary

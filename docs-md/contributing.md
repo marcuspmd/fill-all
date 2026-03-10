@@ -140,6 +140,40 @@ Use `z.uuid()` instead of `z.string().uuid()`.
 3. register it through the classifier pipeline setup
 4. update tests for ordering, fallback, and confidence behavior
 
+The detection strategy can be tuned from the settings page:
+
+![Detection Strategy Settings](images/settings_detection_strategy.png)
+
+### Working on rules
+
+Rules can be configured from three surfaces:
+
+1. **Options page** — bulk management and import/export
+2. **Field icons on the page** — quick per-field rules without leaving the site
+3. **DevTools panel** — inline editing during development sessions
+
+![Rules in Options](images/settings_rules.png)
+
+![Configure Rule from Field Icon](images/form_icons_configure_rules.png)
+
+![Edit Rules in DevTools](images/devtools_edit_rules.png)
+
+### Working on recording and E2E export
+
+The recording workflow runs from the DevTools panel. Recordings can be exported to Playwright, Cypress, or Pest/Dusk-style test scripts, with optional AI optimization.
+
+| Recording | Export Tests |
+|:---:|:---:|
+| ![Recording](images/devtools_recording.png) | ![Export Test](images/devtools_record_export_test.png) |
+
+### Working on demo flows
+
+Demo flows are created from recordings and can be replayed with visual effects, captions, and assertions.
+
+| Demo Edit | Add Effect | Record to Demo |
+|:---:|:---:|:---:|
+| ![Demo Edit](images/devtools_demo_edit.png) | ![Add Effect](images/devtools_demo_edit_add_effect.png) | ![Record to Demo](images/devtools_record_to_demo.png) |
+
 ### Working on content-script behavior
 
 Remember that the content script is a hot path.

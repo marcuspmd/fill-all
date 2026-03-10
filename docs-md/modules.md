@@ -77,6 +77,8 @@ Relevant files include:
 - `popup-ai-context-modal.ts`
 - `popup-messaging.ts`
 
+![Popup](images/popup.png)
+
 ---
 
 ### `src/options/`
@@ -93,6 +95,18 @@ Current tabs/modules:
 - `log-section.ts`
 
 The options page initializes these modules from `options.ts`.
+
+| General Settings | Language | Rules |
+|:---:|:---:|:---:|
+| ![General Settings](images/settings_general.png) | ![Language](images/settings_general_language.png) | ![Rules](images/settings_rules.png) |
+
+| Saved Forms | Form Creation | Dataset |
+|:---:|:---:|:---:|
+| ![Saved Forms](images/settings_forms.png) | ![Form Creation](images/settings_form_creation.png) | ![Dataset](images/settings_dataset.png) |
+
+| Detection Strategy | Field Icons | Learning | Training | Log |
+|:---:|:---:|:---:|:---:|:---:|
+| ![Detection Strategy](images/settings_detection_strategy.png) | ![Field Icons](images/settings_field_icons.png) | ![Learning](images/settings_learning.png) | ![Training](images/settings_training.png) | ![Log](images/settings_log.png) |
 
 ---
 
@@ -125,6 +139,32 @@ Key tab modules:
 - `tabs/record-tab.tsx`
 - `tabs/demo-tab.tsx`
 - `tabs/log-tab.tsx`
+
+| Actions Tab | Fields Tab |
+|:---:|:---:|
+| ![DevTools Actions](images/devtools_actions.png) | ![DevTools Fields](images/devtools_fields.png) |
+
+| Actions (Light Theme) | Fields (Light Theme) |
+|:---:|:---:|
+| ![DevTools Actions Light](images/devtools_actions_ligth.png) | ![DevTools Fields Light](images/devtools_field_ligth.png) |
+
+#### Recording and export
+
+| Recording | Record Started | Export Tests |
+|:---:|:---:|:---:|
+| ![Recording](images/devtools_recording.png) | ![Record Started](images/devtools_record_started.png) | ![Export Test](images/devtools_record_export_test.png) |
+
+#### Demo flows
+
+| Demo Edit | Edit Field in Demo | Add Visual Effect | Convert Recording to Demo |
+|:---:|:---:|:---:|:---:|
+| ![Demo Edit](images/devtools_demo_edit.png) | ![Edit Field](images/devtools_demo_edit_field.png) | ![Add Effect](images/devtools_demo_edit_add_effect.png) | ![Record to Demo](images/devtools_record_to_demo.png) |
+
+#### Edit rules inline
+
+Rules can also be created and edited directly inside the DevTools panel without leaving the current page:
+
+![Edit Rules in DevTools](images/devtools_edit_rules.png)
 
 ---
 
@@ -171,6 +211,12 @@ Important files:
 - `dom-watcher.ts`
 - `field-icon.ts`
 - `field-overlay.ts`
+
+The field icon system provides per-field controls directly overlaid on the page. Each icon opens an inline panel for configuring rules, checking detected type, and triggering individual fills:
+
+| Field Icons | Configure Rule |
+|:---:|:---:|
+| ![Field Icons](images/form_icons.png) | ![Configure Rule](images/form_icons_configure_rules.png) |
 
 ---
 

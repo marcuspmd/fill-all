@@ -54,6 +54,14 @@ Responsibilities include:
 
 This is a hot path, so performance-sensitive flows use lightweight validation instead of full Zod parsing.
 
+After detection, the content script renders interactive field icons directly on the page. These icons give users quick access to per-field actions without opening the extension UI:
+
+![Field Icons on the Page](images/form_icons.png)
+
+Clicking on a field icon opens the rule configuration panel inline:
+
+![Configure Rules from Field Icon](images/form_icons_configure_rules.png)
+
 ### Popup
 
 The popup is intentionally compact. It currently offers four actions:
@@ -64,6 +72,8 @@ The popup is intentionally compact. It currently offers four actions:
 - Settings
 
 The contextual AI entry point can collect optional text, CSV, image, and PDF context before sending a fill request.
+
+![Popup](images/popup.png)
 
 ### Options page
 
@@ -78,6 +88,14 @@ The options page is the configuration hub. Current tabs:
 
 This is where users configure pipeline behavior, rules, saved forms, training data, and logging-related settings.
 
+| General Settings | Rules | Saved Forms |
+|:---:|:---:|:---:|
+| ![General Settings](images/settings_general.png) | ![Rules](images/settings_rules.png) | ![Saved Forms](images/settings_forms.png) |
+
+| Dataset | Detection Strategy | Learning |
+|:---:|:---:|:---:|
+| ![Dataset](images/settings_dataset.png) | ![Detection Strategy](images/settings_detection_strategy.png) | ![Learning](images/settings_learning.png) |
+
 ### DevTools panel
 
 The DevTools panel is the advanced developer surface. Current tabs:
@@ -90,6 +108,10 @@ The DevTools panel is the advanced developer surface. Current tabs:
 - log
 
 The record and demo tabs are now a major part of the product surface, not side experiments.
+
+| Actions | Fields |
+|:---:|:---:|
+| ![DevTools Actions](images/devtools_actions.png) | ![DevTools Fields](images/devtools_fields.png) |
 
 ## Communication model
 
@@ -167,6 +189,10 @@ Recording and demo tooling spans multiple layers.
 - exported scripts are generated from normalized step data
 - optional AI optimization can refine exported output
 
+| Recording in Progress | Record Started | Export Test Script |
+|:---:|:---:|:---:|
+| ![Recording](images/devtools_recording.png) | ![Record Started](images/devtools_record_started.png) | ![Export Test](images/devtools_record_export_test.png) |
+
 ### Demo flows
 
 - recordings can be converted into demo flows
@@ -174,6 +200,10 @@ Recording and demo tooling spans multiple layers.
 - replay supports pause, resume, stop, speed presets, and progress reporting
 - steps can include captions, assertions, waits, and visual effects
 - replay videos are recorded locally using `chrome.tabCapture` and `MediaRecorder`
+
+| Demo Edit | Edit Field | Add Effect | Convert to Demo |
+|:---:|:---:|:---:|:---:|
+| ![Demo Edit](images/devtools_demo_edit.png) | ![Edit Field](images/devtools_demo_edit_field.png) | ![Add Effect](images/devtools_demo_edit_add_effect.png) | ![Record to Demo](images/devtools_record_to_demo.png) |
 
 ## Storage model
 

@@ -40,20 +40,56 @@ Install from the Chrome Web Store:
 
 <div align="center">
 
-### Settings
-![Settings](docs-md/images/settings.png)
+### Popup
+![Popup](docs-md/images/popup.png)
 
-### DevTools Panel
-![DevTools Panel](docs-md/images/dev_tools.png)
+### Field Icons and Rule Configuration
+![Field Icons](docs-md/images/form_icons.png)
+
+![Configure Rules from Field Icon](docs-md/images/form_icons_configure_rules.png)
 
 ### Options Page
 
-| Settings | Saved Forms | Dataset |
+| General Settings | Language | Rules |
 |:---:|:---:|:---:|
-| ![Settings](docs-md/images/config_general.png) | ![Forms](docs-md/images/config_form.png) | ![Dataset](docs-md/images/config_dataset.png) |
+| ![General Settings](docs-md/images/settings_general.png) | ![Language](docs-md/images/settings_general_language.png) | ![Rules](docs-md/images/settings_rules.png) |
 
-### Add Rule From a Field
-![Add Rule](docs-md/images/page_add_rules.png)
+| Saved Forms | Form Creation | Dataset |
+|:---:|:---:|:---:|
+| ![Saved Forms](docs-md/images/settings_forms.png) | ![Form Creation](docs-md/images/settings_form_creation.png) | ![Dataset](docs-md/images/settings_dataset.png) |
+
+| Detection Strategy | Field Icons | Learning |
+|:---:|:---:|:---:|
+| ![Detection Strategy](docs-md/images/settings_detection_strategy.png) | ![Field Icons Settings](docs-md/images/settings_field_icons.png) | ![Learning](docs-md/images/settings_learning.png) |
+
+| Training | Log |
+|:---:|:---:|
+| ![Training](docs-md/images/settings_training.png) | ![Log](docs-md/images/settings_log.png) |
+
+### DevTools Panel
+
+| Actions | Fields |
+|:---:|:---:|
+| ![DevTools Actions](docs-md/images/devtools_actions.png) | ![DevTools Fields](docs-md/images/devtools_fields.png) |
+
+| Actions (Light Theme) | Fields (Light Theme) |
+|:---:|:---:|
+| ![DevTools Actions Light](docs-md/images/devtools_actions_ligth.png) | ![DevTools Fields Light](docs-md/images/devtools_field_ligth.png) |
+
+### Recording and Export
+
+| Recording | Record Started | Export Test |
+|:---:|:---:|:---:|
+| ![Recording](docs-md/images/devtools_recording.png) | ![Record Started](docs-md/images/devtools_record_started.png) | ![Export Test](docs-md/images/devtools_record_export_test.png) |
+
+### Demo Flows
+
+| Edit Demo | Edit Field | Add Effect | Convert to Demo |
+|:---:|:---:|:---:|:---:|
+| ![Demo Edit](docs-md/images/devtools_demo_edit.png) | ![Demo Edit Field](docs-md/images/devtools_demo_edit_field.png) | ![Add Effect](docs-md/images/devtools_demo_edit_add_effect.png) | ![Record to Demo](docs-md/images/devtools_record_to_demo.png) |
+
+### Edit Rules in DevTools
+![Edit Rules](docs-md/images/devtools_edit_rules.png)
 
 </div>
 

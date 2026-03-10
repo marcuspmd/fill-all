@@ -54,6 +54,10 @@ Examples of supported customization patterns:
 
 That keeps the pipeline predictable and easy to test.
 
+The active detection strategy — including which classifiers run and their order — can be configured from the settings page without touching code:
+
+![Detection Strategy Settings](images/settings_detection_strategy.png)
+
 ## Built-in classifier stages
 
 ### HTML/native type classifier
@@ -120,9 +124,19 @@ The project supports both:
 
 Runtime-trained models can take precedence when present.
 
+The training and dataset pages let you inspect, curate, and trigger model retraining directly from the options page:
+
+| Dataset | Training |
+|:---:|:---:|
+| ![Dataset](images/settings_dataset.png) | ![Model Training](images/settings_training.png) |
+
 ### Learning loop
 
 Fill All also maintains learned entries from user activity and rules. Those entries can improve classification and can feed retraining workflows.
+
+The learning configuration is accessible from the options page:
+
+![Learning Settings](images/settings_learning.png)
 
 ---
 
