@@ -68,7 +68,7 @@ export async function generateFieldValueViaProxy(
     });
 
     log.debug(
-      `AI_GENERATE → "${typeof result === "string" ? result : ""}" (campo: "${field.label ?? field.name ?? field.selector}")${customPrompt ? " [custom prompt]" : ""}`,
+      `AI_GENERATE → "${typeof result === "string" ? result : ""}" (campo: "${field.label ?? field.name ?? field.selector}")${customPrompt ? ` [custom prompt: "${customPrompt}"]` : ""}`,
     );
     return typeof result === "string" ? result : "";
   } catch (err) {

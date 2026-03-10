@@ -277,6 +277,29 @@ body {
   border-color: var(--error-bdr);
 }
 
+.status.processing {
+  background: var(--accent-bg, #eff6ff);
+  color: var(--accent, #2563eb);
+  border-color: var(--accent-bdr, #bfdbfe);
+}
+
+.status.processing::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--accent, #2563eb);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── Body ────────────────────────────────────────────────────────────────────── */
 
 .popup-body {

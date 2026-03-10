@@ -151,6 +151,20 @@ function showStatus(msg: string, isError = false): void {
   }, 2000);
 }
 
+function showProcessing(msg: string): void {
+  const el = document.getElementById("status");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "status processing";
+  el.style.display = "block";
+}
+
+function hideStatus(): void {
+  const el = document.getElementById("status");
+  if (!el) return;
+  el.style.display = "none";
+}
+
 // ── Handlers ─────────────────────────────────────────────────────────────────
 
 function setButtonLoading(btn: HTMLButtonElement, loading: boolean): void {
@@ -161,12 +175,21 @@ function setButtonLoading(btn: HTMLButtonElement, loading: boolean): void {
 async function doSend(
   message: import("@/types").ExtensionMessage,
   btn: HTMLButtonElement,
+  processingLabel?: string,
 ): Promise<void> {
   setButtonLoading(btn, true);
+  showProcessing(processingLabel ?? t("progressFilling"));
   try {
-    await sendToActiveTab(message);
+    const result = await sendToActiveTab(message);
+    if (result && typeof result === "object" && "filled" in result) {
+      const filled = (result as { filled: number }).filled;
+      showStatus(`✓ ${filled} ${t("fieldsFillCount")}`);
+    } else {
+      hideStatus();
+    }
   } catch (err) {
     log.warn("Failed to send message:", err);
+    showStatus(t("fpFillErrorLog"), true);
   } finally {
     setButtonLoading(btn, false);
   }

@@ -83,7 +83,7 @@ async function callAiWithTimeout(
 ): Promise<string> {
   const label = field.label ?? field.id ?? field.selector;
   log.info(
-    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${timeoutMs}ms)${customPrompt ? " [custom prompt]" : ""}...`,
+    `🤖 AI gerando valor para: "${label}" (${context}, timeout ${timeoutMs}ms)${customPrompt ? ` [custom prompt: "${customPrompt}"]` : ""}...`,
   );
   const start = Date.now();
 

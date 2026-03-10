@@ -76,12 +76,6 @@ export const fieldValueGeneratorPrompt: StructuredPrompt<
   ],
 
   buildPrompt(input: FieldValueInput): string {
-    // If a custom prompt is provided, use it directly
-    if (input.customPrompt) {
-      return input.customPrompt;
-    }
-
-    // Otherwise, build the standard field-based prompt
     const base = renderPromptBase(this);
 
     const context = [
@@ -96,7 +90,15 @@ export const fieldValueGeneratorPrompt: StructuredPrompt<
       .filter(Boolean)
       .join("\n");
 
-    return `${base}\n\nGenerate a value for this field:\n${context}`;
+    const fieldSection = `Generate a value for this field:\n${context}`;
+
+    // If a custom prompt is provided, include it as an additional instruction
+    // alongside the field context so the AI knows what type of value to generate.
+    if (input.customPrompt) {
+      return `${base}\n\n${fieldSection}\n\nCustom instruction: ${input.customPrompt}`;
+    }
+
+    return `${base}\n\n${fieldSection}`;
   },
 
   parseResponse(raw: string): string | null {

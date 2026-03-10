@@ -140,7 +140,7 @@ export async function generateFieldValue(
   customPrompt?: string,
 ): Promise<string> {
   log.debug(
-    `Gerando valor para campo: selector="${field.selector}" label="${field.label ?? ""}" name="${field.name ?? ""}" type="${field.fieldType}"${customPrompt ? " [custom prompt]" : ""}`,
+    `Gerando valor para campo: selector="${field.selector}" label="${field.label ?? ""}" name="${field.name ?? ""}" type="${field.fieldType}"${customPrompt ? ` [custom prompt: "${customPrompt}"]` : ""}`,
   );
 
   const aiSession = await getSession();
@@ -198,7 +198,7 @@ export async function generateFieldValueFromInput(
   input: FieldValueInput,
 ): Promise<string> {
   log.debug(
-    `Gerando valor via input: label="${input.label ?? ""}" name="${input.name ?? ""}" type="${input.fieldType}"${input.customPrompt ? " [custom prompt]" : ""}`,
+    `Gerando valor via input: label="${input.label ?? ""}" name="${input.name ?? ""}" type="${input.fieldType}"${input.customPrompt ? ` [custom prompt: "${input.customPrompt}"]` : ""}`,
   );
 
   const aiSession = await getSession();
@@ -208,6 +208,10 @@ export async function generateFieldValueFromInput(
   }
 
   const prompt = fieldValueGeneratorPrompt.buildPrompt(input);
+
+  log.groupCollapsed(`Prompt → campo: "${input.label ?? input.name ?? "?"}"`);
+  log.debug("▶ Prompt completo:\n" + prompt);
+  log.groupEnd();
 
   let result: string;
   try {
@@ -222,7 +226,10 @@ export async function generateFieldValueFromInput(
     return "";
   }
 
-  log.debug(`Resposta (input proxy): "${result.trim()}"`);
+  log.groupCollapsed(`Resposta ← campo: "${input.label ?? input.name ?? "?"}"`);
+  log.debug("◄ Resposta raw:\n" + result);
+  log.debug('\u25c4 Valor final (trimmed): "' + result.trim() + '"');
+  log.groupEnd();
   return result.trim();
 }
 
