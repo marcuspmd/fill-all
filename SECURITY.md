@@ -15,7 +15,7 @@ Please do **not** open a public issue for security vulnerabilities.
 
 Preferred reporting order:
 
-1. Use GitHub's **Report a vulnerability** / Security Advisory flow for this repository when it is available.
+1. Use GitHub's **Report a vulnerability** / Security Advisory flow for this repository: <https://github.com/marcuspmd/fill-all/security/advisories/new>.
 2. If the private advisory flow is not available in the repository UI, contact the maintainer privately through GitHub: <https://github.com/marcuspmd>.
 3. Include `fill-all` in the report title and provide enough detail to reproduce and assess the issue.
 
