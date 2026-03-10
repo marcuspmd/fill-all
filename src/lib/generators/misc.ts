@@ -7,11 +7,53 @@ import { generateCpf } from "./cpf";
 import { generateCnpj } from "./cnpj";
 
 /**
- * Generates a random password.
+ * Generates a random password with configurable character classes.
  * @param length - Password length (default: `12`)
+ * @param withNumbers - Include numeric digits (default: `true`)
+ * @param withSpecialChars - Include special characters (default: `true`)
+ * @param withUppercase - Include uppercase letters (default: `true`)
  */
-export function generatePassword(length = 12): string {
-  return faker.internet.password({ length });
+export function generatePassword(
+  length = 12,
+  withNumbers = true,
+  withSpecialChars = true,
+  withUppercase = true,
+): string {
+  const lowercase = "abcdefghijklmnopqrstuvwxyz";
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const digits = "0123456789";
+  const special = "!@#$%^&*()-_=+[]{}|;:,.<>?";
+
+  let charset = lowercase;
+  const mandatory: string[] = [
+    lowercase[Math.floor(Math.random() * lowercase.length)],
+  ];
+
+  if (withUppercase) {
+    charset += upper;
+    mandatory.push(upper[Math.floor(Math.random() * upper.length)]);
+  }
+  if (withNumbers) {
+    charset += digits;
+    mandatory.push(digits[Math.floor(Math.random() * digits.length)]);
+  }
+  if (withSpecialChars) {
+    charset += special;
+    mandatory.push(special[Math.floor(Math.random() * special.length)]);
+  }
+
+  const remaining = Math.max(0, length - mandatory.length);
+  const result = [...mandatory];
+  for (let i = 0; i < remaining; i++) {
+    result.push(charset[Math.floor(Math.random() * charset.length)]);
+  }
+
+  // Fisher-Yates shuffle
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result.join("");
 }
 
 /** Generates a random internet username. */
@@ -36,14 +78,21 @@ export function generateText(wordCount = 5): string {
   return faker.lorem.words(wordCount);
 }
 
-/** Generates a random single-sentence description. */
-export function generateDescription(): string {
-  return faker.lorem.sentence();
+/**
+ * Generates a random description.
+ * @param paragraphs - Number of paragraphs (default: `1`)
+ */
+export function generateDescription(paragraphs = 1): string {
+  if (paragraphs <= 1) return faker.lorem.sentence();
+  return faker.lorem.paragraphs(paragraphs, "\n\n");
 }
 
-/** Generates random notes text (2 sentences). */
-export function generateNotes(): string {
-  return faker.lorem.sentences(2);
+/**
+ * Generates random notes text.
+ * @param sentences - Number of sentences (default: `2`)
+ */
+export function generateNotes(sentences = 2): string {
+  return faker.lorem.sentences(sentences);
 }
 
 /**

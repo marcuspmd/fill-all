@@ -197,7 +197,7 @@ describe("rule-engine/resolveFieldValue", () => {
 
     const result = await resolveFieldValue(field, "https://example.com");
 
-    expect(mockGenerate).toHaveBeenCalledWith("email");
+    expect(mockGenerate).toHaveBeenCalledWith("email", undefined);
     expect(result).toEqual({
       fieldSelector: "#email",
       value: "context@example.com",
@@ -590,7 +590,7 @@ describe("rule-engine/resolveFieldValue", () => {
       const result = await resolveFieldValue(field, "https://example.com");
 
       // Falls through to detected "email" type
-      expect(mockGenerate).toHaveBeenCalledWith("email");
+      expect(mockGenerate).toHaveBeenCalledWith("email", undefined);
       expect(result.source).toBe("generator");
     });
 

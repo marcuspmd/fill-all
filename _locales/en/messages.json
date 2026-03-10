@@ -2293,5 +2293,35 @@
   "settingChromeAiPromptDesc": {
     "message": "Leave empty to use the default prompt. Use {fieldType} to reference the field type and {fieldName} for the field name.",
     "description": "Description of the custom prompt field"
+  },
+  "paramWithNumbers": {
+    "message": "Include numbers"
+  },
+  "paramWithSpecialChars": {
+    "message": "Include special characters"
+  },
+  "paramWithUppercase": {
+    "message": "Include uppercase letters"
+  },
+  "paramParagraphs": {
+    "message": "Number of paragraphs"
+  },
+  "paramSentences": {
+    "message": "Number of sentences"
+  },
+  "optionsTabGenerators": {
+    "message": "Generators"
+  },
+  "generatorsTabTitle": {
+    "message": "Default Generator Parameters"
+  },
+  "generatorsTabDesc": {
+    "message": "Configure the default parameters for each generator type. These defaults apply when no rule overrides the params."
+  },
+  "btnSaveGeneratorDefaults": {
+    "message": "Save Defaults"
+  },
+  "msgGeneratorDefaultsSaved": {
+    "message": "Default parameters saved!"
   }
 }

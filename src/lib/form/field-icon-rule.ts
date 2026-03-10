@@ -284,9 +284,16 @@ function updateParamsSection(): void {
   if (!rulePopupElement) return;
   const container =
     rulePopupElement.querySelector<HTMLElement>("#fa-rp-params");
+  const aiSection =
+    rulePopupElement.querySelector<HTMLElement>("#fa-rp-ai-section");
   if (!container) return;
 
   const selectedType = genSearchableSelect?.getValue() ?? "auto";
+
+  // Show AI section only when generator is "ai"
+  if (aiSection) {
+    aiSection.style.display = selectedType === "ai" ? "" : "none";
+  }
 
   if (
     selectedType === "auto" ||
@@ -429,6 +436,7 @@ function getRulePopupHTML(): string {
         <div class="fa-rp-header-left">
           <div class="fa-rp-header-title">${i("rulePopupTitle")}</div>
           <div class="fa-rp-header-subtitle">${i("rulePopupSubtitle")}</div>
+          <div id="fa-rp-field-name" class="fa-rp-field-name"></div>
         </div>
         <div class="fa-rp-suggestion" id="fa-rp-suggestion" style="display:none">
           ✨ <span>${i("rulePopupSuggested")}</span>&nbsp;<span id="fa-rp-suggestion-type"></span>
@@ -468,7 +476,7 @@ function getRulePopupHTML(): string {
         <span class="fa-rp-divider-text">${i("rulePopupOrSeparator")}</span>
         <div class="fa-rp-divider-line"></div>
       </div>
-      <div class="fa-rp-card fa-rp-card--pink">
+      <div id="fa-rp-ai-section" class="fa-rp-card fa-rp-card--pink" style="display:none">
         <div class="fa-rp-card-icon fa-rp-card-icon--pink">🤖</div>
         <div class="fa-rp-card-content">
           <div class="fa-rp-card-title">${i("editorAiPrompt")}</div>

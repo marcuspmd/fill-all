@@ -14,6 +14,7 @@ const {
   mockTensorFlowGenerate,
   mockGetSettings,
   mockGetIgnoredFieldsForUrl,
+  mockGetGeneratorDefaults,
   mockSetFillingInProgress,
   mockFillCustomComponent,
   mockExtractCustomComponentValue,
@@ -42,6 +43,7 @@ const {
     mockTensorFlowGenerate: vi.fn(),
     mockGetSettings: vi.fn(),
     mockGetIgnoredFieldsForUrl: vi.fn().mockResolvedValue([]),
+    mockGetGeneratorDefaults: vi.fn().mockResolvedValue({}),
     mockSetFillingInProgress: vi.fn(),
     mockFillCustomComponent: vi.fn().mockResolvedValue(false),
     mockExtractCustomComponentValue: vi.fn().mockReturnValue(null),
@@ -68,6 +70,7 @@ vi.mock("@/lib/ai/tensorflow-generator", () => ({
 vi.mock("@/lib/storage/storage", () => ({
   getSettings: mockGetSettings,
   getIgnoredFieldsForUrl: mockGetIgnoredFieldsForUrl,
+  getGeneratorDefaults: mockGetGeneratorDefaults,
 }));
 vi.mock("../dom-watcher", () => ({
   setFillingInProgress: mockSetFillingInProgress,

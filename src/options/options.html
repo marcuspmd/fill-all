@@ -12,8 +12,9 @@
     </header>
 
     <div class="tabs">
-      <button class="tab active" data-tab="settings" data-i18n="tabGeneral">General</button>
+      <button class="tab" data-tab="settings" data-i18n="tabGeneral">General</button>
       <button class="tab" data-tab="rules" data-i18n="tabRules">Rules</button>
+      <button class="tab" data-tab="generators" data-i18n="optionsTabGenerators">Generators</button>
       <button class="tab" data-tab="forms" data-i18n="tabSavedForms">Saved Forms</button>
       <button class="tab" data-tab="dataset" data-i18n="tabDataset">Dataset &amp; Training</button>
       <button class="tab" data-tab="cache" data-i18n="tabCacheAndLearning">Cache &amp; Learning</button>
@@ -309,21 +310,14 @@
             <input type="text" id="rule-fixed" data-i18n-placeholder="ruleFixedValuePlaceholder" placeholder="123.456.789-09" />
           </div>
           <div class="form-group">
-            <label for="rule-ai-prompt" data-i18n="editorAiPrompt">Custom AI prompt (optional):</label>
-            <input type="text" id="rule-ai-prompt" data-i18n-placeholder="editorAiPromptPlaceholder" placeholder="Generate a valid CPF for Brazil" />
-          </div>
-          <div class="form-group">
-            <label for="rule-ai-prompt" data-i18n="editorAiPrompt">Custom AI prompt (optional):</label>
-            <input type="text" id="rule-ai-prompt" data-i18n-placeholder="editorAiPromptPlaceholder" placeholder="Generate a valid CPF for Brazil" />
-          </div>
-          <div class="form-group">
-            <label for="rule-ai-prompt" data-i18n="editorAiPrompt">Custom AI prompt (optional):</label>
-            <input type="text" id="rule-ai-prompt" data-i18n-placeholder="editorAiPromptPlaceholder" placeholder="Generate a valid CPF for Brazil" />
-          </div>
-          <div class="form-group">
             <label for="rule-priority" data-i18n="rulePriorityLabel">Priority (higher = more important):</label>
             <input type="number" id="rule-priority" value="10" min="0" max="100" />
           </div>
+        </div>
+
+        <div id="rule-ai-prompt-container" class="form-group" style="display:none;">
+          <label for="rule-ai-prompt" data-i18n="editorAiPrompt">Custom AI prompt (optional):</label>
+          <input type="text" id="rule-ai-prompt" data-i18n-placeholder="editorAiPromptPlaceholder" placeholder="Generate a valid CPF for Brazil" />
         </div>
 
         <div id="rule-params-container" class="form-group" style="display:none;">
@@ -335,6 +329,22 @@
           <button id="btn-save-rule" class="btn btn-primary" data-i18n="btnSaveRule">Save Rule</button>
           <button id="btn-cancel-rule" class="btn btn-secondary" style="display: none;" data-i18n="btnCancelRule">Cancel</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Generators Tab -->
+    <div class="tab-content" id="tab-generators">
+      <div class="card">
+        <h2 data-i18n="generatorsTabTitle">Default Generator Parameters</h2>
+        <p class="description" data-i18n="generatorsTabDesc">
+          Configure the default parameters for each generator type.
+          These defaults apply when no rule overrides the params.
+        </p>
+        <div id="generators-defaults-list"></div>
+        <div style="margin-top: 16px;">
+          <button id="btn-save-generator-defaults" class="btn btn-primary" data-i18n="btnSaveGeneratorDefaults">Save Defaults</button>
+        </div>
+        <div id="generators-defaults-msg" role="status" aria-live="polite" style="margin-top: 8px; display: none;"></div>
       </div>
     </div>
 

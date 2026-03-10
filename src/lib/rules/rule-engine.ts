@@ -10,6 +10,7 @@ import type {
 } from "@/types";
 import { FIELD_TYPE_DEFINITIONS } from "@/types";
 import { getRulesForUrl } from "@/lib/storage/storage";
+import type { GeneratorDefaults } from "@/lib/storage/generator-defaults-storage";
 import { generate } from "@/lib/generators";
 import {
   adaptGeneratedValue,
@@ -116,6 +117,7 @@ export async function resolveFieldValue(
   forceAIFirst = false,
   aiTimeoutMs = DEFAULT_AI_TIMEOUT_MS,
   chromeAICustomPrompt?: string,
+  generatorDefaults?: GeneratorDefaults,
 ): Promise<GenerationResult> {
   const selector = field.selector;
 
@@ -258,12 +260,13 @@ export async function resolveFieldValue(
 
   // 3. Default generator based on detected field type
   const effectiveType = getEffectiveFieldType(field);
+  const defaultParams = generatorDefaults?.[effectiveType];
   if (DATE_FIELD_TYPES.has(effectiveType)) {
     const value = generateDateForField(effectiveType, field);
     log.debug(`Gerador de data (${effectiveType}, detectado): "${value}"`);
     return { fieldSelector: selector, value, source: "generator" };
   }
-  const value = generateWithConstraints(() => generate(effectiveType), {
+  const value = generateWithConstraints(() => generate(effectiveType, defaultParams), {
     element: field.element,
     requireValidity: true,
   });

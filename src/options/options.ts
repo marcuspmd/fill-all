@@ -11,6 +11,7 @@ import { initFormsTab } from "./forms-section";
 import { initCacheTab } from "./cache-section";
 import { initDatasetTab } from "./dataset-section";
 import { initLogTab } from "./log-section";
+import { initGeneratorsSection } from "./generators-section";
 import { initI18n, localizeHTML } from "@/lib/i18n";
 import type { Settings } from "@/types";
 
@@ -29,6 +30,7 @@ async function main(): Promise<void> {
   initCacheTab();
   initDatasetTab();
   initLogTab();
+  void initGeneratorsSection();
 }
 
 void main();

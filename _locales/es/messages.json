@@ -2293,5 +2293,35 @@
   "settingChromeAiPromptDesc": {
     "message": "Deje en blanco para usar el indicador predeterminado. Use {fieldType} para referirse al tipo de campo y {fieldName} para el nombre del campo.",
     "description": "Descripción del campo de indicador personalizado"
+  },
+  "paramWithNumbers": {
+    "message": "Incluir números"
+  },
+  "paramWithSpecialChars": {
+    "message": "Incluir caracteres especiales"
+  },
+  "paramWithUppercase": {
+    "message": "Incluir letras mayúsculas"
+  },
+  "paramParagraphs": {
+    "message": "Número de párrafos"
+  },
+  "paramSentences": {
+    "message": "Número de oraciones"
+  },
+  "optionsTabGenerators": {
+    "message": "Generadores"
+  },
+  "generatorsTabTitle": {
+    "message": "Parámetros Predeterminados de Generadores"
+  },
+  "generatorsTabDesc": {
+    "message": "Configure los parámetros predeterminados para cada tipo de generador. Estos valores se usan cuando ninguna regla los sobreescribe."
+  },
+  "btnSaveGeneratorDefaults": {
+    "message": "Guardar Predeterminados"
+  },
+  "msgGeneratorDefaultsSaved": {
+    "message": "¡Parámetros predeterminados guardados!"
   }
 }

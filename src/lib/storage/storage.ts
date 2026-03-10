@@ -51,3 +51,10 @@ export {
 } from "./cache-storage";
 
 export { matchUrlPattern } from "@/lib/url/match-url-pattern";
+
+export {
+  getGeneratorDefaults,
+  saveGeneratorDefault,
+  saveAllGeneratorDefaults,
+} from "./generator-defaults-storage";
+export type { GeneratorDefaults } from "./generator-defaults-storage";

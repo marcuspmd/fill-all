@@ -139,9 +139,15 @@ function cancelEditRule(): void {
 function updateRuleParamsSection(existingParams?: GeneratorParams): void {
   const container = document.getElementById("rule-params-container");
   const fieldsDiv = document.getElementById("rule-params-fields");
+  const aiPromptContainer = document.getElementById("rule-ai-prompt-container");
   if (!container || !fieldsDiv) return;
 
   const generatorValue = ruleGeneratorSelect?.getValue() ?? "";
+
+  // Show AI prompt only when "ai" generator is selected
+  if (aiPromptContainer) {
+    aiPromptContainer.style.display = generatorValue === "ai" ? "block" : "none";
+  }
 
   if (
     !generatorValue ||

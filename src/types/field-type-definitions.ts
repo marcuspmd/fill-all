@@ -26,6 +26,18 @@ export interface GeneratorParams {
   readonly options?: string[]; // for select/radio
   readonly probability?: number; // for optional fields or boolean fields
   readonly dateFormat?: "iso" | "br" | "us";
+  /** Password: include numeric digits (default: true). */
+  readonly withNumbers?: boolean;
+  /** Password: include special characters (default: true). */
+  readonly withSpecialChars?: boolean;
+  /** Password: include uppercase letters (default: true). */
+  readonly withUppercase?: boolean;
+  /** Description: number of paragraphs to generate (default: 1). */
+  readonly paragraphs?: number;
+  /** Notes: number of sentences to generate (default: 2). */
+  readonly sentences?: number;
+  /** Text/search: number of words to generate (default varies by type). */
+  readonly words?: number;
   readonly [key: string]: unknown; // allow extra params without TS errors
 }
 
@@ -813,6 +825,24 @@ export const GENERATOR_PARAM_DEFS: Readonly<
       max: 64,
       step: 1,
     },
+    {
+      key: "withNumbers",
+      type: "boolean",
+      labelKey: "paramWithNumbers",
+      defaultValue: true,
+    },
+    {
+      key: "withSpecialChars",
+      type: "boolean",
+      labelKey: "paramWithSpecialChars",
+      defaultValue: true,
+    },
+    {
+      key: "withUppercase",
+      type: "boolean",
+      labelKey: "paramWithUppercase",
+      defaultValue: true,
+    },
   ],
   otp: [
     {
@@ -838,6 +868,50 @@ export const GENERATOR_PARAM_DEFS: Readonly<
   ],
 
   // ── Texto / URL ─────────────────────────────────────────────
+  text: [
+    {
+      key: "words",
+      type: "number",
+      labelKey: "paramWordCount",
+      defaultValue: 5,
+      min: 1,
+      max: 50,
+      step: 1,
+    },
+  ],
+  "search-text": [
+    {
+      key: "words",
+      type: "number",
+      labelKey: "paramWordCount",
+      defaultValue: 2,
+      min: 1,
+      max: 10,
+      step: 1,
+    },
+  ],
+  description: [
+    {
+      key: "paragraphs",
+      type: "number",
+      labelKey: "paramParagraphs",
+      defaultValue: 1,
+      min: 1,
+      max: 10,
+      step: 1,
+    },
+  ],
+  notes: [
+    {
+      key: "sentences",
+      type: "number",
+      labelKey: "paramSentences",
+      defaultValue: 2,
+      min: 1,
+      max: 20,
+      step: 1,
+    },
+  ],
   slug: [
     {
       key: "length",

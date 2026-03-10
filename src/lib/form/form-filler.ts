@@ -19,7 +19,7 @@ import {
 } from "@/lib/ai/chrome-ai-proxy";
 import type { FormContextFieldInput } from "@/lib/ai/prompts";
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
-import { getSettings, getIgnoredFieldsForUrl } from "@/lib/storage/storage";
+import { getSettings, getIgnoredFieldsForUrl, getGeneratorDefaults } from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
 import {
   fillCustomComponent,
@@ -300,6 +300,9 @@ async function doFillAllFields(options?: {
   // Determine AI function based on settings
   const aiGenerateFn = await getAiFunction(settings);
 
+  // Load per-type generator defaults
+  const generatorDefaults = await getGeneratorDefaults();
+
   // Load ignored fields for current URL
   const ignoredFields = await getIgnoredFieldsForUrl(url);
   const ignoredSelectors = new Set(ignoredFields.map((f) => f.selector));
@@ -346,6 +349,7 @@ async function doFillAllFields(options?: {
         settings.forceAIFirst,
         settings.aiTimeoutMs,
         settings.chromeAICustomPrompt,
+        generatorDefaults,
       );
 
       await applyValueToField(field, result.value);
@@ -416,6 +420,7 @@ export async function fillSingleField(
   }
   const settings = await getSettings();
   const aiGenerateFn = await getAiFunction(settings);
+  const generatorDefaults = await getGeneratorDefaults();
   const fieldLabel =
     field.label ?? field.name ?? field.id ?? field.fieldType ?? field.selector;
   log.info(`⏳ Preenchendo [${field.fieldType}] "${fieldLabel}"...`);
@@ -429,6 +434,7 @@ export async function fillSingleField(
       settings.forceAIFirst,
       settings.aiTimeoutMs,
       settings.chromeAICustomPrompt,
+      generatorDefaults,
     );
     await applyValueToField(field, result.value);
     logAuditFill({

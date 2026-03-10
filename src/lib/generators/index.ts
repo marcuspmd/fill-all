@@ -147,7 +147,13 @@ const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
 
   // ── Autenticação ────────────────────────────────────────────
   username: () => generateUsername(),
-  password: (p) => generatePassword(p?.length ?? 12),
+  password: (p) =>
+    generatePassword(
+      p?.length ?? 12,
+      p?.withNumbers !== false,
+      p?.withSpecialChars !== false,
+      p?.withUppercase !== false,
+    ),
   otp: (p) => generateOtp(p?.length ?? 6),
   "verification-code": (p) => generateVerificationCode(p?.length ?? 6),
 
@@ -157,11 +163,11 @@ const GENERATOR_FACTORIES: Record<string, GeneratorFactory> = {
   coupon: () => generateCoupon(),
 
   // ── Genéricos ───────────────────────────────────────────────
-  text: () => generateText(),
-  "search-text": () => generateText(2),
-  "fallback-text": () => generateText(3),
-  description: () => generateDescription(),
-  notes: () => generateNotes(),
+  text: (p) => generateText(p?.words ?? 5),
+  "search-text": (p) => generateText(p?.words ?? 2),
+  "fallback-text": (p) => generateText(p?.words ?? 3),
+  description: (p) => generateDescription(p?.paragraphs ?? 1),
+  notes: (p) => generateNotes(p?.sentences ?? 2),
   website: () => generateWebsite(),
 
   // ── Genéricos extra ────────────────────────────────────────

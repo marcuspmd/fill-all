@@ -2293,5 +2293,35 @@
   "settingChromeAiPromptDesc": {
     "message": "Deixe vazio para usar o prompt padrão. Use {fieldType} para referir ao tipo do campo e {fieldName} para o nome.",
     "description": "Descrição do campo de prompt customizado"
+  },
+  "paramWithNumbers": {
+    "message": "Incluir números"
+  },
+  "paramWithSpecialChars": {
+    "message": "Incluir caracteres especiais"
+  },
+  "paramWithUppercase": {
+    "message": "Incluir letras maiúsculas"
+  },
+  "paramParagraphs": {
+    "message": "Quantidade de parágrafos"
+  },
+  "paramSentences": {
+    "message": "Quantidade de sentenças"
+  },
+  "optionsTabGenerators": {
+    "message": "Geradores"
+  },
+  "generatorsTabTitle": {
+    "message": "Parâmetros Padrão dos Geradores"
+  },
+  "generatorsTabDesc": {
+    "message": "Configure os parâmetros padrão para cada tipo de gerador. Esses valores são usados quando nenhuma regra os sobrescreve."
+  },
+  "btnSaveGeneratorDefaults": {
+    "message": "Salvar Padrões"
+  },
+  "msgGeneratorDefaultsSaved": {
+    "message": "Parâmetros padrão salvos!"
   }
 }
