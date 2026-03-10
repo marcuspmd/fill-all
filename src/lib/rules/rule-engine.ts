@@ -266,10 +266,13 @@ export async function resolveFieldValue(
     log.debug(`Gerador de data (${effectiveType}, detectado): "${value}"`);
     return { fieldSelector: selector, value, source: "generator" };
   }
-  const value = generateWithConstraints(() => generate(effectiveType, defaultParams), {
-    element: field.element,
-    requireValidity: true,
-  });
+  const value = generateWithConstraints(
+    () => generate(effectiveType, defaultParams),
+    {
+      element: field.element,
+      requireValidity: true,
+    },
+  );
   if (value) {
     log.debug(`Gerador padrão (${effectiveType}): "${value}"`);
     return { fieldSelector: selector, value, source: "generator" };

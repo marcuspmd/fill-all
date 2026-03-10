@@ -10,7 +10,11 @@ import {
   GENERATOR_PARAM_DEFS,
   FIELD_TYPE_DEFINITIONS,
 } from "@/types/field-type-definitions";
-import { collectGeneratorParams, renderGeneratorParamFields, showToast } from "./shared";
+import {
+  collectGeneratorParams,
+  renderGeneratorParamFields,
+  showToast,
+} from "./shared";
 import { t } from "@/lib/i18n";
 import {
   getGeneratorDefaults,

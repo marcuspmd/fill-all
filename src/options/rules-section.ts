@@ -146,7 +146,8 @@ function updateRuleParamsSection(existingParams?: GeneratorParams): void {
 
   // Show AI prompt only when "ai" generator is selected
   if (aiPromptContainer) {
-    aiPromptContainer.style.display = generatorValue === "ai" ? "block" : "none";
+    aiPromptContainer.style.display =
+      generatorValue === "ai" ? "block" : "none";
   }
 
   if (

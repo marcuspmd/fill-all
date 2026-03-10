@@ -19,7 +19,11 @@ import {
 } from "@/lib/ai/chrome-ai-proxy";
 import type { FormContextFieldInput } from "@/lib/ai/prompts";
 import { generateWithTensorFlow } from "@/lib/ai/tensorflow-generator";
-import { getSettings, getIgnoredFieldsForUrl, getGeneratorDefaults } from "@/lib/storage/storage";
+import {
+  getSettings,
+  getIgnoredFieldsForUrl,
+  getGeneratorDefaults,
+} from "@/lib/storage/storage";
 import { setFillingInProgress } from "./dom-watcher";
 import {
   fillCustomComponent,
